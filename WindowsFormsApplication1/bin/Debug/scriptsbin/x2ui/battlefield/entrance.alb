@@ -1,0 +1,718 @@
+local CORPS_1 = 0
+local CORPS_2 = 1
+local CORPS_ANY = 2
+local GetInteractionNpcIndex = function()
+  local targetNpcIndex = X2Unit:GetNpcTypeIndex("target")
+  local insteractedNpc = X2BattleField:GetInteractedNpcType()
+  local distance = X2Unit:UnitDistance("target")
+  if targetNpcIndex ~= nil and targetNpcIndex ~= insteractedNpc and distance < 2.5 then
+    return targetNpcIndex
+  end
+  return insteractedNpc
+end
+local function SetViewOfBattleFieldEntranceWindow(id, parent)
+  local battleFieldBannerPath = {
+    [0] = TEXTURE_PATH.BATTLEFIELD_PREVIEW_TRAINING,
+    [7] = TEXTURE_PATH.BATTLEFIELD_PREVIEW_GLADIATOR,
+    [11] = TEXTURE_PATH.BATTLEFIELD_PREVIEW_GLADIATOR,
+    [13] = TEXTURE_PATH.BATTLEFIELD_PREVIEW_GLADIATOR,
+    [14] = TEXTURE_PATH.BATTLEFIELD_PREVIEW_TRAINING
+  }
+  local battleFieldButtonCoordsKey = {
+    [0] = "training",
+    [7] = "gladiator_blue",
+    [11] = "gladiator_blue",
+    [13] = "gladiator",
+    [14] = "training"
+  }
+  local window = CreateWindow(id, parent)
+  window.defaultWidth = 430
+  window.expandWidth = 600
+  window:SetExtent(window.defaultWidth, 635)
+  window:SetTitle(locale.battlefield.title)
+  window:AddAnchor("CENTER", parent, 0, 0)
+  local function CreateBattleFieldTypeContent(index)
+    local contentFrame = window:CreateChildWidget("emptywidget", "contentFrame", index, true)
+    contentFrame:SetExtent(390, 565)
+    local width = contentFrame:GetWidth() - MARGIN.WINDOW_SIDE
+    local img = contentFrame:CreateImageDrawable(TEXTURE_PATH.BATTLEFIELD_PREVIEW_TRAINING, "background")
+    img:AddAnchor("TOP", contentFrame, 0, -5)
+    local _, offset = GetTextureInfo(TEXTURE_PATH.BATTLEFIELD_PREVIEW_TRAINING, "image"):GetExtent()
+    local subtitle = contentFrame:CreateChildWidget("label", "subtitle", 0, true)
+    subtitle:SetAutoResize(true)
+    subtitle:SetHeight(FONT_SIZE.XXLARGE)
+    subtitle:AddAnchor("TOPLEFT", contentFrame, 5, offset)
+    subtitle.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.XXLARGE)
+    ApplyTextColor(subtitle, FONT_COLOR.MIDDLE_TITLE)
+    local fixedNumber = contentFrame:CreateChildWidget("label", "fixedNumber", 0, true)
+    fixedNumber:SetAutoResize(true)
+    fixedNumber:SetHeight(FONT_SIZE.XXLARGE)
+    fixedNumber:AddAnchor("LEFT", subtitle, "RIGHT", 5, 0)
+    fixedNumber.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.XXLARGE)
+    ApplyTextColor(fixedNumber, FONT_COLOR.MIDDLE_TITLE)
+    local balanceLevel = contentFrame:CreateChildWidget("label", "balanceLevel", 0, true)
+    balanceLevel:SetWidth(width)
+    balanceLevel:SetHeight(FONT_SIZE.LARGE)
+    balanceLevel.style:SetAlign(ALIGN_LEFT)
+    balanceLevel.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.LARGE)
+    balanceLevel:AddAnchor("TOPLEFT", subtitle, "BOTTOMLEFT", 0, 8)
+    ApplyTextColor(balanceLevel, FONT_COLOR.BLUE)
+    local description = contentFrame:CreateChildWidget("textbox", "description", 0, true)
+    description:SetWidth(width)
+    description:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+    description:SetHeight(FONT_SIZE.MIDDLE)
+    description.style:SetAlign(ALIGN_LEFT)
+    description:AddAnchor("TOPLEFT", balanceLevel, "BOTTOMLEFT", 0, 8)
+    ApplyTextColor(description, FONT_COLOR.DEFAULT)
+    local playTime = contentFrame:CreateChildWidget("label", "playTime", 0, true)
+    playTime:SetWidth(width)
+    playTime:SetHeight(FONT_SIZE.LARGE)
+    playTime.style:SetAlign(ALIGN_LEFT)
+    playTime.style:SetFontSize(FONT_SIZE.LARGE)
+    playTime:AddAnchor("TOPLEFT", description, "BOTTOMLEFT", 0, 15)
+    ApplyTextColor(playTime, FONT_COLOR.RED)
+    local levelSection = contentFrame:CreateChildWidget("label", "levelSection", 0, true)
+    levelSection:SetWidth(width)
+    levelSection:SetHeight(FONT_SIZE.LARGE)
+    levelSection.style:SetAlign(ALIGN_LEFT)
+    levelSection.style:SetFontSize(FONT_SIZE.LARGE)
+    levelSection:AddAnchor("TOPLEFT", playTime, "BOTTOMLEFT", 0, 3)
+    ApplyTextColor(levelSection, FONT_COLOR.RED)
+    local winConditionFrame = contentFrame:CreateChildWidget("emptywidget", "winConditionFrame", 0, true)
+    winConditionFrame:Show(false)
+    winConditionFrame:SetWidth(contentFrame:GetWidth())
+    winConditionFrame:AddAnchor("TOPLEFT", levelSection, "BOTTOMLEFT", -5, 15)
+    local bg = CreateContentBackground(winConditionFrame, "TYPE2")
+    bg:AddAnchor("TOPLEFT", winConditionFrame, 0, 0)
+    bg:AddAnchor("BOTTOMRIGHT", winConditionFrame, 0, 0)
+    ApplyTextureColor(bg, TEXTURE_COLOR.TYPE12_BROWN)
+    local inset = 15
+    local title = winConditionFrame:CreateChildWidget("label", "title", 0, false)
+    title:SetAutoResize(true)
+    title:SetHeight(FONT_SIZE.LARGE)
+    title:SetText(locale.battlefield.winCondition.title)
+    title:AddAnchor("TOPLEFT", winConditionFrame, inset, inset)
+    title.style:SetFontSize(FONT_SIZE.LARGE)
+    ApplyTextColor(title, FONT_COLOR.MIDDLE_TITLE)
+    local guide = CreateGuideIconWidget(winConditionFrame)
+    guide:AddAnchor("TOPRIGHT", winConditionFrame, -13, 13)
+    local function OnEnterGuide()
+      SetTooltip(locale.battlefield.winCondition.tip, guide)
+    end
+    guide:SetHandler("OnEnter", OnEnterGuide)
+    local OnLeaveGuide = function()
+      HideTooltip()
+    end
+    guide:SetHandler("OnLeave", OnLeaveGuide)
+    local line = CreateLine(title, "TYPE1", "background")
+    line:SetWidth(winConditionFrame:GetWidth() - MARGIN.WINDOW_SIDE)
+    line:AddAnchor("TOPLEFT", title, "BOTTOMLEFT", 0, 7)
+    local scoreAttainment = winConditionFrame:CreateChildWidget("label", "scoreAttainment", 0, true)
+    scoreAttainment:SetAutoResize(true)
+    scoreAttainment:SetHeight(FONT_SIZE.LARGE)
+    scoreAttainment.style:SetFontSize(FONT_SIZE.LARGE)
+    ApplyTextColor(scoreAttainment, FONT_COLOR.BLUE)
+    scoreAttainment.icon = CreateWinConditionIcon(scoreAttainment, "score")
+    scoreAttainment.icon:AddAnchor("RIGHT", scoreAttainment, "LEFT", -3, 0)
+    local killCountAttainment = winConditionFrame:CreateChildWidget("label", "killCountAttainment", 0, true)
+    killCountAttainment:SetAutoResize(true)
+    killCountAttainment:SetHeight(FONT_SIZE.LARGE)
+    killCountAttainment.style:SetFontSize(FONT_SIZE.LARGE)
+    ApplyTextColor(killCountAttainment, FONT_COLOR.BLUE)
+    killCountAttainment.icon = CreateWinConditionIcon(killCountAttainment, "killCount")
+    killCountAttainment.icon:AddAnchor("RIGHT", killCountAttainment, "LEFT", -3, 0)
+    local roundWinCountAttainment = winConditionFrame:CreateChildWidget("label", "roundWinCountAttainment", 0, true)
+    roundWinCountAttainment:SetAutoResize(true)
+    roundWinCountAttainment:SetHeight(FONT_SIZE.LARGE)
+    roundWinCountAttainment.style:SetFontSize(FONT_SIZE.LARGE)
+    ApplyTextColor(roundWinCountAttainment, FONT_COLOR.BLUE)
+    roundWinCountAttainment.icon = CreateWinConditionIcon(roundWinCountAttainment, "roundWinCount")
+    roundWinCountAttainment.icon:AddAnchor("RIGHT", roundWinCountAttainment, "LEFT", -3, 0)
+    local targetDestruction = winConditionFrame:CreateChildWidget("label", "targetDestruction", 0, true)
+    targetDestruction:SetAutoResize(true)
+    targetDestruction:SetText(locale.battlefield.winCondition.targetDestruction)
+    targetDestruction:SetHeight(FONT_SIZE.LARGE)
+    targetDestruction.style:SetFontSize(FONT_SIZE.LARGE)
+    ApplyTextColor(targetDestruction, FONT_COLOR.BLUE)
+    targetDestruction.icon = CreateWinConditionIcon(targetDestruction, "destruction")
+    targetDestruction.icon:AddAnchor("RIGHT", targetDestruction, "LEFT", -3, 1)
+    local scoreSuperiority = winConditionFrame:CreateChildWidget("label", "scoreSuperiority", 0, true)
+    scoreSuperiority:SetAutoResize(true)
+    scoreSuperiority:SetText(locale.battlefield.winCondition.scoreSuperiority)
+    scoreSuperiority:SetHeight(FONT_SIZE.LARGE)
+    scoreSuperiority.style:SetFontSize(FONT_SIZE.LARGE)
+    ApplyTextColor(scoreSuperiority, FONT_COLOR.BLUE)
+    scoreSuperiority.icon = CreateWinConditionIcon(scoreSuperiority, "timeOut")
+    scoreSuperiority.icon:AddAnchor("RIGHT", scoreSuperiority, "LEFT", -4, 0)
+    function contentFrame:SetWinCondition(score, killCount, roundWinCount, targetDestroy, timeOut)
+      self.winConditionFrame:Show(false)
+      scoreAttainment:Show(false)
+      killCountAttainment:Show(false)
+      roundWinCountAttainment:Show(false)
+      targetDestruction:Show(false)
+      scoreSuperiority:Show(false)
+      scoreAttainment:RemoveAllAnchors()
+      killCountAttainment:RemoveAllAnchors()
+      roundWinCountAttainment:RemoveAllAnchors()
+      targetDestruction:RemoveAllAnchors()
+      scoreSuperiority:RemoveAllAnchors()
+      guide:Show(false)
+      local conditionCount = 0
+      local target
+      local defaultOffsetY = 10
+      if score ~= nil and score > 0 then
+        scoreAttainment:Show(true)
+        scoreAttainment:SetText(locale.battlefield.winCondition.scoreAttainment(score))
+        conditionCount = conditionCount + 1
+        if target == nil then
+          scoreAttainment:AddAnchor("TOPLEFT", self.winConditionFrame, scoreAttainment.icon:GetWidth() + inset, defaultOffsetY + MARGIN.WINDOW_SIDE * 1.8)
+        end
+        target = scoreAttainment
+      end
+      if killCount ~= nil and killCount > 0 then
+        killCountAttainment:Show(true)
+        killCountAttainment:SetText(locale.battlefield.winCondition.killCountAttainment(killCount))
+        conditionCount = conditionCount + 1
+        if target == nil then
+          killCountAttainment:AddAnchor("TOPLEFT", self.winConditionFrame, killCountAttainment.icon:GetWidth() + inset, defaultOffsetY + MARGIN.WINDOW_SIDE * 1.8)
+        else
+          killCountAttainment:AddAnchor("TOPLEFT", target, "BOTTOMLEFT", 0, MARGIN.WINDOW_SIDE / 3)
+        end
+        target = killCountAttainment
+      end
+      if roundWinCount ~= nil and roundWinCount > 0 then
+        roundWinCountAttainment:Show(true)
+        roundWinCountAttainment:SetText(locale.battlefield.winCondition.roundWinCountAttainment(roundWinCount))
+        conditionCount = conditionCount + 1
+        if target == nil then
+          roundWinCountAttainment:AddAnchor("TOPLEFT", self.winConditionFrame, roundWinCountAttainment.icon:GetWidth() + inset, defaultOffsetY + MARGIN.WINDOW_SIDE * 1.8)
+        else
+          roundWinCountAttainment:AddAnchor("TOPLEFT", target, "BOTTOMLEFT", 0, MARGIN.WINDOW_SIDE / 3)
+        end
+        target = roundWinCountAttainment
+      end
+      if targetDestroy then
+        targetDestruction:Show(true)
+        conditionCount = conditionCount + 1
+        if target == nil then
+          targetDestruction:AddAnchor("TOPLEFT", self.winConditionFrame, targetDestruction.icon:GetWidth() + inset, defaultOffsetY + MARGIN.WINDOW_SIDE * 1.8)
+        else
+          targetDestruction:AddAnchor("TOPLEFT", target, "BOTTOMLEFT", 0, MARGIN.WINDOW_SIDE / 3)
+        end
+        target = targetDestruction
+      end
+      if timeOut then
+        scoreSuperiority:Show(true)
+        conditionCount = conditionCount + 1
+        if target == nil then
+          scoreSuperiority:AddAnchor("TOPLEFT", self.winConditionFrame, scoreSuperiority.icon:GetWidth() + inset, defaultOffsetY + MARGIN.WINDOW_SIDE * 1.8)
+        else
+          scoreSuperiority:AddAnchor("TOPLEFT", target, "BOTTOMLEFT", 0, MARGIN.WINDOW_SIDE / 3)
+        end
+      end
+      if conditionCount == 0 then
+        return
+      end
+      self.winConditionFrame:Show(true)
+      local height = MARGIN.WINDOW_SIDE * 2 + conditionCount * MARGIN.WINDOW_SIDE + MARGIN.WINDOW_SIDE
+      if conditionCount > 1 then
+        guide:Show(true)
+      end
+      self.winConditionFrame:SetHeight(height)
+    end
+    local entranceATeamBtn = contentFrame:CreateChildWidget("button", "entranceATeamBtn", 0, true)
+    entranceATeamBtn:Show(false)
+    ApplyButtonSkin(entranceATeamBtn, BUTTON_BASIC.DEFAULT)
+    entranceATeamBtn:AddAnchor("BOTTOMLEFT", contentFrame, 10, 0)
+    local entranceBTeamBtn = contentFrame:CreateChildWidget("button", "entranceBTeamBtn", 0, true)
+    entranceBTeamBtn:Show(false)
+    ApplyButtonSkin(entranceBTeamBtn, BUTTON_BASIC.DEFAULT)
+    entranceBTeamBtn:AddAnchor("RIGHT", entranceATeamBtn, "LEFT", 0, 0)
+    local entranceRandomBtn = contentFrame:CreateChildWidget("button", "entranceRandomBtn", 0, true)
+    entranceRandomBtn:SetText(X2Locale:LocalizeUiText(BATTLE_FIELD_TEXT, "random_entrance"))
+    ApplyButtonSkin(entranceRandomBtn, BUTTON_BASIC.DEFAULT)
+    local cancelEntranceBtn = contentFrame:CreateChildWidget("button", "cancelEntranceBtn", 0, true)
+    cancelEntranceBtn:Show(false)
+    cancelEntranceBtn:SetText(locale.battlefield.cancelEntrance)
+    ApplyButtonSkin(cancelEntranceBtn, BUTTON_BASIC.DEFAULT)
+    local requestForm = contentFrame:CreateChildWidget("label", "requestForm", 0, true)
+    requestForm:Show(false)
+    requestForm:SetAutoResize(true)
+    requestForm:SetHeight(FONT_SIZE.MIDDLE)
+    requestForm:AddAnchor("TOPLEFT", winConditionFrame, "BOTTOMLEFT", 5, 10)
+    ApplyTextColor(requestForm, FONT_COLOR.BLUE)
+    local peopleCount = contentFrame:CreateChildWidget("label", "peopleCount", 0, true)
+    peopleCount:Show(false)
+    peopleCount:SetAutoResize(true)
+    peopleCount:SetHeight(FONT_SIZE.MIDDLE)
+    peopleCount:AddAnchor("LEFT", requestForm, "RIGHT", 3, 0)
+    peopleCount:SetText(locale.battlefield.currentPeople)
+    ApplyTextColor(peopleCount, FONT_COLOR.DEFAULT)
+    local count = contentFrame:CreateChildWidget("textbox", "count", 0, true)
+    count:Show(false)
+    count:SetHeight(FONT_SIZE.MIDDLE)
+    count:AddAnchor("BOTTOMLEFT", peopleCount, "BOTTOMRIGHT", 3, 1)
+    ApplyTextColor(count, FONT_COLOR.DEFAULT)
+    local itemEntranceRandomBtn = contentFrame:CreateChildWidget("button", "itemEntranceRandomBtn", 0, true)
+    itemEntranceRandomBtn:SetText(X2Locale:LocalizeUiText(COMMON_TEXT, "Battlefield_entrance_item"))
+    ApplyButtonSkin(itemEntranceRandomBtn, BUTTON_BASIC.DEFAULT)
+    local entranceAvailableTime = contentFrame:CreateChildWidget("textbox", "entranceAvailableTime", 0, true)
+    entranceAvailableTime:SetWidth(contentFrame:GetWidth() / 3)
+    entranceAvailableTime:SetHeight(FONT_SIZE.MIDDLE)
+    entranceAvailableTime:SetAutoWordwrap(false)
+    entranceAvailableTime.style:SetAlign(ALIGN_LEFT)
+    entranceAvailableTime.style:SetFontSize(FONT_SIZE.MIDDLE)
+    entranceAvailableTime:AddAnchor("TOPLEFT", winConditionFrame, "BOTTOMLEFT", 5, 10)
+    ApplyTextColor(entranceAvailableTime, FONT_COLOR.DEFAULT)
+    entranceAvailableTime:Show(true)
+    local entranceCondition1 = contentFrame:CreateChildWidget("textbox", "entranceCondition1", 0, true)
+    entranceCondition1:SetWidth(contentFrame:GetWidth() / 3)
+    entranceCondition1:SetHeight(FONT_SIZE.MIDDLE)
+    entranceCondition1:SetAutoWordwrap(false)
+    entranceCondition1.style:SetAlign(ALIGN_LEFT)
+    entranceCondition1.style:SetFontSize(FONT_SIZE.MIDDLE)
+    entranceCondition1:AddAnchor("TOPLEFT", requestForm, "BOTTOMLEFT", 0, 5)
+    ApplyTextColor(entranceCondition1, FONT_COLOR.DEFAULT)
+    local entranceCondition2 = contentFrame:CreateChildWidget("textbox", "entranceCondition2", 0, true)
+    entranceCondition2:SetWidth(contentFrame:GetWidth() / 3)
+    entranceCondition2:SetHeight(FONT_SIZE.MIDDLE)
+    entranceCondition2.style:SetAlign(ALIGN_LEFT)
+    entranceCondition2.style:SetFontSize(FONT_SIZE.MIDDLE)
+    entranceCondition2:AddAnchor("TOPLEFT", entranceCondition1, "TOPRIGHT", 0, 0)
+    entranceCondition2:SetText(X2Locale:LocalizeUiText(COMMON_TEXT, "Battlefield_entrance_reset_time"))
+    ApplyTextColor(entranceCondition2, FONT_COLOR.DEFAULT)
+    if not X2Player:GetFeatureSet().indunPortal then
+      itemEntranceRandomBtn:Show(false)
+      entranceCondition1:Show(false)
+      entranceCondition2:Show(false)
+      local buttonTable = {entranceRandomBtn, cancelEntranceBtn}
+      AdjustBtnLongestTextWidth(buttonTable)
+      entranceRandomBtn:AddAnchor("BOTTOM", contentFrame, 0, 0)
+      cancelEntranceBtn:AddAnchor("BOTTOM", contentFrame, 0, 0)
+    else
+      local buttonTable = {
+        entranceRandomBtn,
+        cancelEntranceBtn,
+        itemEntranceRandomBtn
+      }
+      local maxWidth = AdjustBtnLongestTextWidth(buttonTable)
+      entranceRandomBtn:AddAnchor("BOTTOM", contentFrame, -(maxWidth / 2), 0)
+      cancelEntranceBtn:AddAnchor("BOTTOM", contentFrame, -(maxWidth / 2), 0)
+      itemEntranceRandomBtn:AddAnchor("BOTTOM", contentFrame, maxWidth / 2, 0)
+    end
+    local function SetStyleCountLabelWaitEntrance(waitEntrance)
+      if waitEntrance == nil then
+        waitEntrance = true
+      end
+      count:SetWidth(500)
+      if waitEntrance then
+        local width = count:GetLongestLineWidth()
+        count:SetWidth(width + 5)
+        count:RemoveAllAnchors()
+        count:AddAnchor("LEFT", requestForm, "RIGHT", 3, 0)
+        peopleCount:SetText("")
+      else
+        local width = count:GetLongestLineWidth()
+        count:SetWidth(width + 5)
+        count:RemoveAllAnchors()
+        count:AddAnchor("LEFT", peopleCount, "RIGHT", 3, 0)
+        peopleCount:SetText(locale.battlefield.currentPeople)
+        peopleCount:RemoveAllAnchors()
+        peopleCount:AddAnchor("LEFT", requestForm, "RIGHT", 3, 0)
+      end
+    end
+    local function VisibleButtonEntranceState(requestEntrance)
+      entranceRandomBtn:Show(not requestEntrance)
+      cancelEntranceBtn:Show(requestEntrance)
+    end
+    function contentFrame:ResetDefaultState()
+      requestForm:Show(false)
+      peopleCount:Show(false)
+      count:Show(false)
+      entranceAvailableTime:Show(true)
+    end
+    local function entranceATeamBtnLeftClickFunc()
+      local result = X2BattleField:RequestInstanceGame(window.battleFieldType, CORPS_1, window.targetNpcIndex)
+      ShowBattleFieldEntranceAlarm(result)
+      window.battleFieldList:EnableBattleFieldButton(not result)
+    end
+    ButtonOnClickHandler(entranceATeamBtn, entranceATeamBtnLeftClickFunc)
+    local function entranceBTeamBtnLeftClickFunc()
+      local result = X2BattleField:RequestInstanceGame(window.battleFieldType, CORPS_2, window.targetNpcIndex)
+      ShowBattleFieldEntranceAlarm(result)
+      window.battleFieldList:EnableBattleFieldButton(not result)
+    end
+    ButtonOnClickHandler(entranceBTeamBtn, entranceBTeamBtnLeftClickFunc)
+    local function entranceRandomBtnLeftClickFunc()
+      local result = X2BattleField:RequestInstanceGame(window.battleFieldType, CORPS_ANY, window.targetNpcIndex)
+      ShowBattleFieldEntranceAlarm(result)
+      window.battleFieldList:EnableBattleFieldButton(not result)
+      window.contentFrame[1]:FillParticipationInfo()
+    end
+    ButtonOnClickHandler(entranceRandomBtn, entranceRandomBtnLeftClickFunc)
+    local function itemEntranceRandomBtnLeftClickFunc()
+      X2BattleField:RequestUseItemInstanceGame(window.battleFieldType, CORPS_ANY, window.targetNpcIndex)
+    end
+    ButtonOnClickHandler(itemEntranceRandomBtn, itemEntranceRandomBtnLeftClickFunc)
+    function contentFrame:CancelEntranceBtnLeftClickFunc()
+      X2BattleField:CancelInstanceGame()
+    end
+    ButtonOnClickHandler(cancelEntranceBtn, contentFrame.CancelEntranceBtnLeftClickFunc)
+    function contentFrame:CancelProc(failedApply)
+      VisibleButtonEntranceState(false)
+      ShowBattleFieldEntranceAlarm(false)
+      contentFrame:ResetDefaultState()
+      window.battleFieldList:EnableBattleFieldButton(true)
+      window:Show(false)
+    end
+    local function WatingBattlefieldEntrance()
+      requestForm:Show(true)
+      peopleCount:Show(true)
+      count:Show(true)
+      entranceAvailableTime:Show(false)
+      ApplyTextColor(count, FONT_COLOR.BLUE)
+      count:SetText(string.format("/ %s", locale.battlefield.waiting))
+      SetStyleCountLabelWaitEntrance(true)
+    end
+    function contentFrame:FillParticipationInfo()
+      local battleFieldType = X2BattleField:GetApplyBattleFieldType()
+      if battleFieldType == 0 then
+        VisibleButtonEntranceState(false)
+        return
+      end
+      local myCorps = X2BattleField:GetJoinedInfos()
+      local myCorpsName = X2BattleField:GetEntranceFactionInfo(battleFieldType, myCorps)
+      if myCorpsName == "ANY_CORPS" then
+        myCorpsName = X2Locale:LocalizeUiText(COMMON_TEXT, "random")
+      end
+      local str = string.format("%s - %s", locale.battlefield.myRequest, myCorpsName)
+      requestForm:SetText(str)
+      VisibleButtonEntranceState(true)
+      itemEntranceRandomBtn:Enable(false)
+      WatingBattlefieldEntrance()
+    end
+    local function FillWindowBasicInfo()
+      local basicInfo = X2BattleField:GetEntranceBasicInfo(window.battleFieldType)
+      if basicInfo == nil then
+        return
+      end
+      subtitle:SetText(basicInfo.name)
+      description:SetText(basicInfo.desc)
+      description:SetHeight(description:GetTextHeight())
+      local battlefieldType = basicInfo.type
+      if basicInfo.balanceLevel ~= 0 then
+        balanceLevel:SetText(X2Locale:LocalizeUiText(COMMON_TEXT, "on_balance_level_battlefield"))
+        description:RemoveAllAnchors()
+        description:AddAnchor("TOPLEFT", balanceLevel, "BOTTOMLEFT", 0, 8)
+      else
+        balanceLevel:SetText("")
+        description:RemoveAllAnchors()
+        description:AddAnchor("TOPLEFT", subtitle, "BOTTOMLEFT", 0, 8)
+      end
+      local texturePath = battleFieldBannerPath[battlefieldType]
+      if texturePath == nil then
+        texturePath = battleFieldBannerPath[0]
+      end
+      img:SetTexture(texturePath)
+      img:SetTextureInfo("image")
+    end
+    local function FillFixedNumberInfo()
+      local maximumPlayer = X2BattleField:GetEntranceMaximumPlayers(window.battleFieldType)
+      local str = string.format("(%d vs %d)", maximumPlayer, maximumPlayer)
+      fixedNumber:SetText(str)
+    end
+    local function FillLevelSectionInfo()
+      local minLevel, maxLevel = X2BattleField:GetEntranceLevelSection(window.battleFieldType)
+      local str = string.format("%s: %d - %d", locale.battlefield.entrancePossibleLevel, minLevel, maxLevel)
+      levelSection:SetText(str)
+    end
+    local function FillTimeInfo()
+      local timeInfo = X2BattleField:GetTimeInfo(window.battleFieldType)
+      local totalPlayTime = timeInfo.timePlaying * timeInfo.playRoundCount
+      local str
+      if timeInfo.playRoundCount > 1 then
+        str = string.format("%s: %s %s", locale.battlefield.playTime, locale.time.GetRemainDate(0, 0, 0, 0, totalPlayTime, 0), locale.battlefield.playTimeDetail(timeInfo.playRoundCount, timeInfo.timePlaying))
+      else
+        str = string.format("%s: %s", locale.battlefield.playTime, locale.time.GetRemainDate(0, 0, 0, 0, totalPlayTime, 0))
+      end
+      playTime:SetText(str)
+    end
+    local function FiilEntranceButtonTexts()
+      local targetWidgets = {
+        entranceATeamBtn,
+        entranceBTeamBtn,
+        entranceRandomBtn
+      }
+      for corps = CORPS_1, CORPS_ANY do
+        local strCorps = X2BattleField:GetEntranceFactionInfo(window.battleFieldType, corps)
+        if strCorps == "ANY_CORPS" then
+          strCorps = X2Locale:LocalizeUiText(BATTLE_FIELD_TEXT, "random_entrance")
+        else
+          strCorps = X2Locale:LocalizeUiText(BATTLE_FIELD_TEXT, "team_entrance", strCorps)
+        end
+        targetWidgets[corps + 1]:SetText(strCorps)
+      end
+    end
+    function contentFrame:SetEntrance(enterCount, maxEnterCount, entranceItem, available)
+      local str = ""
+      if 1000 == maxEnterCount then
+        str = X2Locale:LocalizeUiText(COMMON_TEXT, "Battlefield_entrance_unlimited")
+      else
+        local color = enterCount < maxEnterCount and FONT_COLOR_HEX.DEFAULT or FONT_COLOR_HEX.RED
+        str = X2Locale:LocalizeUiText(COMMON_TEXT, "Battlefield_entrance_condition", color, tostring(enterCount), tostring(maxEnterCount))
+      end
+      entranceCondition1:SetText(str)
+      entranceCondition1:SetWidth(entranceCondition1:GetLongestLineWidth())
+      entranceRandomBtn:Enable(true)
+      itemEntranceRandomBtn:Enable(false)
+      entranceCondition2:Show(false)
+      if maxEnterCount <= enterCount then
+        entranceRandomBtn:Enable(false)
+        entranceCondition2:Show(true)
+        if entranceItem then
+          itemEntranceRandomBtn:Enable(true)
+        end
+      end
+      if not available then
+        entranceRandomBtn:Enable(false)
+        itemEntranceRandomBtn:Enable(false)
+      end
+    end
+    local function SetAvailableTime(fromHh, fromMm, toHh, toMm)
+      if fromHh == toHh and fromMm == toMm then
+        entranceAvailableTime:SetText("")
+      else
+        local str = X2Locale:LocalizeUiText(COMMON_TEXT, "battle_field_available_time")
+        entranceAvailableTime:SetText(string.format("%s %d:%02d ~ %d:%02d", str, fromHh, fromMm, toHh, toMm))
+      end
+    end
+    function contentFrame:FillBattlefieldInfo()
+      FillWindowBasicInfo()
+      FillFixedNumberInfo()
+      FillTimeInfo()
+      FillLevelSectionInfo()
+      FiilEntranceButtonTexts()
+      local victoryConds = X2BattleField:GetEntranceVictoryConditionInfo(window.battleFieldType)
+      local victoryScore = victoryConds.victoryScore
+      local victoryKillCount = victoryConds.victoryKillCount
+      local victoryRoundWinCount = victoryConds.victoryRoundWinCount
+      local playRoundCount = victoryConds.playRoundCount
+      local isDesturtion = victoryConds.victoryTarget ~= 0
+      local enterCount = victoryConds.enterCount
+      local maxEnterCount = victoryConds.maxEnterCount
+      local entranceItem = victoryConds.entranceItem
+      local fromHh = victoryConds.fromHh
+      local fromMm = victoryConds.fromMm
+      local toHh = victoryConds.toHh
+      local toMm = victoryConds.toMm
+      local available = true
+      if ENTER_BUTTON_ENABLE_ALWAYS == false then
+        available = victoryConds.available
+      end
+      self:SetWinCondition(victoryScore, victoryKillCount, victoryRoundWinCount, isDesturtion, true)
+      self:SetEntrance(enterCount, maxEnterCount, entranceItem, available)
+      self:FillParticipationInfo()
+      SetAvailableTime(fromHh, fromMm, toHh, toMm)
+    end
+    function contentFrame:SetContentWidth(width)
+      self:SetWidth(width)
+      balanceLevel:SetWidth(width - 5)
+      description:SetWidth(width - 5)
+      playTime:SetWidth(width - 5)
+      levelSection:SetWidth(width - 5)
+      winConditionFrame:SetWidth(width)
+      entranceCondition2:SetWidth(width)
+      entranceCondition1:SetWidth(width)
+    end
+  end
+  CreateBattleFieldTypeContent(1)
+  window.contentFrame[1]:AddAnchor("TOPRIGHT", window, -MARGIN.WINDOW_SIDE, MARGIN.WINDOW_TITLE)
+  local function CrateBattleFieldList()
+    local width, eachButtonHeight = GetTextureInfo(TEXTURE_PATH.BATTLEFIELD_LIST_BUTTON, battleFieldButtonCoordsKey[0]):GetExtent()
+    local battleFieldList = window:CreateChildWidget("emptywidget", "battleFieldList", 0, true)
+    battleFieldList:SetExtent(width, window.contentFrame[1]:GetHeight())
+    local bg = CreateContentBackground(battleFieldList, "TYPE3")
+    bg:AddAnchor("TOPLEFT", battleFieldList, -12, -10)
+    bg:AddAnchor("BOTTOMRIGHT", battleFieldList, 12, 0)
+    function battleFieldList:UpdateSelectedBattleFieldList(button)
+      if self.battleFieldBtn ~= nil then
+        for i = 1, #self.battleFieldBtn do
+          self.battleFieldBtn[i].selectedImg:Show(false)
+        end
+        button.selectedImg:Show(true)
+      end
+    end
+    function battleFieldList:EnableBattleFieldButton(enable)
+      if self.battleFieldBtn ~= nil then
+        for i = 1, #self.battleFieldBtn do
+          self.battleFieldBtn[i]:Enable(enable)
+        end
+      end
+    end
+    function battleFieldList:UpdateBattleFieldButtonList()
+      local offsetY = 0
+      local list = X2BattleField:GetBattleFieldList()
+      local existButtonCount = 0
+      if battleFieldList.battleFieldBtn ~= nil then
+        existButtonCount = #battleFieldList.battleFieldBtn
+      end
+      for i = 1, #list do
+        local battleFieldBtn
+        if i > existButtonCount then
+          battleFieldBtn = battleFieldList:CreateChildWidget("button", "battleFieldBtn", i, true)
+        else
+          battleFieldBtn = battleFieldList.battleFieldBtn[i]
+          battleFieldBtn:RemoveAllAnchors()
+        end
+        battleFieldBtn.battleFieldType = list[i]
+        battleFieldBtn:AddAnchor("TOPLEFT", battleFieldList, "TOPLEFT", 0, offsetY)
+        battleFieldBtn:SetExtent(width, eachButtonHeight)
+        battleFieldBtn:Show(true)
+        local coordsKey = battleFieldButtonCoordsKey[battleFieldBtn.battleFieldType]
+        if coordsKey == nil then
+          coordsKey = battleFieldButtonCoordsKey[0]
+        end
+        if i > existButtonCount then
+          battleFieldBtn.img = battleFieldBtn:CreateImageDrawable(TEXTURE_PATH.BATTLEFIELD_LIST_BUTTON, "background")
+        else
+          battleFieldBtn.img:RemoveAllAnchors()
+        end
+        battleFieldBtn.img:SetTextureInfo(coordsKey)
+        battleFieldBtn.img:AddAnchor("TOPLEFT", battleFieldBtn, "TOPLEFT", 0, 0)
+        battleFieldBtn.img:Show(true)
+        if i > existButtonCount then
+          battleFieldBtn.selectedImg = battleFieldBtn:CreateNinePartDrawable(TEXTURE_PATH.BATTLEFIELD_LIST_BUTTON, "overlay")
+        else
+          battleFieldBtn.selectedImg:RemoveAllAnchors()
+        end
+        battleFieldBtn.selectedImg:SetTextureInfo("frame_on")
+        battleFieldBtn.selectedImg:SetExtent(width, eachButtonHeight)
+        battleFieldBtn.selectedImg:AddAnchor("TOPLEFT", battleFieldBtn, "TOPLEFT", 0, 0)
+        battleFieldBtn.selectedImg:Show(false)
+        if i > existButtonCount then
+          battleFieldBtn.overImg = battleFieldBtn:CreateNinePartDrawable(TEXTURE_PATH.BATTLEFIELD_LIST_BUTTON, "overlay")
+        else
+          battleFieldBtn.overImg:RemoveAllAnchors()
+        end
+        battleFieldBtn.overImg:SetTextureInfo("frame_ov")
+        battleFieldBtn.overImg:SetExtent(width, eachButtonHeight)
+        battleFieldBtn.overImg:AddAnchor("TOPLEFT", battleFieldBtn, "TOPLEFT", 0, 0)
+        battleFieldBtn.overImg:Show(false)
+        offsetY = offsetY + eachButtonHeight
+        if i > existButtonCount then
+          local function battleFieldBtnLeftClickFunc(button)
+            battleFieldList:UpdateSelectedBattleFieldList(button)
+            button:battleFieldBtnOnEnter()
+            window.battleFieldType = button.battleFieldType
+            window.contentFrame[1]:FillBattlefieldInfo()
+          end
+          ButtonOnClickHandler(battleFieldBtn, battleFieldBtnLeftClickFunc)
+          function battleFieldBtn:battleFieldBtnOnEnter()
+            self.overImg:Show(self:IsEnabled())
+          end
+          battleFieldBtn:SetHandler("OnEnter", battleFieldBtn.battleFieldBtnOnEnter)
+          function battleFieldBtn:battleFieldBtnOnLeave()
+            self.overImg:Show(false)
+          end
+          battleFieldBtn:SetHandler("OnLeave", battleFieldBtn.battleFieldBtnOnLeave)
+        end
+      end
+    end
+    battleFieldList:Show(false)
+  end
+  CrateBattleFieldList()
+  window.battleFieldList:AddAnchor("TOPLEFT", window, MARGIN.WINDOW_SIDE, MARGIN.WINDOW_TITLE)
+  window.byInteraction = true
+  return window
+end
+local featureSet = X2Player:GetFeatureSet()
+local function CreateBattleFieldEntranceWindow(id, parent)
+  local window = SetViewOfBattleFieldEntranceWindow(id, parent)
+  function window:ShowProc()
+    local defaultAnchor = true
+    if self.byInteraction then
+      self.targetNpcIndex = GetInteractionNpcIndex()
+      self.battleFieldType = X2BattleField:GetApplyBattleFieldType()
+      if self.battleFieldType == 0 then
+        self.battleFieldList:UpdateBattleFieldButtonList()
+        self.battleFieldType = self.battleFieldList.battleFieldBtn[1].battleFieldType
+        self.battleFieldList:UpdateSelectedBattleFieldList(self.battleFieldList.battleFieldBtn[1])
+        self.battleFieldList:Show(true)
+        defaultAnchor = false
+      end
+    else
+      self.targetNpcIndex = 0
+      self.battleFieldType = X2BattleField:GetApplyBattleFieldType()
+      if featureSet.hudBattleFieldButton and self.battleFieldType == 0 then
+        self.battleFieldList:UpdateBattleFieldButtonList()
+        self.battleFieldType = self.battleFieldList.battleFieldBtn[1].battleFieldType
+        self.battleFieldList:UpdateSelectedBattleFieldList(self.battleFieldList.battleFieldBtn[1])
+        self.battleFieldList:Show(true)
+        defaultAnchor = false
+      end
+    end
+    self.contentFrame[1]:RemoveAllAnchors()
+    if defaultAnchor then
+      self.contentFrame[1]:SetContentWidth(390)
+      self.contentFrame[1]:AddAnchor("TOP", self, 0, MARGIN.WINDOW_TITLE)
+      self:SetWidth(self.defaultWidth)
+    else
+      self.contentFrame[1]:SetContentWidth(430)
+      self.contentFrame[1]:AddAnchor("TOPRIGHT", self, -MARGIN.WINDOW_SIDE, MARGIN.WINDOW_TITLE)
+      self:SetWidth(self.expandWidth)
+    end
+    self.contentFrame[1]:FillBattlefieldInfo()
+  end
+  function window:OnHide()
+    self.byInteraction = true
+    self.battleFieldList:Show(false)
+  end
+  window:SetHandler("OnHide", window.OnHide)
+  local events = {
+    UPDATE_INSTANT_GAME_STATE = function()
+      if not window:IsVisible() then
+        return
+      end
+      window.contentFrame[1]:FillParticipationInfo()
+    end,
+    ENTERED_INSTANT_GAME_ZONE = function()
+      window:Show(false)
+      window.contentFrame[1]:ResetDefaultState()
+      window.battleFieldList:EnableBattleFieldButton(true)
+    end,
+    INSTANT_GAME_JOIN_CANCEL = function(failedApply)
+      window.contentFrame[1]:CancelProc(failedApply)
+    end,
+    LEFT_LOADING = function()
+      window:Show(false)
+    end,
+    INSTANT_GAME_JOIN_APPLY = function()
+      ShowBattleFieldEntranceAlarm(true)
+      window.battleFieldList:EnableBattleFieldButton(false)
+      window.contentFrame[1]:FillParticipationInfo()
+    end
+  }
+  window:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(window, events)
+  return window
+end
+battlefield.entranceWnd = CreateBattleFieldEntranceWindow("battlefield.entranceWnd", "UIParent")
+battlefield.entranceWnd:SetSounds("battlefield_entrance")
+function ToggleBattleFieldEntrance(show, num, byInteraction)
+  if X2Player:IsInSeamlessZone() == false then
+    AddMessageToSysMsgWindow(GetUIText(COMMON_TEXT, "instant_game_hud_button_disable_tooltip"))
+    return false
+  end
+  if featureSet.hudBattleFieldButton and #X2BattleField:GetBattleFieldList() == 0 then
+    AddMessageToSysMsgWindow(GetUIText(COMMON_TEXT, "battle_field_list_none"))
+    return false
+  end
+  battlefield.entranceWnd.byInteraction = byInteraction
+  if battlefield.entranceWnd.byInteraction and battlefield.entranceWnd:IsVisible() then
+    return true
+  end
+  battlefield.entranceWnd:Show(not battlefield.entranceWnd:IsVisible())
+  return true
+end

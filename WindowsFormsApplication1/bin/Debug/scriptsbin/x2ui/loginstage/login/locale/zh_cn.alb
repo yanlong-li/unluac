@@ -1,0 +1,75 @@
+if X2Util:GetGameProvider() == TENCENT then
+  loginLocale.loginHide = true
+  loginLocale.gradeShow = false
+  loginLocale.archeageLogoCoords = {
+    599,
+    342,
+    425,
+    170
+  }
+  loginLocale.gameHealthNotice = {
+    show = true,
+    showTime = 3000,
+    fadeOutTime = 500
+  }
+  function loginLocale:CreateRightBottomBtns(login)
+    login.reviewMovieButton = CreateEmptyButton("reviewMovieButton", login.backMain)
+    login.reviewMovieButton:Show(false)
+    login.reviewMovieButton:AddAnchor("BOTTOMRIGHT", login.backMain, -9, 1)
+    ApplyButtonSkinTable(login.reviewMovieButton, BUTTON_LOGINSTAGE.REVIEW_MOVIE)
+  end
+  function loginLocale:StaffButtonEnable(staffButton, isReady)
+  end
+  function loginLocale:StaffButtonShow(staffButton, show, time)
+  end
+  BUTTON_LOGINSTAGE.REVIEW_MOVIE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coords = {
+        normal = {
+          230,
+          0,
+          119,
+          35
+        },
+        over = {
+          230,
+          35,
+          119,
+          35
+        },
+        click = {
+          230,
+          70,
+          119,
+          35
+        },
+        disable = {
+          230,
+          105,
+          119,
+          35
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 15,
+        y = 0
+      },
+      drawableExtent = {width = 119, height = 35}
+    }
+  }
+end

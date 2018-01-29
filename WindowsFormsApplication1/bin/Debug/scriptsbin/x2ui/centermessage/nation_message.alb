@@ -1,0 +1,64 @@
+local CreateNationMessage = function(id, parent)
+  local window = UIParent:CreateWidget("window", id, parent)
+  window:Show(false)
+  window:SetExtent(946, 175)
+  window:AddAnchor("TOP", "UIParent", 0, 60)
+  window:Clickable(false)
+  window:SetUILayer("system")
+  local bg = window:CreateImageDrawable(TEXTURE_PATH.ALARM_DECO, "background")
+  bg:SetCoords(0, 0, 782, 128)
+  bg:SetExtent(782, 128)
+  bg:AddAnchor("BOTTOM", window, 0, 0)
+  local statusBg = window:CreateImageDrawable(TEXTURE_PATH.ALARM_DECO, "artwork")
+  statusBg:SetExtent(109.65, 70.55)
+  statusBg:SetCoords(782, 0, 129, 83)
+  statusBg:AddAnchor("TOP", window, 0, 0)
+  local coords = FORM_CENTER_MESSAGE.NATION_INDEPENDENCE_COORDS.FLAG
+  local statusIcon = window:CreateImageDrawable(TEXTURE_PATH.NATION_ALARM, "artwork")
+  statusIcon:SetExtent(coords[3], coords[4])
+  statusIcon:SetCoords(coords[1], coords[2], coords[3], coords[4])
+  statusIcon:AddAnchor("CENTER", statusBg, 0, -12)
+  window.statusIcon = statusIcon
+  local statusTexture = window:CreateImageDrawable(TEXTURE_PATH.NATION_ALARM, "overlay")
+  statusTexture:AddAnchor("TOP", statusBg, "BOTTOM", 0, -(MARGIN.WINDOW_SIDE - 2))
+  window.statusTexture = statusTexture
+  local statusText = window:CreateChildWidget("textbox", "statusText", 0, true)
+  statusText:AddAnchor("TOP", statusTexture, "BOTTOM", 0, 0)
+  statusText:SetHeight(FONT_SIZE.LARGE)
+  statusText.style:SetFontSize(FONT_SIZE.LARGE)
+  statusText.style:SetShadow(true)
+  statusText.style:SetAlign(ALIGN_CENTER)
+  statusText:Clickable(false)
+  function window:FillIndependenceInfo(ownerName, nationName)
+    local ownerNameColor = string.format("%s[%s]|r", FONT_COLOR_HEX.NATION_INDEPENDENCE, ownerName)
+    local naitonNameColor = string.format("%s[%s]|r", FONT_COLOR_HEX.NATION_INDEPENDENCE, nationName)
+    local coords = FORM_CENTER_MESSAGE.NATION_INDEPENDENCE_COORDS.DECLARE
+    self.statusTexture:SetExtent(coords[3], coords[4])
+    self.statusTexture:SetCoords(coords[1], coords[2], coords[3], coords[4])
+    local str = locale.nationMgr.nationIndependenceMsg(ownerNameColor, naitonNameColor)
+    self.statusText:SetWidth(1000)
+    self.statusText:SetText(str)
+    self.statusText:SetWidth(self.statusText:GetLongestLineWidth() + 10)
+  end
+  local OnEndFadeOut = function(self)
+    StartNextImgEvent()
+  end
+  window:SetHandler("OnEndFadeOut", OnEndFadeOut)
+  return window
+end
+nationMessage = CreateNationMessage("nationMessage", "UIParent")
+function ShowNationMessage(ownerName, nationName)
+  nationMessage:Show(true)
+  nationMessage:FillIndependenceInfo(ownerName, nationName)
+  F_SOUND:PlayUISound("event_nation_independence", true)
+  local showingTime = 0
+  local function OnUpdate(self, dt)
+    showingTime = dt + showingTime
+    if showingTime > 5000 then
+      self:Show(false, 1000)
+      self:ReleaseHandler("OnUpdate")
+    end
+  end
+  nationMessage:SetHandler("OnUpdate", OnUpdate)
+  return true
+end

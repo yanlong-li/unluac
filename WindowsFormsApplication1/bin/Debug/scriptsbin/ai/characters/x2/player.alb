@@ -1,0 +1,12 @@
+AICharacter.Player = {
+  Class = UNIT_CLASS_LEADER,
+  Constructor = function(self, entity)
+    AI.ChangeParameter(entity.id, AIPARAM_COMBATCLASS, AICombatClasses.Infantry)
+  end,
+  AnyBehavior = {
+    GO_TO_SPAWN = "player_idle",
+    GO_TO_IDLE = "player_idle",
+    GO_TO_RUN_COMMAND_SET = "run_command_set"
+  },
+  player_idle = {}
+}

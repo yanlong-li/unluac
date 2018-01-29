@@ -1,0 +1,4 @@
+if assignmentLocale == nil then
+  assignmentLocale = {}
+end
+assignmentLocale.useGrade = true

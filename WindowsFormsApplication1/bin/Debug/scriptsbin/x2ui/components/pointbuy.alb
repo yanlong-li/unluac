@@ -1,0 +1,76 @@
+local aapointBuyFrame
+function CreateAAPointBuyFrame(id, parent)
+  local frame = SetViewOfAAPointBuyFrame(id, parent)
+  frame.cashUnit = "1"
+  frame.aapointUnit = "1"
+  function frame.window.titleBar:OnMouseDown(arg)
+  end
+  frame.window.titleBar:SetHandler("OnMouseDown", frame.window.titleBar.OnMouseDown)
+  function frame.window.titleBar:OnMouseUp(arg)
+  end
+  frame.window.titleBar:SetHandler("OnMouseUp", frame.window.titleBar.OnMouseUp)
+  function frame.window.btnOk:OnClick()
+    local function DialogHandler(wnd)
+      wnd:SetTitle(locale.inGameShop.chargeAAPoint)
+      wnd:SetContent(locale.inGameShop.askBuyAAPoint)
+      function wnd:OkProc()
+        X2Player:RequestBuyAAPoint(frame.window.moneyGroup.inputCashToAAPoint:GetText())
+        frame:Show(false)
+      end
+    end
+    X2DialogManager:RequestDefaultDialog(DialogHandler, "")
+  end
+  frame.window.btnOk:SetHandler("OnClick", frame.window.btnOk.OnClick)
+  function frame.window.moneyGroup.inputCashToAAPoint:OnTextChanged()
+    local value = self:GetText()
+    local exchangedData = X2Player:ExchangeCashToAAPoint(value)
+    self:SetText(exchangedData.validatedCash)
+    frame.window.moneyGroup.wantedAAPoint:SetText(SettingPriceText(exchangedData.exchangedAAPoint, PRICE_TYPE_AA_POINT))
+    frame.window.moneyGroup.afterMyCash:SetText(SettingPriceText(exchangedData.remainCash, PRICE_TYPE_AA_CASH))
+    frame.window.moneyGroup.finalAAPoint:SetText(SettingPriceText(exchangedData.finalAAPoint, PRICE_TYPE_AA_POINT))
+  end
+  frame.window.moneyGroup.inputCashToAAPoint:SetHandler("OnTextChanged", frame.window.moneyGroup.inputCashToAAPoint.OnTextChanged)
+  function frame:Update(initialize)
+    self.aapointUnit = tostring(X2Player:GetExchangeRatio())
+    local cashText = SettingPriceText(self.cashUnit, PRICE_TYPE_AA_CASH)
+    local aapointText = SettingPriceText(self.aapointUnit, PRICE_TYPE_AA_POINT)
+    self.window.noticePrice:SetText(locale.inGameShop.GetChangeRatioText(cashText, aapointText))
+    if initialize == true then
+      self.window.moneyGroup.inputCashToAAPoint:SetText(self.cashUnit)
+    end
+  end
+  function frame:ShowProc()
+    self.window:Show(true)
+    if parent.waiting ~= nil and parent.waiting:IsVisible() == true then
+      parent.waiting:Raise()
+    end
+    self:Update(true)
+  end
+  function frame:OnHide()
+    self.window:Show(false)
+    if frame.target ~= nil then
+      frame.target:EnablePick(true)
+    end
+    self.window.moneyGroup.inputCashToAAPoint:SetText("0")
+  end
+  frame:SetHandler("OnHide", frame.OnHide)
+  function frame.window:OnClose()
+    frame:Show(false)
+  end
+  function frame.ShowAAPointBuyFrame(target)
+    frame:AddAnchor("TOPLEFT", target, 0, 0)
+    frame:AddAnchor("BOTTOMRIGHT", target, 0, 0)
+    frame:Show(true)
+    frame.window:AddAnchor("CENTER", frame, 0, 0)
+    frame.target = target
+    target:EnablePick(false)
+  end
+  frame:Show(false)
+  return frame
+end
+function GetAAPointBuyFrame()
+  if aapointBuyFrame == nil then
+    aapointBuyFrame = CreateAAPointBuyFrame("aapointAABuyFrame", "UIParent")
+  end
+  return aapointBuyFrame
+end

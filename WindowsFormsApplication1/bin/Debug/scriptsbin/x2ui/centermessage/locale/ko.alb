@@ -1,0 +1,58 @@
+if centerMessageLocale == nil then
+  centerMessageLocale = {}
+end
+centerMessageLocale.killEffect = {
+  killEffectCoords = {
+    {
+      0,
+      219,
+      123,
+      37
+    },
+    {
+      297,
+      0,
+      147,
+      37
+    },
+    {
+      297,
+      0,
+      172,
+      37
+    },
+    {
+      297,
+      74,
+      171,
+      37
+    },
+    {
+      120,
+      89,
+      171,
+      37
+    },
+    {
+      0,
+      156,
+      150,
+      37
+    }
+  },
+  firstKilBloodlHelmetCoords = {
+    0,
+    108,
+    100,
+    108
+  },
+  deco = {
+    296,
+    100,
+    134,
+    100
+  }
+}
+function centerMessageLocale:GetEnchantResultItemStr(gradeStr, nameStr)
+  return string.format("%s %s", gradeStr, nameStr)
+end

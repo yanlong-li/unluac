@@ -1,0 +1,186 @@
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+local function CreateInfoFrame(window)
+  local frame = window:CreateChildWidget("emptywidget", "infoFrame", 0, true)
+  frame:SetExtent(760, 268)
+  frame:AddAnchor("TOPLEFT", window, 0, sideMargin)
+  CreateNationMap("nationMap", frame, true)
+  frame.nationMap:AddAnchor("TOPLEFT", frame, 0, 0)
+  frame.upperFrame = CreateNationInfos("InfoUpperFrame", frame, true)
+  frame.upperFrame:AddAnchor("TOPLEFT", frame.nationMap, "TOPRIGHT", 5, 0)
+  return frame
+end
+local SetViewOfNationNotice = function(window, parent)
+  local frame = window:CreateChildWidget("emptywidget", "nationNotice", 0, true)
+  frame:SetExtent(760, 235)
+  frame:AddAnchor("TOPLEFT", parent, "BOTTOMLEFT", 0, 0)
+  local writeButton = frame:CreateChildWidget("button", "writeButton", 0, true)
+  ApplyButtonSkin(writeButton, BUTTON_CONTENTS.EXPEDITION_INFO_WRITE)
+  writeButton:Show(true)
+  writeButton:AddAnchor("BOTTOMRIGHT", frame, -2, -2)
+  local bg = CreateContentBackground(frame, "TYPE2")
+  bg:AddAnchor("TOPLEFT", frame, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", frame, 0, 0)
+  ApplyTextureColor(bg, FONT_COLOR.RAID_PARTY_ORANGE)
+  local nationTitle = frame:CreateChildWidget("editboxmultiline", "nationTitle", 0, true)
+  nationTitle:SetExtent(670, 80)
+  nationTitle:AddAnchor("TOPLEFT", frame, 10, 10)
+  InitMultiline(nationTitle)
+  ApplyTextColor(nationTitle, FONT_COLOR.BLUE)
+  ApplyEditSkin(nationTitle, nil, false)
+  nationTitle.style:SetAlign(ALIGN_TOP_LEFT)
+  local inset = expeditionLocale.inset.infoMultiline
+  nationTitle:SetInset(inset[1], inset[2], inset[3], inset[4])
+  nationTitle.textLength = 136
+  nationTitle:SetMaxTextLength(nationTitle.textLength)
+  nationTitle:Enable(false)
+  nationTitle:SetReadOnly(true)
+  nationTitle.bg:Show(false)
+  local nationTitleLabel = frame:CreateChildWidget("textbox", "nationTitleLabel", 0, true)
+  nationTitleLabel:SetHeight(FONT_SIZE.LARGE)
+  nationTitleLabel.style:SetFontSize(FONT_SIZE.LARGE)
+  nationTitleLabel:AddAnchor("TOPRIGHT", frame, -13, 15)
+  nationTitleLabel:AddAnchor("LEFT", nationTitle, "RIGHT", 0, 0)
+  nationTitleLabel.style:SetAlign(ALIGN_RIGHT)
+  ApplyTextColor(nationTitleLabel, FONT_COLOR.SOFT_BROWN)
+  nationTitleLabel:Show(false)
+  local line = CreateLine(frame, "TYPE1")
+  line:AddAnchor("TOP", nationTitle, "BOTTOM", 0, 10)
+  line:AddAnchor("LEFT", frame, 0, 0)
+  line:AddAnchor("RIGHT", frame, 0, 0)
+  local nationContent = frame:CreateChildWidget("editboxmultiline", "nationContent", 0, true)
+  nationContent:SetExtent(670, 110)
+  nationContent:AddAnchor("TOPLEFT", line, "BOTTOMLEFT", 10, 10)
+  InitMultiline(nationContent)
+  ApplyTextColor(nationContent, FONT_COLOR.DEFAULT)
+  ApplyEditSkin(nationContent, nil, false)
+  nationContent.textLength = 200
+  nationContent:SetMaxTextLength(nationContent.textLength)
+  nationContent.style:SetAlign(ALIGN_TOP_LEFT)
+  nationContent:SetCursorColor(0, 0, 0, 1)
+  local inset = expeditionLocale.inset.infoMultiline
+  nationContent:SetInset(inset[1], inset[2], inset[3], inset[4])
+  nationContent:Enable(false)
+  nationContent:SetReadOnly(true)
+  nationContent.bg:Show(false)
+  local nationContentLabel = frame:CreateChildWidget("textbox", "nationContentLabel", 0, true)
+  nationContentLabel:SetHeight(FONT_SIZE.LARGE)
+  nationContentLabel.style:SetFontSize(FONT_SIZE.LARGE)
+  nationContentLabel:AddAnchor("TOPRIGHT", line, "BOTTOMRIGHT", -13, 10)
+  nationContentLabel:AddAnchor("LEFT", nationContent, "RIGHT", 0, 0)
+  nationContentLabel.style:SetAlign(ALIGN_RIGHT)
+  ApplyTextColor(nationContentLabel, FONT_COLOR.SOFT_BROWN)
+  nationContentLabel:Show(false)
+  return frame
+end
+local SetViewOfNationNoticeHandler = function(frame)
+  function frame.writeButton:OnClick()
+    if frame.nationTitleLabel:IsVisible() then
+      frame.nationTitleLabel:Show(false)
+      frame.nationContentLabel:Show(false)
+      frame.nationTitle:SetReadOnly(true)
+      frame.nationTitle:Enable(false)
+      frame.nationTitle.bg:Show(false)
+      frame.nationContent:SetReadOnly(true)
+      frame.nationContent:Enable(false)
+      frame.nationContent.bg:Show(false)
+      X2Nation:SendNationInfoSet(frame.nationTitle:GetText(), frame.nationContent:GetText())
+      frame.nationTitle:SetText("")
+      frame.nationContent:SetText("")
+      self.time = 0
+      self.waiting = true
+      self:Enable(false)
+      function self:OnUpdate(dt)
+        self.time = self.time + dt
+        local TIME_OUT = 2000
+        if not self.waiting or TIME_OUT < self.time then
+          self.time = 0
+          self.waiting = false
+          self:Enable(true)
+          self:ReleaseHandler("OnUpdate")
+        end
+      end
+      self:SetHandler("OnUpdate", self.OnUpdate)
+    else
+      frame.nationTitleLabel:Show(true)
+      frame.nationContentLabel:Show(true)
+      frame.nationTitle:SetReadOnly(false)
+      frame.nationTitle:Enable(true)
+      frame.nationTitle.bg:Show(true)
+      frame.nationTitle:OnTextChanged()
+      frame.nationTitle:SetInset(8, 8, 16, 8)
+      frame.nationContent:SetReadOnly(false)
+      frame.nationContent:Enable(true)
+      frame.nationContent.bg:Show(true)
+      frame.nationContent:OnTextChanged()
+      frame.nationContent:SetInset(8, 8, 16, 8)
+    end
+  end
+  frame.writeButton.waiting = false
+  frame.writeButton:SetHandler("OnClick", frame.writeButton.OnClick)
+  function frame.nationTitle:OnTextChanged()
+    local len = self:GetTextLength()
+    local color
+    if len >= self.textLength then
+      color = FONT_COLOR_HEX.DEFAULT
+    else
+      color = FONT_COLOR_HEX.SOFT_BROWN
+    end
+    local str = string.format("%s%s|r/%s", color, len, self.textLength)
+    frame.nationTitleLabel:SetText(str)
+  end
+  frame.nationTitle:SetHandler("OnTextChanged", frame.nationTitle.OnTextChanged)
+  function frame.nationContent:OnTextChanged()
+    local len = self:GetTextLength()
+    local color
+    if len >= self.textLength then
+      color = FONT_COLOR_HEX.DEFAULT
+    else
+      color = FONT_COLOR_HEX.SOFT_BROWN
+    end
+    local str = string.format("%s%s|r/%s", color, len, self.textLength)
+    frame.nationContentLabel:SetText(str)
+  end
+  frame.nationContent:SetHandler("OnTextChanged", frame.nationContent.OnTextChanged)
+  function frame:SetNoticeInfo(title, content)
+    if title ~= nil then
+      self.nationTitle:SetText(title)
+    else
+      self.nationTitle:SetText("")
+    end
+    if content ~= nil then
+      self.nationContent:SetText(content)
+    else
+      self.nationContent:SetText("")
+    end
+  end
+end
+function CreateNationTabOfNationMgr(window)
+  local frame = CreateInfoFrame(window)
+  local nationNoticeFrame = SetViewOfNationNotice(window, frame)
+  SetViewOfNationNoticeHandler(nationNoticeFrame)
+  function window:Init()
+    local factionId = X2Faction:GetMyTopLevelFaction()
+    local info = X2Nation:GetNationBaseInfo(factionId)
+    frame.upperFrame:Init(info, factionId)
+    frame.nationMap:FillMapInfo(factionId)
+    ShowBelongExpeditionList(false)
+    local factionId = X2Faction:GetMyTopLevelFaction()
+    local myName = X2Unit:UnitName("player")
+    local isKing = X2Nation:IsNationOwner(factionId, myName)
+    nationNoticeFrame.writeButton:Enable(isKing)
+    X2Nation:SendNationInfoGet()
+  end
+  local events = {
+    NATION_INFO = function(nationInfo)
+      frame.upperFrame:SetNationAuthorityIcon(nationInfo.relation)
+      nationNoticeFrame:SetNoticeInfo(nationInfo.title, nationInfo.content)
+    end,
+    NATION_INFO_SET = function(nationNoticeInfo)
+      nationNoticeFrame:SetNoticeInfo(nationNoticeInfo.title, nationNoticeInfo.content)
+    end
+  }
+  window:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(window, events)
+end

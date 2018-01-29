@@ -1,0 +1,530 @@
+F_SOUND:StopMusic()
+local nameEdit = login.backMain.mainWindow.nameEdit
+local passwdEdit = login.backMain.mainWindow.passwdEdit
+local loginButton = login.backMain.mainWindow.loginButton
+local reviewMovieButton = login.backMain.mainWindow.reviewMovieButton
+local staffButton = login.backMain.mainWindow.staffButton
+local optionButton = login.backMain.mainWindow.optionButton
+local exitButton = login.backMain.mainWindow.exitButton
+local characterNameHelper = login.backMain.mainWindow.characterNameHelper
+local characterPwdHelper = login.backMain.mainWindow.characterPwdHelper
+local opPasswdEdit = login.backMain.opWindow.opPasswdEdit
+local opButton = login.backMain.opWindow.opButton
+local joinBtn = login.backMain.mainWindow.helperWnd.joinBtn
+local findIdBtn = login.backMain.mainWindow.helperWnd.findIdBtn
+local findPwBtn = login.backMain.mainWindow.helperWnd.findPwBtn
+login.state = "LOGO_START"
+login.effectTime = 0
+login.opIsOtp = true
+HasPwdFocus = false
+local name = Console:GetAttribute("cl_account")
+if 0 < string.len(name) then
+  nameEdit:SetText(name)
+  HasPwdFocus = true
+else
+  characterNameHelper:Show(true)
+end
+function nameEdit:OnEscapePressed()
+end
+nameEdit:SetHandler("OnEscapePressed", nameEdit.OnEscapePressed)
+function passwdEdit:OnEscapePressed()
+end
+passwdEdit:SetHandler("OnEscapePressed", passwdEdit.OnEscapePressed)
+function login.backMain:OnMouseDown(arg)
+  return true
+end
+login.backMain:SetHandler("OnMouseDown", login.backMain.OnMouseDown)
+local handledBtn
+local function SetButtonHandler(button, text)
+  handledBtn = button
+  SetButtonFontColor(handledBtn, GetWhiteCheckButtonFontColor())
+  local delay = 0
+  local cnt = -1
+  function handledBtn:OnUpdate(dt)
+    delay = delay - dt
+    if delay < 0 then
+      delay = 500
+      cnt = (cnt + 1) % 4
+      local str = text
+      for i = 1, cnt do
+        str = str .. "."
+      end
+      handledBtn:SetText(str)
+    end
+  end
+  handledBtn:SetHandler("OnUpdate", handledBtn.OnUpdate)
+end
+local function ReleaseButtonHandler()
+  if handledBtn ~= nil then
+    SetButtonFontColor(handledBtn, GetLoginStageDefaultFontColor())
+    handledBtn:ReleaseHandler("OnUpdate")
+    handledBtn = nil
+  end
+end
+local isReadyToLogin = false
+function IsValidLoginDataLength()
+  local idLen = string.len(nameEdit:GetText())
+  local passwdLen = string.len(passwdEdit:GetText())
+  if idLen >= 4 and passwdLen >= 6 then
+    return true
+  elseif idLen >= 4 and passwdLen >= 1 then
+    HasPwdFocus = true
+  end
+  return false
+end
+function Trylogin()
+  if IsValidLoginDataLength() and isReadyToLogin then
+    X2:ConnectToServer("", nameEdit:GetText(), passwdEdit:GetText())
+    passwdEdit:SetText("")
+    F_SOUND:PlayUISound("login_stage_try_login", true)
+    SetReadyToLogin(false)
+  end
+end
+nameEdit:SetHandler("OnEnterPressed", Trylogin)
+passwdEdit:SetHandler("OnEnterPressed", Trylogin)
+loginButton:SetHandler("OnEnterPressed", Trylogin)
+function loginButton:OnClick(arg)
+  if arg == "LeftButton" then
+    Trylogin()
+  end
+end
+loginButton:SetHandler("OnClick", loginButton.OnClick)
+function CheckLoginButtonActivation()
+  if IsValidLoginDataLength() and isReadyToLogin then
+    loginButton:Enable(true)
+  else
+    if characterNameHelper:IsVisible() == true then
+      characterNameHelper:Show(false)
+    elseif characterPwdHelper:IsVisible() == true and HasPwdFocus == true then
+      characterPwdHelper:Show(false)
+    end
+    loginButton:Enable(false)
+  end
+end
+nameEdit:SetHandler("OnTextChanged", CheckLoginButtonActivation)
+passwdEdit:SetHandler("OnTextChanged", CheckLoginButtonActivation)
+function SetReadyToLogin(isReady)
+  isReadyToLogin = isReady
+  ToggleOptionFrame(false)
+  loginButton:Enable(isReady)
+  reviewMovieButton:Enable(isReady)
+  loginLocale:StaffButtonEnable(staffButton, isReady)
+  optionButton:Enable(isReady)
+  nameEdit:Enable(isReady)
+  passwdEdit:Enable(isReady)
+  CheckLoginButtonActivation()
+  if isReady then
+    loginButton.style:SetAlign(ALIGN_CENTER)
+    loginButton:SetInset(0, 0, 0, 0)
+    loginButton:SetText(locale.login.login)
+    ReleaseButtonHandler()
+  else
+    loginButton.style:SetAlign(ALIGN_LEFT)
+    loginButton:SetInset(65, 0, 0, 0)
+    SetButtonHandler(loginButton, locale.login.logining)
+  end
+end
+local isReadyToOp = false
+function IsValidOpDataLength()
+  local opPasswdLen = string.len(opPasswdEdit:GetText())
+  if opPasswdLen >= 8 then
+    return true
+  end
+  return false
+end
+function TryOp()
+  if IsValidOpDataLength() and isReadyToOp then
+    if login.opIsOtp then
+      X2:SendOtpNumber(opPasswdEdit:GetText())
+    else
+      X2:SendPcCertNumber(opPasswdEdit:GetText())
+    end
+    opPasswdEdit:SetText("")
+    SetReadyToOp(false)
+    F_SOUND:PlayUISound("login_stage_try_login", true)
+  end
+end
+opPasswdEdit:SetHandler("OnEnterPressed", TryOp)
+function opButton:OnClick(arg)
+  if arg == "LeftButton" then
+    TryOp()
+  end
+end
+opButton:SetHandler("OnClick", opButton.OnClick)
+function CheckOpButtonActivation()
+  opButton:Enable(IsValidOpDataLength() and isReadyToOp)
+end
+opPasswdEdit:SetHandler("OnTextChanged", CheckOpButtonActivation)
+function SetReadyToOp(isReady)
+  isReadyToOp = isReady
+  CheckOpButtonActivation()
+  if isReady then
+    if login.opIsOtp then
+      opButton:SetText(locale.login.btn_otp)
+    else
+      opButton:SetText(locale.login.btn_pc_cert)
+    end
+    opButton.style:SetAlign(ALIGN_CENTER)
+    opButton:SetInset(0, 0, 0, 0)
+    ReleaseButtonHandler()
+  else
+    SetButtonHandler(opButton, locale.login.certing)
+    opButton.style:SetAlign(ALIGN_LEFT)
+    opButton:SetInset(70, 0, 0, 0)
+  end
+end
+function loginButton:OnEnter()
+  if self:IsEnabled() == false then
+    SetTargetAnchorTooltip(locale.login.loginTip, "TOP", self, "BOTTOM", 0, 5)
+  end
+end
+loginButton:SetHandler("OnEnter", loginButton.OnEnter)
+function loginButton:OnLeave()
+  HideTooltip()
+end
+loginButton:SetHandler("OnLeave", loginButton.OnLeave)
+function passwdEdit:OnClick()
+  HasPwdFocus = true
+end
+passwdEdit:SetHandler("OnClick", passwdEdit.OnClick)
+function passwdEdit:OnEvent(event)
+  local inputLanguage = X2Input:GetInputLanguage()
+  if inputLanguage ~= "English" then
+    X2Input:SetInputLanguage("English")
+  end
+end
+passwdEdit:SetHandler("OnEvent", passwdEdit.OnEvent)
+passwdEdit:RegisterEvent("IME_STATUS_CHANGED")
+function reviewMovieButton:OnClick(arg)
+  X2LoginCharacter:ReviewMovie()
+end
+reviewMovieButton:SetHandler("OnClick", reviewMovieButton.OnClick)
+function joinBtn:OnClick()
+  X2:RequestJoin()
+end
+joinBtn:SetHandler("OnClick", joinBtn.OnClick)
+function findIdBtn:OnClick()
+  X2:RequestFindId()
+end
+findIdBtn:SetHandler("OnClick", findIdBtn.OnClick)
+function findPwBtn:OnClick()
+  X2:RequestFindPassword()
+end
+findPwBtn:SetHandler("OnClick", findPwBtn.OnClick)
+function OnEnteredlogin()
+  if string.len(nameEdit:GetText()) == 0 then
+    nameEdit:SetFocus()
+  else
+    passwdEdit:SetFocus()
+    HasPwdFocus = true
+  end
+  login.backMain:Show(true)
+end
+function OnLeftlogin()
+  nameEdit:ClearFocus()
+  passwdEdit:ClearFocus()
+  login.backMain:Show(false)
+end
+function SetFocusToPassword()
+  login.backMain.opWindow:Show(false)
+  login.backMain.mainWindow:Show(not loginLocale.loginHide)
+  passwdEdit:SetFocus()
+end
+local events = {ENTERED_LOGIN = OnEnteredlogin, LEFT_LOGIN = OnLeftlogin}
+login.backMain.mainWindow:SetHandler("OnEvent", function(this, event, ...)
+  events[event](...)
+end)
+login.backMain.mainWindow:RegisterEvent("ENTERED_LOGIN")
+login.backMain.mainWindow:RegisterEvent("LEFT_LOGIN")
+login.logoTime = {
+  START_DELAY = 100,
+  FADE_IN_TIME = 500,
+  SHOW_TIME = 1500,
+  FADE_OUT_TIME = 500,
+  LOGIN_FADE_IN_TIME = 500
+}
+login.gameRatingTime = {
+  FADE_IN_TIME = 300,
+  SHOW_TIME = loginLocale.gameRating.showTime,
+  FADE_OUT_TIME = loginLocale.gameRating.fadeOutTime
+}
+local gameHealthNoticeTime = {
+  FADE_IN_TIME = 300,
+  SHOW_TIME = loginLocale.gameHealthNotice.showTime,
+  FADE_OUT_TIME = loginLocale.gameHealthNotice.fadeOutTime
+}
+login.stateHandler = CreateEmptyWindow("login.stateHandler", "UIParent")
+login.stateHandler:SetExtent(1, 1)
+local ShowStaffWindows = function()
+  login.state = "STAFF_READY"
+  login.backMain.mainWindow:Show(false, FADE_IN_TIME)
+  if loginStageBlackWnd ~= nil then
+    loginStageBlackWnd:Show(true, FADE_IN_TIME)
+    local OnEndFadeIn = function()
+      staffWindow:Show(true, FADE_IN_TIME)
+    end
+    loginStageBlackWnd:SetHandler("OnEndFadeIn", OnEndFadeIn)
+  end
+end
+local HideStaffWindows = function()
+  login.state = "STAFF_FADE_END"
+  F_SOUND:StopMusic()
+  F_SOUND:PlayMusic("login_stage_music_before_login")
+  X2LoginCharacter:StartLoginMovie()
+  if loginStageBlackWnd ~= nil then
+    loginStageBlackWnd:ReleaseHandler("OnEndFadeIn")
+    loginStageBlackWnd:Show(false, FADE_IN_TIME)
+  end
+  login.backMain.mainWindow:Show(not loginLocale.loginHide, FADE_IN_TIME)
+end
+if staffButton then
+  function staffButton:OnClick(arg)
+    if arg == "LeftButton" then
+      SetShowHideFunctionForStaffWidnow(ShowStaffWindows, HideStaffWindows)
+      ShowStaffWidnow(true)
+    end
+  end
+  staffButton:SetHandler("OnClick", staffButton.OnClick)
+end
+function login.stateHandler:OnEffect(dt)
+  login.effectTime = login.effectTime + dt
+  if login.state == "LOGO_START" then
+    if login.effectTime > login.logoTime.START_DELAY then
+      backupState = login.state
+      login.state = "LOGO_SHOW"
+      login.effectTime = 0
+      X2LoginCharacter:OnEndLoginState(backupState)
+    end
+  elseif login.state == "LOGO_SHOW" then
+  elseif login.state == "GAME_HEALTH_NOTICE_START" then
+    login.state = "GAME_HEALTH_NOTICE_FADE_IN"
+    login.effectTime = 0
+    if loginStageBlackWnd ~= nil then
+      loginStageBlackWnd:Show(true)
+    end
+    login.gameHealthNotice:Show(true, gameHealthNoticeTime.FADE_IN_TIME)
+  elseif login.state == "GAME_HEALTH_NOTICE_FADE_IN" then
+    if login.effectTime > gameHealthNoticeTime.FADE_IN_TIME then
+      login.state = "GAME_HEALTH_NOTICE_SHOW"
+      login.effectTime = 0
+      if loginStageBlackWnd ~= nil then
+        loginStageBlackWnd:Show(false)
+      end
+    end
+  elseif login.state == "GAME_HEALTH_NOTICE_SHOW" then
+    if login.effectTime > gameHealthNoticeTime.SHOW_TIME then
+      login.state = "GAME_HEALTH_NOTICE_FADE_OUT"
+      login.effectTime = 0
+      login.gameHealthNotice:Show(false, gameHealthNoticeTime.FADE_OUT_TIME)
+    end
+  elseif login.state == "GAME_HEALTH_NOTICE_FADE_OUT" then
+    if login.effectTime > gameHealthNoticeTime.FADE_OUT_TIME then
+      if loginLocale.gameRating.show then
+        login.state = "GAME_RATING_START"
+      else
+        login.state = "GAME_RATING_SHOW"
+      end
+    end
+  elseif login.state == "GAME_RATING_START" then
+    login.state = "GAME_RATING_FADE_IN"
+    login.effectTime = 0
+    if loginStageBlackWnd ~= nil then
+      loginStageBlackWnd:Show(true)
+    end
+    login.gameRatingNotice:Show(true, login.gameRatingTime.FADE_IN_TIME)
+  elseif login.state == "GAME_RATING_FADE_IN" then
+    if login.effectTime > login.gameRatingTime.FADE_IN_TIME then
+      login.state = "GAME_RATING_SHOW"
+      login.effectTime = 0
+      if loginStageBlackWnd ~= nil then
+        loginStageBlackWnd:Show(false)
+      end
+    end
+  elseif login.state == "GAME_RATING_SHOW" then
+    if login.effectTime > login.gameRatingTime.SHOW_TIME then
+      X2LoginCharacter:OnEndLoginState(login.state)
+      login.state = "GAME_RATING_FADE_OUT"
+      login.effectTime = 0
+      X2LoginCharacter:StartLoginPage()
+    end
+  elseif login.state == "GAME_RATING_FADE_OUT" then
+    if login.effectTime > login.gameRatingTime.FADE_OUT_TIME then
+      login.state = "LOGO_SHOW"
+    end
+  elseif login.state == "STAFF_READY" then
+    login.state = "STAFF_FADE_IN"
+    login.effectTime = 0
+    if optionFrame ~= nil and optionFrame:IsVisible() then
+      optionFrame:Show(false, login.gameRatingTime.FADE_IN_TIME)
+    end
+  elseif login.state == "STAFF_FADE_IN" then
+    if login.effectTime > login.gameRatingTime.FADE_IN_TIME then
+      login.state = "STAFF_SHOW"
+    end
+  elseif login.state == "STAFF_FADE_OUT" then
+    login.state = "STAFF_FADE_END"
+    login.effectTime = 0
+  elseif login.state == "STAFF_FADE_END" and login.effectTime > login.gameRatingTime.FADE_IN_TIME then
+    login.state = "LOGO_SHOW"
+  end
+end
+login.stateHandler:SetHandler("OnEffect", login.stateHandler.OnEffect)
+login.stateHandler:Show(true)
+local cameraEntity = UIParent:GetEntityByName("login_camera")
+if cameraEntity == nil then
+  UIParent:Warning("can't find login_camera")
+else
+  local cameraPos = cameraEntity:GetPos()
+  local cameraAng = cameraEntity:GetAngles()
+  UIParent:LogAlways(string.format("camera pos : %3.2f, %3.2f, %3.2f", cameraPos.x, cameraPos.y, cameraPos.z))
+  UIParent:SetViewCameraPos(cameraPos)
+  UIParent:SetViewCameraAngles(cameraAng)
+  UIParent:SetViewCameraFov(1.0466667)
+end
+local eventWnd = CreateEmptyWindow("fd", "UIParent")
+eventWnd:SetExtent(0, 0)
+eventWnd:AddAnchor("TOPLEFT", "UIParent", 0, 0)
+eventWnd:Show(true)
+function SetArsTimeoutMessage(widget, waitTime)
+  local msg
+  if waitTime > 0 then
+    msg = locale.login.GetContentArsWithTimeOut(math.floor(waitTime / 1000))
+  else
+    msg = locale.login.GetContentArs()
+  end
+  widget:SetText(msg)
+end
+function login.backMain.arsWindow:OnUpdate(dt)
+  self.showTime = self.showTime + dt
+  local curTime = self.showTime / 1000
+  curTime = self.maxTime - self.showTime
+  if curTime < 0 then
+    curTime = 0
+  end
+  if curTime == 0 then
+    self:ReleaseHandler("OnUpdate")
+  end
+  SetArsTimeoutMessage(self.arsTitle, curTime)
+end
+function login.backMain:InitArs(number, waitTime)
+  if waitTime > 0 then
+    self.arsWindow.showTime = 0
+    self.arsWindow.maxTime = waitTime + 1000
+    self.arsWindow:SetHandler("OnUpdate", self.arsWindow.OnUpdate)
+  end
+  SetArsTimeoutMessage(self.arsWindow.arsTitle, waitTime)
+  self.arsWindow.arsNumber:SetText(number)
+  login.gameRatingNotice:Show(false)
+  login.gameHealthNotice:Show(false)
+  ShowLoginBottomButtons()
+  self.mainWindow:Show(false)
+  self.opWindow:Show(false)
+  self.arsWindow:Show(true)
+end
+local eventHandler = {
+  SHOW_LOGIN_WINDOW = function(show)
+    login.gameRatingNotice:Show(false)
+    login.gameHealthNotice:Show(false)
+    if loginLocale.loginHide == true then
+      login.backMain.mainWindow:Show(false, login.gameRatingTime.FADE_IN_TIME)
+    else
+      login.backMain.mainWindow:Show(show, login.gameRatingTime.FADE_IN_TIME)
+    end
+    exitButton:Show(show, login.gameRatingTime.FADE_IN_TIME)
+    optionButton:Show(show, login.gameRatingTime.FADE_IN_TIME)
+    reviewMovieButton:Show(show, login.gameRatingTime.FADE_IN_TIME)
+    loginLocale:StaffButtonShow(staffButton, show, login.gameRatingTime.FADE_IN_TIME)
+    if string.len(nameEdit:GetText()) == 0 then
+      nameEdit:SetFocus()
+    else
+      passwdEdit:SetFocus()
+      HasPwdFocus = true
+    end
+    SetReadyToLogin(true)
+  end,
+  SHOW_GAME_RATING = function()
+    if loginLocale.gameHealthNotice.show then
+      login.state = "GAME_HEALTH_NOTICE_START"
+    elseif loginLocale.gameRating.show then
+      login.state = "GAME_RATING_START"
+    else
+      login.state = "GAME_RATING_SHOW"
+    end
+  end,
+  WEB_BROWSER_ESC_EVENT = function(browser)
+    if browser == staffWindow.browser then
+      ShowStaffWidnow(false)
+    end
+  end,
+  OPEN_OTP = function(currentTry, maxTry, onTime)
+    local function ShowOTPWindow()
+      login.gameRatingNotice:Show(false)
+      login.gameHealthNotice:Show(false)
+      ShowLoginBottomButtons()
+      login.backMain.mainWindow:Show(false)
+      login.backMain.arsWindow:Show(false)
+      login.opIsOtp = true
+      login.backMain.opWindow:Show(true)
+      login.backMain.opWindow.opTitle:SetText(locale.login.title_otp)
+      login.backMain.opWindow.opButton:SetText(locale.login.btn_otp)
+      opPasswdEdit:SetFocus()
+    end
+    if onTime == true and currentTry > 1 then
+      local function DialogNoticeHandler(wnd)
+        wnd:SetTitle(locale.login.error_title_otp)
+        wnd:SetContent(locale.login.GetErrorContentOtp(currentTry - 1, maxTry))
+        wnd:SetWindowModal(true)
+        opPasswdEdit:ClearFocus()
+        function wnd:OkProc()
+          ShowOTPWindow()
+        end
+      end
+      X2DialogManager:RequestNoticeDialog(DialogNoticeHandler, eventWnd:GetId())
+    else
+      ShowOTPWindow()
+    end
+    SetReadyToOp(true)
+  end,
+  OPEN_ARS = function(number, timeout)
+    login.backMain:InitArs(number, timeout)
+  end,
+  OPEN_PCCERT = function(currentTry, maxTry, onTime)
+    local function ShowPcCertWindow()
+      login.gameRatingNotice:Show(false)
+      login.gameHealthNotice:Show(false)
+      ShowLoginBottomButtons()
+      login.backMain.mainWindow:Show(false)
+      login.backMain.arsWindow:Show(false)
+      login.opIsOtp = false
+      login.backMain.opWindow:Show(true)
+      login.backMain.opWindow.opTitle:SetText(locale.login.title_pc_cert)
+      login.backMain.opWindow.opButton:SetText(locale.login.btn_pc_cert)
+      opPasswdEdit:SetFocus()
+    end
+    if onTime == true and currentTry > 1 then
+      local function DialogNoticeHandler(wnd)
+        wnd:SetTitle(locale.login.error_title_pc_cert)
+        wnd:SetContent(locale.login.GetErrorContentPcCert(currentTry - 1, maxTry))
+        wnd:SetWindowModal(true)
+        opPasswdEdit:ClearFocus()
+        function wnd:OkProc()
+          ShowPcCertWindow()
+        end
+      end
+      X2DialogManager:RequestNoticeDialog(DialogNoticeHandler, eventWnd:GetId())
+    else
+      ShowPcCertWindow()
+    end
+    SetReadyToOp(true)
+  end,
+  LOGIN_DENIED = function()
+    login.backMain.mainWindow:Show(not loginLocale.loginHide)
+    login.backMain.opWindow:Show(false)
+    login.backMain.arsWindow:Show(false)
+    SetReadyToLogin(true)
+  end
+}
+eventWnd:SetHandler("OnEvent", function(this, event, ...)
+  eventHandler[event](...)
+end)
+RegistUIEvent(eventWnd, eventHandler)

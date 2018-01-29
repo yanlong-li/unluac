@@ -1,0 +1,6 @@
+if X2Util:GetGameProvider() == MAILRU then
+  FORM_SLAVE_INFO_WND = {
+    WND_WIDTH = 430,
+    WIDTH_RATIO = {TITLE = 0.45, VALUE = 0.55}
+  }
+end

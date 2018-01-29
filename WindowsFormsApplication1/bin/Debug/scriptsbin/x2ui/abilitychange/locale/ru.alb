@@ -1,0 +1,23 @@
+if X2Util:GetGameProvider() == MAILRU then
+  abilityChangeLocale.abilityChangeFrame = {
+    extent = {w = 510, h = 450}
+  }
+  function abilityChangeLocale.SetAbilityChangeLayoutFunc(parentWindow)
+    local x = 5
+    local y = 0
+    local buttonTable = {}
+    for j = 1, #locale.common.abilityCategoryName do
+      local all_ability_button = parentWindow:CreateChildWidget("button", "all_ability_button", j, true)
+      all_ability_button:SetText(locale.common.abilityCategoryName[j])
+      all_ability_button:AddAnchor("TOPLEFT", parentWindow, x, y)
+      ApplyButtonSkin(all_ability_button, BUTTON_CONTENTS.ALL_ABILITY)
+      x = x + 240
+      if j % 2 == 0 then
+        x = 5
+        y = y + 35
+      end
+      table.insert(buttonTable, all_ability_button)
+    end
+    AdjustBtnLongestTextWidth(buttonTable, 200)
+  end
+end

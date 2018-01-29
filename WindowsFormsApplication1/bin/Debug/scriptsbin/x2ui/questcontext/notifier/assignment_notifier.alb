@@ -1,0 +1,103 @@
+function CreateAssignmentNotifierWnd(id, parent)
+  local wnd = SetViewOfAssignmentNotifierWnd(id, parent)
+  function wnd:ResetScroll()
+    local scrollValue = wnd.scroll.vs:GetValue()
+    wnd:SetValue(0)
+    ResetScroll(wnd, 0)
+    local height = 10
+    if wnd.todayQuestWnd ~= nil then
+      height = height + wnd.todayQuestWnd:GetHeight()
+    end
+    if wnd.todayExpeditionQuestWnd ~= nil then
+      height = height + wnd.todayExpeditionQuestWnd:GetHeight()
+    end
+    if wnd.racialAchievementWnd ~= nil then
+      height = height + wnd.racialAchievementWnd:GetHeight()
+    end
+    if wnd.normalAchievementWnd ~= nil then
+      height = height + wnd.normalAchievementWnd:GetHeight()
+    end
+    wnd.height = height
+    ResetScroll(wnd, height)
+    if height > wnd:GetHeight() then
+      wnd:SetValue(math.min(math.max(scrollValue, 0), height - wnd:GetHeight()))
+    end
+    local lockScroll = false
+    if height ~= nil and GetNotifierOpenState() then
+      if height < wnd:GetHeight() then
+        height = 0
+        lockScroll = true
+      end
+      ResetScroll(wnd, height)
+      wnd:Lock(lockScroll)
+    end
+  end
+  function wnd:MakeList()
+    if wnd.todayQuestWnd ~= nil then
+      wnd.todayQuestWnd:MakeList()
+      wnd:AnchorLast(wnd.todayQuestWnd)
+    end
+    if wnd.todayExpeditionQuestWnd ~= nil then
+      if X2Faction:GetMyExpeditionId() ~= 0 then
+        wnd.todayExpeditionQuestWnd:MakeList()
+        wnd.todayExpeditionQuestWnd:Show(true)
+        wnd:AnchorLast(wnd.todayExpeditionQuestWnd)
+      else
+        wnd.todayExpeditionQuestWnd:Show(false)
+      end
+    end
+    if wnd.racialAchievementWnd ~= nil then
+      wnd.racialAchievementWnd:MakeList()
+      wnd:AnchorLast(wnd.racialAchievementWnd)
+    end
+    if wnd.normalAchievementWnd ~= nil then
+      wnd.normalAchievementWnd:MakeList()
+      wnd:AnchorLast(wnd.normalAchievementWnd)
+    end
+    wnd:ResetScroll()
+  end
+  local assignmentEvents = {
+    ACHIEVEMENT_UPDATE = function()
+      wnd:MakeList()
+    end,
+    UPDATE_TODAY_ASSIGNMENT = function()
+      wnd:MakeList()
+    end,
+    START_TODAY_ASSIGNMENT = function(stepName)
+      wnd:MakeList()
+    end
+  }
+  wnd:SetHandler("OnEvent", function(this, event, ...)
+    assignmentEvents[event](...)
+  end)
+  RegistUIEvent(wnd, assignmentEvents)
+  if wnd.todayQuestWnd ~= nil then
+    function todayQuestToggled(isOpen)
+      SetTodayQuestOpenState(isOpen)
+      wnd.ResetScroll()
+    end
+    wnd.todayQuestWnd:SetToggleCallback(todayQuestToggled)
+  end
+  if wnd.todayExpeditionQuestWnd ~= nil then
+    function todayExpeditionQuestToggled(isOpen)
+      SetTodayExpeditionQuestOpenState(isOpen)
+      wnd.ResetScroll()
+    end
+    wnd.todayExpeditionQuestWnd:SetToggleCallback(todayExpeditionQuestToggled)
+  end
+  if wnd.racialAchievementWnd ~= nil then
+    function racialAchievementToggled(isOpen)
+      SetRacialAchievementOpenState(isOpen)
+      wnd.ResetScroll()
+    end
+    wnd.racialAchievementWnd:SetToggleCallback(racialAchievementToggled)
+  end
+  if wnd.normalAchievementWnd ~= nil then
+    function normalAchievementToggled(isOpen)
+      SetGeneralAchievementOpenState(isOpen)
+      wnd.ResetScroll()
+    end
+    wnd.normalAchievementWnd:SetToggleCallback(normalAchievementToggled)
+  end
+  return wnd
+end

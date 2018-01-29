@@ -1,0 +1,375 @@
+local putupItemList
+function CreateAuctionPutupFrame(window)
+  SetViewOfAuctionPutupFrame(window)
+  local putupItemFrame = window.putupItemFrame
+  local timeCheckBoxes = putupItemFrame.timeCheckBoxes
+  local itemButton = putupItemFrame.itemButton
+  local itemNameLabel = putupItemFrame.itemNameLabel
+  local startPriceEditsWindow = putupItemFrame.startPriceEditsWindow
+  local directPriceEditsWindow = putupItemFrame.directPriceEditsWindow
+  local directBundlePrice = putupItemFrame.directBundlePrice
+  local directBundleAmountLabel = putupItemFrame.directBundleAmountLabel
+  local lowestPrice = putupItemFrame.lowestPrice
+  local putupButton = putupItemFrame.putupButton
+  local deposit = putupItemFrame.deposit
+  local charge = putupItemFrame.charge
+  local listCtrl = window.listCtrl
+  local pageControl = window.pageControl
+  local refreshButton = window.refreshButton
+  local availableMoney = window.availableMoney
+  local availableAAPoint = window.availableAAPoint
+  local cancelBidButton = window.cancelBidButton
+  local leftMarketPriceBtn = putupItemFrame.marketPriceBtn
+  local rightMarketPriceBtn = window.rightMarketPriceBtn
+  local EnableMarketPriceBtn = function(button, enable)
+    if button == nil then
+      return
+    end
+    button:Enable(enable)
+  end
+  local function SetMarketPriceBtn(button, itemType, itemGrade)
+    if button == nil then
+      return
+    end
+    if itemType == nil then
+      button:InitMarketPrice()
+      EnableMarketPriceBtn(button, false)
+    end
+    button:SetMarketPrice(itemType, itemGrade)
+    EnableMarketPriceBtn(button, true)
+  end
+  window.attachedItemStackCnt = 0
+  window.attachedItemType = 0
+  window.attachedItemGrade = 0
+  function window:EnableSearch(enable)
+    pageControl:Enable(enable, true)
+    EnableMarketPriceBtn(rightMarketPriceBtn, listCtrl:GetSelectedIdx() > 0)
+  end
+  local function OnEnter(self)
+    if self:IsEnabled() then
+      SetTooltip(locale.auction.bidSuccesfullyCommission, self)
+    elseif deposit:IsVisible() then
+      SetTooltip(locale.auction.lowDirectPrice, self)
+    end
+  end
+  putupButton:SetHandler("OnEnter", OnEnter)
+  function window:Init()
+    itemButton:Init()
+    timeCheckBoxes:Check(1)
+    itemNameLabel:SetText("")
+    availableMoney:Update(X2Util:GetMyMoneyString(), false)
+    availableAAPoint:UpdateAAPoint(X2Util:GetMyAAPointString(), false)
+    startPriceEditsWindow:SetAmountStr("0")
+    directPriceEditsWindow:SetAmountStr("0")
+    directPriceEditsWindow:SetCurrencyAmountLimit(directPriceEditsWindow:GetSystemCurrencyAmountLimit())
+    directBundlePrice:Update(0)
+    directBundleAmountLabel:Update("-")
+    window.attachedItemStackCnt = 0
+    window.attachedItemType = 0
+    window.attachedItemGrade = 0
+    listCtrl:ClearSelection()
+    listCtrl:DeleteAllDatas()
+    cancelBidButton:Enable(false)
+    EnableMarketPriceBtn(rightMarketPriceBtn, false)
+    EnableMarketPriceBtn(leftMarketPriceBtn, false)
+    pageControl:Init()
+    self:UpdateLowestPrice()
+    X2Auction:ClearSearchCondition()
+  end
+  function window:AttachItem(attached)
+    if attached == true then
+      local itemInfo = X2Auction:GetAttachedItemInfo()
+      if itemInfo ~= nil then
+        local color = Hex2Dec(itemInfo.gradeColor)
+        itemNameLabel.style:SetColor(color[1], color[2], color[3], color[4])
+        itemNameLabel:SetText(itemInfo.name)
+        local stackCount = GetItemStackCount(itemInfo)
+        window.attachedItemStackCnt = stackCount
+        window.attachedItemType = itemInfo.itemType
+        window.attachedItemGrade = itemInfo.itemGrade
+        itemButton:SetItemInfo(itemInfo)
+        itemButton:SetStack(stackCount)
+        local costStr = X2Util:NumberToString(itemInfo.refund * (tonumber(stackCount) or itemInfo.stack))
+        startPriceEditsWindow:SetAmountStr(costStr)
+        startPriceEditsWindow.goldEdit:SetFocus()
+        directPriceEditsWindow:SetAmountStr("0")
+        X2Auction:SetPrice(costStr, "0")
+        directPriceEditsWindow:SetCurrencyAmountLimit(X2Util:DivideNumberString(directPriceEditsWindow:GetSystemCurrencyAmountLimit(), tostring(stackCount)))
+        directBundlePrice:Update(0)
+        directBundleAmountLabel:Update(stackCount)
+        deposit:Show(true)
+        self:CalcDeposit()
+        charge:Show(true)
+        self:CalcCharge()
+        putupButton:Enable(true)
+        self:FillAttachedItemPriceInfo(window.attachedItemType, window.attachedItemGrade, window.attachedItemStackCnt)
+        self:UpdateLowestPrice()
+        SetMarketPriceBtn(leftMarketPriceBtn, itemInfo.itemType, itemInfo.itemGrade)
+      end
+    else
+      window.attachedItemStackCnt = 0
+      window.attachedItemType = 0
+      window.attachedItemGrade = 0
+      itemButton:Init()
+      itemNameLabel:SetText("")
+      deposit:Show(false)
+      charge:Show(false)
+      timeCheckBoxes:Check(1)
+      putupButton:Enable(false)
+      startPriceEditsWindow:SetAmountStr("0")
+      directPriceEditsWindow:SetAmountStr("0")
+      directPriceEditsWindow:SetCurrencyAmountLimit(directPriceEditsWindow:GetSystemCurrencyAmountLimit())
+      directBundlePrice:Update(0)
+      directBundleAmountLabel:Update("-")
+      SetMarketPriceBtn(leftMarketPriceBtn)
+      self:UpdateLowestPrice()
+    end
+  end
+  function window:CalcDeposit()
+    local startPriceStr = startPriceEditsWindow:GetAmountStr()
+    local directPriceStr = directBundlePrice.amount
+    local duration = 1
+    for i = 1, #timeCheckBoxes do
+      if timeCheckBoxes[i]:GetChecked() == true then
+        duration = i
+        break
+      end
+    end
+    local depositPrice = X2Auction:CalcDeposit(startPriceStr, directPriceStr, duration)
+    local str
+    if F_MONEY.currency.auctionFee == CURRENCY_AA_POINT then
+      str = string.format("%s |p%d;", locale.auction.deposit, depositPrice)
+    else
+      str = string.format("%s |m%d;", locale.auction.deposit, depositPrice)
+    end
+    deposit:SetText(str)
+    if deposit:IsVisible() then
+      if directPriceStr ~= "0" and X2Util:CompareMoneyString(startPriceStr, directPriceStr) > 0 then
+        putupButton:Enable(false)
+        EnableMarketPriceBtn(leftMarketPriceBtn, false)
+      else
+        putupButton:Enable(true)
+        EnableMarketPriceBtn(leftMarketPriceBtn, true)
+      end
+    end
+  end
+  function window:CalcCharge()
+    local duration = 1
+    for i = 1, #timeCheckBoxes do
+      if timeCheckBoxes[i]:GetChecked() == true then
+        duration = i
+        break
+      end
+    end
+    local chargePers = X2Auction:CalcCharge(window.attachedItemType, duration)
+    local chargePersModified = X2Auction:IsChargeChanged(window.attachedItemType, duration)
+    local str
+    if chargePersModified then
+      str = string.format("%s %s%s", GetUIText(COMMON_TEXT, "auction_charge_percent"), FONT_COLOR_HEX.BLUE, chargePers)
+    else
+      str = string.format("%s %s", GetUIText(COMMON_TEXT, "auction_charge_percent"), chargePers)
+    end
+    charge:SetText(str)
+  end
+  function startPriceEditsWindow:MoneyEditProc()
+    window:CalcDeposit()
+  end
+  function directPriceEditsWindow:MoneyEditProc()
+    local each = directPriceEditsWindow:GetAmountStr()
+    local cnt = window.attachedItemStackCnt
+    local bundel = X2Util:MultiplyNumberString(tostring(each), tostring(cnt))
+    directBundlePrice:Update(bundel)
+    window:CalcDeposit()
+  end
+  for i = 1, 4 do
+    local checkBox = timeCheckBoxes[i]
+    function checkBox:RadioBtnCheckChangedProc()
+      window:CalcDeposit()
+    end
+  end
+  function pageControl:OnPageChanged(pageIndex, countPerPage)
+    self:Enable(false, true)
+    X2Auction:SearchMyAuctionArticles(pageIndex)
+  end
+  function window:OnShow()
+    X2Auction:SetCurTab(1)
+    UIParent:LogAlways(string.format("[LOG] OnShow putup tab(1)"))
+    pageControl:Init()
+    listCtrl:DeleteAllDatas()
+    X2Auction:DetachItem()
+    timeCheckBoxes[1]:SetChecked(true)
+    X2Auction:SearchMyAuctionArticles(0)
+    SetSearchCoolTime()
+    EnableMarketPriceBtn(leftMarketPriceBtn, false)
+  end
+  window:SetHandler("OnShow", window.OnShow)
+  function window:OnHide()
+    X2Auction:DetachItem()
+  end
+  window:SetHandler("OnHide", window.OnHide)
+  function window:ClearPutupedItemList()
+    if putupItemList == nil then
+      return
+    end
+    while true do
+      table.remove(putupItemList, #putupItemList)
+      if #putupItemList == 0 then
+        break
+      end
+    end
+    putupItemList = nil
+  end
+  function window:GetPutupedItemList(itemType, itemGrade)
+    if putupItemList == nil then
+      return nil
+    end
+    for i = 1, #putupItemList do
+      if putupItemList[i].itemType == itemType and putupItemList[i].itemGrade == itemGrade then
+        return putupItemList[i]
+      end
+    end
+    return nil
+  end
+  function window:SaveAttachedItemPriceInfo()
+    if putupItemList == nil then
+      putupItemList = {}
+    end
+    local itemInfo = self:GetPutupedItemList(window.attachedItemType, window.attachedItemGrade)
+    if itemInfo == nil then
+      itemInfo = {}
+    end
+    itemInfo.itemType = window.attachedItemType
+    itemInfo.itemGrade = window.attachedItemGrade
+    itemInfo.duration = 1
+    for i = 1, #timeCheckBoxes do
+      if timeCheckBoxes[i]:GetChecked() == true then
+        itemInfo.duration = i
+        break
+      end
+    end
+    itemInfo.stackCount = window.attachedItemStackCnt
+    if itemInfo.stackCount == 0 then
+      UIParent:LogAlways(string.format("[ERROR] SaveAttachedItemPriceInfo()... stackCount is 0 !!"))
+      return
+    end
+    itemInfo.bidPrice = tonumber(startPriceEditsWindow:GetAmountStr()) / itemInfo.stackCount
+    itemInfo.directPrice = tonumber(directPriceEditsWindow:GetAmountStr())
+    table.insert(putupItemList, itemInfo)
+  end
+  function window:FillAttachedItemPriceInfo(itemType, itemGrade, nowStackCount)
+    local itemInfo = self:GetPutupedItemList(itemType, itemGrade)
+    if itemInfo == nil then
+      return
+    end
+    startPriceEditsWindow:SetAmountStr(itemInfo.bidPrice * nowStackCount)
+    directPriceEditsWindow:SetAmountStr(itemInfo.directPrice)
+    timeCheckBoxes[itemInfo.duration]:SetChecked(true)
+  end
+  function window:UpdateLowestPrice()
+    if window.attachedItemType == 0 then
+      lowestPrice:SetPrice(nil, nil)
+    else
+      local price = X2Auction:GetLowestPrice(window.attachedItemType, window.attachedItemGrade)
+      lowestPrice:SetPrice(window.attachedItemType, price)
+    end
+  end
+  function directPriceEditsWindow:SetLowestPrice(price)
+    local itemType = window.attachedItemType
+    local itemGrade = window.attachedItemGrade
+    local itemInfo = window:GetPutupedItemList(itemType, itemGrade)
+    if itemInfo == nil then
+      directPriceEditsWindow:SetAmountStr(price)
+    end
+  end
+  function lowestPrice:SetPrice(itemType, price)
+    if itemType == nil and price == nil then
+      lowestPrice.style:SetAlign(ALIGN_CENTER)
+      lowestPrice:SetText("-")
+    elseif itemType == window.attachedItemType then
+      if price == nil then
+        lowestPrice.style:SetAlign(ALIGN_CENTER)
+        lowestPrice:SetText(locale.auction.searching)
+      elseif price == "0" then
+        lowestPrice.style:SetAlign(ALIGN_CENTER)
+        lowestPrice:SetText(locale.auction.no_lowest_price)
+        directPriceEditsWindow:SetLowestPrice("0")
+      else
+        lowestPrice.style:SetAlign(ALIGN_RIGHT)
+        lowestPrice:Update(price)
+        directPriceEditsWindow:SetLowestPrice(price)
+      end
+    end
+  end
+  local itemButton = putupItemFrame.itemButton
+  local ItemButtonLeftClickFunc = function()
+    local exist = X2Auction:GetAttachedItemExist()
+    if exist == true and X2Cursor:GetCursorPickedBagItemIndex() == 0 then
+      X2Auction:DetachItem()
+    else
+      X2Auction:AttachItemFromPick()
+    end
+  end
+  local ItemButtonRightClickFunc = function()
+    local exist = X2Auction:GetAttachedItemExist()
+    if exist == true and X2Cursor:GetCursorPickedBagItemIndex() == 0 then
+      X2Auction:DetachItem()
+    end
+  end
+  ButtonOnClickHandler(itemButton, ItemButtonLeftClickFunc, ItemButtonRightClickFunc)
+  local function PutupButtonLeftButtonClickFunc()
+    window:SaveAttachedItemPriceInfo()
+    for i = 1, #timeCheckBoxes do
+      if timeCheckBoxes[i]:GetChecked() == true then
+        X2Auction:SetDuration(i)
+      end
+    end
+    local bidPriceStr = startPriceEditsWindow:GetAmountStr()
+    local directPriceStr = tostring(directBundlePrice.amount)
+    X2Auction:SetPrice(bidPriceStr, directPriceStr)
+    X2Auction:AskAuctionArticle()
+  end
+  ButtonOnClickHandler(putupButton, PutupButtonLeftButtonClickFunc)
+  local function CancelBidButtonLeftButtonClickFunc()
+    local selIdx = listCtrl:GetSelectedIdx()
+    local articleId = X2Auction:GetSearchedItemArticleId(selIdx)
+    local itemInfo = X2Auction:GetSearchedItemInfo(selIdx)
+    if articleId == nil then
+      return
+    end
+    listCtrl:ClearSelection()
+    local function DialogHandler(wnd)
+      ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_VALUE_TEXT)
+      local content = locale.auction.askCancelMsg(itemInfo.name, tostring(itemInfo.stackCount))
+      local valueText
+      if F_MONEY.currency.auctionFee == CURRENCY_AA_POINT then
+        valueText = string.format("|p%d;", tonumber(itemInfo.depositStr))
+      else
+        valueText = string.format("|m%d;", tonumber(itemInfo.depositStr))
+      end
+      wnd:SetTitle(locale.auction.cancelBid)
+      wnd:SetContentEx(content, valueText)
+      function wnd:OkProc()
+        X2Auction:CancelAuctionArticle(articleId)
+      end
+    end
+    X2DialogManager:RequestDefaultDialog(DialogHandler, window:GetParent():GetParent():GetId())
+  end
+  ButtonOnClickHandler(cancelBidButton, CancelBidButtonLeftButtonClickFunc)
+  function listCtrl:OnSelChanged(selIdx)
+    if selIdx > 0 then
+      local itemInfo = X2Auction:GetSearchedItemInfo(selIdx)
+      local isEmptyBidder = itemInfo.bidState == BID_STATE.BS_NOBID
+      cancelBidButton:Enable(isEmptyBidder)
+      SetMarketPriceBtn(rightMarketPriceBtn, itemInfo.itemType, itemInfo.itemGrade)
+    else
+      cancelBidButton:Enable(false)
+      SetMarketPriceBtn(rightMarketPriceBtn)
+    end
+  end
+  listCtrl:SetHandler("OnSelChanged", listCtrl.OnSelChanged)
+  local RefreshButtonLeftButtonClickFunc = function()
+    X2Auction:SearchRefresh()
+    SetSearchCoolTime()
+  end
+  ButtonOnClickHandler(refreshButton, RefreshButtonLeftButtonClickFunc)
+end

@@ -1,0 +1,889 @@
+petBar = {}
+petInfoWindow = nil
+local isMount = X2Mate:IsPlayerMounting()
+function MateTypeToActionISlot(mateType)
+  if mateType == MATE_TYPE_RIDE then
+    return ISLOT_PET_RIDE_ACTION
+  end
+  if mateType == MATE_TYPE_BATTLE then
+    return ISLOT_PET_BATTLE_ACTION
+  end
+end
+function MateTypeToCommandISlot(mateType)
+  if mateType == MATE_TYPE_RIDE then
+    return ISLOT_PET_RIDE_COMMAND
+  end
+  if mateType == MATE_TYPE_BATTLE then
+    return ISLOT_PET_BATTLE_COMMAND
+  end
+end
+function EnableStateButtons(mateType, enable)
+  for i = 1, PET_STATE_STAND do
+    petBar[mateType].stateBar.buttons[i]:Enable(enable)
+  end
+end
+function UpdateStateButtons(mateType, stateIndex)
+  for i = 1, PET_STATE_STAND do
+    if i == stateIndex then
+      SetBGPushed(petBar[mateType].stateBar.buttons[i], true)
+    else
+      SetBGPushed(petBar[mateType].stateBar.buttons[i], false)
+    end
+  end
+  petBar[mateType].stateBar.selected = stateIndex
+end
+function ApplyState(mateType, stateIndex)
+  local result = petBar[mateType].stateBar.funcs[stateIndex](petBar[mateType].stateBar.buttons[stateIndex])
+  if result == true then
+    UpdateStateButtons(mateType, stateIndex)
+  end
+end
+function UpdatePetBarCommandText(mateType)
+  if petBar[mateType] ~= nil then
+    if X2Mate:HavePassenger(mateType) then
+      petBar[mateType].command.buttons[PET_CMD_PASSENGER_GET_OFF]:SetEnable(true)
+      petBar[mateType].command.buttons[PET_CMD_PASSENGER_GET_OFF].bindText.style:SetColor(1, 1, 1, 1)
+    else
+      petBar[mateType].command.buttons[PET_CMD_PASSENGER_GET_OFF]:SetEnable(false)
+      petBar[mateType].command.buttons[PET_CMD_PASSENGER_GET_OFF].bindText.style:SetColor(1, 0, 0, 1)
+    end
+  end
+end
+local GetPetInfoWindow = function(mateType)
+  local localPetInfo
+  if petBar[mateType] == nil or petInfoWindow == nil then
+    return nil
+  end
+  if X2Player:GetFeatureSet().mateTypeSummon then
+    if petInfoWindow.tab.window[mateType] == nil then
+      return nil
+    end
+    localPetInfo = petInfoWindow.tab.window[mateType]
+  else
+    localPetInfo = petInfoWindow
+  end
+  return localPetInfo
+end
+function UpdatePetEquipSlot(mateType)
+  local localPetInfo = GetPetInfoWindow(mateType)
+  if localPetInfo == nil then
+    return
+  end
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local eIdx = 1
+  for i, slot in pairs(equipSlots) do
+    local slotNo = slot[1]
+    local slotName = slot[2]
+    if X2Equipment:IsMateEquippableSlot(GetPetTargetName(mateType), slotNo) == true then
+      localPetInfo.buttons[slotNo]:Show(true)
+      if X2Player:GetFeatureSet().mateTypeSummon then
+        localPetInfo.buttons[slotNo]:AddAnchor("BOTTOMRIGHT", localPetInfo, 0, (eIdx - 1) * 50 + -titleMargin * 2.3)
+      else
+        localPetInfo.buttons[slotNo]:AddAnchor("BOTTOMRIGHT", localPetInfo, -sideMargin, (eIdx - 1) * 50 + -titleMargin * 2.3)
+      end
+      eIdx = eIdx + 1
+    else
+      localPetInfo.buttons[slotNo]:Show(false)
+    end
+  end
+end
+function GetPetExpString(mateType)
+  local percentexp, currentExp, prevLevelTotalExp, forLevelupExp = X2Mate:GetPetExpToNextLevel(mateType)
+  local currentLevelExp = currentExp - prevLevelTotalExp
+  local expString = string.format("|,%d; / |,%d; (%.2f%%)", currentLevelExp, forLevelupExp, percentexp)
+  return expString
+end
+local CorrectWidgetScreenPos = function(widget)
+  if widget:CheckOutOfScreen() then
+    widget:RemoveAllAnchors()
+    local x, y = widget:CorrectOffsetByScreen()
+    widget:AddAnchor("TOPLEFT", "UIParent", F_LAYOUT:CalcDontApplyUIScale(x), F_LAYOUT:CalcDontApplyUIScale(y))
+  end
+end
+local function UpdatePetViewInfoUpdate(mateType, call)
+  local localPetInfo = GetPetInfoWindow(mateType)
+  if localPetInfo == nil then
+    return
+  end
+  localPetInfo.attributes:UpdateInfoView()
+end
+local petBarEvents = {
+  DISMISS_PET = function(onePetBar, mateType)
+    if onePetBar.mateType ~= mateType then
+      return
+    end
+    local localPetInfo = GetPetInfoWindow(mateType)
+    if localPetInfo ~= nil then
+      localPetInfo:Enable(false)
+      if X2Player:GetFeatureSet().mateTypeSummon then
+        petInfoWindow.tab.unselectedButton[mateType]:Enable(false)
+        if not petInfoWindow:ChangeEnabledTab() then
+          petInfoWindow:Show(false)
+        end
+      end
+    end
+    if mateType == MATE_TYPE_RIDE then
+      isMount = false
+    end
+    onePetBar:ShowCommandBar(false)
+    onePetBar:ShowActionBar(false)
+    onePetBar:ShowStateBar(false)
+    onePetBar:Show(false)
+    UpdatePetViewInfoUpdate(mateType, "DISMISS_PET")
+  end,
+  MOUNT_PET = function(onePetBar, mateType, isMyPet)
+    if onePetBar.mateType ~= mateType then
+      return
+    end
+    if isMyPet == true then
+      isMount = true
+      onePetBar:ShowStateBar(true)
+      onePetBar:ShowActionBar(true)
+      UpdatePetBarCommandText(mateType)
+      onePetBar:RefreshExtent()
+      UpdatePetViewInfoUpdate(mateType, "MOUNT_PET")
+    end
+  end,
+  UNMOUNT_PET = function(onePetBar, mateType, isMyPet)
+    if onePetBar.mateType ~= mateType then
+      return
+    end
+    if isMyPet == true then
+      isMount = false
+      onePetBar:ShowStateBar(true)
+      onePetBar:ShowActionBar(true)
+      UpdatePetBarCommandText(mateType)
+      onePetBar:RefreshExtent()
+      UpdatePetViewInfoUpdate(mateType, "UNMOUNT_PET")
+    end
+  end,
+  MATE_SKILL_LEARNED = function(onePetBar, mateType, text)
+    if onePetBar.mateType ~= mateType then
+      return
+    end
+    if onePetBar.action.show == true then
+      onePetBar:ShowActionBar(true)
+    end
+    onePetBar:RefreshExtent()
+    UpdatePetViewInfoUpdate(mateType, "MATE_SKILL_LEARNED")
+  end,
+  LEVEL_CHANGED = function(onePetBar)
+    onePetBar.expBar:SetExp()
+    UpdatePetViewInfoUpdate(onePetBar.mateType, "LEVEL_CHANGED")
+  end,
+  EXP_CHANGED = function(onePetBar)
+    onePetBar.expBar:SetExp()
+    onePetBar:RefreshExtent()
+    UpdatePetViewInfoUpdate(onePetBar.mateType, "EXP_CHANGED")
+  end,
+  PET_FOLLOWING_MASTER = function(onePetBar, mateType)
+    if onePetBar.mateType ~= mateType then
+      return
+    end
+    UpdatePetBarCommandText(mateType)
+    onePetBar:RefreshExtent()
+  end,
+  PET_STOP_BY_MASTER = function(onePetBar, mateType)
+    if onePetBar.mateType ~= mateType then
+      return
+    end
+    UpdatePetBarCommandText(mateType)
+    onePetBar:RefreshExtent()
+  end,
+  ENTERED_WORLD = function(onePetBar)
+    onePetBar:RefreshExtent()
+    UpdatePetViewInfoUpdate(onePetBar.mateType, "ENTERED_WORLD")
+  end,
+  UPDATE_BINDINGS = function(onePetBar)
+    onePetBar:UpdateBindingText()
+    onePetBar:RefreshExtent()
+  end,
+  PASSENGER_MOUNT_PET = function(onePetBar, mateType)
+    if onePetBar.mateType ~= mateType then
+      return
+    end
+    UpdatePetBarCommandText(mateType)
+    onePetBar:RefreshExtent()
+    UpdatePetViewInfoUpdate(mateType, "PASSENGER_MOUNT_PET")
+  end,
+  PASSENGER_UNMOUNT_PET = function(onePetBar, mateType)
+    if onePetBar.mateType ~= mateType then
+      return
+    end
+    UpdatePetBarCommandText(mateType)
+    onePetBar:RefreshExtent()
+    UpdatePetViewInfoUpdate(mateType, "PASSENGER_UNMOUNT_PET")
+  end,
+  PET_AUTO_SKILL_CHANGED = function(onePetBar, mateType)
+    if onePetBar.mateType ~= mateType then
+      return
+    end
+    for i = 1, MAX_PET_ACTION_SLOT do
+      local button = onePetBar.action.buttons[i]
+      if button.needDriver == false then
+        button.autoUse = X2Mate:GetAutoStartMountSkill(mateType, i)
+        button:ApplyAutoAttackEffect(button.autoUse)
+      end
+    end
+    onePetBar:RefreshExtent()
+    UpdatePetViewInfoUpdate(mateType, "PET_AUTO_SKILL_CHANGED")
+  end,
+  FAILED_TO_SET_PET_AUTO_SKILL = function(onePetBar, mateType)
+    if onePetBar.mateType ~= mateType then
+      return
+    end
+    if X2Mate:IsMountablePet(mateType) == true then
+      AddMessageToSysMsgWindow(locale.pet.action.cannotSetAutoUse1)
+    else
+      AddMessageToSysMsgWindow(locale.pet.action.cannotSetAutoUse2)
+    end
+  end,
+  TOGGLE_WALK = function(onePetBar)
+    UpdatePetViewInfoUpdate(onePetBar.mateType, "TOGGLE_WALK")
+  end,
+  BUFF_UPDATE = function(onePetBar, action, target)
+    if target == "mate" then
+      UpdatePetViewInfoUpdate(onePetBar.mateType, "BUFF_UPDATE")
+    end
+  end,
+  DEBUFF_UPDATE = function(onePetBar, action, target)
+    if target == "mate" then
+      UpdatePetViewInfoUpdate(onePetBar.mateType, "DEBUFF_UPDATE")
+    end
+  end,
+  BUFF_SKILL_CHANGED = function(onePetBar)
+    UpdatePetViewInfoUpdate(onePetBar.mateType, "BUFF_SKILL_CHANGED")
+  end,
+  UNIT_NAME_CHANGED = function(onePetBar)
+    UpdatePetViewInfoUpdate(onePetBar.mateType, "UNIT_NAME_CHANGED")
+  end
+}
+function CreatePetBar(mateType)
+  local onePetBar = CreateEmptyWindow("petBar" .. tostring(mateType), "UIParent")
+  petBar[mateType] = onePetBar
+  petBar[mateType]:SetExtent(0, 0)
+  petBar[mateType].mateType = mateType
+  DrawEffectActionBarBackground(petBar[mateType])
+  CreateActionBar(petBar[mateType]:GetId() .. ".actionBar", petBar[mateType])
+  CreateCommandBar(petBar[mateType]:GetId() .. ".commandBar", petBar[mateType])
+  CreatePetBag(petBar[mateType])
+  CreateStateBar(petBar[mateType]:GetId() .. ".stateBar", petBar[mateType])
+  function onePetBar:MakeOriginWindowPos(reset)
+    if onePetBar == nil then
+      return
+    end
+    self:RemoveAllAnchors()
+    local posX = 430
+    local posY = -20
+    if X2Player:GetFeatureSet().mateTypeSummon then
+      posY = -152
+      posX = 345
+      if mateType == MATE_TYPE_BATTLE then
+        posY = -257
+      end
+    end
+    if reset then
+      self:AddAnchor("BOTTOM", "UIParent", "BOTTOM", F_LAYOUT:CalcDontApplyUIScale(posX), F_LAYOUT:CalcDontApplyUIScale(posY))
+    else
+      self:AddAnchor("BOTTOM", "UIParent", "BOTTOM", posX, posY)
+    end
+    if self.RefreshExtent then
+      self:RefreshExtent()
+    end
+  end
+  onePetBar:MakeOriginWindowPos()
+  if petInfoWindow == nil then
+    petInfoWindow = CreatePetInfoWindow("PetInfoWindow")
+  end
+  local localPetInfo = GetPetInfoWindow(mateType)
+  if localPetInfo == nil then
+    return
+  end
+  localPetInfo:Enable(true)
+  if X2Player:GetFeatureSet().mateTypeSummon then
+    petInfoWindow.tab.unselectedButton[mateType]:Enable(true)
+  else
+    localPetInfo:ChangeParent(petBar[mateType])
+  end
+  petBar[mateType].stateBar.selected = -1
+  petBar[mateType].stateBar.funcs = {
+    [PET_STATE_AGGRESSIVE] = function(button)
+      return X2Mate:AggressiveMode(mateType)
+    end,
+    [PET_STATE_PROTECTIVE] = function(button)
+      return X2Mate:ProtectiveMode(mateType)
+    end,
+    [PET_STATE_PASSIVE] = function(button)
+      return X2Mate:PassiveMode(mateType)
+    end,
+    [PET_STATE_STAND] = function(button)
+      return X2Mate:StandMode(mateType)
+    end
+  }
+  petBar[mateType].stateBar.stateNameToStateValue = {
+    aggressive = PET_STATE_AGGRESSIVE,
+    protective = PET_STATE_PROTECTIVE,
+    passive = PET_STATE_PASSIVE,
+    idle = PET_STATE_STAND
+  }
+  petBar[mateType].stateBar.guides = {
+    [PET_STATE_AGGRESSIVE] = locale.pet.state.guides.aggressive,
+    [PET_STATE_PROTECTIVE] = locale.pet.state.guides.protective,
+    [PET_STATE_PASSIVE] = locale.pet.state.guides.passive,
+    [PET_STATE_STAND] = locale.pet.state.guides.stand
+  }
+  for i = 1, PET_STATE_STAND do
+    do
+      local button = petBar[mateType].stateBar.buttons[i]
+      function button:OnClick(clickedButton)
+        if clickedButton == "LeftButton" then
+          ApplyState(mateType, i)
+        end
+      end
+      function button:OnButtonUp(clickedButton, extraModifiers)
+        if clickedButton == "LeftButton" then
+          ApplyState(mateType, i)
+        end
+      end
+      button:SetHandler("OnClick", button.OnClick)
+      button:SetHandler("OnButtonUp", button.OnButtonUp)
+      function button:OnEnter()
+        SetTooltip(petBar[mateType].stateBar.guides[i], self)
+      end
+      button:SetHandler("OnEnter", button.OnEnter)
+      function button:OnLeave()
+        HideTooltip()
+      end
+      button:SetHandler("OnLeave", button.OnLeave)
+    end
+  end
+  petBar[mateType].command.funcs = {
+    [PET_CMD_EQUIP] = function(button)
+      if not X2Mate:IsPlayerPetExists(mateType) then
+        return
+      end
+      local visible = false
+      if X2Player:GetFeatureSet().mateTypeSummon then
+        visible = petInfoWindow.tab.window[mateType]:IsVisible() and petInfoWindow:IsVisible()
+      else
+        visible = petInfoWindow:IsVisible()
+      end
+      petInfoWindow:Show(not visible)
+      if X2Player:GetFeatureSet().mateTypeSummon and petInfoWindow:IsVisible() then
+        petInfoWindow:ChangeTab(mateType)
+      end
+      UpdatePetEquipSlot(mateType)
+      UpdatePetBarCommandText(mateType)
+      UpdatePetViewInfoUpdate(mateType, "PET_CMD_EQUIP")
+    end,
+    [PET_CMD_MOUNT] = function(button)
+      if petBar[mateType].command.buttons[PET_CMD_MOUNT].using == false then
+        return
+      end
+      if not X2Mate:IsPlayerMounting() then
+        X2Mate:MountMate(mateType)
+      else
+        X2Mate:UnMountMate()
+      end
+      UpdatePetViewInfoUpdate(mateType, "PET_CMD_MOUNT")
+    end,
+    [PET_CMD_PASSENGER_GET_OFF] = function()
+      if petBar[mateType].command.buttons[PET_CMD_PASSENGER_GET_OFF].using == false then
+        return
+      end
+      X2Mate:KickPassenger()
+      UpdatePetViewInfoUpdate(mateType, "PET_CMD_PASSENGER_GET_OFF")
+    end,
+    [PET_CMD_CYA] = function()
+      X2Mate:DismissPet(mateType)
+      if petBar[mateType] ~= nil then
+        petBar[mateType].bagWindow:Show(false)
+      end
+      UpdatePetViewInfoUpdate(mateType, "PET_CMD_PASSENGER_GET_OFF")
+    end,
+    [PET_CMD_ATTACK] = function()
+      if petBar[mateType].command.buttons[PET_CMD_ATTACK].using == false then
+        return
+      end
+      X2Mate:OrderAttackTarget(mateType)
+      UpdatePetViewInfoUpdate(mateType, "PET_CMD_ATTACK")
+    end
+  }
+  petBar[mateType].command.guides = {
+    [PET_CMD_EQUIP] = locale.pet.command.guides.openEquip,
+    [PET_CMD_MOUNT] = locale.pet.command.guides.mount,
+    [PET_CMD_PASSENGER_GET_OFF] = locale.pet.command.guides.passengerGetOff,
+    [PET_CMD_CYA] = locale.pet.command.guides.cya,
+    [PET_CMD_ATTACK] = locale.pet.command.guides.attack
+  }
+  petBar[mateType].command.showCond = {
+    [PET_CMD_EQUIP] = true,
+    [PET_CMD_MOUNT] = X2Mate:IsMountablePet(mateType),
+    [PET_CMD_PASSENGER_GET_OFF] = X2Mate:IsMountablePet(mateType) and X2Mate:IsHavePassengerSeat(mateType),
+    [PET_CMD_CYA] = true,
+    [PET_CMD_ATTACK] = X2Mate:IsAttackablePet(mateType)
+  }
+  for k = 1, PET_CMD_LAST do
+    do
+      local button = petBar[mateType].command.buttons[k]
+      if button ~= nil then
+        function button:OnClickProc(arg)
+          if arg == "LeftButton" then
+            petBar[mateType].command.funcs[k](self)
+          end
+        end
+        function button:OnButtonUp(clickedButton, extraModifiers)
+          if clickedButton == "LeftButton" then
+            petBar[mateType].command.funcs[k](self)
+          end
+        end
+        button:SetHandler("OnButtonUp", button.OnButtonUp)
+        function button:OnEnter()
+          SetTooltip(petBar[mateType].command.guides[k], self)
+          if k == PET_CMD_MOUNT then
+            if X2Mate:IsPlayerMounting() then
+              SetTooltip(locale.pet.toggle.getOff, self)
+            else
+              SetTooltip(locale.pet.toggle.getOn, self)
+            end
+          end
+        end
+        button:SetHandler("OnEnter", button.OnEnter)
+        function button:OnLeave()
+          HideTooltip()
+        end
+        button:SetHandler("OnLeave", button.OnLeave)
+        if k == PET_CMD_MOUNT then
+          function button:OnUpdate()
+            if not X2Mate:IsPlayerMounting() and not X2Mate:CanMount(mateType) then
+              button:SetOverlayColor(ICON_BUTTON_OVERLAY_COLOR.RED)
+            else
+              button:OverlayInvisible()
+            end
+          end
+          button:SetHandler("OnUpdate", button.OnUpdate)
+        end
+        if k == PET_CMD_CYA then
+          function button:OnUpdate()
+            if X2Mate:CanDismiss(mateType) then
+              button:OverlayInvisible()
+            else
+              button:SetOverlayColor(ICON_BUTTON_OVERLAY_COLOR.RED)
+            end
+          end
+          button:SetHandler("OnUpdate", button.OnUpdate)
+        end
+      end
+    end
+  end
+  local function SetPetBarSkillTooltip(slotNumber, slot)
+    local skillInfo = X2Mate:GetMountSkill(mateType, slotNumber)
+    if skillInfo ~= nil then
+      if skillInfo.learned == false then
+        skillInfo.showReq = true
+        skillInfo.displayPetSkillLearnLevel = true
+      end
+      ShowTooltip(skillInfo, slot)
+    end
+  end
+  for i = 1, MAX_PET_ACTION_SLOT do
+    do
+      local button = petBar[mateType].action.buttons[i]
+      function button:OnEnter()
+        SetPetBarSkillTooltip(i, button)
+      end
+      button:SetHandler("OnEnter", button.OnEnter)
+      function button:OnLeave()
+        HideTooltip()
+      end
+      button:SetHandler("OnLeave", button.OnLeave)
+    end
+  end
+  function onePetBar:SetPetBarClickable()
+    petBar[mateType]:Clickable(petBar[mateType].command.show or petBar[mateType].action.show)
+  end
+  function onePetBar:UpdateBindingText()
+    for i = 1, MAX_PET_ACTION_SLOT do
+      local slot = petBar[mateType].action.buttons[i]
+      local hotKey = ConvertAbbreviatedBindingText(slot:GetHotKey())
+      slot.keybindingLabel:SetText(hotKey)
+    end
+    for i = 1, #petCmdStr do
+      local buttonText
+      if X2Player:GetFeatureSet().mateTypeSummon then
+        buttonText = "Pet" .. tostring(mateType) .. "CommandButton" .. tostring(i)
+      else
+        buttonText = "PetCommandButton" .. tostring(i)
+      end
+      local abbrText = ConvertAbbreviatedBindingText(X2Hotkey:GetBindingButton(buttonText, 1) or "")
+      petBar[mateType].command.buttons[i].bindText:SetText(abbrText)
+    end
+  end
+  function onePetBar:ShowActionBar(show)
+    petBar[mateType].action.show = show
+    local skillCount = X2Mate:GetNumMountSkills(mateType)
+    local btnCount = MAX_PET_ACTION_SLOT
+    if show then
+      btnCount = math.min(skillCount, MAX_PET_ACTION_SLOT)
+    end
+    if btnCount <= MAX_PET_ACTION_SLOT then
+      petBar[mateType].actionBar:SetHeight(45)
+    else
+      petBar[mateType].actionBar:SetHeight(90)
+    end
+    for i = 1, btnCount do
+      petBar[mateType].action.buttons[i]:Show(show)
+      petBar[mateType].action.buttons[i]:EstablishSlot(MateTypeToActionISlot(mateType), i)
+    end
+    if show == true then
+      self:UpdateBindingText()
+    end
+    petBar[mateType]:SetPetBarClickable()
+  end
+  local function EnableUpdateStateButtons()
+    if X2Mate:IsAttackablePet(mateType) ~= true then
+      petBar[mateType].stateBar.buttons[1]:Enable(false)
+      petBar[mateType].stateBar.buttons[2]:Enable(false)
+    end
+  end
+  function onePetBar:ShowStateBar(show)
+    local state = X2Mate:PetState(mateType)
+    if state ~= nil then
+      UpdateStateButtons(mateType, petBar[mateType].stateBar.stateNameToStateValue[state])
+    else
+      UpdateStateButtons(mateType, -1)
+    end
+    if isMount and X2Mate:IsMountablePet(mateType) then
+      EnableStateButtons(mateType, false)
+    else
+      EnableStateButtons(mateType, true)
+    end
+    EnableUpdateStateButtons()
+    if show == false then
+      petBar[mateType].stateBar.selected = -1
+    end
+    petBar[mateType].stateBar:Show(show)
+  end
+  function onePetBar:ShowCommandBar(show)
+    petBar[mateType].command.show = show
+    local showButtonCount = 0
+    for i = 1, #petBar[mateType].command.buttons do
+      if petBar[mateType].command.showCond[i] then
+        showButtonCount = showButtonCount + 1
+        petBar[mateType].command.buttons[i].using = true
+        petBar[mateType].command.buttons[i]:Show(show)
+      else
+        petBar[mateType].command.buttons[i].using = false
+        petBar[mateType].command.buttons[i]:Show(false)
+      end
+      petBar[mateType].command.buttons[i]:AddAnchor("BOTTOMLEFT", petBar[mateType].cmdBg, (showButtonCount - 1) * (ICON_SIZE.DEFAULT - 1), 0)
+      petBar[mateType].command.buttons[i]:Enable(true)
+    end
+    if petInfoWindow:IsVisible() and show == false and (not X2Player:GetFeatureSet().mateTypeSummon or petInfoWindow.tab.window[mateType]:IsVisible()) then
+      petInfoWindow:Show(false)
+    end
+    petBar[mateType].expBar:Show(false)
+    petBar[mateType]:SetPetBarClickable()
+    petBar[mateType].cmdBg:Show(show)
+    UpdatePetBarCommandText(mateType)
+    petBar[mateType]:UpdateBindingText()
+  end
+  function onePetBar.expBar:SetExp()
+    local percentexp, currentExp, prevLevelTotalExp, forLevelupExp = X2Mate:GetPetExpToNextLevel(mateType)
+    if currentExp == nil then
+      return
+    end
+    local currentLevelExp = currentExp - prevLevelTotalExp
+    petBar[mateType].expBar:SetMinMaxValues(0, forLevelupExp)
+    petBar[mateType].expBar:SetValue(currentLevelExp)
+  end
+  function onePetBar.expBar:OnEnter()
+    local tooltip = GetPetExpString(mateType)
+    local str = string.format("%s: %s", GetUIText(COMMON_TEXT, "exp"), tooltip)
+    SetExpTooltip(str, self, false)
+  end
+  petBar[mateType].expBar:SetHandler("OnEnter", petBar[mateType].expBar.OnEnter)
+  function onePetBar.expBar:OnLeave(arg)
+    HideTooltip()
+  end
+  petBar[mateType].expBar:SetHandler("OnLeave", petBar[mateType].expBar.OnLeave)
+  localPetInfo:SetCloseOnEscape(true)
+  for i, slot in pairs(equipSlots) do
+    do
+      local slotNo = slot[1]
+      local slotName = slot[2]
+      local button = localPetInfo.buttons[slotNo]
+      function button:OnClickProc(arg)
+        if arg == "LeftButton" then
+          X2Equipment:PickupMateEquippedItem(GetPetTargetName(mateType), slotNo)
+        elseif arg == "RightButton" then
+          X2Equipment:MateUnequipItem(GetPetTargetName(mateType), slotNo)
+        end
+      end
+      function button:OnDragStart(arg)
+        if arg == "LeftButton" then
+          X2Equipment:PickupMateEquippedItem(GetPetTargetName(mateType), slotNo)
+        end
+      end
+      function button:OnDragReceive(arg)
+        if arg == "LeftButton" then
+          X2Equipment:PickupMateEquippedItem(GetPetTargetName(mateType), slotNo)
+        end
+      end
+      button:RegisterForDrag("LeftButton")
+      button:SetHandler("OnDragStart", button.OnDragStart)
+      button:SetHandler("OnDragReceive", button.OnDragReceive)
+    end
+  end
+  local GetEmptySlotTip = function(slotNo)
+    if slotNo == 1 then
+      return locale.pet.helmet
+    elseif slotNo == 3 then
+      return locale.pet.armor
+    elseif slotNo == 4 then
+      return locale.pet.saddle
+    elseif slotNo == 7 then
+      return locale.pet.shoes
+    end
+  end
+  function localPetInfo:OnEquipmentChanged()
+    for i, slot in pairs(equipSlots) do
+      do
+        local slotNo = slot[1]
+        local slotName = slot[2]
+        local tooltip = X2Equipment:GetEquippedItemTooltipText(GetPetTargetName(mateType), slotNo)
+        local equiptSlot = self.buttons[slotNo]
+        self.buttons[slotNo]:SetItemInfo(tooltip)
+        self.buttons[slotNo].back:SetColor(1, 1, 1, 1)
+        local function OnEnter(self)
+          if tooltip.itemType ~= 0 then
+            ShowTooltip(tooltip, self)
+          else
+            SetTooltip(GetEmptySlotTip(slotNo), self)
+          end
+        end
+        equiptSlot:SetHandler("OnEnter", OnEnter)
+      end
+    end
+  end
+  function localPetInfo:ShowProc()
+    self:OnEquipmentChanged()
+  end
+  local equipmentEvents = {
+    UNIT_NPC_EQUIPMENT_CHANGED = function()
+      localPetInfo:OnEquipmentChanged()
+      UpdatePetViewInfoUpdate(mateType, "UNIT_NPC_EQUIPMENT_CHANGED")
+    end
+  }
+  localPetInfo:SetHandler("OnEvent", function(this, event, ...)
+    equipmentEvents[event](...)
+  end)
+  localPetInfo:RegisterEvent("UNIT_NPC_EQUIPMENT_CHANGED")
+  for idx = 1, MAX_PET_BAG_COUNT do
+    do
+      local button = localPetInfo.bagSlots[idx]
+      button:RegisterForDrag("LeftButton")
+      function button:OnClick(arg)
+        if arg == "LeftButton" then
+          X2Bag:PickupMountBagFromSlot(1, idx)
+        end
+      end
+      button:SetHandler("OnClick", button.OnClick)
+      function button:OnDragStart(arg)
+        if arg == "LeftButton" then
+          X2Bag:PickupMountBagFromSlot(1, idx)
+        end
+      end
+      button:SetHandler("OnDragStart", button.OnDragStart)
+      function button:OnDragReceive(arg)
+        if arg == "LeftButton" then
+          X2Bag:PickupMountBagFromSlot(1, idx)
+        end
+      end
+      button:SetHandler("OnDragReceive", button.OnDragReceive)
+    end
+  end
+  for bagIdx = 1, MAX_PET_BAG_COUNT do
+    for slotIdx = 1, MAX_PET_BAG_SLOT_COUNT do
+      do
+        local button = petBar[mateType].bagWindow.bags[bagIdx].slots[slotIdx]
+        function button:OnClick(arg)
+          if arg == "LeftButton" then
+            X2Bag:PickupMountBagItem(1, bagIdx, slotIdx)
+          end
+        end
+        function button:OnDragStart(arg)
+          if arg == "LeftButton" then
+            X2Bag:PickupMountBagItem(1, bagIdx, slotIdx)
+          end
+        end
+        function button:OnDragReceive(arg)
+          if arg == "LeftButton" then
+            X2Bag:PickupMountBagItem(1, bagIdx, slotIdx)
+          end
+        end
+        button:RegisterForDrag("LeftButton")
+        button:SetHandler("OnClick", button.OnClick)
+        button:SetHandler("OnDragStart", button.OnDragStart)
+        button:SetHandler("OnDragReceive", button.OnDragReceive)
+      end
+    end
+  end
+  function onePetBar.bagWindow:ShowProc()
+    for bagIdx = 1, MAX_PET_BAG_COUNT do
+      for slotIdx = 1, MAX_PET_BAG_SLOT_COUNT do
+        petBar[mateType].bagWindow.bags[bagIdx].slots[slotIdx]:Show(false)
+      end
+    end
+    for bagIdx = 1, MAX_PET_BAG_COUNT do
+      local slotCount = X2Bag:GetMountBagNumSlots(1, bagIdx)
+      for slotIdx = 1, slotCount do
+        local bagSlotInfo = X2Bag:GetMountableBagItemInfo(1, bagIdx, slotIdx)
+        local iconPath = EMPTY_SLOT_PATH
+        if bagSlotInfo ~= nil and bagSlotInfo.path ~= nil then
+          iconPath = bagSlotInfo.path
+        end
+        petBar[mateType].bagWindow.bags[bagIdx].slots[slotIdx]:SetPath(iconPath)
+        petBar[mateType].bagWindow.bags[bagIdx].slots[slotIdx]:SetTooltip(X2Bag:GetMountableBagItemTooltipText(1, bagIdx, slotIdx))
+        petBar[mateType].bagWindow.bags[bagIdx].slots[slotIdx]:Show(true)
+      end
+    end
+  end
+  local bagEvents = {
+    MOUNT_BAG_UPDATE = function()
+      petBar[mateType].bagWindow:ShowProc()
+    end
+  }
+  petBar[mateType].bagWindow:SetHandler("OnEvent", function(this, event, ...)
+    bagEvents[event](...)
+  end)
+  petBar[mateType].bagWindow:RegisterEvent("MOUNT_BAG_UPDATE")
+  onePetBar:RegisterForDrag("LeftButton")
+  function onePetBar:OnDragStart(arg)
+    if arg == "LeftButton" then
+      self.moving = true
+      petBar[mateType]:StartMoving()
+      X2Cursor:ClearCursor()
+      X2Cursor:SetCursorImage(CURSOR_PATH.MOVE, 0, 0)
+    end
+  end
+  petBar[mateType]:SetHandler("OnDragStart", petBar[mateType].OnDragStart)
+  function onePetBar:OnDragStop()
+    if self.moving then
+      petBar[mateType]:StopMovingOrSizing()
+      X2Cursor:ClearCursor()
+      self.moving = false
+    end
+  end
+  petBar[mateType]:SetHandler("OnDragStop", petBar[mateType].OnDragStop)
+  function onePetBar:OnEnter()
+    if self.isvisibleBg == false then
+      self:OnEnterEffectSetting()
+    end
+  end
+  petBar[mateType]:SetHandler("OnEnter", petBar[mateType].OnEnter)
+  function onePetBar:OnLeave()
+    self:OnLeaveEffectSetting()
+  end
+  petBar[mateType]:SetHandler("OnLeave", petBar[mateType].OnLeave)
+  function onePetBar:OnHide()
+    if petBar[mateType].equip ~= nil then
+      petBar[mateType].equip:EnableHidingIsRemove(true)
+      if petBar[mateType].equip:IsVisible() == false then
+        petBar[mateType].equip:Show(true)
+      end
+      petBar[mateType].equip:Show(false)
+    end
+    for i = 1, PET_STATE_STAND do
+      if X2Player:GetFeatureSet().mateTypeSummon then
+        _G["Pet" .. tostring(mateType) .. "StanceButton" .. tostring(i)] = nil
+      else
+        _G["PetStanceButton" .. tostring(i)] = nil
+      end
+    end
+    for i = 1, MAX_PET_ACTION_SLOT do
+      if X2Player:GetFeatureSet().mateTypeSummon then
+        _G["Pet" .. tostring(mateType) .. "ActionButton" .. tostring(i)] = nil
+      else
+        _G["PetActionButton" .. tostring(i)] = nil
+      end
+    end
+    for i = PET_CMD_EQUIP, PET_CMD_LAST do
+      if X2Player:GetFeatureSet().mateTypeSummon then
+        _G["Pet" .. tostring(mateType) .. "CommandButton" .. tostring(i)] = nil
+      else
+        _G["PetCommandButton" .. tostring(i)] = nil
+      end
+    end
+    petBar[mateType] = nil
+  end
+  petBar[mateType]:SetHandler("OnHide", petBar[mateType].OnHide)
+  function onePetBar:OnScale()
+    CorrectWidgetScreenPos(self)
+  end
+  petBar[mateType]:SetHandler("OnScale", petBar[mateType].OnScale)
+  function onePetBar:RefreshExtent()
+    if petBar[mateType] == nil or petBar[mateType].action == nil then
+      return
+    end
+    if petBar[mateType].action.show then
+      if X2Player:GetFeatureSet().mateTypeSummon then
+        petBar[mateType]:SetExtent(250 + ICON_SIZE.DEFAULT - 1, 105)
+      else
+        petBar[mateType]:SetExtent(250, 105)
+      end
+    elseif petBar[mateType].command.show then
+      petBar[mateType]:SetExtent(234, 62)
+    else
+      petBar[mateType]:SetExtent(234, 0)
+    end
+    CorrectWidgetScreenPos(petBar[mateType])
+  end
+  petBar[mateType].cmdBg:RegisterForDrag("LeftButton")
+  function onePetBar.cmdBg:OnDragStart(arg)
+    petBar[mateType]:OnDragStart(arg)
+  end
+  petBar[mateType].cmdBg:SetHandler("OnDragStart", petBar[mateType].cmdBg.OnDragStart)
+  function onePetBar.cmdBg:OnDragStop()
+    petBar[mateType]:OnDragStop()
+  end
+  petBar[mateType].cmdBg:SetHandler("OnDragStop", petBar[mateType].cmdBg.OnDragStop)
+  petBar[mateType]:Show(true)
+  petBar[mateType]:ShowStateBar(false)
+  petBar[mateType]:ShowActionBar(false)
+  petBar[mateType]:ShowCommandBar(false)
+  petBar[mateType]:SetHandler("OnEvent", function(this, event, ...)
+    petBarEvents[event](this, ...)
+  end)
+  RegistUIEvent(petBar[mateType], petBarEvents)
+  petBar[mateType]:EnableHidingIsRemove(true)
+  AddUISaveHandlerByKey("petBar" .. tostring(mateType), petBar[mateType], false)
+  petBar[mateType]:ApplyLastWindowOffset()
+end
+local FirstCheckPet = function(mateType)
+  if X2Mate:IsPlayerPetExists(mateType) then
+    if petBar[mateType] == nil then
+      CreatePetBar(mateType)
+    end
+    petBar[mateType]:ShowStateBar(true)
+    petBar[mateType]:ShowCommandBar(true)
+    petBar[mateType]:ShowActionBar(true)
+  end
+end
+FirstCheckPet(MATE_TYPE_RIDE)
+FirstCheckPet(MATE_TYPE_BATTLE)
+if petInfoWindow == nil then
+  petInfoWindow = CreatePetInfoWindow("PetInfoWindow")
+end
+local function SpawnPet(mateType)
+  if petBar[mateType] == nil then
+    CreatePetBar(mateType)
+  end
+  petBar[mateType]:ShowStateBar(true)
+  petBar[mateType]:ShowCommandBar(true)
+  petBar[mateType].expBar:SetExp()
+  petBar[mateType]:ShowActionBar(true)
+  petBar[mateType]:RefreshExtent()
+  UpdatePetViewInfoUpdate(mateType, "SPAWN_PET")
+end
+UIParent:SetEventHandler("SPAWN_PET", SpawnPet)

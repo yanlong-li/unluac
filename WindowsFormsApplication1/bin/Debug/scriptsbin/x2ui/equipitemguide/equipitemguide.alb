@@ -1,0 +1,381 @@
+local equipItemGuideWnd
+local CreateEquipItemGuideWnd = function(id, parent)
+  local wnd = SetViewOfEquipItemGuideWnd(id, parent)
+  local categoryWnd = wnd.categoryWnd
+  local descWnd = wnd.descWnd
+  local itemWnd = wnd.itemWnd
+  local equippedIcon = descWnd.equippedIcon
+  local gradeCombobox = wnd.gradeCombobox
+  local resetBtn = itemWnd.resetBtn
+  local sortCombobox = descWnd.sortCombobox
+  local selElementInfo, equippedItems
+  local function UpateEquippedItems()
+    equippedItems = {}
+    for i = 1, #PLAYER_EQUIP_SLOTS do
+      equippedItems[PLAYER_EQUIP_SLOTS[i]] = X2Equipment:GetEquippedItemTooltipText("player", PLAYER_EQUIP_SLOTS[i])
+    end
+  end
+  local categorys = {
+    [EST_1HANDED] = "weapon",
+    [EST_2HANDED] = "weapon",
+    [EST_RANGED] = "weapon",
+    [EST_SHIELD] = "weapon",
+    [EST_INSTRUMENT] = "weapon",
+    [EST_HEAD] = "armor",
+    [EST_CHEST] = "armor",
+    [EST_WAIST] = "armor",
+    [EST_ARMS] = "armor",
+    [EST_HANDS] = "armor",
+    [EST_LEGS] = "armor",
+    [EST_FEET] = "armor",
+    [EST_BACK] = "armor",
+    [EST_EAR] = "accessory",
+    [EST_NECK] = "accessory",
+    [EST_FINGER] = "accessory"
+  }
+  local function GetCategoryStr()
+    local selValue = categoryWnd.content:GetSelectedValue()
+    if categorys[selValue] == nil then
+      return "invalid"
+    end
+    return categorys[selValue]
+  end
+  local function FillDescWnd(infos)
+    itemWnd.itemList:Init()
+    descWnd.list:DeleteAllDatas()
+    if infos == nil or #infos == 0 then
+      return
+    end
+    for i = 1, #infos do
+      descWnd.list:InsertData(i, 1, infos[i])
+    end
+  end
+  function GetEquipItemGuideSelectedGrade()
+    local grade = gradeCombobox:GetSelectedIndex()
+    if grade == 1 then
+      grade = 0
+    end
+    return grade
+  end
+  local SORT = {ASCENDING = 1, DESCENDING = 2}
+  local function GetAscendingSort()
+    return sortCombobox:GetSelectedIndex() == SORT.ASCENDING
+  end
+  local function UpdateDescWnd()
+    selElementInfo = nil
+    local selIndex = sortCombobox:GetSelectedIndex()
+    local info = X2EquipItemGuide:GetCategoryInfos(GetCategoryStr(), categoryWnd.content:GetSelectedValue() or 0, descWnd:GetSelectedTab(), GetEquipItemGuideSelectedGrade(), GetAscendingSort())
+    FillDescWnd(info)
+    equippedIcon:Update()
+  end
+  function descWnd.list:OnSliderChangedProc()
+    equippedIcon:Update()
+    if selElementInfo ~= nil then
+      descWnd.list:UpdateScrollSelctedImg()
+    end
+  end
+  local function SelcteClear()
+    descWnd.list:ResetSelectedImg()
+    resetBtn:Enable(false)
+  end
+  function categoryWnd:OnSelChanged()
+    UpdateDescWnd()
+    SelcteClear()
+  end
+  function descWnd:OnTabChangedProc(selIdx)
+    UpdateDescWnd()
+    descWnd.referenceWnd:ShowOrderInfo(selIdx < 4)
+    SelcteClear()
+  end
+  function gradeCombobox:SelectedProc()
+    local tempSelElementInfo = selElementInfo
+    local topDataIndex = descWnd.list:GetTopDataIndex()
+    UpdateDescWnd()
+    if tempSelElementInfo ~= nil then
+      descWnd.list:SetTopDataIndex(topDataIndex)
+      descWnd.list:UpdateView()
+      descWnd.list.scroll.vs:SetValue(topDataIndex - 1, false)
+      FillDescWndElementClickProc(tempSelElementInfo)
+      descWnd.list:UpdateScrollSelctedImg()
+      equippedIcon:Update()
+    end
+  end
+  local function ResetBtnLeftClickFunc(self)
+    descWnd.list:SetTopDataIndex(1)
+    descWnd.list:UpdateView()
+    descWnd.list.scroll.vs:SetValue(0, false)
+    itemWnd.itemList:Init()
+    SelcteClear()
+  end
+  ButtonOnClickHandler(resetBtn, ResetBtnLeftClickFunc)
+  local OnEnter = function(self)
+    SetTooltip(GetUIText(COMMON_TEXT, "equip_item_guide_reset"), self)
+  end
+  resetBtn:SetHandler("OnEnter", OnEnter)
+  function sortCombobox:SelectedProc()
+    UpdateDescWnd()
+    SelcteClear()
+    descWnd.list:SetGradeBg(GetAscendingSort())
+    resetBtn:Enable(false)
+    if GetAscendingSort() then
+      descWnd.list.gradeBg:SetTextureInfo("dot")
+    else
+      descWnd.list.gradeBg:SetTextureInfo("dot_reverse")
+    end
+  end
+  function FillDescWndElementClickProc(elementInfo)
+    selElementInfo = elementInfo
+    local items = X2EquipItemGuide:GetSpecifiedItems(GetCategoryStr(), categoryWnd.content:GetSelectedValue() or 0, selElementInfo.equipItemGuideType, GetEquipItemGuideSelectedGrade())
+    itemWnd:FillItemWnd(categoryWnd.content:GetSelectedText(), selElementInfo.lootMainCategory, selElementInfo.name, items)
+  end
+  local OnEnter = function(self)
+    if self.tooltip == nil then
+      return
+    end
+    SetTooltip(self.tooltip, self)
+  end
+  equippedIcon:SetHandler("OnEnter", OnEnter)
+  function equippedIcon:DisableByCannotCompared(targetStr)
+    equippedIcon:SetEnableEquipIcon(false)
+    equippedIcon:AddAnchor("TOPRIGHT", descWnd.list, -36, 0)
+    targetStr = SetEnterString(targetStr, GetUIText(COMMON_TEXT, "item_can_not_be_compared_grade_not_exist"))
+    return targetStr
+  end
+  function equippedIcon:Update()
+    equippedIcon:Init()
+    local dataCount = descWnd.list:GetDataCount()
+    if dataCount <= 0 then
+      return
+    end
+    if equippedItems == nil then
+      UpateEquippedItems()
+    end
+    local found = false
+    for k = 1, table.maxn(equippedItems) do
+      if equippedItems[k] ~= nil and equippedItems[k].slotTypeNum ~= nil then
+        local selSlotTypeNum = equippedItems[k].slotTypeNum
+        if selSlotTypeNum == EST_MAINHAND or selSlotTypeNum == EST_OFFHAND then
+          selSlotTypeNum = EST_1HANDED
+        end
+        if categoryWnd.content:GetSelectedValue() == selSlotTypeNum then
+          curScore = equippedItems[k].gearScore.bare
+          equippedIcon.tooltip = string.format([[
+%s: |c%s%s (%s)|r
+%s: %s]], GetUIText(COMMON_TEXT, "equip_item_guide_equipped"), equippedItems[k].gradeColor, equippedItems[k].name, equippedItems[k].grade, GetUIText(COMMON_TEXT, "equip_item_guide_equipped_gear_score"), curScore)
+          found = true
+          break
+        end
+      end
+    end
+    if not found then
+      return
+    end
+    equippedIcon:Show(true)
+    local firstData, latterData, firstViewData, latterViewData
+    local rowCount = descWnd.list:GetRowCount()
+    local ValidData = function(data)
+      return data ~= nil and data.gearScore ~= nil
+    end
+    for i = 1, dataCount do
+      local curData = descWnd.list:GetDataByDataIndex(i, 1)
+      if not ValidData(firstData) and ValidData(curData) then
+        firstData = curData
+      end
+      local topDataIndex = descWnd.list:GetTopDataIndex()
+      if i >= topDataIndex and i < topDataIndex + rowCount then
+        if not ValidData(firstViewData) and ValidData(curData) then
+          firstViewData = curData
+        end
+        if ValidData(curData) then
+          latterViewData = curData
+        end
+      end
+      if ValidData(curData) then
+        latterData = curData
+      end
+    end
+    if not ValidData(firstData) and not ValidData(latterData) then
+      equippedIcon.tooltip = self:DisableByCannotCompared(equippedIcon.tooltip)
+      return
+    end
+    equippedIcon:SetEnableEquipIcon(true)
+    local xOffset = -36
+    local yOffset = 4
+    local isAscendingSort = GetAscendingSort()
+    local firstGearScore = tonumber(firstData.gearScore) or 0
+    local latterGearScore = tonumber(latterData.gearScore) or 0
+    local firstViewGearScore = firstViewData and tonumber(firstViewData.gearScore) or 0
+    local latterViewGearScore = latterViewData and tonumber(latterViewData.gearScore) or 0
+    local function ValidMinMax(isFirstData)
+      local firstScore = firstViewGearScore > 0 and firstViewGearScore or firstGearScore
+      local latterScore = latterViewGearScore > 0 and latterViewGearScore or latterGearScore
+      if isAscendingSort then
+        return isFirstData and firstScore > curScore or latterScore < curScore
+      else
+        return isFirstData and latterScore < curScore or firstScore > curScore
+      end
+    end
+    local function DoubleArrow(isFirstData)
+      local firstScore = firstViewGearScore > 0 and firstViewGearScore or firstGearScore
+      local latterScore = latterViewGearScore > 0 and latterViewGearScore or latterGearScore
+      local topDataIndex = descWnd.list:GetTopDataIndex()
+      if isAscendingSort then
+        if isFirstData then
+          return firstScore > curScore and topDataIndex <= 1
+        else
+          return latterScore < curScore and topDataIndex > dataCount - rowCount
+        end
+      elseif isFirstData then
+        return firstScore < curScore and topDataIndex <= 1
+      else
+        return latterScore > curScore and topDataIndex > dataCount - rowCount
+      end
+    end
+    if ValidData(latterData) and ValidMinMax(false) then
+      local arrowOffset = equippedIcon:SetArrow(false, DoubleArrow(false))
+      equippedIcon:AddAnchor("BOTTOMRIGHT", descWnd.list, xOffset, -(arrowOffset - yOffset))
+      return
+    elseif ValidData(firstData) and ValidMinMax(true) then
+      local arrowOffset = equippedIcon:SetArrow(true, DoubleArrow(true))
+      equippedIcon:AddAnchor("TOPRIGHT", descWnd.list, xOffset, arrowOffset - yOffset)
+      return
+    end
+    for i = 1, rowCount do
+      local curSubItem = descWnd.list:GetListCtrlSubItem(i, 1)
+      local curData = descWnd.list:GetDataByViewIndex(i, 1)
+      local score = tonumber(curData.gearScore)
+      if score ~= nil then
+        local xOffset = 25
+        if curScore == score then
+          equippedIcon:AddAnchor("RIGHT", curSubItem.gearScore, "LEFT", xOffset, 0)
+          return
+        elseif isAscendingSort and score > curScore or not isAscendingSort and score < curScore then
+          local startWidget, endWidget
+          local prevIndex = 1
+          local prevSubItem = descWnd.list:GetListCtrlSubItem(i - prevIndex, 1)
+          local prevData = descWnd.list:GetDataByViewIndex(i - prevIndex, 1)
+          while prevData == nil or prevData.gearScore == nil do
+            prevIndex = prevIndex + 1
+            if i - prevIndex <= 0 then
+              return
+            end
+            prevData = descWnd.list:GetDataByViewIndex(i - prevIndex, 1)
+            prevSubItem = descWnd.list:GetListCtrlSubItem(i - prevIndex, 1)
+          end
+          startWidget = prevSubItem.gearScore
+          endWidget = curSubItem.gearScore
+          local sx, sy = startWidget:GetOffset()
+          local ex, ey = endWidget:GetOffset()
+          offset = (score - curScore) / (score - prevData.gearScore) * (ey - sy)
+          equippedIcon:AddAnchor("RIGHT", endWidget, "LEFT", xOffset, -offset)
+          return
+        end
+      end
+    end
+  end
+  function itemWnd:FillItemWnd(slotTypeStr, lootMainCategory, equipItemGuideName, items)
+    self.slotTypeLabel:Show(true)
+    self.slotTypeLabel:SetText(slotTypeStr)
+    self.lootCategoryLabel:Show(true)
+    self.lootCategoryLabel:SetText(string.format("\226\148\148 %s", wnd:GetLootCategoryStr(lootMainCategory)))
+    self.equipItemGuideNameLabel:Show(true)
+    self.equipItemGuideNameLabel:SetText(string.format("\226\148\148 %s", equipItemGuideName))
+    self.itemList:DeleteAllDatas()
+    resetBtn:Enable(true)
+    self:SetEmptyList(#items == 0)
+    for i = 1, #items do
+      self.itemList:InsertData(i, 1, items[i])
+    end
+  end
+  local lootButton = itemWnd.wayToLootWnd.lootButton
+  local function LootButtonLeftClickFunc(self)
+    local selDataIdx = itemWnd.itemList:GetSelectedDataIndex()
+    if selDataIdx == 0 then
+      return
+    end
+    local data = itemWnd.itemList:GetSelectedData(1)
+    if self.viewType == "craft" then
+      ExternalCraftSearch(data.itemType)
+    elseif self.viewType == "map" then
+      local portalInfo = self.portalInfo
+      worldmap:ToggleMapWithPortal(portalInfo.portal_zone_id, portalInfo.x, portalInfo.y, portalInfo.z)
+    end
+  end
+  ButtonOnClickHandler(lootButton, LootButtonLeftClickFunc)
+  local wayToLootWnd = itemWnd.wayToLootWnd
+  local function FillWayToLootInfo(info)
+    local lootLabel = wayToLootWnd.lootLabel
+    local wayLabel = wayToLootWnd.wayLabel
+    lootLabel:Show(true)
+    wayLabel:Show(true)
+    lootButton:Enable(true)
+    wayLabel:SetWidth(125)
+    if info.zoneId == 0 and info.wayToLoot == "" then
+      lootButton:Show(true)
+      ChangeButtonSkin(lootButton, BUTTON_BASIC.EQUIP_ITEM_GUIDE_CRAFT)
+      wayLabel:SetText(GetUIText(AUCTION_TEXT, "item_category_recipe"))
+      lootButton.viewType = "craft"
+    elseif info.zoneId ~= 0 then
+      lootButton:Show(true)
+      ChangeButtonSkin(lootButton, BUTTON_BASIC.EQUIP_ITEM_GUIDE_MAP)
+      wayLabel:SetText(GetUIText(COMMON_TEXT, "portal_indun"))
+      if selElementInfo == nil then
+        lootButton:Enable(false)
+        return
+      end
+      local portalInfo = X2EquipItemGuide:GetIndunPortalInfo(selElementInfo.zoneId)
+      if portalInfo == nil then
+        lootButton:Enable(false)
+        return
+      else
+        lootButton.portalInfo = portalInfo
+      end
+      lootButton.viewType = "map"
+    else
+      lootButton:Show(false)
+      wayLabel:SetWidth(190)
+      wayLabel:SetText(info.wayToLoot)
+      wayLabel.tooltip = info.wayToLoot
+    end
+  end
+  function itemWnd.itemList:Init()
+    self:DeleteAllDatas()
+    itemWnd.slotTypeLabel:Show(false)
+    itemWnd.lootCategoryLabel:Show(false)
+    itemWnd.equipItemGuideNameLabel:Show(false)
+    itemWnd.emptyLabel:Show(false)
+    wayToLootWnd:Init()
+  end
+  function itemWnd.itemList:SelChangedProc(selDataViewIdx, selDataIdx, selDataKey, doubleClick)
+    wayToLootWnd:Init()
+    if selDataIdx == 0 then
+      return
+    end
+    FillWayToLootInfo(selElementInfo)
+  end
+  local events = {
+    UNIT_EQUIPMENT_CHANGED = function()
+      UpateEquippedItems()
+      equippedIcon:Update()
+    end
+  }
+  wnd:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(wnd, events)
+  return wnd
+end
+function ToggleEquipItemGuide(show)
+  if not X2Player:GetFeatureSet().equipItemGuide then
+    return
+  end
+  if equipItemGuideWnd == nil then
+    equipItemGuideWnd = CreateEquipItemGuideWnd("equipItemGuideWnd", "UIParent")
+  end
+  local isShow = show
+  if isShow == nil then
+    isShow = not equipItemGuideWnd:IsVisible()
+  end
+  equipItemGuideWnd:Show(isShow)
+end
+ADDON:RegisterContentTriggerFunc(UIC_EQUIP_ITEM_GUIDE, ToggleEquipItemGuide)

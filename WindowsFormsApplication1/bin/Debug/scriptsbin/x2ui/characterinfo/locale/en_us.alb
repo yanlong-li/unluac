@@ -1,0 +1,23 @@
+if X2Util:GetGameProvider() == TRION then
+  if X2Locale:GetLocale() == "en_us" then
+    characetInfoLocale.juryIconCoords = {
+      250,
+      106,
+      66,
+      18
+    }
+    characetInfoLocale.TabWidth = 95
+  elseif X2Locale:GetLocale() == "fr" then
+    characetInfoLocale.juryIconCoords = {
+      250,
+      106,
+      66,
+      18
+    }
+    characetInfoLocale.TabWidth = 110
+  elseif X2Locale:GetLocale() == "de" then
+    characetInfoLocale.juryIconCoords = UIParent:GetTextureData(TEXTURE_PATH.CHARACTER_INFO, "Standby").coords
+    characetInfoLocale.TabWidth = 110
+  end
+  characetInfoLocale.windowWidth = 430
+end

@@ -1,0 +1,10 @@
+if X2Util:GetGameProvider() == GAMEON then
+  inventoryLocale.guideLineSpace = 13
+  inventoryLocale.guideInset = {
+    0,
+    0,
+    0,
+    7
+  }
+  inventoryLocale.gradeEnchant = {defaultWarningTextAnchor = 2}
+end

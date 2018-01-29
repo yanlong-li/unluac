@@ -1,0 +1,332 @@
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+local ResetMenu = function()
+  if chatOptionWindow == nil then
+    return
+  end
+  for k = 1, #chatOptionWindow.page do
+    SetBGHighlighted(chatOptionWindow.menuListWindow.menu[k], false, GetAbilityButtonFontColor())
+    chatOptionWindow.page[k]:Show(false)
+  end
+end
+local SelectMenu = function(index)
+  if chatOptionWindow == nil then
+    return
+  end
+  for k = 1, #chatOptionWindow.menuListWindow.menu do
+    if k == index then
+      SetBGHighlighted(chatOptionWindow.menuListWindow.menu[k], true, GetAbilityButtonFontColor())
+      chatOptionWindow.page[k]:Show(true)
+    else
+      SetBGHighlighted(chatOptionWindow.menuListWindow.menu[k], false, GetAbilityButtonFontColor())
+      chatOptionWindow.page[k]:Show(false)
+    end
+  end
+end
+function SetResetButton(status)
+  if chatOptionWindow == nil then
+    return
+  end
+  if status == true then
+    chatOptionWindow.chatResetButton:Show(true)
+    chatOptionWindow.resetButton:AddAnchor("BOTTOMLEFT", chatOptionWindow.chatResetButton, "BOTTOMRIGHT", 0, 0)
+  else
+    chatOptionWindow.chatResetButton:Show(false)
+    chatOptionWindow.resetButton:AddAnchor("BOTTOMLEFT", chatOptionWindow, sideMargin, -sideMargin)
+  end
+end
+function SetChatOptionWindowHandler()
+  local japanFontSize = {
+    12,
+    13,
+    14,
+    16,
+    17
+  }
+  for k = 1, #chatOptionWindow.menuListWindow.menu do
+    do
+      local btn = chatOptionWindow.menuListWindow.menu[k]
+      function btn:OnClick(arg)
+        if arg == "LeftButton" then
+          ResetMenu()
+          SelectMenu(k)
+        end
+      end
+      btn:SetHandler("OnClick", btn.OnClick)
+    end
+  end
+  SelectMenu(1)
+  local button = chatOptionWindow.etcPage.bgColorButton
+  function button:SelectedProcedure(r, g, b, a)
+    self.colorBG:SetColor(r, g, b, a)
+  end
+  local anchorInfo = {}
+  anchorInfo.target = button
+  function button:OnClick()
+    ShowPallet(anchorInfo, self)
+  end
+  button:SetHandler("OnClick", button.OnClick)
+  function chatOptionWindow.cancelButton:OnClick()
+    chatOptionWindow:Show(false)
+  end
+  chatOptionWindow.cancelButton:SetHandler("OnClick", chatOptionWindow.cancelButton.OnClick)
+  function chatOptionWindow:ShowProc()
+    if self.chatTabId == nil then
+      return
+    end
+    local default = false
+    self:LoadOption(default)
+  end
+  function chatOptionWindow:OnHide()
+    HidePallet()
+    chatOptionWindow = nil
+  end
+  chatOptionWindow:SetHandler("OnHide", chatOptionWindow.OnHide)
+  local button = chatOptionWindow.okButton
+  function button:OnClick()
+    chatOptionWindow:SaveOption()
+    chatOptionWindow:Show(false)
+  end
+  button:SetHandler("OnClick", button.OnClick)
+  local button = chatOptionWindow.chatResetButton
+  function button:OnClick()
+    X2Chat:InitChatWindow()
+    chatOptionWindow:Show(false)
+  end
+  button:SetHandler("OnClick", button.OnClick)
+  local button = chatOptionWindow.resetButton
+  function button:OnClick()
+    local default = true
+    chatOptionWindow:LoadOption(default)
+  end
+  button:SetHandler("OnClick", button.OnClick)
+  function chatOptionWindow:LoadOption(default)
+    local chatTabInfos = {}
+    if default == true then
+      chatTabInfos = X2Chat:GetDefaultChatTabInfoTable(self.chatTabId)
+    else
+      chatTabInfos = X2Chat:GetChatTabInfoTable(self.chatTabId)
+    end
+    if chatTabInfos == nil then
+      return false
+    end
+    if self.chatTabId == 0 then
+      SetResetButton(true)
+    else
+      SetResetButton(false)
+    end
+    self:LoadChatWindowOption(default)
+    self:LoadTabnameFromTable(chatTabInfos)
+    self:LoadFilterFromTable(chatTabInfos)
+    self:LoadFilterLockedFromTable(chatTabInfos)
+    self:LoadFilterColorFromTable(chatTabInfos)
+    self:LoadFontSizeFromTable(chatTabInfos)
+    self:LoadBgAlphaFromTable(chatTabInfos)
+    self:LoadBgColorFromTable(chatTabInfos)
+    self.chatTabInfos = chatTabInfos
+    return true
+  end
+  function chatOptionWindow:SaveOption()
+    local chatTabInfos = chatOptionWindow.chatTabInfos
+    if self.chatTabId == nil or chatTabInfos == nil then
+      return
+    end
+    self:SaveChatWindowOption()
+    self:SaveFilterToTable(chatTabInfos)
+    self:SaveFilterColorToTable(chatTabInfos)
+    self:SaveFontSizeToTable(chatTabInfos)
+    self:SaveBgAlphaToTable(chatTabInfos)
+    self:SaveBgColorToTable(chatTabInfos)
+    X2Chat:UpdateChatTabInfo(self.chatTabId, chatOptionWindow.chatTabInfos)
+  end
+  function chatOptionWindow:LoadChatWindowOption(default)
+    local overAlpha = 0.7
+    local leaveAlpha = 0.5
+    if not default then
+      chatOption = X2Chat:GetChatOption()
+      overAlpha = chatOption.overAlpha
+      leaveAlpha = chatOption.leaveAlpha
+    end
+    chatOptionWindow.etcPage.defaultAlphaScroll:SetValue(leaveAlpha * 100, true)
+    chatOptionWindow.etcPage.overlAlphaScroll:SetValue(overAlpha * 100, true)
+    self.chatOption = chatOption
+  end
+  function chatOptionWindow:LoadTabnameFromTable(info)
+    local name = info.name
+    if name == nil then
+      return
+    end
+    self:SetTitle(name .. " " .. locale.chatFiltering.title)
+  end
+  function chatOptionWindow:LoadFilterFromTable(info)
+    local filters = info.filters
+    if filters == nil then
+      return
+    end
+    local boxMap = self.checkBoxs.boxMapUseExtraValue
+    if boxMap == nil then
+      return
+    end
+    for filter, value in pairs(filters) do
+      if boxMap[filter] ~= nil then
+        boxMap[filter]:SetChecked(value, false)
+      end
+    end
+  end
+  function chatOptionWindow:LoadFilterLockedFromTable(info)
+    local filters = info.filterLocked
+    if filters == nil then
+      return
+    end
+    local boxMap = self.checkBoxs.boxMapUseExtraValue
+    if boxMap == nil then
+      return
+    end
+    for filter, value in pairs(filters) do
+      if boxMap[filter] ~= nil then
+        boxMap[filter]:Enable(not value)
+      end
+    end
+  end
+  function chatOptionWindow:LoadFilterColorFromTable(info)
+    local filterColors = info.filterColors
+    if filterColors == nil then
+      return
+    end
+    local boxMap = self.checkBoxs.boxMapUseExtraValue
+    if boxMap == nil then
+      return
+    end
+    for filter, color in pairs(filterColors) do
+      local checkbox = boxMap[filter]
+      if checkbox ~= nil and checkbox.colorPick ~= nil then
+        checkbox.colorPick.colorBG:SetColor(color.r, color.g, color.b, color.a)
+      end
+    end
+  end
+  function chatOptionWindow:LoadFontSizeFromTable(info)
+    local fontSize = info.fontSize
+    if fontSize == nil then
+      return
+    end
+    if chatLocale.chatOption.fontSizeOption == true then
+      self.etcPage.fontSizeScroll:SetValue(fontSize, false)
+    else
+      for i = 1, #japanFontSize do
+        if japanFontSize[i] == fontSize then
+          self.etcPage.fontSizeScroll:SetValue(i, false)
+          return
+        end
+      end
+    end
+  end
+  function chatOptionWindow:LoadBgAlphaFromTable(info)
+    local bgColor = info.bgColor
+    if bgColor == nil then
+      return
+    end
+  end
+  function chatOptionWindow:LoadBgColorFromTable(info)
+    local bgColor = info.bgColor
+    if bgColor == nil then
+      return
+    end
+    self.etcPage.bgColorButton.colorBG:SetColor(bgColor.r, bgColor.g, bgColor.b, 1)
+  end
+  function chatOptionWindow:SaveChatWindowOption(chatOption)
+    self.chatOption.leaveAlpha = chatOptionWindow.etcPage.defaultAlphaScroll:GetValue() / 100
+    self.chatOption.overAlpha = chatOptionWindow.etcPage.overlAlphaScroll:GetValue() / 100
+    X2Chat:UpdateChatOption(self.chatOption)
+  end
+  function chatOptionWindow:SaveFilterToTable(info)
+    local filters = info.filters
+    if filters == nil then
+      return
+    end
+    local filterLocked = info.filterLocked
+    local boxMap = self.checkBoxs.boxMapUseExtraValue
+    if boxMap == nil then
+      return
+    end
+    for filter, checkBox in pairs(boxMap) do
+      if filters[filter] ~= nil and (filterLocked == nil or not filterLocked[filter]) then
+        filters[filter] = checkBox:GetChecked()
+      end
+    end
+  end
+  function chatOptionWindow:SaveFilterColorToTable(info)
+    local filterColors = info.filterColors
+    if filterColors == nil then
+      return
+    end
+    local boxMap = self.checkBoxs.boxMapUseExtraValue
+    if boxMap == nil then
+      return
+    end
+    for filter, checkbox in pairs(boxMap) do
+      if filterColors[filter] ~= nil and checkbox.colorPick ~= nil then
+        filterColors[filter] = checkbox.colorPick.colorBG:GetColor()
+      end
+    end
+  end
+  function chatOptionWindow:SaveFontSizeToTable(info)
+    if info.fontSize == nil then
+      return
+    end
+    if chatLocale.chatOption.fontSizeOption == true then
+      info.fontSize = chatOptionWindow.etcPage.fontSizeScroll:GetValue()
+    else
+      info.fontSize = japanFontSize[chatOptionWindow.etcPage.fontSizeScroll:GetValue()]
+    end
+  end
+  function chatOptionWindow:SaveBgAlphaToTable(info)
+    if info.bgColor == nil then
+      return
+    end
+  end
+  function chatOptionWindow:SaveBgColorToTable(info)
+    if info.bgColor == nil then
+      return
+    end
+    local color = chatOptionWindow.etcPage.bgColorButton.colorBG:GetColor()
+    info.bgColor.r = color.r
+    info.bgColor.g = color.g
+    info.bgColor.b = color.b
+  end
+  function chatOptionWindow.etcPage.defaultAlphaScroll:OnSliderChanged(arg)
+    local value = chatOptionWindow.etcPage.defaultAlphaScroll:GetValue() or 0
+    local str = string.format("%d", value)
+    chatOptionWindow.etcPage.defaultAlphaPercent:SetText(tostring(str))
+  end
+  chatOptionWindow.etcPage.defaultAlphaScroll:SetHandler("OnSliderChanged", chatOptionWindow.etcPage.defaultAlphaScroll.OnSliderChanged)
+  function chatOptionWindow.etcPage.overlAlphaScroll:OnSliderChanged(arg)
+    local value = chatOptionWindow.etcPage.overlAlphaScroll:GetValue() or 0
+    local str = string.format("%d", value)
+    chatOptionWindow.etcPage.overAlphaPercent:SetText(tostring(str))
+  end
+  chatOptionWindow.etcPage.overlAlphaScroll:SetHandler("OnSliderChanged", chatOptionWindow.etcPage.overlAlphaScroll.OnSliderChanged)
+end
+function ShowChatOptionWindow(chatTabId)
+  if chatOptionWindow == nil then
+    local checkBoxs = {}
+    chatOptionWindow = CreateChatOptionWindow("chatOptionWindow", "UIParent")
+    chatOptionWindow:Show(false)
+    chatOptionWindow:AddAnchor("CENTER", "UIParent", 0, 0)
+    chatOptionWindow.normalPage = CreateNormalPageWindow("chatOptionWindow.normalPage", chatOptionWindow.pageWindow, checkBoxs)
+    chatOptionWindow.normalPage:Show(false)
+    chatOptionWindow.alarmPage = CreateAlarmPageWindow("chatOptionWindow.alarmPage", chatOptionWindow.pageWindow, checkBoxs)
+    chatOptionWindow.alarmPage:Show(false)
+    chatOptionWindow.combatPage = CreateCombatPageWindow("chatOptionWindow.combatPage", chatOptionWindow.pageWindow, checkBoxs)
+    chatOptionWindow.combatPage:Show(false)
+    chatOptionWindow.etcPage = CreateEtcPageWindow("chatOptionWindow.etcPage", chatOptionWindow.pageWindow)
+    chatOptionWindow.etcPage:Show(false)
+    chatOptionWindow.page = {}
+    chatOptionWindow.page[1] = chatOptionWindow.normalPage
+    chatOptionWindow.page[2] = chatOptionWindow.alarmPage
+    chatOptionWindow.page[3] = chatOptionWindow.combatPage
+    chatOptionWindow.page[4] = chatOptionWindow.etcPage
+    chatOptionWindow.checkBoxs = checkBoxs
+    SetChatOptionWindowHandler()
+  end
+  chatOptionWindow.chatTabId = chatTabId
+  chatOptionWindow:Show(true)
+end

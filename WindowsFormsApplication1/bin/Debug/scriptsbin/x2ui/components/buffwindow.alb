@@ -1,0 +1,170 @@
+local BUFF_ANIMATION_TIME = 0.1
+local BLINK_START_TIME = 30000
+local BLINK_HALF_CYCLE = 800
+local FormatRemainTime = function(timeValue, timeUnit)
+  local timeStr = ""
+  local key = ""
+  if not (timeValue >= 0) or not timeValue then
+    timeValue = 0
+  end
+  local multiply = 1000
+  if timeUnit ~= nil and timeUnit == "sec" then
+    multiply = 1
+  end
+  if timeValue >= multiply * 86400 then
+    timeStr = tostring(math.floor(timeValue / (multiply * 86400)))
+    key = "day_initial"
+  elseif timeValue >= multiply * 3600 then
+    timeStr = tostring(math.floor(timeValue / (multiply * 3600)))
+    key = "hour_initial"
+  elseif timeValue >= multiply * 60 then
+    timeStr = tostring(math.floor(timeValue / (multiply * 60)))
+    key = "minute_initial"
+  elseif timeValue >= 0 then
+    timeStr = tostring(math.floor(timeValue / multiply))
+    key = "second_initial"
+  end
+  return X2Locale:LocalizeUiText(TIME, key, timeStr)
+end
+local UpdateExtent = function(wnd, count)
+  local row = math.floor((count - 1) / wnd.buffCountOnSingleLine)
+  local column = math.mod(count - 1, wnd.buffCountOnSingleLine)
+  if wnd.sortVertical == true then
+    row, column = column, row
+  end
+  if count < wnd.buffCountOnSingleLine then
+    wnd:SetExtent((wnd.iconSize + wnd.iconXGap) * (column + 1), (wnd.iconSize + wnd.iconYGap) * (row + 1))
+  else
+    wnd:SetExtent((wnd.iconSize + wnd.iconXGap) * wnd.buffCountOnSingleLine, (wnd.iconSize + wnd.iconYGap) * (row + 1))
+  end
+end
+function CreateBuffWindow(id, parent, maxCount, isBuff, isRaidMember)
+  local w = SetViewOfBuffWindow(id, parent, maxCount, isBuff)
+  w.isBuff = isBuff
+  w.count = -1
+  w.isRaidMember = isRaidMember
+  w.buffTypeMap = {}
+  for i = 1, #w.button do
+    do
+      local button = w.button[i]
+      function button:OnEnter()
+        local buffInfo
+        if isRaidMember then
+          buffInfo = X2Unit:UnitRemovableDebuffTooltip(self.target, self.index)
+        elseif w.isBuff then
+          buffInfo = X2Unit:UnitBuffTooltip(self.target, self.index)
+        else
+          buffInfo = X2Unit:UnitDeBuffTooltip(self.target, self.index)
+        end
+        if buffInfo ~= nil then
+          ShowTooltip(buffInfo, self)
+        end
+      end
+      button:SetHandler("OnEnter", button.OnEnter)
+      function button:OnLeave()
+        HideTooltip()
+      end
+      button:SetHandler("OnLeave", button.OnLeave)
+      button.blinkTime = 0
+      function button:OnUpdate(dt)
+        self.blinkTime = self.blinkTime + dt
+        if self.blinkTime > BLINK_HALF_CYCLE * 2 then
+          self.blinkTime = 0
+        end
+        local alpha = self.blinkTime % BLINK_HALF_CYCLE / BLINK_HALF_CYCLE
+        if self.blinkTime < BLINK_HALF_CYCLE then
+          button:SetAlpha(1 - alpha)
+        else
+          button:SetAlpha(alpha)
+        end
+      end
+    end
+  end
+  function w:ShowLifeTime(show)
+    for i = 1, #self.button do
+      self.button[i].leftTimeText:Show(show)
+    end
+  end
+  function w:BuffUpdate(target)
+    local count
+    if w.isRaidMember then
+      count = X2Unit:UnitRemovableDebuffCount(target) or 0
+    elseif w.isBuff then
+      count = X2Unit:UnitBuffCount(target) or 0
+    else
+      count = X2Unit:UnitDeBuffCount(target) or 0
+    end
+    local buffTypeMap = {}
+    for i = 1, #self.button do
+      local button = self.button[i]
+      if i <= count then
+        local buffInfo
+        if w.isRaidMember then
+          buffInfo = X2Unit:UnitRemovableDebuff(target, i)
+        elseif w.isBuff then
+          buffInfo = X2Unit:UnitBuff(target, i)
+        else
+          buffInfo = X2Unit:UnitDeBuff(target, i)
+        end
+        if buffInfo ~= nil then
+          button.index = i
+          button.target = target
+          if button.t == nil or button.t and button.t.buff_id ~= buffInfo.buff_id then
+            SetIconBackGround(button, buffInfo.path)
+          end
+          if buffInfo.timeLeft ~= nil then
+            if button:HasHandler("OnUpdate") == false and buffInfo.timeLeft <= BLINK_START_TIME then
+              button:SetHandler("OnUpdate", button.OnUpdate)
+            elseif button:HasHandler("OnUpdate") == true and buffInfo.timeLeft > BLINK_START_TIME then
+              button:SetAlpha(1)
+              button:ReleaseHandler("OnUpdate")
+            end
+          else
+            button:SetAlpha(1)
+            button:ReleaseHandler("OnUpdate")
+          end
+          button.t = buffInfo
+          local leftTime = buffInfo.timeLeft
+          if leftTime ~= nil then
+            button.leftTimeText:SetText(FormatRemainTime(leftTime, buffInfo.timeUnit))
+          else
+            button.leftTimeText:SetText("")
+          end
+          if target ~= "targettarget" then
+            if buffInfo == nil or buffInfo.stack == nil or 1 >= buffInfo.stack then
+              button.stack:SetText("")
+            else
+              button.stack:SetText(string.format("x%d", buffInfo.stack))
+            end
+          end
+          local buffType = buffInfo.buff_id
+          buffTypeMap[buffType] = i
+          if self.buffTypeMap[buffType] ~= nil then
+            local targetButton = self.button[self.buffTypeMap[buffType]]
+            if targetButton:IsNowAnimation() == true then
+              button:InheritAnimationData(targetButton)
+            end
+          else
+            button:SetAlphaAnimation(0.5, 1, BUFF_ANIMATION_TIME, 0)
+            button:SetScaleAnimation(1.5, 1, BUFF_ANIMATION_TIME, 0, "CENTER")
+            button:SetStartAnimation(true, true)
+          end
+        end
+        button:Show(true)
+      else
+        button.index = nil
+        button.target = nil
+        button.t = nil
+        button:SetAlpha(1)
+        button:Show(false)
+        button:ReleaseHandler("OnUpdate")
+      end
+    end
+    self.buffTypeMap = buffTypeMap
+    if self.count ~= count then
+      self.count = count
+      UpdateExtent(self, count)
+    end
+  end
+  return w
+end

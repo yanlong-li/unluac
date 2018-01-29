@@ -1,0 +1,45 @@
+if X2Util:GetGameProvider() == TRION then
+  chatLocale.chatComboListExtent = {w = 145, h = 270}
+  BUTTON_CONTENTS.CHAT_OPTION = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.DEFAULT,
+    coordsKey = "brush",
+    width = 160,
+    height = 31,
+    fontColor = GetAbilityButtonFontColor(),
+    fontSize = FONT_SIZE.LARGE
+  }
+  chatLocale.chatOption = {
+    windowWidth = 680,
+    menuList = {width = 150},
+    leftButtonWidth = BUTTON_SIZE.DEFAULT_MIDDLE.WIDTH,
+    alarmPage = {
+      colWidth = 200,
+      leftMenuChkOffset = 165,
+      rightMenuChkOffset = 238,
+      leftSubmenuChkOffset = 147,
+      rightSubmenuChkOffset = 220
+    },
+    normalPage = {menuChkOffset = 193, enterCountOffset = 250},
+    combatPage = {
+      colWidth = 245,
+      menuChkOffset = 193,
+      subMenuChkOffset = 175
+    },
+    pageColWidth = {
+      205,
+      205,
+      205
+    },
+    fontSizeOption = true,
+    fontSizeText = {
+      "12",
+      "13",
+      "14",
+      "15",
+      "16",
+      "17pt"
+    },
+    X2Chat:SetOptionDefaultFontSize(15)
+  }
+end

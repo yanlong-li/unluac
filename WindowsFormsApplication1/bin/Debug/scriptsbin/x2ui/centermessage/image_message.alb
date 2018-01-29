@@ -1,0 +1,55 @@
+function CreateImgNotifyWindow(id, parent)
+  local chatWindow = UIParent:CreateWidget("message", id, parent)
+  chatWindow.style:SetAlign(ALIGN_CENTER)
+  chatWindow.style:SetSnap(true)
+  chatWindow.style:SetShadow(true)
+  chatWindow:SetLineSpace(3)
+  chatWindow.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.XXLARGE)
+  chatWindow.style:SetColor(1, 0, 0, 1)
+  chatWindow:SetTimeVisible(2)
+  chatWindow:SetMaxLines(1)
+  return chatWindow
+end
+local AttachImg = function(msgWnd, bgImg, bgCroords, textWidth, fgImg, fgCroords)
+  local bg = msgWnd:CreateImageDrawable(bgImg, "background")
+  bg:SetExtent(textWidth, bgCroords[4])
+  bg:SetCoords(bgCroords[1], bgCroords[2], bgCroords[3], bgCroords[4])
+  bg:AddAnchor("CENTER", msgWnd, "CENTER", 0, 0)
+  bg:SetColor(1, 1, 1, 0.8)
+  msgWnd.bg = bg
+  if fgImg ~= nil then
+    local fg = msgWnd:CreateImageDrawable(fgImg, "overlay")
+    fg:SetExtent(fgCroords[3], fgCroords[4])
+    fg:SetCoords(fgCroords[1], fgCroords[2], fgCroords[3], fgCroords[4])
+    fg:AddAnchor("LEFT", bg, "LEFT", 0, 0)
+    fg:SetColor(1, 1, 1, 0.8)
+    msgWnd.fg = fg
+  end
+end
+imgNotifyWindow = CreateImgNotifyWindow("imgNotifyWindow", systemLayerParent)
+imgNotifyWindow:SetExtent(UIParent:GetScreenWidth(), 25)
+imgNotifyWindow:AddAnchor("TOP", "UIParent", "TOP", 0, 100)
+imgNotifyWindow:Show(false)
+imgNotifyWindow:Clickable(false)
+imgNotifyWindowBack = imgNotifyWindow:CreateColorDrawable(0, 0, 1, 0, "background")
+imgNotifyWindowBack:AddAnchor("TOPLEFT", imgNotifyWindow, 0, 0)
+imgNotifyWindowBack:AddAnchor("BOTTOMRIGHT", imgNotifyWindow, 0, 0)
+function imgNotifyWindow:OnUpdate(dt)
+  self.showingTime = dt + self.showingTime
+  local t = self.showingTime / 3000
+  if t > 1 then
+    self:Show(false, 2000)
+    self:ReleaseHandler("OnUpdate")
+  end
+end
+function ShowImgNotifyMessage(msgInfo)
+  local msg = "|cFFFFFF00" .. tostring(msgInfo.msg)
+  local textWidth = imgNotifyWindow.style:GetTextWidth(msg) + 20
+  AttachImg(imgNotifyWindow, msgInfo.bgImg, msgInfo.bgImgCoords, textWidth, msgInfo.fgImg, msgInfo.fgImgCoords)
+  imgNotifyWindow:AddMessage(msg)
+  imgNotifyWindow:Show(true)
+  imgNotifyWindow.showingTime = 0
+  imgNotifyWindow:SetHandler("OnUpdate", imgNotifyWindow.OnUpdate)
+  imgNotifyWindow.bg:SetColor(0, 0, 0, 0.8)
+  imgNotifyWindow:Raise()
+end

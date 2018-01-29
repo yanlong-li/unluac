@@ -1,0 +1,468 @@
+local expeditionSiegeList = CreateExpeditionSiegeList("expeditionSiegeList", "UIParent")
+expeditionSiegeList:Show(false)
+local wnd = expedMgmt.tab.window[GetExpeiditonTabIdx(EXPEDITION_TAB_MENU_IDX.SIEGE)]
+local btn = wnd.open_siege_member_window_button
+function btn:OnClick(arg)
+  if arg == "LeftButton" then
+    local schedule = wnd.schedules[wnd.curPageIndex]
+    if schedule == nil then
+      LuaAssert(string.format("not exist schedule. index = %d", wnd.curPageIndex))
+      return
+    end
+    local visible = not expeditionSiegeList:IsVisible()
+    expeditionSiegeList:Show(visible)
+    if visible == true then
+      expeditionSiegeList:UpdateAll(schedule.zoneGroupType)
+    end
+  end
+end
+btn:SetHandler("OnClick", btn.OnClick)
+function wnd:ResetSiegeInfo()
+  self.titleWindow.castleNameLabel:SetText("")
+  self.titleWindow.castleNameLabel2:SetText("")
+  self.titleWindow.statusLabel:SetText("")
+  self.open_siege_member_window_button:Show(false)
+  self.siege_info_window:SetTitleText("")
+  self.siege_info_window.scroll_window:SetMinMaxValues("vert", 0, 0)
+  self.siege_info_window.scroll_window.content.textbox:SetText("")
+  self.contentWindow.leftTime:SetText("")
+  self.contentWindow.myExpeditionName:SetText("")
+  self.contentWindow.myExpeditionMemberCount:SetText("")
+  self.contentWindow.enemyExpeditionName:SetText("")
+  self.contentWindow.enemyExpeditionMemberCount:SetText("")
+  self.contentWindow.defense_icon:SetVisible(false)
+  self.contentWindow.defense_icon:RemoveAllAnchors()
+  self.notExistSiegeInfoLabel:Show(true)
+end
+function wnd:ShowWidgets(visible)
+  self.pageControl:Show(visible)
+  self.titleWindow:Show(visible)
+  self.siege_info_window:Show(visible)
+  self.contentWindow:Show(visible)
+  self.open_siege_member_window_button:Show(visible)
+  self.notExistSiegeInfoLabel:Show(not visible)
+end
+local function FillSiegeDateInfo(str)
+  local widget = wnd.siege_info_window.scroll_window.content.textbox
+  widget:SetText(str)
+  widget:SetHeight(widget:GetTextHeight())
+  ResetScroll(wnd.siege_info_window.scroll_window, widget:GetTextHeight())
+end
+local function FillSiegeExpedition(zoneGroupType, periodName, defenseName, offenseName, team, reinforcementsState)
+  local GetMemberCountText = function(reinforcementsState, memberCount, memberLimit, reinforcedLimit)
+    if reinforcementsState == REINFORCEMENTS_STATE.NOT_YET then
+      return string.format("%d %s+ %s", memberCount, FONT_COLOR_HEX.GRAY, locale.common.GetPeopleCount(reinforcedLimit - memberLimit))
+    end
+    return locale.common.GetPeopleCount(memberCount)
+  end
+  if team == "defense_team" then
+    ApplyTextColor(wnd.contentWindow.myExpeditionName, FONT_COLOR.BLUE)
+    ApplyTextColor(wnd.contentWindow.enemyExpeditionName, FONT_COLOR.RED)
+    wnd.contentWindow.myExpeditionName:SetText(defenseName)
+    wnd.contentWindow.enemyExpeditionName:SetText(offenseName)
+    if periodName == "siege_period_siege" then
+      local memberCount, memberLimit, reinforcedLimit = X2Dominion:GetCurDefenseSiegeParticipantCount(zoneGroupType)
+      wnd.contentWindow.myExpeditionMemberCount:SetText(GetMemberCountText(reinforcementsState, memberCount, memberLimit, reinforcedLimit))
+      local memberCount, memberLimit, reinforcedLimit = X2Dominion:GetCurOffenseSiegeParticipantCount(zoneGroupType)
+      wnd.contentWindow.enemyExpeditionMemberCount:SetText(GetMemberCountText(false, memberCount, memberLimit))
+    end
+  elseif team == "offense_team" then
+    ApplyTextColor(wnd.contentWindow.myExpeditionName, FONT_COLOR.RED)
+    ApplyTextColor(wnd.contentWindow.enemyExpeditionName, FONT_COLOR.BLUE)
+    wnd.contentWindow.myExpeditionName:SetText(offenseName)
+    wnd.contentWindow.enemyExpeditionName:SetText(defenseName)
+    if periodName == "siege_period_siege" then
+      local memberCount, memberList, reinforcedLimit = X2Dominion:GetCurOffenseSiegeParticipantCount(zoneGroupType)
+      wnd.contentWindow.myExpeditionMemberCount:SetText(GetMemberCountText(reinforcementsState, memberCount, memberList, reinforcedLimit))
+      local memberCount, memberList, reinforcedLimit = X2Dominion:GetCurDefenseSiegeParticipantCount(zoneGroupType)
+      wnd.contentWindow.enemyExpeditionMemberCount:SetText(GetMemberCountText(false, memberCount, memberList))
+    end
+  end
+  if periodName == "siege_period_declare" then
+    ApplyTextColor(wnd.contentWindow.myExpeditionName, FONT_COLOR.DEFAULT)
+    ApplyTextColor(wnd.contentWindow.enemyExpeditionName, FONT_COLOR.DEFAULT)
+  end
+end
+local function FillPeriodInfo(periodName, defenseName, offenseName, team)
+  wnd.titleWindow.statusLabel:SetText(locale.dominion[periodName])
+  wnd.contentWindow.defense_icon:RemoveAllAnchors()
+  wnd.contentWindow.defense_icon:SetVisible(true)
+  wnd.open_siege_member_window_button:Show(false)
+  if team == "defense_team" then
+    wnd.contentWindow.defense_icon:AddAnchor("BOTTOMRIGHT", wnd.contentWindow.myExpeditionName, "TOPRIGHT", 0, 0)
+  elseif team == "offense_team" then
+    wnd.contentWindow.defense_icon:AddAnchor("BOTTOMLEFT", wnd.contentWindow.enemyExpeditionName, "TOPLEFT", 1, 0)
+  end
+  if periodName == "siege_period_declare" then
+    ApplyTextColor(wnd.titleWindow.statusLabel, FONT_COLOR.YELLOW)
+    wnd.titleWindow.siege_status_icon_color:SetColor(ConvertColor(255), ConvertColor(159), ConvertColor(7), 0.4)
+    wnd.titleWindow.siege_status_icon:SetCoords(0, 56, 56, 56)
+  elseif periodName == "siege_period_warmup" then
+    ApplyTextColor(wnd.titleWindow.statusLabel, FONT_COLOR.PURPLE)
+    wnd.titleWindow.siege_status_icon_color:SetColor(ConvertColor(204), ConvertColor(129), ConvertColor(251), 0.7)
+    wnd.titleWindow.siege_status_icon:SetCoords(0, 0, 56, 56)
+  elseif periodName == "siege_period_siege" then
+    wnd.open_siege_member_window_button:Show(true)
+    if team == "defense_team" then
+      wnd.titleWindow.statusLabel:SetText(locale.dominion.defense)
+      ApplyTextColor(wnd.titleWindow.statusLabel, FONT_COLOR.BLUE)
+      wnd.titleWindow.siege_status_icon_color:SetColor(ConvertColor(125), ConvertColor(232), ConvertColor(255), 0.8)
+      wnd.titleWindow.siege_status_icon:SetCoords(0, 168, 56, 56)
+    elseif team == "offense_team" then
+      ApplyTextColor(wnd.titleWindow.statusLabel, FONT_COLOR.RED)
+      wnd.titleWindow.siege_status_icon_color:SetColor(1, 0, 0, 0.5)
+      wnd.titleWindow.siege_status_icon:SetCoords(0, 112, 56, 56)
+    end
+  end
+end
+local function FillSiegeTimeInfo(zoneGroupType, periodName, reinforcementsState)
+  local remainDate = X2Dominion:GetCurPeriodRemainDate(zoneGroupType)
+  local remainDateString = locale.time.GetRemainDateToDateFormat(remainDate)
+  local str = ""
+  if periodName == "siege_period_siege" then
+    if reinforcementsState == REINFORCEMENTS_STATE.NOT_YET then
+      local remainDate = X2Dominion:GetReinforceRemainDate(zoneGroupType)
+      local reinforceRemainDateString = locale.time.GetRemainDateToDateFormat(remainDate)
+      str = string.format("%s : %s%s %s/ %s %s : %s%s", locale.dominion.reinforce_remain_time, FONT_COLOR_HEX.BLUE, reinforceRemainDateString, FONT_COLOR_HEX.GRAY, locale.dominion[periodName], locale.dominion.left_period, FONT_COLOR_HEX.RED, remainDateString)
+    else
+      str = string.format("%s %s : %s", locale.dominion.siege_warfare, locale.dominion.left_period, remainDateString)
+    end
+  else
+    str = string.format("%s %s : %s", locale.dominion[periodName], locale.dominion.left_period, remainDateString)
+  end
+  wnd.contentWindow.leftTime:SetText(str)
+end
+local UpdateSiegeScheduleIcon = function(schedule, remainDateFormat)
+  local function GetRemainDateFormat(zoneGroup)
+    local remainDate = X2Dominion:GetCurPeriodRemainDate(schedule.zoneGroupType)
+    return locale.time.GetRemainDateToDateFormat(remainDate)
+  end
+  remainDateFormat = remainDateFormat or GetRemainDateFormat(schedule.zoneGroupType)
+  siegeScheduleIcons:UpdateIcon(schedule.zoneGroupType, schedule.zoneGroupName, schedule.defenseName, schedule.offenseName, schedule.periodName, schedule.team, schedule.reinforcementsState, remainDateFormat)
+end
+local visibleCheckButton = wnd.titleWindow.visibleCheckButton
+function visibleCheckButton:CheckBtnCheckChagnedProc()
+  local checked = self:GetChecked()
+  local zoneGroupType = wnd.schedules[wnd.curPageIndex].zoneGroupType
+  wnd.schedules[wnd.curPageIndex].checked = checked
+  siegeScheduleIcons:DeleteAllIcons()
+  for k = 1, #wnd.schedules do
+    if wnd.schedules[k].checked == true then
+      UpdateSiegeScheduleIcon(wnd.schedules[k])
+    end
+  end
+end
+function wnd:FillSiegeInfos(pageIndex)
+  pageIndex = pageIndex or 0
+  self:ResetSiegeInfo()
+  if pageIndex == 0 then
+    self:ShowWidgets(false)
+    return
+  end
+  self:ShowWidgets(true)
+  local siege_info = self.schedules[pageIndex]
+  if siege_info.zoneGroupName == nil then
+    return
+  end
+  local enable = X2Faction:GetMyExpeditionId() ~= 0
+  self.titleWindow.visibleCheckButton:Enable(enable)
+  self.titleWindow.visibleCheckButton:SetChecked(siege_info.checked)
+  self.titleWindow.castleNameLabel:SetText(siege_info.defenseName .. " " .. locale.territory.tabCastle)
+  self.titleWindow.castleNameLabel2:SetText("<" .. siege_info.zoneGroupName .. ">")
+  if siege_info.periodName == nil then
+    return
+  end
+  FillPeriodInfo(siege_info.periodName, siege_info.defenseName, siege_info.offenseName, siege_info.team)
+  FillSiegeExpedition(siege_info.zoneGroupType, siege_info.periodName, siege_info.defenseName, siege_info.offenseName, siege_info.team, siege_info.reinforcementsState)
+  if siege_info.periodName == "siege_period_declare" or siege_info.periodName == "siege_period_warmup" then
+    self.siege_info_window:SetTitleText(locale.dominion.siege_info)
+    local startDate = X2Dominion:GetSiegePeriodStartDate(siege_info.zoneGroupType)
+    local endDate = X2Dominion:GetSiegePeriodEndDate(siege_info.zoneGroupType)
+    local filter = FORMAT_FILTER.DAY + FORMAT_FILTER.HOUR + FORMAT_FILTER.MINUTE
+    local str = locale.time.GetPeriodToDateFormat(startDate, endDate, filter)
+    str = string.format([[
+%s
+- %s]], locale.dominion.siege_period, str)
+    FillSiegeDateInfo(str)
+  elseif siege_info.periodName == "siege_period_siege" then
+    FillSiegeDateInfo("")
+  end
+  FillSiegeTimeInfo(siege_info.zoneGroupType, siege_info.periodName, siege_info.reinforcementsState)
+end
+function wnd:FillSiegeRole(pageIndex)
+  if pageIndex == nil then
+    wnd:ShowWidgets(false)
+    return
+  end
+  self:ShowWidgets(true)
+  local siege_info = self.schedules[pageIndex]
+  if siege_info.periodName ~= "siege_period_siege" then
+    FillPeriodInfo(siege_info.periodName, siege_info.defenseName, siege_info.offenseName, siege_info.team)
+    FillSiegeExpedition(siege_info.zoneGroupType, siege_info.periodName, siege_info.defenseName, siege_info.offenseName, siege_info.team, siege_info.reinforcementsState)
+  end
+end
+function wnd.pageControl:OnPageChanged(pageIndex, countPerPage)
+  if wnd.schedules[pageIndex] == nil then
+    return
+  end
+  wnd.curPageIndex = pageIndex
+  wnd:FillSiegeInfos(pageIndex)
+end
+function wnd:GetSchedule(zoneGroupType)
+  local GetNewSchedule = function()
+    local schedule = {}
+    schedule.zoneGroupType = 0
+    schedule.zoneGroupName = ""
+    schedule.periodName = ""
+    schedule.reinforcementsState = REINFORCEMENTS_STATE.INVALID
+    schedule.defenseName = ""
+    schedule.offenseName = ""
+    schedule.team = ""
+    schedule.checked = true
+    return schedule
+  end
+  local count = #self.schedules
+  for k = 1, count do
+    if self.schedules[k].zoneGroupType == zoneGroupType then
+      return self.schedules[k], k
+    end
+  end
+  self.schedules[count + 1] = GetNewSchedule()
+  return self.schedules[count + 1], count + 1
+end
+function wnd:UpdateSchedule(zoneGroupType, zoneGroupName, defenseName, offenseName, periodName, team, remainDateFormat)
+  local GetReinforcementsState = function(periodName, zoneGroupType, defenseName, offenseName, team)
+    if periodName ~= "siege_period_siege" then
+      return REINFORCEMENTS_STATE.INVALID
+    end
+    local myTeamName = ""
+    if team == "defense_team" then
+      myTeamName = defenseName
+    elseif team == "offense_team" then
+      myTeamName = offenseName
+    else
+      LuaAssert(string.format("error - GetReinforcementsState() team = %s", team))
+      return REINFORCEMENTS_STATE.INVALID
+    end
+    local name = X2Dominion:GetDominionOriginOwnerExpeditionName(zoneGroupType)
+    if myTeamName ~= name then
+      return REINFORCEMENTS_STATE.INVALID
+    end
+    if X2Dominion:IsReinforceArrived(zoneGroupType) then
+      return REINFORCEMENTS_STATE.ARRIVED
+    end
+    return REINFORCEMENTS_STATE.NOT_YET
+  end
+  local schedule, index = wnd:GetSchedule(zoneGroupType)
+  schedule.zoneGroupType = zoneGroupType
+  schedule.zoneGroupName = zoneGroupName
+  schedule.periodName = periodName
+  schedule.reinforcementsState = GetReinforcementsState(periodName, zoneGroupType, defenseName, offenseName, team)
+  schedule.defenseName = defenseName
+  schedule.offenseName = offenseName
+  schedule.team = team
+  if schedule.checked == true then
+    UpdateSiegeScheduleIcon(schedule, remainDateFormat)
+  end
+end
+local FireFirstEnteredWorldChatMessage = function(zoneGroupType, zoneGroupName, defenseName, offenseName, periodName, remainDateFormat)
+  action = periodName
+  local endDate = X2Dominion:GetCurPeriodEndDate(zoneGroupType)
+  local endDateFormat = locale.time.GetDateToDateFormat(endDate)
+  local func = locale.dominion.GetSiegeMsgInProgress
+  local text = func(action, zoneGroupName, defenseName, offenseName, periodName, remainDateFormat, endDateFormat)
+  X2Chat:DispatchChatMessage(CMF_DOMINION_AND_SIEGE_INFO, text)
+  if X2Dominion:IsNextSiegePeriodToday(zoneGroupType) == false then
+    return
+  end
+  local nextPeriodName = X2Dominion:GetNextSiegePeriodName(zoneGroupType)
+  if nextPeriodName == "siege_period_peace" then
+    return
+  end
+  local startDate = X2Dominion:GetNextPeriodStartDate(zoneGroupType)
+  local endDate = X2Dominion:GetNextPeriodEndDate(zoneGroupType)
+  local remainDate = X2Dominion:GetNextPeriodRemainDate(zoneGroupType)
+  local startDateFormat = locale.time.GetDateToDateFormat(startDate)
+  local remainDateFormat = locale.time.GetRemainDateToDateFormat(remainDate)
+  local endDateFormat = locale.time.GetDateToDateFormat(endDate)
+  local func = locale.dominion.GetSiegeMsgSchedule
+  local text = func(nextPeriodName, zoneGroupName, defenseName, offenseName, startDateFormat, remainDateFormat, endDateFormat)
+  X2Chat:DispatchChatMessage(CMF_DOMINION_AND_SIEGE_INFO, text)
+end
+function wnd:UpdateAllSiegeSchedules(firstEnteredWorld)
+  local GetTeamString = function(zoneGroupType)
+    local result, team = X2Dominion:IsSiegeExpedition(zoneGroupType)
+    if result == true then
+      return team
+    end
+    LuaAssert(string.format("error!! GetTeamString() failed!! - zoneGroup : %d", zoneGroupType))
+    return "invalid_team"
+  end
+  local zoneGroupTypes = X2Dominion:GetMySiegeZoneGroupTypes()
+  if zoneGroupTypes == nil then
+    return false
+  end
+  siegeScheduleIcons:DeleteAllIcons()
+  for k = 1, #self.schedules do
+    self.schedules[k] = nil
+  end
+  for k = 1, #zoneGroupTypes do
+    local zoneGroupType = zoneGroupTypes[k]
+    local periodName = X2Dominion:GetCurSiegePeriodName(zoneGroupType)
+    if periodName ~= "siege_period_peace" then
+      local zoneGroupName = X2Dominion:GetZoneGroupName(zoneGroupType)
+      local defenseName = X2Dominion:GetSiegeCurDeffenseExpeditionName(zoneGroupType)
+      local offenseName = X2Dominion:GetSiegeCurOffenseExpeditionName(zoneGroupType)
+      local remainDate = X2Dominion:GetCurPeriodRemainDate(zoneGroupType)
+      local remainDateFormat = locale.time.GetRemainDateToDateFormat(remainDate)
+      local team = GetTeamString(zoneGroupType)
+      self:UpdateSchedule(zoneGroupType, zoneGroupName, defenseName, offenseName, periodName, team, remainDateFormat)
+      if firstEnteredWorld == true then
+        local imgEventInfo = MakeImgEventInfo("DOMINION_SIEGE_PERIOD_CHANGED", AddSiegeScheduleMsg, {
+          zoneGroupType,
+          periodName,
+          zoneGroupName,
+          defenseName,
+          offenseName,
+          team,
+          false,
+          true
+        })
+        AddImgEventQueue(imgEventInfo)
+        FireFirstEnteredWorldChatMessage(zoneGroupType, zoneGroupName, defenseName, offenseName, periodName, remainDateFormat)
+      end
+    end
+  end
+  local totalPage = #self.schedules
+  if totalPage == 0 then
+    self.curPageIndex = 0
+  elseif totalPage < self.curPageIndex then
+    self.curPageIndex = 1
+  elseif self.curPageIndex == 0 then
+    self.curPageIndex = 1
+  end
+  self.pageControl:SetPageByItemCount(totalPage, 1)
+  self:FillSiegeInfos(self.curPageIndex)
+end
+function wnd:SiegePeriodChanged(action, zoneGroupType, zoneGroupName, defenseName, offenseName, periodName, isMyInfo, team)
+  if action == "ignore" then
+    return
+  end
+  if action ~= "unearned_win" and periodName ~= "siege_period_auction" then
+    local remainDate = X2Dominion:GetCurPeriodRemainDate(zoneGroupType)
+    local remainDateFormat = locale.time.GetRemainDateToDateFormat(remainDate)
+    local endDate = X2Dominion:GetCurPeriodEndDate(zoneGroupType)
+    local endDateFormat = locale.time.GetDateToDateFormat(endDate)
+    local func = locale.dominion.GetSiegeMsg
+    local text = func(action, zoneGroupName, defenseName, offenseName, remainDateFormat, endDateFormat)
+    X2Chat:DispatchChatMessage(CMF_DOMINION_AND_SIEGE_INFO, text)
+  end
+  if action ~= "unearned_win" then
+    local imgEventInfo = MakeImgEventInfo("DOMINION_SIEGE_PERIOD_CHANGED", AddSiegeScheduleMsg, {
+      zoneGroupType,
+      periodName,
+      zoneGroupName,
+      defenseName,
+      offenseName,
+      team,
+      true,
+      isMyInfo,
+      action
+    })
+    AddImgEventQueue(imgEventInfo)
+  end
+  if periodName == "siege_period_peace" then
+    if team == "defense_team" then
+      F_SOUND:PlayUISound("event_siege_victory")
+    elseif team == "offense_team" then
+      F_SOUND:PlayUISound("event_siege_defeat")
+    end
+  end
+  if isMyInfo == false then
+    return
+  end
+  if expeditionSiegeList:IsVisible() == true and expeditionSiegeList.zoneGroupType == zoneGroupType and periodName ~= "siege_period_siege" then
+    expeditionSiegeList:ClearAll()
+  end
+  self:UpdateAllSiegeSchedules(false)
+  if periodName == "siege_period_warmup" then
+    F_SOUND:PlayUISound("event_siege_warm_up")
+  end
+end
+function wnd:UpdateOwnerChanged(zoneGroupType, zoneGroupName, defenseName, offenseName, isMyInfo, team)
+  if isMyInfo == false then
+    return
+  end
+  self:UpdateAllSiegeSchedules(false)
+end
+function wnd:SiegeSystemNotice(zoneGroupType, isMyInfo)
+  if isMyInfo == false then
+    return
+  end
+  local zoneGroupName = X2Dominion:GetZoneGroupName(zoneGroupType)
+  local periodName = X2Dominion:GetCurSiegePeriodName(zoneGroupType)
+  local remainDate = X2Dominion:GetCurPeriodRemainDate(zoneGroupType)
+  local remainDateFormat = locale.time.GetRemainDateToDateFormat(remainDate)
+  local message = ""
+  if periodName == "siege_period_warmup" then
+    message = locale.dominion.GetSiegeStartAlarmMsg(zoneGroupName, remainDateFormat)
+  elseif periodName == "siege_period_siege" then
+    message = locale.dominion.GetSiegeEndAlarmMsg(zoneGroupName, remainDateFormat)
+  end
+  X2Chat:DispatchChatMessage(CMF_DOMINION_AND_SIEGE_INFO, message)
+end
+function wnd:UpdateRemainTimes()
+  for k = 1, #self.schedules do
+    local schedule = self.schedules[k]
+    if schedule.reinforcementsState == REINFORCEMENTS_STATE.NOT_YET and X2Dominion:IsReinforceArrived(schedule.zoneGroupType) then
+      schedule.reinforcementsState = REINFORCEMENTS_STATE.ARRIVED
+      if self.curPageIndex == k then
+        self:FillSiegeInfos(self.curPageIndex)
+      end
+      local name = X2Dominion:GetDominionOriginOwnerExpeditionName(schedule.zoneGroupType)
+      local imgEventInfo = MakeImgEventInfo("DOMINION_SIEGE_UPDATE_TIMER", AddSiegeReinforcementsArrivedMsg, {name})
+      AddImgEventQueue(imgEventInfo)
+    end
+    if schedule.checked == true then
+      UpdateSiegeScheduleIcon(schedule)
+    end
+    if self.curPageIndex == k then
+      FillSiegeTimeInfo(schedule.zoneGroupType, schedule.periodName, schedule.reinforcementsState)
+    end
+  end
+end
+function wnd:ParticipantCountChanged(zoneGroupType)
+  for k = 1, #self.schedules do
+    local schedule = self.schedules[k]
+    if schedule.zoneGroupType == zoneGroupType then
+      if self.curPageIndex == k then
+        self:FillSiegeInfos(self.curPageIndex)
+      end
+      if expeditionSiegeList:IsVisible() == true then
+        expeditionSiegeList:UpdateAll(zoneGroupType)
+      end
+    end
+  end
+end
+function wnd:ParticipantBriefChanged()
+  if expeditionSiegeList:IsVisible() == true then
+    local zoneGroupType = expeditionSiegeList.zoneGroupType
+    expeditionSiegeList:UpdateAll(zoneGroupType)
+  end
+end
+function ShowExpedMgmtUI_SiegeScheduleTab(zoneGroupType)
+  expedMgmt:Show(true)
+  expedMgmt:ChangeTab(GetExpeiditonTabIdx(EXPEDITION_TAB_MENU_IDX.SIEGE))
+  local enable = X2Faction:GetMyExpeditionId() ~= 0 and true or false
+  for i = 1, #expedMgmt.tab.window do
+    expedMgmt.tab.unselectedButton[i]:Enable(enable)
+  end
+  for k = 1, #wnd.schedules do
+    if wnd.schedules[k].zoneGroupType == zoneGroupType then
+      wnd.curPageIndex = k
+      wnd:FillSiegeInfos(wnd.curPageIndex)
+      wnd.pageControl:SetCurrentPage(wnd.curPageIndex, true)
+      return
+    end
+  end
+end

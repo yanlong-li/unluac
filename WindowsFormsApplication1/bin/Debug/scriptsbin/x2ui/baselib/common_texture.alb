@@ -1,0 +1,483 @@
+F_TEXTURE = {}
+funcNamespaceTable.F_TEXTURE = F_TEXTURE
+function F_TEXTURE:ApplyCoordAndAnchor(drawable, coord, target, x, y)
+  if drawable == nil or coord == nil then
+    UIParent:Warning(string.format("[ERROR] failed apply coord"))
+    return
+  end
+  drawable:SetCoords(coord[1], coord[2], coord[3], coord[4])
+  drawable:SetExtent(coord[3], coord[4])
+  if target then
+    drawable:AddAnchor("TOPLEFT", target, x, y)
+  end
+end
+function F_TEXTURE:GetTextureInfo(path, key)
+  local info = UIParent:GetTextureData(path, key)
+  if info == nil then
+    info = {
+      coords = {
+        -1,
+        -1,
+        -1,
+        -1
+      },
+      extent = {-1, -1},
+      inset = {
+        0,
+        0,
+        0,
+        0
+      },
+      color = {
+        1,
+        1,
+        1,
+        1
+      },
+      offset = {-1, -1}
+    }
+  end
+  function info:ValidCoords(coords)
+    local valid = false
+    for i = 1, #coords do
+      if coords[i] ~= -1 then
+        valid = true
+      end
+    end
+    return valid
+  end
+  function info:GetWidth()
+    if info.extent == nil then
+      return info.coords[3]
+    else
+      return info.extent[1]
+    end
+  end
+  function info:GetHeight()
+    if info.extent == nil then
+      return info.coords[4]
+    else
+      return info.extent[2]
+    end
+  end
+  function info:ValidOffset()
+    for i = 1, #info.offset do
+      if info.offset[i] == -1 then
+        return false
+      end
+    end
+    return true
+  end
+  function info:GetOffset()
+    return info.offset
+  end
+  function info:GetExtent()
+    if info.extent == nil then
+      return info.coords[3], info.coords[4]
+    else
+      return info.extent[1], info.extent[2]
+    end
+  end
+  function info:GetCoords()
+    if not info:ValidCoords(info.coords) then
+      UIParent:LogAlways(string.format("can't find img coords, !!ask UI Part (path: %s /key: %s)!!", path, key))
+      if X2:IsEnteredWorld() and ChatLog ~= nil then
+        ChatLog(string.format("can't find img coords, !!ask UI Part (path: %s / key: %s)!!", path, key))
+      end
+    end
+    return info.coords[1], info.coords[2], info.coords[3], info.coords[4]
+  end
+  function info:GetInset()
+    return info.inset
+  end
+  function info:GetColor()
+    if info.color == nil then
+      return {
+        1,
+        1,
+        1,
+        1
+      }
+    end
+    return {
+      ConvertColor(info.color[1]),
+      ConvertColor(info.color[2]),
+      ConvertColor(info.color[3]),
+      ConvertColor(info.color[4])
+    }
+  end
+  return info
+end
+function GetTextureInfo(path, key)
+  return F_TEXTURE:GetTextureInfo(path, key)
+end
+function DrawRoundDingbat(widget)
+  local dingbat = widget:CreateImageDrawable(TEXTURE_PATH.DEFAULT, "background")
+  dingbat:SetCoords(994, 34, 13, 12)
+  dingbat:SetExtent(13, 12)
+  dingbat:AddAnchor("RIGHT", widget, "LEFT", -2, 1)
+  widget.dingbat = dingbat
+  return dingbat
+end
+function CreateTooltipDrawable(widget)
+  local bg = widget:CreateNinePartDrawable(TEXTURE_PATH.HUD, "background")
+  bg:AddAnchor("TOPLEFT", widget, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", widget, 0, 0)
+  bg:SetCoords(733, 169, 14, 15)
+  bg:SetInset(7, 7, 6, 7)
+  widget.bg = bg
+end
+function DrawMoneyIcon(parent, arg)
+  local icon = parent:CreateImageDrawable(TEXTURE_PATH.MONEY_WINDOW, "background")
+  icon:SetVisible(true)
+  local coords = localeView.moneyIconCoords[arg]
+  if coords ~= nil then
+    icon:SetExtent(coords[3], coords[4])
+    icon:SetCoords(coords[1], coords[2], coords[3], coords[4])
+  end
+  return icon
+end
+function DrawSkillFlameIcon(widget, layer)
+  if layer == nil then
+    layer = "artwork"
+  end
+  local flameIcon = widget:CreateImageDrawable(TEXTURE_PATH.SKILL, "artwork")
+  flameIcon:SetCoords(170, 46, 35, 35)
+  flameIcon:SetExtent(35, 35)
+  return flameIcon
+end
+function DrawEffectActionBarBackground(actionBar)
+  local bg = actionBar:CreateEffectDrawable(TEXTURE_PATH.HUD, "background")
+  bg:SetVisible(false)
+  bg:SetCoords(452, 0, 277, 51)
+  bg:AddAnchor("TOPLEFT", actionBar, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", actionBar, 0, 0)
+  bg:SetRepeatCount(1)
+  actionBar.bg = bg
+  actionBar.isvisibleBg = false
+  function actionBar:OnEnterEffectSetting()
+    self.bg:SetEffectPriority(1, "alpha", 0.5, 0.5)
+    self.bg:SetEffectInitialColor(1, 1, 1, 1, 0)
+    self.bg:SetEffectFinalColor(1, 1, 1, 1, 0.4)
+    self.bg:SetStartEffect(true)
+    self.isvisibleBg = true
+  end
+  function actionBar:OnLeaveEffectSetting()
+    self.bg:SetEffectPriority(1, "alpha", 0.3, 0.3)
+    self.bg:SetEffectInitialColor(1, 1, 1, 1, 0.4)
+    self.bg:SetEffectFinalColor(1, 1, 1, 1, 0)
+    self.bg:SetStartEffect(true)
+    self.isvisibleBg = false
+  end
+end
+function DrawItemSideEffectBackground(widget)
+  if baselibLocale.itemSideEffect == false then
+    return nil
+  end
+  local bgTime = 0.4
+  local itemSideEffectBg = widget:CreateEffectDrawable(TEXTURE_PATH.ITEM_SID_EEFFECT, "artwork")
+  itemSideEffectBg:SetVisible(false)
+  itemSideEffectBg:SetInternalDrawType("ninepart")
+  itemSideEffectBg:SetCoords(GetTextureInfo(TEXTURE_PATH.ITEM_SID_EEFFECT, "icon_frame"):GetCoords())
+  local inset = GetTextureInfo(TEXTURE_PATH.ITEM_SID_EEFFECT, "icon_frame"):GetInset()
+  itemSideEffectBg:SetInset(inset[1], inset[2], inset[3], inset[4])
+  itemSideEffectBg:AddAnchor("TOPLEFT", widget, 0, 0)
+  itemSideEffectBg:AddAnchor("BOTTOMRIGHT", widget, 0, 0)
+  widget.itemSideEffectBg = itemSideEffectBg
+  itemSideEffectBg:SetRepeatCount(0)
+  itemSideEffectBg:SetEffectPriority(1, "alpha", bgTime, bgTime)
+  itemSideEffectBg:SetEffectInitialColor(1, 1, 1, 1, 0)
+  itemSideEffectBg:SetEffectFinalColor(1, 1, 1, 1, 1)
+  itemSideEffectBg:SetEffectPriority(2, "alpha", bgTime, bgTime)
+  itemSideEffectBg:SetEffectInitialColor(2, 1, 1, 1, 1)
+  itemSideEffectBg:SetEffectFinalColor(2, 1, 1, 1, 0)
+  local width, height = widget:GetExtent()
+  local light1 = widget:CreateEffectDrawable(TEXTURE_PATH.ITEM_SID_EEFFECT, "artwork")
+  light1:SetVisible(false)
+  light1:SetCoords(GetTextureInfo(TEXTURE_PATH.ITEM_SID_EEFFECT, "light"):GetCoords())
+  light1:SetExtent(width, height)
+  light1:AddAnchor("TOPLEFT", widget, 0, 1)
+  widget.light1 = light1
+  light1:SetMoveEffectType(1, "top", 0, 0.5, 0.7, 0.7)
+  light1:SetMoveEffectEdge(1, 0, 1)
+  light1:SetEffectPriority(1, "alpha", 0.2, 0.2)
+  light1:SetEffectScale(1, 0.455, 0.56, 0.16, 0.175)
+  light1:SetEffectInitialColor(1, 1, 1, 1, 0)
+  light1:SetEffectFinalColor(1, 1, 1, 1, 1)
+  light1:SetEffectPriority(2, "alpha", 0.2, 0.2)
+  light1:SetEffectScale(2, 0.56, 0.98, 0.175, 0.175)
+  light1:SetEffectInitialColor(2, 1, 1, 1, 1)
+  light1:SetEffectFinalColor(2, 1, 1, 1, 1)
+  light1:SetEffectPriority(3, "alpha", 0.3, 0.3)
+  light1:SetEffectScale(3, 0.98, 0.42, 0.175, 0.16)
+  light1:SetEffectInitialColor(3, 1, 1, 1, 1)
+  light1:SetEffectFinalColor(3, 1, 1, 1, 0)
+  light1:SetMoveEffectType(2, "right", 0.48, 0.5, 0.7, 0.7)
+  light1:SetMoveEffectEdge(2, 0, 1)
+  light1:SetEffectPriority(4, "alpha", 0.2, 0.2)
+  light1:SetEffectScale(4, 0.455, 0.56, 0.16, 0.175)
+  light1:SetEffectInitialColor(4, 1, 1, 1, 0)
+  light1:SetEffectFinalColor(4, 1, 1, 1, 1)
+  light1:SetEffectPriority(5, "alpha", 0.2, 0.2)
+  light1:SetEffectScale(5, 0.56, 0.98, 0.175, 0.175)
+  light1:SetEffectInitialColor(5, 1, 1, 1, 1)
+  light1:SetEffectFinalColor(5, 1, 1, 1, 1)
+  light1:SetEffectPriority(6, "alpha", 0.3, 0.3)
+  light1:SetEffectScale(6, 0.98, 0.42, 0.175, 0.16)
+  light1:SetEffectInitialColor(6, 1, 1, 1, 1)
+  light1:SetEffectFinalColor(6, 1, 1, 1, 0)
+  local light2 = widget:CreateEffectDrawable(TEXTURE_PATH.ITEM_SID_EEFFECT, "artwork")
+  light2:SetVisible(false)
+  light2:SetCoords(GetTextureInfo(TEXTURE_PATH.ITEM_SID_EEFFECT, "light"):GetCoords())
+  light2:SetExtent(width, height)
+  light2:AddAnchor("TOPLEFT", widget, 0, -1)
+  widget.light2 = light2
+  light2:SetMoveEffectType(1, "bottom", 0, 0.5, 0.7, 0.7)
+  light2:SetMoveEffectEdge(1, 1, 0)
+  light2:SetEffectPriority(1, "alpha", 0.2, 0.2)
+  light2:SetEffectScale(1, 0.455, 0.56, 0.16, 0.175)
+  light2:SetEffectInitialColor(1, 1, 1, 1, 0)
+  light2:SetEffectFinalColor(1, 1, 1, 1, 1)
+  light2:SetEffectPriority(2, "alpha", 0.2, 0.2)
+  light2:SetEffectScale(2, 0.56, 0.98, 0.175, 0.175)
+  light2:SetEffectInitialColor(2, 1, 1, 1, 1)
+  light2:SetEffectFinalColor(2, 1, 1, 1, 1)
+  light2:SetEffectPriority(3, "alpha", 0.3, 0.3)
+  light2:SetEffectScale(3, 0.98, 0.42, 0.175, 0.16)
+  light2:SetEffectInitialColor(3, 1, 1, 1, 1)
+  light2:SetEffectFinalColor(3, 1, 1, 1, 0)
+  light2:SetMoveEffectType(2, "left", 0.48, 0, 0.7, 0.7)
+  light2:SetMoveEffectEdge(2, 1, 0)
+  light2:SetEffectPriority(4, "alpha", 0.2, 0.2)
+  light2:SetEffectScale(4, 0.455, 0.56, 0.16, 0.175)
+  light2:SetEffectInitialColor(4, 1, 1, 1, 0)
+  light2:SetEffectFinalColor(4, 1, 1, 1, 1)
+  light2:SetEffectPriority(5, "alpha", 0.2, 0.2)
+  light2:SetEffectScale(5, 0.56, 0.98, 0.175, 0.175)
+  light2:SetEffectInitialColor(5, 1, 1, 1, 1)
+  light2:SetEffectFinalColor(5, 1, 1, 1, 1)
+  light2:SetEffectPriority(6, "alpha", 0.3, 0.3)
+  light2:SetEffectScale(6, 0.98, 0.42, 0.175, 0.16)
+  light2:SetEffectInitialColor(6, 1, 1, 1, 1)
+  light2:SetEffectFinalColor(6, 1, 1, 1, 0)
+  function widget:Anim_Item_Side_effect(isStart)
+    if isStart == true then
+      if self.itemSideEffectBg:IsVisible() == false then
+        self.itemSideEffectBg:SetStartEffect(true)
+        self.light1:SetStartEffect(true)
+        self.light2:SetStartEffect(true)
+      end
+    elseif self.itemSideEffectBg:IsVisible() == true then
+      self.itemSideEffectBg:SetStartEffect(false)
+      self.light1:SetStartEffect(false)
+      self.light2:SetStartEffect(false)
+    end
+  end
+  return itemSideEffectBg
+end
+function CreateLine(widget, styleType, layer)
+  if layer == nil then
+    layer = "background"
+  end
+  local styleTable = {
+    TYPE1 = function(widget, layer)
+      local line = widget:CreateImageDrawable(TEXTURE_PATH.DEFAULT, layer)
+      line:SetCoords(0, 1007, 311, 3)
+      line:SetHeight(3)
+      line:SetColor(1, 1, 1, 0.8)
+      return line
+    end,
+    TYPE2 = function(widget, layer)
+      local line = widget:CreateImageDrawable(TEXTURE_PATH.TAB_LIST, layer)
+      line:SetCoords(256, 0, -256, 5)
+      line:SetHeight(5)
+      local line2 = widget:CreateImageDrawable(TEXTURE_PATH.TAB_LIST, layer)
+      line2:SetCoords(0, 0, 256, 5)
+      line2:SetHeight(5)
+      return line, line2
+    end,
+    TYPE3 = function(widget, layer)
+      local line = widget:CreateImageDrawable(TEXTURE_PATH.DEFAULT, layer)
+      line:SetCoords(1020, 693, 4, 331)
+      line:SetExtent(4, 331)
+      return line
+    end,
+    TYPE4 = function(widget, layer)
+      local line = widget:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.TAB, layer)
+      line:SetTextureInfo("line")
+      local line2 = widget:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.TAB, layer)
+      line2:SetTextureInfo("line")
+      return line, line2
+    end
+  }
+  return styleTable[styleType](widget, layer)
+end
+function DrawTargetLine(widget)
+  local line = widget:CreateImageDrawable(TEXTURE_PATH.DEFAULT, "overlay")
+  line:SetExtent(0, 3)
+  line:SetCoords(0, 1007, 311, 3)
+  line:SetColor(1, 1, 1, 0.3)
+  line:AddAnchor("TOPLEFT", widget, "BOTTOMLEFT", 0, 8)
+  line:AddAnchor("TOPRIGHT", widget, "BOTTOMRIGHT", 0, 8)
+  widget.line = line
+end
+function CreateContentBackground(widget, styleType, color, layer)
+  if color == nil then
+    if styleType == "TYPE8" then
+      color = "BLACK"
+    else
+      color = "BROWN"
+    end
+  end
+  if layer == nil then
+    layer = "background"
+  end
+  local GetTextureColor = function(styleType, color)
+    local keyString = string.format("%s_%s", styleType, color)
+    if TEXTURE_COLOR[keyString] == nil then
+      keyString = string.format("BOX_%s", color)
+    end
+    if TEXTURE_COLOR[keyString] == nil then
+      ChatLog("not found matched color, called function CreateContentBackground")
+      X2Util:RaiseLuaCallStack("not found matched color, called function CreateContentBackground")
+      return {
+        1,
+        0,
+        0,
+        1
+      }
+    end
+    return TEXTURE_COLOR[keyString]
+  end
+  local styleTable = {
+    TYPE1 = function(widget, layer)
+      local bg = widget:CreateImageDrawable(TEXTURE_PATH.DEFAULT, layer)
+      bg:SetCoords(446, 405, 238, 168)
+      ApplyTextureColor(bg, GetTextureColor(styleType, color))
+      return bg
+    end,
+    TYPE2 = function(widget, layer)
+      local bg = widget:CreateNinePartDrawable(TEXTURE_PATH.DEFAULT, layer)
+      bg:SetCoords(994, 15, 30, 19)
+      bg:SetInset(14, 9, 15, 9)
+      ApplyTextureColor(bg, GetTextureColor(styleType, color))
+      return bg
+    end,
+    TYPE3 = function(widget, layer)
+      local bg = widget:CreateImageDrawable(TEXTURE_PATH.DEFAULT, layer)
+      bg:SetCoords(361, 582, 274, 413)
+      ApplyTextureColor(bg, GetTextureColor(styleType, color))
+      return bg
+    end,
+    TYPE4 = function(widget, layer)
+      local bg = widget:CreateImageDrawable(TEXTURE_PATH.DEFAULT, layer)
+      bg:SetCoords(687, 390, 238, 180)
+      ApplyTextureColor(bg, GetTextureColor(styleType, color))
+      return bg
+    end,
+    TYPE5 = function(widget, layer)
+      local bg = widget:CreateNinePartDrawable(TEXTURE_PATH.DEFAULT, layer)
+      bg:SetCoords(446, 332, 240, 26)
+      bg:SetInset(120, 13, 119, 12)
+      ApplyTextureColor(bg, GetTextureColor(styleType, color))
+      return bg
+    end,
+    TYPE6 = function(widget, layer)
+      local bg = widget:CreateImageDrawable(TEXTURE_PATH.DEFAULT, layer)
+      bg:SetCoords(687, 332, 312, 58)
+      ApplyTextureColor(bg, GetTextureColor(styleType, color))
+      return bg
+    end,
+    TYPE7 = function(widget, layer)
+      local bg = widget:CreateImageDrawable(TEXTURE_PATH.SUBZONE_SYSTEM, layer)
+      bg:SetCoords(0, 0, 256, 57)
+      ApplyTextureColor(bg, GetTextureColor(styleType, color))
+      return bg
+    end,
+    TYPE8 = function(widget, layer)
+      local bg = widget:CreateImageDrawable(TEXTURE_PATH.ALARM_BG, layer)
+      bg:SetCoords(0, 0, 512, 64)
+      ApplyTextureColor(bg, GetTextureColor(styleType, color))
+      return bg
+    end,
+    TYPE9 = function(widget, layer)
+      local bg = widget:CreateImageDrawable(TEXTURE_PATH.DEFAULT, layer)
+      bg:SetCoords(635, 573, 200, 175)
+      ApplyTextureColor(bg, GetTextureColor(styleType, color))
+      return bg
+    end,
+    TYPE10 = function(widget, layer)
+      local bg = widget:CreateNinePartDrawable(TEXTURE_PATH.DEFAULT, layer)
+      bg:SetCoords(949, 210, 25, 36)
+      bg:SetInset(12, 15, 12, 20)
+      ApplyTextureColor(bg, GetTextureColor(styleType, color))
+      return bg
+    end,
+    TYPE11 = function(widget, layer)
+      local bg = widget:CreateNinePartDrawable(TEXTURE_PATH.DEFAULT, layer)
+      bg:SetCoords(994, 65, 30, 10)
+      bg:SetInset(14, 5, 15, 4)
+      ApplyTextureColor(bg, GetTextureColor(styleType, color))
+      return bg
+    end,
+    TYPE12 = function(widget, layer)
+      local bg = widget:CreateNinePartDrawable(TEXTURE_PATH.DEFAULT, layer)
+      bg:SetCoords(635, 748, 200, 21)
+      bg:SetInset(17, 10, 182, 10)
+      ApplyTextureColor(bg, GetTextureColor(styleType, color))
+      return bg
+    end,
+    TYPE13 = function(widget, layer)
+      local bg = widget:CreateNinePartDrawable(TEXTURE_PATH.PAPER_DECO, layer)
+      bg:SetCoords(0, 0, 398, 281)
+      return bg
+    end
+  }
+  return styleTable[styleType](widget, layer)
+end
+function CreateIcon(widget, iconType, layer)
+  if layer == nil then
+    layer = "overlay"
+  end
+  local iconTable = {
+    arrow = function(widget, layer)
+      local icon = widget:CreateImageDrawable(TEXTURE_PATH.HUD, layer)
+      icon:SetCoords(624, 364, 28, 17)
+      icon:SetExtent(28, 17)
+      return icon
+    end
+  }
+  return iconTable[iconType](widget, layer)
+end
+function CreateLoadingTextureSet(widget)
+  local modalLoadingWindow = widget:CreateChildWidget("emptywidget", "modalLoadingWindow", 0, true)
+  local bg = modalLoadingWindow:CreateNinePartDrawable(TEXTURE_PATH.DEFAULT, "overlay")
+  bg:SetCoords(971, 199, 8, 4)
+  bg:SetInset(3, 1, 3, 1)
+  bg:SetColor(1, 1, 1, 0.5)
+  bg:AddAnchor("TOPLEFT", modalLoadingWindow, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", modalLoadingWindow, 0, 0)
+  local effect = modalLoadingWindow:CreateEffectDrawable("ui/tutorials/loading.dds", "overlay")
+  effect:SetVisible(false)
+  effect:SetExtent(32, 32)
+  effect:SetCoords(100, 1, 32, 32)
+  effect:AddAnchor("CENTER", modalLoadingWindow, 0, 0)
+  effect:SetRepeatCount(0)
+  effect:SetEffectPriority(1, "rotate", 1.5, 1.5)
+  effect:SetEffectRotate(1, 0, 360)
+  modalLoadingWindow.effect = effect
+  function widget:WaitPage(isShow)
+    self.modalLoadingWindow:Show(isShow)
+    self.modalLoadingWindow.effect:SetStartEffect(isShow)
+    self.modalLoadingWindow:Raise()
+  end
+  function widget:WaitPageCont(isShow)
+    local isVisible = self.modalLoadingWindow:IsVisible()
+    self.modalLoadingWindow:Show(isShow)
+    if isVisible ~= isShow then
+      self.modalLoadingWindow.effect:SetStartEffect(isShow)
+    end
+    self.modalLoadingWindow:Raise()
+  end
+  return modalLoadingWindow
+end

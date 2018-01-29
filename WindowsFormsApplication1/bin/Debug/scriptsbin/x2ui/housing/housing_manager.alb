@@ -1,0 +1,188 @@
+housing = {}
+housing.eventListener = UIParent:CreateWidget("emptywidget", "housing.eventListener", "UIParent")
+housing.eventListener:Show(false)
+housing.materialWindow = nil
+housing.maintainWindow = nil
+housing.buildWindow = nil
+housing.rebuilingWnd = nil
+local housingInteractionEvents = {
+  HOUSE_INTERACTION_START = function(structureType, viewType)
+    if structureType == "housing" then
+      if X2House:IsHouseUnderConstruction() then
+        ShowMaterialWindow(true)
+        if X2House:IsCastle() == true then
+          UpdateHousingMaterialInfo()
+        end
+      else
+        ShowHousingMainTainWindow(true)
+        if not X2House:IsMyHouse() then
+          UpdateHouseDefaultInfo()
+        else
+          UpdateMyHouseDefaultInfo()
+        end
+        UpdateMaintainWindowHeight()
+        if X2House:IsCastle() then
+          viewType = "castle"
+        end
+        UpdateDecoImage(viewType)
+      end
+    else
+      ShowMaterialWindow(true)
+      UpdateShipyardMaterialInfo()
+    end
+  end,
+  HOUSE_INTERACTION_END = function()
+    ShowHousingMainTainWindow(false)
+    ShowMaterialWindow(false)
+  end,
+  HOUSE_TAX_INFO = function(dominionTaxRate, hostileTaxRate, taxString, dueTime, prepayTime, weeksWithoutPay, weeksPrepay, isAlreadyPaid, isHeavyTaxHouse, depositString, taxItemType)
+    if X2House:IsHouseUnderConstruction() == false then
+      if housing.maintainWindow ~= nil then
+        if X2House:IsMyHouse() then
+          UpdateMyHouseTaxInfo(dominionTaxRate, hostileTaxRate, taxString, dueTime, prepayTime, weeksWithoutPay, weeksPrepay, isAlreadyPaid, isHeavyTaxHouse, depositString, taxItemType)
+        else
+          UpdateHouseTaxInfo(dominionTaxRate, hostileTaxRate, dueTime, weeksWithoutPay)
+        end
+        UpdateMaintainWindowHeight()
+      end
+    elseif housing.materialWindow ~= nil then
+      UpdateHousingMaterialInfo(taxString, dueTime, weeksWithoutPay, isAlreadyPaid, depositString, taxItemType)
+    end
+  end,
+  UNIT_NAME_CHANGED = function()
+    if housing.maintainWindow then
+      local houseName = X2House:GetHouseName() or ""
+      housing.maintainWindow:UpdateTitle(houseName)
+      X2Chat:DispatchChatMessage(CMF_SYSTEM, locale.housing.msg_house_change_name)
+    end
+  end,
+  HOUSE_STEP_INFO_UPDATED = function(structureType)
+    if housing.materialWindow ~= nil then
+      housing.materialWindow:UpdateStepInfo(structureType)
+    end
+  end,
+  BUILDER_END = function()
+    ShowBuildWindow()
+  end,
+  HOUSE_BUILD_INFO = function(hType, bTax, hTax, heavyTaxHouseCount, normalTaxHouseCount, isHeavyTaxHouse, hostileTaxRate, depositString, taxItemType)
+    ShowBuildWindow(hType, bTax, hTax, heavyTaxHouseCount, normalTaxHouseCount, isHeavyTaxHouse, hostileTaxRate, depositString, taxItemType)
+  end,
+  CHANGE_ACTABILITY_DECO_NUM = function()
+    if housing.maintainWindow == nil then
+      return
+    end
+    if housing.maintainWindow.decoActabilitywindow == nil then
+      return
+    end
+    if not housing.maintainWindow.decoActabilitywindow:IsVisible() then
+      return
+    end
+    housing.maintainWindow.decoActabilitywindow:FillList()
+  end,
+  HOUSE_DECO_UPDATED = function()
+    if housing.maintainWindow == nil then
+      return
+    end
+    if not housing.maintainWindow:IsVisible() then
+      return
+    end
+    UpdateFurnitureCount()
+  end,
+  HOUSE_PERMISSION_UPDATED = function()
+    if housing.maintainWindow == nil then
+      return
+    end
+    if not housing.maintainWindow:IsVisible() then
+      return
+    end
+    if X2House:IsMyHouse() then
+      return
+    end
+    UpdateHouseDefaultInfo()
+  end,
+  HOUSE_SET_SELL_SUCCESS = function()
+    if housing.maintainWindow == nil then
+      return
+    end
+    if not housing.maintainWindow:IsVisible() then
+      return
+    end
+    if housing.maintainWindow.sellRegisterWindow == nil then
+      return
+    end
+    if not housing.maintainWindow.sellRegisterWindow:IsVisible() then
+      return
+    end
+    housing.maintainWindow.sellRegisterWindow:Show(false)
+  end,
+  HOUSE_CANCEL_SELL_SUCCESS = function()
+    if housing.maintainWindow == nil then
+      return
+    end
+    if not housing.maintainWindow:IsVisible() then
+      return
+    end
+    if housing.maintainWindow.sellRegisterWindow == nil then
+      return
+    end
+    if not housing.maintainWindow.sellRegisterWindow:IsVisible() then
+      return
+    end
+    housing.maintainWindow.sellRegisterWindow:Show(false)
+  end,
+  HOUSE_SET_SELL_FAIL = function()
+    if housing.maintainWindow == nil then
+      return
+    end
+    if not housing.maintainWindow:IsVisible() then
+      return
+    end
+    if housing.maintainWindow.sellRegisterWindow == nil then
+      return
+    end
+    if not housing.maintainWindow.sellRegisterWindow:IsVisible() then
+      return
+    end
+    if housing.maintainWindow.sellRegisterWindow.nameEditbox:IsEnabled() then
+      housing.maintainWindow.sellRegisterWindow.nameEditbox:SetText("")
+    end
+  end,
+  HOUSE_BUY_SUCCESS = function()
+    if housing.maintainWindow == nil then
+      return
+    end
+    if not housing.maintainWindow:IsVisible() then
+      return
+    end
+    UpdateMyHouseDefaultInfo()
+  end,
+  HOUSE_SALE_SUCCESS = function(houseName)
+    if housing.maintainWindow == nil then
+      return
+    end
+    if not housing.maintainWindow:IsVisible() then
+      return
+    end
+    if housing.maintainWindow.sellRegisterWindow == nil then
+      return
+    end
+    if not housing.maintainWindow.sellRegisterWindow:IsVisible() then
+      return
+    end
+    housing.maintainWindow.sellRegisterWindow:Show(false)
+  end,
+  HOUSE_INFO_UPDATED = function()
+    if housing.maintainWindow == nil then
+      return
+    end
+    if not housing.maintainWindow:IsVisible() then
+      return
+    end
+    UpdateSellInfo()
+    UpdateRebuildInfo()
+  end
+}
+housing.eventListener:SetHandler("OnEvent", function(this, event, ...)
+  housingInteractionEvents[event](...)
+end)
+RegistUIEvent(housing.eventListener, housingInteractionEvents)

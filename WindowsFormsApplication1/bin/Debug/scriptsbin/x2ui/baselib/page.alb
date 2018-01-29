@@ -1,0 +1,194 @@
+function CreatePageControl(id, parent, style)
+  local widget = SetViewOfPageControl(id, parent, style)
+  function widget:ShowPageButtons(show)
+    self.firstPageButton:Show(show)
+    self.prevPageButton:Show(show)
+    self.lastPageButton:Show(show)
+    self.nextPageButton:Show(show)
+  end
+  function widget:Init()
+    self.currentPage = 1
+    self.maxPage = 1
+    self.countPerPage = 1
+    self.labelStyle = "normal"
+    self.title = ""
+    self.rotatePage = false
+    self.firstPageButton:Enable(false)
+    self.prevPageButton:Enable(false)
+    self.lastPageButton:Enable(false)
+    self.nextPageButton:Enable(false)
+    self:SetCurrentPage(1, false)
+  end
+  function widget:SetTitleStyle(text, style)
+    self.title = text
+    if style == nil then
+      style = "normal"
+    end
+    widget.labelStyle = style
+  end
+  function widget:UpdatePageLabel()
+    if widget.labelStyle == "normal" then
+      local str = string.format("%d / %d", self.currentPage, self.maxPage)
+      self.pageLabel:SetText(str)
+    elseif widget.labelStyle == "actionBar" then
+      local str = string.format("%d", self.currentPage)
+      self.pageLabel:SetText(str)
+    elseif widget.labelStyle == "ucc" then
+      local str = string.format("%s (%d / %d)", self.title, self.currentPage, self.maxPage)
+      self.pageLabel:SetText(str)
+    end
+  end
+  function widget:SetPageCount(count, countPerPage, notify)
+    if count == nil or count < 1 then
+      count = 1
+    end
+    if notify == nil then
+      notify = true
+    end
+    self.countPerPage = countPerPage
+    self.maxPage = count
+    if self.currentPage > self.maxPage then
+      self:SetCurrentPage(self.maxPage, notify)
+    end
+    self:UpdatePageLabel()
+  end
+  local function UpdatePageButton()
+    widget.firstPageButton:Enable(true)
+    widget.prevPageButton:Enable(true)
+    widget.lastPageButton:Enable(true)
+    widget.nextPageButton:Enable(true)
+    if widget.rotatePage then
+      return
+    end
+    if widget.currentPage <= 1 and widget.currentPage >= widget.maxPage then
+      widget.firstPageButton:Enable(false)
+      widget.prevPageButton:Enable(false)
+      widget.lastPageButton:Enable(false)
+      widget.nextPageButton:Enable(false)
+    elseif widget.currentPage >= widget.maxPage then
+      widget.lastPageButton:Enable(false)
+      widget.nextPageButton:Enable(false)
+    elseif widget.currentPage <= 1 then
+      widget.firstPageButton:Enable(false)
+      widget.prevPageButton:Enable(false)
+    end
+  end
+  function widget:UseActionBarPageRotate()
+    self.rotatePage = true
+    UpdatePageButton()
+  end
+  function widget:Enable(isEnable)
+    self.firstPageButton:Enable(isEnable)
+    self.lastPageButton:Enable(isEnable)
+    self.prevPageButton:Enable(isEnable)
+    self.nextPageButton:Enable(isEnable)
+    if isEnable then
+      ApplyTextColor(self.pageLabel, self.pageLabel.defaultColor)
+    else
+      ApplyTextColor(self.pageLabel, FONT_COLOR.GRAY)
+    end
+    if isEnable then
+      UpdatePageButton()
+    end
+  end
+  function widget:SetPageByItemCount(itemCount, countPerPage, notify)
+    if itemCount == nil then
+      itemCount = 0
+    end
+    if notify == nil then
+      notify = true
+    end
+    local pageCount = math.floor(itemCount / countPerPage)
+    if itemCount % countPerPage ~= 0 then
+      pageCount = pageCount + 1
+    end
+    self:SetPageCount(pageCount, countPerPage, notify)
+    UpdatePageButton()
+  end
+  function widget:SetCurrentPage(index, notify)
+    self.currentPage = index
+    if self.currentPage < 1 then
+      self.currentPage = 1
+      notify = false
+    elseif self.currentPage > self.maxPage then
+      self.currentPage = self.maxPage
+      notify = false
+    end
+    self:UpdatePageLabel()
+    UpdatePageButton()
+    if notify ~= false then
+      self:CallPageChangedHanlder()
+    end
+  end
+  function widget:GetCurrentPageIndex()
+    return self.currentPage
+  end
+  function widget:GetTotalPageCount()
+    return self.maxPage
+  end
+  function widget:GetCountPerPage()
+    return self.countPerPage
+  end
+  function widget:Refresh()
+    self:UpdatePageLabel()
+    self:CallPageChangedHanlder()
+  end
+  function widget:CallPageChangedHanlder()
+    self:OnPageChanged(self.currentPage, self.countPerPage)
+  end
+  function widget:MoveFirstPage()
+    self:SetCurrentPage(1)
+    UpdatePageButton()
+  end
+  function widget:MoveLastPage()
+    self:SetCurrentPage(self.maxPage)
+    UpdatePageButton()
+  end
+  function widget:MovePrevPage()
+    if self.rotatePage and self.currentPage == 1 then
+      self:SetCurrentPage(self.maxPage)
+    else
+      self:SetCurrentPage(self.currentPage - 1)
+    end
+    UpdatePageButton()
+  end
+  function widget:MoveNextPage()
+    if self.rotatePage and self.currentPage == self.maxPage then
+      self:SetCurrentPage(1)
+    else
+      self:SetCurrentPage(self.currentPage + 1)
+    end
+    UpdatePageButton()
+  end
+  function widget.firstPageButton:OnClick(arg)
+    if arg == "LeftButton" then
+      widget:MoveFirstPage()
+    end
+  end
+  widget.firstPageButton:SetHandler("OnClick", widget.firstPageButton.OnClick)
+  function widget.prevPageButton:OnClick(arg)
+    if arg == "LeftButton" then
+      widget:MovePrevPage()
+    end
+  end
+  widget.prevPageButton:SetHandler("OnClick", widget.prevPageButton.OnClick)
+  function widget.nextPageButton:OnClick(arg)
+    if arg == "LeftButton" then
+      widget:MoveNextPage()
+    end
+  end
+  widget.nextPageButton:SetHandler("OnClick", widget.nextPageButton.OnClick)
+  function widget.lastPageButton:OnClick(arg)
+    if arg == "LeftButton" then
+      widget:MoveLastPage()
+    end
+  end
+  widget.lastPageButton:SetHandler("OnClick", widget.lastPageButton.OnClick)
+  function widget:OnPageChanged(pageIndex, countPerPage)
+    if self.ProcOnPageChanged ~= nil then
+      self:ProcOnPageChanged(pageIndex, countPerPage)
+    end
+  end
+  widget:Init()
+  return widget
+end

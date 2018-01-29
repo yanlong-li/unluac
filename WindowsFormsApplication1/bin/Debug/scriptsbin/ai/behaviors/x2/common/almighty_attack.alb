@@ -1,0 +1,16 @@
+AIBehaviour.almighty_attack = {
+  Name = "almighty_attack",
+  alertness = AIALERTNESS_COMBAT,
+  Constructor = function(self, entity)
+    entity.unit:StopCasting()
+    entity:InitAICombat()
+    entity.unit:StartAiSkillLists(entity.AI.param.aiPhaseChangeType, entity.AI.param.aiSkillLists)
+  end,
+  Destructor = function(self, entity)
+    entity.unit:EndAiSkillLists()
+    entity:ClearAICombat()
+  end,
+  OnAggroTargetChanged = function(self, entity, sender, data)
+    AI.SetAttentionTargetOf(entity.id, data.id, AITARGETREASON_ATTACK)
+  end
+}

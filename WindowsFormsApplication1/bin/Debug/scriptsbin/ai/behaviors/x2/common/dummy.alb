@@ -1,0 +1,24 @@
+AIBehaviour.dummy = {
+  Name = "dummy",
+  alertness = AIALERTNESS_IDLE,
+  Constructor = function(self, entity)
+    entity.unit:SetDefaultPosture(true)
+    entity:SelectPipe(AIGOALPIPE_DONT_RESET_AG, "common_DoNothing")
+  end,
+  Destructor = function(self, entity)
+    entity.unit:SetDefaultPosture(false)
+  end,
+  OnPostureChanged = function(self, entity)
+    entity.unit:SetDefaultPosture(true)
+  end,
+  OnEnemySeen = function(self, entity)
+  end,
+  OnFriendSeen = function(self, entity)
+  end,
+  OnAlertTargetChanged = function(self, entity, sender, data)
+  end,
+  OnGroupLeaderDied = function(self, entity)
+  end,
+  OnGroupMemberDied = function(self, entity)
+  end
+}

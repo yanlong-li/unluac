@@ -1,0 +1,73 @@
+if X2Util:GetGameProvider() == TENCENT then
+  BUTTON_CONTENTS.ENTERED_TEAM_TALK_ROOM = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.QQ_TALK,
+    coords = {
+      normal = {
+        GetTextureInfo(TEXTURE_PATH.QQ_TALK, "icon_conversation"):GetCoords()
+      },
+      over = {
+        GetTextureInfo(TEXTURE_PATH.QQ_TALK, "icon_conversation"):GetCoords()
+      },
+      click = {
+        GetTextureInfo(TEXTURE_PATH.QQ_TALK, "icon_conversation"):GetCoords()
+      },
+      disable = {
+        GetTextureInfo(TEXTURE_PATH.QQ_TALK, "icon_conversation"):GetCoords()
+      }
+    },
+    width = GetTextureInfo(TEXTURE_PATH.QQ_TALK, "icon_conversation"):GetWidth(),
+    height = GetTextureInfo(TEXTURE_PATH.QQ_TALK, "icon_conversation"):GetHeight()
+  }
+  BUTTON_CONTENTS.NOT_ENTERED_TEAM_TALK_ROOM = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.QQ_TALK,
+    coords = {
+      normal = {
+        GetTextureInfo(TEXTURE_PATH.QQ_TALK, "icon_qt"):GetCoords()
+      },
+      over = {
+        GetTextureInfo(TEXTURE_PATH.QQ_TALK, "icon_qt"):GetCoords()
+      },
+      click = {
+        GetTextureInfo(TEXTURE_PATH.QQ_TALK, "icon_qt"):GetCoords()
+      },
+      disable = {
+        GetTextureInfo(TEXTURE_PATH.QQ_TALK, "icon_qt"):GetCoords()
+      }
+    },
+    width = GetTextureInfo(TEXTURE_PATH.QQ_TALK, "icon_qt"):GetWidth(),
+    height = GetTextureInfo(TEXTURE_PATH.QQ_TALK, "icon_qt"):GetHeight()
+  }
+  BUTTON_CONTENTS.CUTSCENE_PLAY = {
+    {
+      drawableType = "drawable",
+      path = TEXTURE_PATH.DEFAULT,
+      coordsKey = "skill",
+      width = 117,
+      height = 30,
+      fontInset = {
+        left = 30,
+        top = 0,
+        right = 0,
+        bottom = 0
+      },
+      fontColor = {
+        normal = FONT_COLOR.DEFAULT,
+        highlight = FONT_COLOR.TITLE,
+        pushed = FONT_COLOR.TITLE,
+        disabled = FONT_COLOR.GRAY
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = BUTTON_TEXTURE_PATH.CUTSCENE_PLAY,
+      coordsKey = "btn_cutscene",
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 21,
+        y = 0
+      }
+    }
+  }
+end

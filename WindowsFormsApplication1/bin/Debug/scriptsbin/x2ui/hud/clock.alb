@@ -1,0 +1,428 @@
+local factionName = ""
+local protectFactionId, protectFctionInfo, zoneText, subzone
+defaultOption = false
+local saveOption = true
+local timeTic = 0
+local beforeMin = -1
+local amImg = clockBar.amImg
+local pmImg = clockBar.pmImg
+local sun = clockBar.sun
+local moon = clockBar.moon
+local factionLabel = clockBar.factionLabel
+local locationNameLabel = clockBar.locationNameLabel
+local honorPointWarStateWnd = clockBar.honorPointWarStateWnd
+local honorPointWarStateGageBar = honorPointWarStateWnd.stateGageBar
+local honorPointWarRemainTime = honorPointWarStateWnd.honorPointWarRemainTime
+local honorPointWarTitle = honorPointWarStateWnd.honorPointWarTitle
+local IsMorning = function()
+  local isAm, hour, minute = X2Time:GetGameTime()
+  if isAm == false then
+    hour = hour + 12
+  end
+  minute = hour * 60 + minute
+  if minute >= 210 and minute <= 1230 then
+    return true
+  else
+    return false
+  end
+end
+local GetDayCoords = function()
+  local isAm, hour, minute = X2Time:GetGameTime()
+  local copyMin = minute
+  if isAm == false then
+    hour = hour + 12
+  end
+  minute = hour * 60 + minute
+  local minTime = 210
+  local limitTime = 1230
+  local currentTime = hour * 60 + copyMin
+  limitTime = limitTime - minTime
+  currentTime = currentTime - minTime
+  local ratio = currentTime / limitTime
+  local r = 100
+  local startAng = math.pi / 4
+  local endAng = startAng + math.pi / 2
+  local currAng = startAng + (endAng - startAng) * ratio
+  x = math.cos(currAng) * r * -1
+  y = math.sin(currAng) * r
+  return x, y
+end
+local GetNightCoords = function()
+  local isAm, hour, minute = X2Time:GetGameTime()
+  local x, y
+  if isAm == false then
+    hour = hour + 12
+  end
+  minute = hour * 60 + minute
+  local copyMin = minute
+  if minute >= 1230 then
+    minute = minute - 1230
+  else
+    minute = minute + 210
+  end
+  local limitTime = 1650
+  if copyMin < 1230 then
+    copyMin = copyMin + 1440
+  end
+  limitTime = limitTime - 1230
+  copyMin = copyMin - 1230
+  local ratio = copyMin / limitTime
+  local r = 100
+  local startAng = math.pi / 4
+  local endAng = startAng + math.pi / 2
+  local currAng = startAng + (endAng - startAng) * ratio
+  x = math.cos(currAng) * r * -1
+  y = math.sin(currAng) * r
+  return x, y
+end
+local function ResizeHonoPointWindow()
+  honorPointWarTitle:RemoveAllAnchors()
+  local targetWidget = honorPointWarStateGageBar:IsVisible() and honorPointWarStateGageBar or honorPointWarRemainTime:IsVisible() and honorPointWarRemainTime or honorPointWarStateWnd
+  local targetAnchor = (honorPointWarStateGageBar:IsVisible() or honorPointWarRemainTime:IsVisible()) and "LEFT" or "RIGHT"
+  honorPointWarTitle:AddAnchor("RIGHT", targetWidget, targetAnchor, -10, 0)
+  honorPointWarStateWnd.bg:RemoveAllAnchors()
+  honorPointWarStateWnd.bg:AddAnchor("LEFT", honorPointWarTitle, -25, 0)
+  honorPointWarStateWnd.bg:AddAnchor("RIGHT", honorPointWarStateWnd, 0, 0)
+end
+local function HideHudZoneInfo()
+  honorPointWarStateWnd:Show(false)
+  factionLabel:Show(false)
+end
+local function UpdateHudZoneInfo(zoneInfo)
+  honorPointWarStateWnd.zoneInfo = zoneInfo
+  honorPointWarStateWnd.strRemainTime = ""
+  honorPointWarStateWnd.remainTime = 0
+  local fontColor = GetHudZoneStateFontColor(zoneInfo)
+  local bgColor = GetHudZoneStateTextureColor(zoneInfo)
+  if fontColor ~= nil and bgColor ~= nil then
+    ApplyTextColor(honorPointWarTitle, fontColor)
+    ApplyTextColor(honorPointWarRemainTime, fontColor)
+    ApplyTextureColor(honorPointWarStateWnd.bg, bgColor)
+  end
+  if zoneInfo == nil then
+    return
+  elseif zoneInfo.isInstanceZone then
+    HideHudZoneInfo()
+    return
+  elseif zoneInfo.isFestivalZone then
+    honorPointWarStateWnd:Show(true)
+    factionLabel:Show(false)
+    honorPointWarStateGageBar:Show(false)
+    honorPointWarRemainTime:Show(false)
+    honorPointWarTitle:SetText(GetCommonText("festival_zone"))
+    honorPointWarTitle.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.XLARGE)
+  elseif zoneInfo.isConflictZone then
+    honorPointWarStateWnd:Show(true)
+    factionLabel:Show(false)
+    local isDangerState = zoneInfo.conflictState < HPWS_BATTLE
+    if isDangerState then
+      honorPointWarStateGageBar:Show(true)
+      for i = 1, 5 do
+        honorPointWarStateGageBar.gage[i]:SetVisible(i <= zoneInfo.conflictState + 1)
+      end
+    else
+      honorPointWarStateGageBar:Show(false)
+    end
+    if zoneInfo.remainTime > 0 then
+      honorPointWarRemainTime:SetText(GetRemainTimeString(zoneInfo.remainTime * 1000))
+      honorPointWarStateWnd.remainTime = zoneInfo.remainTime * 1000
+      honorPointWarRemainTime:Show(true)
+    else
+      honorPointWarRemainTime:Show(false)
+    end
+    if isDangerState then
+      honorPointWarTitle.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.MIDDLE)
+    else
+      honorPointWarTitle.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.XLARGE)
+    end
+    honorPointWarTitle:SetText(locale.honorPointWar.getZoneStateHud(zoneInfo.conflictState))
+  elseif zoneInfo.isSiegeZone then
+    honorPointWarStateWnd:Show(false)
+    factionLabel:Show(true)
+    honorPointWarStateGageBar:Show(false)
+    honorPointWarRemainTime:Show(false)
+    honorPointWarTitle:SetText(GetCommonText("conflict_zone"))
+    honorPointWarTitle.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.XLARGE)
+  else
+    honorPointWarStateGageBar:Show(false)
+    honorPointWarRemainTime:Show(false)
+    local titleText = ""
+    if zoneInfo.isNuiaProtectedZone then
+      titleText = GetCommonText("nuia_protection_zone")
+      honorPointWarStateWnd:Show(false)
+      factionLabel:Show(true)
+    elseif zoneInfo.isHariharaProtectedZone then
+      titleText = GetCommonText("harihara_protection_zone")
+      honorPointWarStateWnd:Show(false)
+      factionLabel:Show(true)
+    elseif zoneInfo.isPeaceZone then
+      titleText = GetCommonText("non_pvp_zone")
+      honorPointWarStateWnd:Show(false)
+      factionLabel:Show(true)
+    else
+      titleText = GetCommonText("conflict_zone")
+      honorPointWarStateWnd:Show(false)
+      factionLabel:Show(true)
+    end
+    honorPointWarTitle:SetText(titleText)
+    honorPointWarTitle.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.XLARGE)
+  end
+  ResizeHonoPointWindow()
+  if clockBar.sextantWindow ~= nil then
+    if honorPointWarStateWnd:IsVisible() then
+      clockBar.sextantWindow:AddAnchor("TOPRIGHT", honorPointWarStateWnd, "BOTTOMRIGHT", -2, 10)
+    else
+      clockBar.sextantWindow:AddAnchor("TOPRIGHT", factionLabel, "BOTTOMRIGHT", -2, 6)
+    end
+  end
+end
+function ToggleSextantWindow(toggle)
+  if clockBar.sextantWindow ~= nil and baselibLocale.openedSextant == true then
+    clockBar.sextantWindow.toggle = toggle
+    clockBar.sextantWindow:Show(toggle)
+  end
+end
+local tipText = locale.tooltip
+function GetRemainTimeString(msec)
+  totalSec = msec / 1000
+  if totalSec < 60 then
+    return string.format("%s %s", locale.server.timeBelowOneMinute, locale.housing.left)
+  end
+  totalMinute = math.floor(totalSec / 60)
+  if 60 > totalMinute then
+    return string.format("%d%s %s", totalMinute, tipText.minute, locale.housing.left)
+  end
+  minute = totalMinute % 60
+  totalHour = math.floor(totalMinute / 60)
+  if totalHour < 24 then
+    if minute == 0 then
+      return string.format("%d%s %s", totalHour, tipText.hour, locale.housing.left)
+    end
+    return string.format("%d%s %d%s %s", totalHour, tipText.hour, minute, tipText.minute, locale.housing.left)
+  end
+  hour = totalHour % 24
+  day = math.floor(totalHour / 24)
+  if hour == 0 then
+    return string.format("%d%s %s", day, tipText.day, locale.housing.left)
+  end
+  return string.format("%d%s %d%s %s", day, tipText.day, hour, tipText.hour, locale.housing.left)
+end
+local function UpdateHonorPointWarRemainTime(dt)
+  if honorPointWarStateWnd.zoneInfo.conflictState < HPWS_BATTLE then
+    return
+  end
+  if honorPointWarStateWnd.remainTime > 0 then
+    local strTime = GetRemainTimeString(honorPointWarStateWnd.remainTime)
+    honorPointWarStateWnd.remainTime = honorPointWarStateWnd.remainTime - dt
+    if honorPointWarStateWnd.strRemainTime == strTime then
+      return
+    end
+    honorPointWarStateWnd.strRemainTime = strTime
+    honorPointWarRemainTime:SetText(honorPointWarStateWnd.strRemainTime)
+  else
+    honorPointWarStateWnd.strRemainTime = ""
+    honorPointWarRemainTime:SetText(honorPointWarStateWnd.strRemainTime)
+  end
+end
+function clockBar:OnEffect(dt)
+  zoneText = X2World:GetZoneText()
+  subzone = X2World:GetSubZoneText()
+  if zoneText == nil then
+    zoneText = locale.clock.unknown_region
+  end
+  if honorPointWarStateWnd:IsVisible() then
+    if subzone ~= nil then
+      locationNameLabel:SetText(subzone)
+    elseif honorPointWarStateWnd.zoneInfo.zoneName == nil then
+      locationNameLabel:SetText(zoneText)
+    else
+      locationNameLabel:SetText(honorPointWarStateWnd.zoneInfo.zoneName)
+    end
+  else
+    local str = ""
+    if subzone == nil then
+      str = zoneText
+    else
+      str = subzone
+    end
+    if X2:GetInstanceIndex() ~= nil then
+      str = string.format("%s -%d", str, X2:GetInstanceIndex())
+    end
+    locationNameLabel:SetText(str)
+  end
+  local zoneInfo = honorPointWarStateWnd.zoneInfo
+  if zoneInfo == nil then
+    return
+  elseif zoneInfo.isFestivalZone then
+    factionLabel:SetText(GetCommonText("festival_zone"))
+  elseif zoneInfo.isConflictZone then
+    factionLabel:SetText("")
+  elseif zoneInfo.isSiegeZone then
+    factionLabel:SetText(GetCommonText("conflict_zone"))
+  elseif zoneInfo.isPeaceZone then
+    factionLabel:SetText(GetCommonText("non_pvp_zone"))
+  else
+    local protectFactionId = X2World:GetZoneFaction()
+    if protectFactionId == nil then
+      factionLabel:SetText(GetCommonText("conflict_zone"))
+    else
+      local protectFactionInfo = X2Faction:GetFactionInfo(protectFactionId)
+      if protectFactionInfo ~= nil then
+        local factionName = tostring(protectFactionInfo.name) .. " " .. locale.clock.protectRegion
+        factionLabel:SetText(factionName)
+      end
+    end
+  end
+  if saveOption ~= defaultOption then
+    clockBar:Show(true)
+  else
+    clockBar:Show(false)
+  end
+  local isAm, hour, minute = X2Time:GetGameTime()
+  if math.abs(minute - beforeMin) <= 0.5 then
+    return
+  end
+  beforeMin = minute
+  if defaultOption == false then
+    local x, y
+    if IsMorning() == true then
+      amImg:SetVisible(true)
+      pmImg:SetVisible(false)
+      sun:SetVisible(true)
+      moon:SetVisible(false)
+      x, y = GetDayCoords()
+      sun:AddAnchor("BOTTOMLEFT", clockBar, x + 80, 5)
+    else
+      amImg:SetVisible(false)
+      pmImg:SetVisible(true)
+      sun:SetVisible(false)
+      moon:SetVisible(true)
+      x, y = GetNightCoords()
+      moon:AddAnchor("BOTTOMLEFT", clockBar, x + 80, -2)
+    end
+  end
+end
+clockBar:SetHandler("OnEffect", clockBar.OnEffect)
+clockBar.isShowTooltip = false
+clockBar.minute = -1
+function clockBar:OnUpdate(dt)
+  if self.isShowTooltip == true then
+    local isAm, hour, minute = X2Time:GetGameTime()
+    minute = math.floor(minute)
+    if minute ~= self.minute then
+      local tip = hudLocale.MakeHudTimeString()
+      self.minute = minute
+      SetTargetAnchorTooltip(tip, "RIGHT", self, "LEFT", 0, 0)
+    end
+  end
+  if honorPointWarStateWnd:IsVisible() then
+    UpdateHonorPointWarRemainTime(dt)
+  end
+  if clockBar.sextantWindow ~= nil then
+    local isShow = false
+    if worldmap ~= nil then
+      local sextantInfo = worldmap:GetPlayerSextants()
+      if sextantInfo ~= nil and clockBar.sextantWindow.toggle == true then
+        clockBar.sextantWindow:Update(sextantInfo)
+        isShow = true
+      end
+    end
+    clockBar.sextantWindow:Show(isShow)
+  end
+end
+clockBar:SetHandler("OnUpdate", clockBar.OnUpdate)
+function clockBar:OnEnter()
+  local isAm, hour, minute = X2Time:GetGameTime()
+  local tip = hudLocale.MakeHudTimeString()
+  self.minute = math.floor(minute)
+  self.isShowTooltip = true
+  SetTargetAnchorTooltip(tip, "RIGHT", self, "LEFT", 0, 0)
+end
+clockBar:SetHandler("OnEnter", clockBar.OnEnter)
+function clockBar:OnLeave()
+  self.isShowTooltip = false
+  self.minute = -1
+  HideTooltip()
+end
+clockBar:SetHandler("OnLeave", clockBar.OnLeave)
+function honorPointWarStateWnd:OnEnter()
+  local zoneInfo = honorPointWarStateWnd.zoneInfo
+  local color = GetTooltipZoneStateFontColor(zoneInfo)
+  local tooltipTitle, tooltipMsg
+  if zoneInfo.isFestivalZone then
+    tooltipTitle = X2Locale:LocalizeUiText(COMMON_TEXT, "festival_period", zoneInfo.festivalName)
+    tooltipMsg = GetCommonText("festival_zone_map_desc")
+  elseif zoneInfo.isConflictZone then
+    tooltipMsg = locale.honorPointWar.stateTooltip
+    if zoneInfo.conflictState < HPWS_BATTLE then
+      local strState = locale.honorPointWar.getZoneState(zoneInfo.conflictState)
+      tooltipTitle = locale.honorPointWar.stateDangerousTooltipTitle(strState)
+    else
+      tooltipTitle = locale.honorPointWar.getZoneStateTooltipTitle(zoneInfo.conflictState)
+    end
+    if zoneInfo.conflictState == HPWS_PEACE then
+      tooltipMsg = locale.honorPointWar.statePeaceTooltip
+    end
+  elseif zoneInfo.isSiegeZone then
+    tooltipTitle = GetCommonText("conflict_zone_map_title")
+    tooltipMsg = GetCommonText("conflict_zone_map_desc")
+  elseif zoneInfo.isNuiaProtectedZone then
+    tooltipTitle = GetCommonText("nuia_protection_zone")
+    tooltipMsg = GetCommonText("nuia_protection_zone_map_desc")
+  elseif zoneInfo.isHariharaProtectedZone then
+    tooltipTitle = GetCommonText("harihara_protection_zone")
+    tooltipMsg = GetCommonText("harihara_protection_zone_map_desc")
+  elseif zoneInfo.isPeaceZone then
+    tooltipTitle = GetCommonText("non_pvp_zone")
+    tooltipMsg = GetCommonText("non_pvp_zone_map_desc")
+  else
+    tooltipTitle = GetCommonText("conflict_zone_map_title")
+    tooltipMsg = GetCommonText("conflict_zone_map_desc")
+  end
+  local tooltip = string.format([[
+%s%s
+%s%s]], GetHexColorForString(Dec2Hex(color)), tooltipTitle, FONT_COLOR_HEX.SOFT_BROWN, tooltipMsg)
+  SetTooltip(tooltip, self, false)
+end
+honorPointWarStateWnd:SetHandler("OnEnter", honorPointWarStateWnd.OnEnter)
+function honorPointWarStateWnd:OnLeave()
+  HideTooltip()
+end
+honorPointWarStateWnd:SetHandler("OnLeave", honorPointWarStateWnd.OnLeave)
+local function InitHudZoneInfo()
+  local zoneInfo = X2Map:GetZoneStateInfoByZoneId(0)
+  if zoneInfo == nil then
+    HideHudZoneInfo()
+  elseif not zoneInfo.isCurrentZone then
+    return
+  end
+  UpdateHudZoneInfo(zoneInfo)
+end
+local clockBarEvents = {
+  HPW_ZONE_STATE_CHANGE = function(zoneId)
+    local zoneInfo = X2Map:GetZoneStateInfoByZoneId(zoneId)
+    if zoneInfo == nil then
+      HideHudZoneInfo()
+    elseif not zoneInfo.isCurrentZone then
+      return
+    end
+    UpdateHudZoneInfo(zoneInfo)
+  end,
+  ENTER_ANOTHER_ZONEGROUP = function(zoneId)
+    local zoneInfo = X2Map:GetZoneStateInfoByZoneId(zoneId)
+    if zoneInfo == nil then
+      HideHudZoneInfo()
+    elseif not zoneInfo.isCurrentZone then
+      return
+    end
+    UpdateHudZoneInfo(zoneInfo)
+  end,
+  LEFT_LOADING = function()
+    InitHudZoneInfo()
+  end
+}
+clockBar:SetHandler("OnEvent", function(this, event, ...)
+  clockBarEvents[event](...)
+end)
+RegistUIEvent(clockBar, clockBarEvents)
+InitHudZoneInfo()

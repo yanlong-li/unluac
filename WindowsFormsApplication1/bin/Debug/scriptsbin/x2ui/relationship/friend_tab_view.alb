@@ -1,0 +1,145 @@
+function SetViewOfFriendTabWindow(window)
+  FRIEND_COL = {
+    NAME = 1,
+    LV = 2,
+    CLASS = 3,
+    POS = 4,
+    RACE = 5,
+    ONLINE = 6,
+    PARTY = 7,
+    CHK = 8
+  }
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local showOffMember = CreateCheckButton(window:GetId() .. ".showOffMember", window, locale.friend.showOffMember)
+  showOffMember:SetButtonStyle("eyeShape")
+  showOffMember:AddAnchor("BOTTOMRIGHT", window, "TOPRIGHT", 0, -2)
+  window.showOffMember = showOffMember
+  local frame = CreatePageScrollListCtrl(window, "frame", 0)
+  frame:Show(true)
+  frame:AddAnchor("TOPLEFT", window, 0, sideMargin / 2)
+  frame:AddAnchor("BOTTOMRIGHT", window, 0, bottomMargin + -sideMargin / 1.5)
+  frame:SetUseDoubleClick(true)
+  function frame:CheckProc_inviteButton()
+    window.invitePartyButton:Enable(window:GetSelctedCheckBoxs())
+  end
+  local NameDataSetFunc = function(subItem, data, setValue)
+    if setValue then
+      subItem.nameLabel:SetText(data[FRIEND_COL.NAME])
+      subItem.selectCheck:Show(true)
+      subItem.selectCheck:Enable(data[FRIEND_COL.ONLINE])
+      subItem.selectCheck:SetChecked(data[FRIEND_COL.CHK], false)
+      subItem.icon:Show(data[FRIEND_COL.PARTY])
+      ChangeSubItemTextColorForOnline(subItem.nameLabel, data[FRIEND_COL.ONLINE])
+    else
+      subItem.nameLabel:SetText("")
+      subItem.icon:Show(false)
+      subItem.selectCheck:SetChecked(false, false)
+      subItem.selectCheck:Show(false)
+    end
+  end
+  local LevelDataSetFunc = function(subItem, data, setValue)
+    if setValue then
+      subItem:SetText(tostring(data[FRIEND_COL.LV]))
+      ChangeSubItemTextColorForOnline(subItem, data[FRIEND_COL.ONLINE])
+    end
+  end
+  local RaceDataSetFunc = function(subItem, data, setValue)
+    if setValue then
+      subItem:SetText(locale.raceText[data[FRIEND_COL.RACE]])
+      ChangeSubItemTextColorForOnline(subItem, data[FRIEND_COL.ONLINE])
+    end
+  end
+  local JobDataSetFunc = function(subItem, data, setValue)
+    if setValue then
+      subItem:SetText(GetCombinedAbilityName(data[FRIEND_COL.CLASS][1], data[FRIEND_COL.CLASS][2], data[FRIEND_COL.CLASS][3]))
+      ChangeSubItemTextColorForOnline(subItem, data[FRIEND_COL.ONLINE])
+    end
+  end
+  function frame:IsAllChecked()
+    for i = 1, frame:GetDataCount() do
+      local data = frame:GetDataByDataIndex(i, 1)
+      if data[FRIEND_COL.ONLINE] and not data[FRIEND_COL.CHK] then
+        return false
+      end
+    end
+    return true
+  end
+  local function NameColumnLayoutSetFunc(frame, rowIndex, colIndex, subItem)
+    local selectCheck = CreateCheckButton(subItem:GetId() .. ".selectCheck", subItem)
+    selectCheck:Show(false)
+    selectCheck:AddAnchor("LEFT", subItem, 5, 0)
+    subItem.selectCheck = selectCheck
+    subItem.selectCheck.rowIndex = rowIndex
+    function selectCheck:CheckBtnCheckChagnedProc(checked)
+      local data = frame:GetDataByViewIndex(rowIndex, colIndex)
+      data[FRIEND_COL.CHK] = checked
+      if not checked then
+        window.allSelectCheck:SetChecked(false, false)
+      else
+        window.allSelectCheck:SetChecked(frame:IsAllChecked(), false)
+      end
+      if frame.CheckProc_inviteButton ~= nil then
+        frame:CheckProc_inviteButton(checked)
+      end
+    end
+    local icon = CreatePartyIconWidget(subItem)
+    icon:Show(false)
+    icon:AddAnchor("LEFT", subItem, 20, 1)
+    local nameLabel = subItem:CreateChildWidget("label", "nameLabel", 0, true)
+    nameLabel:Show(true)
+    nameLabel:SetExtent(140, 25)
+    nameLabel:AddAnchor("LEFT", icon, "RIGHT", 3, -1)
+    nameLabel.style:SetAlign(ALIGN_LEFT)
+    ApplyTextColor(nameLabel, FONT_COLOR.DEFAULT)
+  end
+  local columnWidth = relationshipLocale.friendTab.columnWidth
+  frame:InsertColumn(locale.faction.name, columnWidth.name, LCCIT_WINDOW, NameDataSetFunc, NameAscendingSortFunc, NameDescendingSortFunc, NameColumnLayoutSetFunc)
+  frame:InsertColumn(relationshipLocale:GetLevelText(), columnWidth.level, LCCIT_STRING, LevelDataSetFunc, LevelAscendingSortFunc, LevelDescendingSortFunc, nil)
+  frame:InsertColumn(locale.community.race, columnWidth.race, LCCIT_STRING, RaceDataSetFunc, RaceAscendingSortFunc, RaceDescendingSortFunc, nil)
+  frame:InsertColumn(locale.community.job, columnWidth.job, LCCIT_STRING, JobDataSetFunc, JobAscendingSortFunc, JobDescendingSortFunc, nil)
+  frame:InsertRows(10, false)
+  DrawListCtrlUnderLine(frame.listCtrl)
+  ListCtrlOverClickTextureSetting(frame.listCtrl)
+  for i = 1, #frame.listCtrl.column do
+    SettingListColumn(frame.listCtrl, frame.listCtrl.column[i])
+    DrawListCtrlColumnSperatorLine(frame.listCtrl.column[i], #frame.listCtrl.column, i)
+    frame.listCtrl.column[i]:Enable(false)
+  end
+  local allSelectCheck = CreateCheckButton(window:GetId() .. ".allSelectCheck", window)
+  allSelectCheck:AddAnchor("LEFT", frame.listCtrl.column[1], 5, 0)
+  window.allSelectCheck = allSelectCheck
+  local invitePartyButton = window:CreateChildWidget("button", "invitePartyButton", 0, true)
+  invitePartyButton:Enable(false)
+  invitePartyButton:SetText(locale.expedition.inviteParty)
+  invitePartyButton:AddAnchor("BOTTOMRIGHT", window, 0, 1)
+  ApplyButtonSkin(invitePartyButton, BUTTON_BASIC.DEFAULT)
+  local namePolicyInfo = X2Util:GetNamePolicyInfo(VNT_CHAR)
+  local inputNameExtent = relationshipLocale.friendTab.inputName.extent
+  local inputName = window:CreateChildWidget("editbox", "inputName", 0, true)
+  inputName:SetExtent(inputNameExtent[1], inputNameExtent[2])
+  inputName:AddAnchor("BOTTOMLEFT", window, 0, 0)
+  inputName:SetMaxTextLength(namePolicyInfo.local_max)
+  ApplyEditSkin(inputName)
+  CreateEditGuideText(inputName, locale.common.input_name_guide)
+  local numOfonlineMember = window:CreateChildWidget("textbox", "numOfonlineMember", 0, true)
+  numOfonlineMember:Show(true)
+  numOfonlineMember:SetExtent(220, 16)
+  numOfonlineMember:AddAnchor("BOTTOMLEFT", inputName, "TOPLEFT", 0, -4)
+  numOfonlineMember.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(numOfonlineMember, FONT_COLOR.TITLE)
+  local refreshButton = window:CreateChildWidget("button", "refreshButton", 0, true)
+  refreshButton:AddAnchor("TOPRIGHT", window, 3, 13)
+  refreshButton:Show(true)
+  refreshButton:SetExtent(28, 28)
+  ApplyButtonSkin(refreshButton, BUTTON_BASIC.RESET)
+  local addFriendButton = window:CreateChildWidget("button", "addFriendButton", 0, true)
+  addFriendButton:Enable(false)
+  addFriendButton:SetText(locale.friend.addFriend)
+  addFriendButton:AddAnchor("BOTTOMLEFT", inputName, "BOTTOMRIGHT", 3, 1)
+  ApplyButtonSkin(addFriendButton, BUTTON_BASIC.DEFAULT)
+  local modalLoadingWindow = CreateLoadingTextureSet(window)
+  modalLoadingWindow:AddAnchor("TOPLEFT", frame, -sideMargin + 1, 0)
+  modalLoadingWindow:AddAnchor("BOTTOMRIGHT", frame, sideMargin + -1, 0)
+  local buttonTable = {invitePartyButton, addFriendButton}
+  AdjustBtnLongestTextWidth(buttonTable)
+end

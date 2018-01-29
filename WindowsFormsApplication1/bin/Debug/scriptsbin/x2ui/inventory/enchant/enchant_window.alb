@@ -1,0 +1,362 @@
+local ENCHANT_PAGE_NUM = {
+  GRADE = 1,
+  SOCKET = 2,
+  GEM = 3,
+  EVOLVING = 4,
+  REFURBISHMENT = 5
+}
+local featureSet = X2Player:GetFeatureSet()
+if not featureSet.itemEvolving then
+  ENCHANT_PAGE_NUM.REFURBISHMENT = 4
+end
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+local function CreateEnchantWindow(id, parent)
+  local extent, anchor, text
+  local window = CreateWindow(id, parent)
+  window:Show(false)
+  window:SetExtent(510, 710)
+  window:AddAnchor("CENTER", parent, 0, 0)
+  window:SetTitle(GetUIText(COMMON_TEXT, "grade_enchant_title"))
+  window:SetSounds("item_enchant")
+  local OnClick = function()
+    X2ItemEnchant:LeaveItemEnchantMode()
+  end
+  window.titleBar.closeButton:SetHandler("OnClick", OnClick)
+  window:SetHandler("OnCloseByEsc", OnClick)
+  local tab = CreateImageTab("tab", window)
+  tab:AddAnchor("TOPLEFT", window, sideMargin, titleMargin)
+  tab:AddAnchor("BOTTOMRIGHT", window, -sideMargin, 0)
+  local tabInfos = {
+    {
+      tooltip = GetUIText(COMMON_TEXT, "grade_enchant"),
+      buttonStyle = BUTTON_CONTENTS.ENCHANT_TAB_GRADE
+    },
+    {
+      tooltip = GetUIText(COMMON_TEXT, "socket"),
+      buttonStyle = BUTTON_CONTENTS.ENCHANT_TAB_SOCKET
+    },
+    {
+      tooltip = GetUIText(COMMON_TEXT, "gem_enchant"),
+      buttonStyle = BUTTON_CONTENTS.ENCHANT_TAB_GEM
+    }
+  }
+  if featureSet.itemEvolving then
+    local info = {
+      tooltip = GetUIText(COMMON_TEXT, "evolving"),
+      buttonStyle = BUTTON_CONTENTS.ENCHANT_TAB_EVOLVING
+    }
+    table.insert(tabInfos, info)
+  end
+  if featureSet.enchantWndItemRefurbishmentTab then
+    local info = {
+      tooltip = GetUIText(COMMON_TEXT, "item_scale"),
+      buttonStyle = BUTTON_CONTENTS.ENCHANT_TAB_SCALE
+    }
+    table.insert(tabInfos, info)
+  end
+  tab:AddTabs(tabInfos)
+  CreateEnchantGradeWindow(tab.window[ENCHANT_PAGE_NUM.GRADE])
+  CreateSocketEnchantWindow(tab.window[ENCHANT_PAGE_NUM.SOCKET])
+  CreateGemEnchantWindow(tab.window[ENCHANT_PAGE_NUM.GEM])
+  if featureSet.itemEvolving then
+    CreateEvolvingEnchantWindow(tab.window[ENCHANT_PAGE_NUM.EVOLVING])
+  end
+  if featureSet.enchantWndItemRefurbishmentTab then
+    CreateRefurbishmentWindow(tab.window[ENCHANT_PAGE_NUM.REFURBISHMENT])
+  end
+  function tab:OnTabChangedProc(selected)
+    if selected == ENCHANT_PAGE_NUM.GRADE then
+      X2ItemEnchant:SwitchItemEnchantGradeMode()
+    elseif selected == ENCHANT_PAGE_NUM.SOCKET then
+      if window.isEnterMode then
+        window.isEnterMode = false
+        return
+      end
+      X2ItemEnchant:SwitchItemEnchantSocketInsertMode()
+    elseif selected == ENCHANT_PAGE_NUM.GEM then
+      X2ItemEnchant:SwitchItemEnchantGemMode()
+    elseif selected == ENCHANT_PAGE_NUM.EVOLVING then
+      if window.isEnterMode then
+        window.isEnterMode = false
+        return
+      end
+      X2ItemEnchant:SwitchItemEnchantEvolvingMode()
+    elseif selected == ENCHANT_PAGE_NUM.REFURBISHMENT then
+      X2ItemEnchant:SwitchItemRefurbishmentMode()
+    end
+  end
+  function window:SelectMode(mode)
+    if mode == "grade" then
+      window.tab.window[ENCHANT_PAGE_NUM.GRADE]:SlotAllUpdate(false)
+    elseif mode == "socket_insert" then
+      window.tab.window[ENCHANT_PAGE_NUM.SOCKET].tabSubMenu.subMenuButtons[1]:OnClick()
+      window.tab.window[ENCHANT_PAGE_NUM.SOCKET]:SlotAllUpdate(false)
+    elseif mode == "socket_remove" then
+      window.tab.window[ENCHANT_PAGE_NUM.SOCKET].tabSubMenu.subMenuButtons[2]:OnClick()
+      window.tab.window[ENCHANT_PAGE_NUM.SOCKET]:SlotAllUpdate(false)
+    elseif mode == "socket_extract" then
+      window.tab.window[ENCHANT_PAGE_NUM.SOCKET].tabSubMenu.subMenuButtons[3]:OnClick()
+      window.tab.window[ENCHANT_PAGE_NUM.SOCKET]:SlotAllUpdate(false)
+    elseif mode == "gem" then
+      window.tab.window[ENCHANT_PAGE_NUM.GEM]:SlotAllUpdate(false)
+    elseif mode == "evolving" then
+      window.tab.window[ENCHANT_PAGE_NUM.EVOLVING].tabSubMenu.subMenuButtons[1]:OnClick()
+      window.tab.window[ENCHANT_PAGE_NUM.EVOLVING]:SlotAllUpdate(false)
+    elseif mode == "evolving_re_roll" then
+      window.tab.window[ENCHANT_PAGE_NUM.EVOLVING].tabSubMenu.subMenuButtons[2]:OnClick()
+      window.tab.window[ENCHANT_PAGE_NUM.EVOLVING]:SlotAllUpdate(false)
+    elseif mode == "refurbishment" then
+      window.tab.window[ENCHANT_PAGE_NUM.REFURBISHMENT]:SlotAllUpdate(false)
+    end
+  end
+  local evolvingResultWnd
+  local function CreateEvolvingResultWnd(id, parent)
+    local window = CreateWindow(id, parent)
+    window:SetExtent(430, 300)
+    window:SetTitle(GetUIText(COMMON_TEXT, "item_grade_up"))
+    window:EnableHidingIsRemove(true)
+    local commonWidth = window:GetWidth() - MARGIN.WINDOW_SIDE * 2
+    local gradeBg = CreateContentBackground(window, "TYPE7", "BROWN", "artwork")
+    gradeBg:SetExtent(254, 36)
+    gradeBg:AddAnchor("TOP", window, 0, MARGIN.WINDOW_TITLE)
+    local grade = window:CreateChildWidget("textbox", "grade", 0, false)
+    grade:SetExtent(commonWidth, FONT_SIZE.LARGE)
+    grade:AddAnchor("CENTER", gradeBg, 0, -2)
+    grade.style:SetFontSize(FONT_SIZE.LARGE)
+    local itemIcon = CreateItemIconButton("itemIcon", window)
+    itemIcon:SetExtent(ICON_SIZE.DEFAULT, ICON_SIZE.DEFAULT)
+    itemIcon:AddAnchor("TOP", gradeBg, "BOTTOM", 0, MARGIN.WINDOW_SIDE / 1.5)
+    local itemName = window:CreateChildWidget("textbox", "itemName", 0, false)
+    itemName:SetExtent(commonWidth, FONT_SIZE.MIDDLE)
+    itemName:AddAnchor("TOP", itemIcon, "BOTTOM", 0, 5)
+    local function CreateItem(id, title)
+      local item = window:CreateChildWidget("emptywidget", id, 0, false)
+      item:SetExtent(commonWidth - MARGIN.WINDOW_SIDE, FONT_SIZE.LARGE)
+      local name = item:CreateChildWidget("label", "name", 0, false)
+      name:SetExtent(item:GetWidth() * inventoryLocale.evolving.resultWndWidthPercent.name, FONT_SIZE.LARGE)
+      name:AddAnchor("TOPLEFT", item, 0, 0)
+      name:SetText(title)
+      name.style:SetAlign(ALIGN_RIGHT)
+      name.style:SetFontSize(FONT_SIZE.LARGE)
+      ApplyTextColor(name, FONT_COLOR.EVOLVING_GRAY)
+      local value = item:CreateChildWidget("textbox", "value", 0, false)
+      value:SetExtent(item:GetWidth() * inventoryLocale.evolving.resultWndWidthPercent.value - MARGIN.WINDOW_SIDE / 2, FONT_SIZE.MIDDLE)
+      value:AddAnchor("TOPLEFT", name, "TOPRIGHT", MARGIN.WINDOW_SIDE / 2, 0)
+      value:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+      value.style:SetAlign(ALIGN_LEFT)
+      value.style:SetFontSize(FONT_SIZE.LARGE)
+      ApplyTextColor(value, FONT_COLOR.BLUE)
+      function item:SetValue(str)
+        if str == nil or str == "" then
+          self:SetHeight(0)
+          self:Show(false)
+          return
+        end
+        value:SetText(str)
+        local height = value:GetTextHeight()
+        value:SetHeight(height)
+        self:SetHeight(height)
+      end
+      return item
+    end
+    local changeItem = CreateItem("changeItem", GetUIText(COMMON_TEXT, "replacement"))
+    changeItem:AddAnchor("TOP", itemName, "BOTTOM", 0, MARGIN.WINDOW_SIDE)
+    local addItem = CreateItem("addItem", GetUIText(COMMON_TEXT, "addition"))
+    addItem:AddAnchor("TOP", changeItem, "BOTTOM", 0, 5)
+    local bg = CreateContentBackground(window, "TYPE2", "BROWN", "artwork")
+    local okButton = window:CreateChildWidget("button", "okButton", 0, false)
+    okButton:SetText(GetUIText(COMMON_TEXT, "ok"))
+    ApplyButtonSkin(okButton, BUTTON_BASIC.DEFAULT)
+    local function OkButtonLeftClickFunc()
+      window:Show(false)
+    end
+    ButtonOnClickHandler(okButton, OkButtonLeftClickFunc)
+    function window:UpdateInfo(isEvolving, itemInfo, gradeStr, changeStr, addStr)
+      if isEvolving then
+        window:SetTitle(GetUIText(COMMON_TEXT, "item_grade_up"))
+        gradeBg:AddAnchor("TOP", window, 0, MARGIN.WINDOW_TITLE)
+        gradeBg:SetVisible(true)
+      else
+        window:SetTitle(GetCommonText("change_evolving_effect"))
+        gradeBg:AddAnchor("TOP", window, 0, MARGIN.WINDOW_TITLE - 20)
+        gradeBg:SetVisible(false)
+      end
+      itemIcon:SetItemInfo(itemInfo)
+      itemName:SetText(itemInfo.name)
+      itemName:SetHeight(itemName:GetTextHeight())
+      local gradeColor = X2Item:GradeColor(itemInfo.itemGrade)
+      ApplyTextColor(itemName, Hex2Dec(gradeColor))
+      grade:SetText(gradeStr)
+      changeItem:SetValue(changeStr)
+      addItem:SetValue(addStr)
+      local startTarget, endTarget
+      if changeStr ~= "" and addStr ~= "" then
+        startTarget = changeItem
+        endTarget = addItem
+      else
+        if changeStr ~= "" then
+          startTarget = changeItem
+        end
+        if addStr ~= "" then
+          startTarget = addItem
+        end
+        endTarget = startTarget
+      end
+      if startTarget == nil and endTarget == nil then
+        bg:SetHeight(0)
+        bg:SetVisible(false)
+      else
+        bg:RemoveAllAnchors()
+        bg:AddAnchor("TOPLEFT", startTarget, -MARGIN.WINDOW_SIDE / 1.5, -MARGIN.WINDOW_SIDE / 1.5)
+        bg:AddAnchor("BOTTOMRIGHT", endTarget, MARGIN.WINDOW_SIDE / 1.5, MARGIN.WINDOW_SIDE / 1.5)
+        bg:SetVisible(true)
+      end
+      okButton:RemoveAllAnchors()
+      okButton:AddAnchor("TOP", itemName, "BOTTOM", 0, MARGIN.WINDOW_SIDE + bg:GetHeight())
+      local _, height = F_LAYOUT:GetExtentWidgets(self.titleBar, okButton)
+      self:SetHeight(height + MARGIN.WINDOW_SIDE)
+    end
+    local function OnHide()
+      evolvingResultWnd = nil
+    end
+    window:SetHandler("OnHide", OnHide)
+    return window
+  end
+  local function UnlockAllTab()
+    for i = 1, #window.tab.window do
+      window.tab.selectedButton[i]:Enable(true)
+      window.tab.unselectedButton[i]:Enable(true)
+    end
+  end
+  local events = {
+    SWITCH_ENCHANT_ITEM_MODE = function(mode)
+      window:SelectMode(mode)
+    end,
+    LEAVE_ENCHANT_ITEM_MODE = function()
+      for i = 1, #window.tab.window do
+        window.tab.window[i]:SlotAllUpdate(false)
+      end
+      window.tab.window[ENCHANT_PAGE_NUM.SOCKET]:UnlockSubMenu()
+      UnlockAllTab()
+      window:Show(false)
+    end,
+    UPDATE_ENCHANT_ITEM_MODE = function(isExcutable, isLock)
+      local function GetVisibleTabWindow()
+        for i = 1, #window.tab.window do
+          if window.tab.window[i]:IsVisible() then
+            return window.tab.window[i]
+          end
+        end
+      end
+      GetVisibleTabWindow():SlotAllUpdate(isExcutable, isLock)
+      if not isLock then
+        window.tab.window[ENCHANT_PAGE_NUM.SOCKET]:UnlockSubMenu()
+        UnlockAllTab()
+      end
+    end,
+    ITEM_EVOLVING_RESULT = function(linkText, isEvolving, oldGrade, newGrade, infos)
+      if isEvolving == true and oldGrade == newGrade then
+        return
+      end
+      if infos == nil then
+        return
+      end
+      local itemInfo = X2Item:InfoFromLink(linkText)
+      if itemInfo == nil then
+        return
+      end
+      if evolvingResultWnd == nil then
+        evolvingResultWnd = CreateEvolvingResultWnd("evolvingResultWnd", "UIParent")
+        evolvingResultWnd:Show(true)
+        evolvingResultWnd:AddAnchor("CENTER", "UIParent", 0, 0)
+      end
+      local gradeStr = ""
+      if isEvolving == true then
+        gradeStr = GetUIText(COMMON_TEXT, "change_value", string.format("|c%s[%s]", X2Item:GradeColor(oldGrade), X2Item:GradeName(oldGrade)), string.format("|c%s[%s]", X2Item:GradeColor(newGrade), X2Item:GradeName(newGrade)))
+      end
+      local GetAttrStr = function(name, value)
+        return string.format("%s %s", locale.attribute(name), GetModifierCalcValue(name, value))
+      end
+      local changeStr = ""
+      if infos.changeAttr then
+        local beforeStr = GetAttrStr(infos.beforeChange.name, infos.beforeChange.value)
+        local afterStr = GetAttrStr(infos.afterChange.name, infos.afterChange.value)
+        changeStr = GetUIText(COMMON_TEXT, "change_value", beforeStr, afterStr)
+      end
+      local addStr = ""
+      for i = 1, infos.addCount do
+        local item = infos.add[i]
+        local itemStr = GetAttrStr(item.name, item.value)
+        addStr = SetEnterString(addStr, itemStr)
+      end
+      evolvingResultWnd:UpdateInfo(isEvolving, itemInfo, gradeStr, changeStr, addStr)
+    end
+  }
+  window:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(window, events)
+  return window
+end
+local enchantWnd
+function EnterEnchantItemMode(mode)
+  if CheckExclusiveUI(GROUP_BAG_SHARE, UI_KIND_ITEM_ENCHANT, IsActivatedItemEnchant) then
+    X2ItemEnchant:LeaveItemEnchantMode()
+    return
+  end
+  if enchantWnd == nil then
+    enchantWnd = CreateEnchantWindow("enchantWnd", "UIParent")
+  end
+  local function SelectTab(mode)
+    if mode == "grade" then
+      enchantWnd.tab:SelectTab(ENCHANT_PAGE_NUM.GRADE)
+    elseif mode == "socket_insert" or mode == "socket_remove" or mode == "socket_extract" then
+      if mode == "socket_extract" and not featureSet.socketExtract then
+        return false
+      end
+      enchantWnd.isEnterMode = true
+      enchantWnd.tab:SelectTab(ENCHANT_PAGE_NUM.SOCKET)
+    elseif mode == "gem" then
+      enchantWnd.tab:SelectTab(ENCHANT_PAGE_NUM.GEM)
+    elseif mode == "evolving" then
+      if not featureSet.itemEvolving then
+        return false
+      end
+      enchantWnd.tab:SelectTab(ENCHANT_PAGE_NUM.EVOLVING)
+    elseif mode == "evolving_re_roll" then
+      if not featureSet.itemEvolving or not featureSet.itemEvolvingReRoll then
+        return false
+      end
+      enchantWnd.isEnterMode = true
+      enchantWnd.tab:SelectTab(ENCHANT_PAGE_NUM.EVOLVING)
+    elseif mode == "refurbishment" then
+      if not featureSet.enchantWndItemRefurbishmentTab then
+        return false
+      end
+      enchantWnd.tab:SelectTab(ENCHANT_PAGE_NUM.REFURBISHMENT)
+    end
+    return true
+  end
+  local success = SelectTab(mode)
+  if not success then
+    X2ItemEnchant:LeaveItemEnchantMode()
+    return
+  end
+  enchantWnd:SelectMode(mode)
+  enchantWnd:Show(true)
+end
+UIParent:SetEventHandler("ENTER_ENCHANT_ITEM_MODE", EnterEnchantItemMode)
+function GetEnchantWindow()
+  return enchantWnd
+end
+function LockUnvisibleTab()
+  if GetEnchantWindow() == nil then
+    return
+  end
+  for i = 1, #enchantWnd.tab.window do
+    if not enchantWnd.tab.window[i]:IsVisible() then
+      enchantWnd.tab.selectedButton[i]:Enable(false)
+      enchantWnd.tab.unselectedButton[i]:Enable(false)
+    end
+  end
+end

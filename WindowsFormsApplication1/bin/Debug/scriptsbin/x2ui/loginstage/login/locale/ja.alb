@@ -1,0 +1,64 @@
+if X2Util:GetGameProvider() == GAMEON then
+  loginLocale.loginHide = true
+  loginLocale.gradeShow = false
+  function loginLocale:CreateRightBottomBtns(login)
+    login.reviewMovieButton = CreateEmptyButton("reviewMovieButton", login.backMain)
+    login.reviewMovieButton:Show(false)
+    login.reviewMovieButton:AddAnchor("BOTTOMRIGHT", login.backMain, -9, 1)
+    ApplyButtonSkinTable(login.reviewMovieButton, BUTTON_LOGINSTAGE.REVIEW_MOVIE)
+  end
+  function loginLocale:StaffButtonEnable(staffButton, isReady)
+  end
+  function loginLocale:StaffButtonShow(staffButton, show, time)
+  end
+  BUTTON_LOGINSTAGE.REVIEW_MOVIE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coords = {
+        normal = {
+          201,
+          0,
+          124,
+          36
+        },
+        over = {
+          201,
+          36,
+          124,
+          36
+        },
+        click = {
+          201,
+          72,
+          124,
+          36
+        },
+        disable = {
+          201,
+          108,
+          124,
+          36
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 15,
+        y = -1
+      },
+      drawableExtent = {width = 124, height = 36}
+    }
+  }
+end

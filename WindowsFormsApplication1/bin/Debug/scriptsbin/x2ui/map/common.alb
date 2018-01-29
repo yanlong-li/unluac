@@ -1,0 +1,1095 @@
+WMS_WORLD = 1
+WMS_CONTINENT = 2
+WMS_ZONE = 3
+WMS_CITY = 4
+WORLDMAP_VISIBLE_WIDTH = 928
+WORLDMAP_VISIBLE_HEIGHT = 556
+MAP_LEVELS = {
+  WMS_WORLD,
+  WMS_CONTINENT,
+  WMS_ZONE,
+  WMS_CITY
+}
+MAP_LIST = {}
+local M_ICON_PATH = TEXTURE_PATH.MAP_ICON
+M_ICON_EXTENT = 24
+M_TOOLTIP_OFFSET_X = 18
+M_TOOLTIP_OFFSET_Y = 0
+M_TOOLTIP_OFFSET_REVERSE_X = 0
+M_TOOLTIP_OFFSET_REVERSE_Y = 15
+M_QUEST_OBJECTIVE_TOOLTIP_COLOR = "|cFFE5ED96"
+M_NPC_NICKNAME_TOOLTIP_COLOR = "|cFFE5ED96"
+PING_TYPE_PING = 1
+PING_TYPE_ENEMY = 2
+PING_TYPE_ATTACK = 3
+PING_TYPE_LINE = 4
+PING_TYPE_ERASER = 5
+pingPushed = {
+  [PING_TYPE_PING] = false,
+  [PING_TYPE_ENEMY] = false,
+  [PING_TYPE_ATTACK] = false,
+  [PING_TYPE_LINE] = false,
+  [PING_TYPE_ERASER] = false
+}
+local function GetFactionHqIconCoords()
+  local featureSet = X2Player:GetFeatureSet()
+  if featureSet.hero then
+    return GetTextureInfo(M_ICON_PATH, "hero"):GetCoords()
+  else
+    return 0, 0, 0, 0
+  end
+end
+mapIconCoordList = {}
+mapIconCoordList[MST_QUEST_TALK_OR_EMPLOYMENT] = {
+  0,
+  0,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_QUEST_MAIN_GIVES] = {
+  216,
+  0,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_QUEST_ZONE_GIVES] = {
+  216,
+  48,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_QUEST_REPEAT] = {
+  216,
+  168,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_QUEST_MAIN_COMPLETES] = {
+  216,
+  24,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_QUEST_MAIN_PROGRESS] = {
+  216,
+  96,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_QUEST_ZONE_COMPLETES] = {
+  216,
+  72,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_QUEST_ZONE_PROGRESS] = {
+  216,
+  96,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_QUEST_LIVELIHOOD_GIVES] = {
+  216,
+  192,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_QUEST_LIVELIHOOD_COMPLETE] = {
+  216,
+  216,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_QUEST_HUNT_GIVES] = {
+  192,
+  0,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_QUEST_NOTIFIER] = {
+  0,
+  0,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_PARTY] = {
+  168,
+  0,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_RAIDTEAM] = {
+  168,
+  24,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_OFFLINE_PARTY] = {
+  168,
+  48,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_RAIDTEAM_OWNER] = {
+  144,
+  96,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_OVER_HEAD_MARK1] = {
+  384,
+  48,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_OVER_HEAD_MARK2] = {
+  408,
+  48,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_OVER_HEAD_MARK3] = {
+  432,
+  48,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_OVER_HEAD_MARK4] = {
+  456,
+  48,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_OVER_HEAD_MARK5] = {
+  480,
+  48,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_OVER_HEAD_MARK6] = {
+  312,
+  72,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_OVER_HEAD_MARK7] = {
+  336,
+  72,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_OVER_HEAD_MARK8] = {
+  360,
+  72,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_OVER_HEAD_MARK9] = {
+  384,
+  72,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_OVER_HEAD_MARK10] = {
+  408,
+  72,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_OVER_HEAD_MARK11] = {
+  432,
+  72,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_OVER_HEAD_MARK12] = {
+  456,
+  72,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_QUEST_LETIT] = {
+  216,
+  120,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_QUEST_OVER] = {
+  216,
+  144,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_FRIENDLY] = {
+  160,
+  32,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_HOSTILE] = {
+  160,
+  0,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_ABILITY_CHANGER] = {
+  0,
+  96,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STATION] = {
+  144,
+  48,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_GRAVEYARD] = {
+  120,
+  216,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STABLER] = {
+  24,
+  96,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STORE_POTION] = {
+  0,
+  24,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STORE_CLOTHES] = {
+  24,
+  0,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STORE_FOOD] = {
+  24,
+  120,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STORE_WEAPON] = {
+  0,
+  0,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STORE_DEFENSE] = {
+  24,
+  0,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STORE_TREE] = {
+  24,
+  72,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STORE_PLANTS] = {
+  24,
+  216,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STORE_MATERIAL] = {
+  0,
+  168,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STORE_GOODS] = {
+  0,
+  168,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STORE_ENLISTING] = {
+  24,
+  168,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STORE_SHIP] = {
+  24,
+  192,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STORE_SIEGE_WEAPON] = {
+  0,
+  48,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STORE_BUILDING] = {
+  64,
+  128,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STORE_FURNITURE] = {
+  0,
+  120,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STORE_LIVESTOCK] = {
+  24,
+  144,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STORE_BANK] = {
+  24,
+  48,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STORE_AUCTION_HOUSE] = {
+  0,
+  144,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STORE_EXPEDITION] = {
+  48,
+  120,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STORE_PIRATE_EXPEDITION] = {
+  0,
+  216,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STORE_TERRITORY] = {
+  64,
+  160,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STORE_TRADE] = {
+  48,
+  48,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STORE_DELPHINAD] = {
+  48,
+  24,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STORE_ROAMER] = {
+  0,
+  168,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STORE_BLACKSMITH] = {
+  48,
+  72,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_STORE_GLADIATOR] = {
+  240,
+  168,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_OCEAN_TRADER] = {
+  GetTextureInfo(M_ICON_PATH, "sea_trade"):GetCoords()
+}
+mapIconCoordList[MST_NPC_INSTANCE_TARGET_CORPS1] = {
+  192,
+  216,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_NPC_INSTANCE_TARGET_CORPS2] = {
+  192,
+  192,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_HOUSING_HOUSE] = {
+  72,
+  96,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_HOUSING_FARM] = {
+  72,
+  120,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_HOUSING_FISHFARM] = {
+  144,
+  72,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_MY_CROPS] = {
+  72,
+  0,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_CORPSE_POS] = {
+  120,
+  192,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_MY_PING] = {
+  144,
+  216,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_PORTAL] = {
+  168,
+  96,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_SHIP] = {
+  GetTextureInfo(M_ICON_PATH, "ship_01"):GetCoords()
+}
+mapIconCoordList[MST_SHIPYARD] = {
+  144,
+  24,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_SHIP_ENEMY] = {
+  168,
+  120,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_SHIPYARD_ENEMY] = {
+  168,
+  144,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_COMMON_FARM] = {
+  144,
+  120,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_TRANSFER_AIRSHIP] = {
+  168,
+  216,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_TRANSFER_CARRIAGE] = {
+  168,
+  168,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_TRANSFER_LANDSHIP] = {
+  168,
+  192,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_FORCE_RELEASED_SHIP] = {
+  48,
+  168,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_FORCE_RELEASED_VEHICLE] = {
+  48,
+  168,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_FISH_SCHOOL] = {
+  192,
+  144,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_BOSS] = {
+  GetTextureInfo(M_ICON_PATH, "boss"):GetCoords()
+}
+mapIconCoordList[MST_DOODAD_MAIL] = {
+  72,
+  72,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_DOODAD_INN] = {
+  120,
+  168,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_DOODAD_LEATHER] = {
+  96,
+  192,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_DOODAD_CRAFT] = {
+  96,
+  120,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_DOODAD_METAL] = {
+  120,
+  144,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_DOODAD_MACHINERY] = {
+  120,
+  0,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_DOODAD_TIMBER] = {
+  96,
+  144,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_DOODAD_WOODWORK] = {
+  96,
+  168,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_DOODAD_WEAPON] = {
+  120,
+  72,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_DOODAD_STONE] = {
+  120,
+  96,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_DOODAD_ARCHIUM] = {
+  96,
+  216,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_DOODAD_ALCHEMY] = {
+  120,
+  48,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_DOODAD_COOK] = {
+  120,
+  24,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_DOODAD_COATOFARMS] = {
+  120,
+  120,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_DOODAD_FABRIC] = {
+  96,
+  24,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_DOODAD_SPECIAL_PRODUCT] = {
+  96,
+  96,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_DOODAD_LIGHT_ARMOR] = {
+  96,
+  72,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_DOODAD_LEATHER_ARMOR] = {
+  96,
+  0,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_DOODAD_HEAVY_ARMOR] = {
+  96,
+  48,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_DOODAD_PAPER] = {
+  192,
+  120,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_DOODAD_PRINT] = {
+  192,
+  96,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_DOODAD_FISH_STAND] = {
+  192,
+  168,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_DOODAD_ART_WORK] = {
+  240,
+  192,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_DOODAD_PORTAL] = {
+  144,
+  144,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_DOODAD_PORTAL_ARCHEMALL] = {
+  144,
+  168,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_DOODAD_PORTAL_DUNGEON] = {
+  144,
+  192,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_HOUSE_NORMAL_HOUSE] = {
+  72,
+  216,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_HOUSE_SEA_FARM_HOUSE] = {
+  192,
+  24,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_HOUSE_HIGH_HOUSE] = {
+  192,
+  48,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_HOUSE_PUMPKIN_HOUSE] = {
+  192,
+  72,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_HOUSE_FARM_HOUSE] = {
+  192,
+  72,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_HOUSE_BENNY_HOUSE] = {
+  240,
+  120,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_HOUSE_BUNGALOW_HOUSE] = {
+  240,
+  144,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_DOODAD_HAMMER] = {
+  GetTextureInfo(M_ICON_PATH, "hammer"):GetCoords()
+}
+mapIconCoordList[MST_DOODAD_SLAVE_EQUIPMENT] = {
+  GetTextureInfo(M_ICON_PATH, "ship"):GetCoords()
+}
+mapIconCoordList[MST_DOODAD_MATE_EQUIPMENT] = {
+  GetTextureInfo(M_ICON_PATH, "animal"):GetCoords()
+}
+mapIconCoordList[MST_MY_SLAVE] = {
+  48,
+  216,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_PLAYER] = {
+  0,
+  0,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_CONQUEST_BASE] = {
+  244,
+  217,
+  19,
+  25
+}
+mapIconCoordList[MST_TRADE_ROUTE] = {
+  0,
+  0,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_LIGHT_HOUSE] = {
+  312,
+  96,
+  M_ICON_EXTENT,
+  M_ICON_EXTENT
+}
+mapIconCoordList[MST_FACTION_HQ] = {
+  GetFactionHqIconCoords()
+}
+mapIconCoordList[MST_PING_ENEMY] = {
+  0,
+  0,
+  0,
+  0
+}
+mapIconCoordList[MST_PING_ATTACK] = {
+  0,
+  0,
+  0,
+  0
+}
+mapIconCoordList[MST_PING_LINE] = {
+  0,
+  0,
+  0,
+  0
+}
+mapIconCoordList[MST_DOODAD_RAID_PURITY] = {
+  GetTextureInfo(M_ICON_PATH, "raid_purity"):GetCoords()
+}
+X2Map:SetMapIconCoords(#mapIconCoordList + 1, mapIconCoordList)
+local shipCoords = {
+  {
+    GetTextureInfo(M_ICON_PATH, "ship_01"):GetCoords()
+  },
+  {
+    GetTextureInfo(M_ICON_PATH, "ship_02"):GetCoords()
+  },
+  {
+    GetTextureInfo(M_ICON_PATH, "ship_03"):GetCoords()
+  },
+  {
+    GetTextureInfo(M_ICON_PATH, "ship_04"):GetCoords()
+  }
+}
+X2Map:SetShipCoords(#shipCoords, shipCoords)
+local notifyCoords = {
+  {
+    480,
+    72,
+    24,
+    24
+  },
+  {
+    288,
+    24,
+    24,
+    24
+  },
+  {
+    312,
+    24,
+    24,
+    24
+  },
+  {
+    336,
+    24,
+    24,
+    24
+  },
+  {
+    360,
+    24,
+    24,
+    24
+  },
+  {
+    384,
+    24,
+    24,
+    24
+  },
+  {
+    408,
+    24,
+    24,
+    24
+  },
+  {
+    432,
+    24,
+    24,
+    24
+  },
+  {
+    456,
+    24,
+    24,
+    24
+  },
+  {
+    480,
+    24,
+    24,
+    24
+  },
+  {
+    360,
+    96,
+    24,
+    24
+  }
+}
+X2Map:SetNotifyCoords(#notifyCoords, notifyCoords)
+local notifyAreaCoords = {
+  {
+    480,
+    72,
+    24,
+    24
+  },
+  {
+    240,
+    0,
+    16,
+    16
+  },
+  {
+    256,
+    0,
+    16,
+    16
+  },
+  {
+    272,
+    0,
+    16,
+    16
+  },
+  {
+    240,
+    16,
+    16,
+    16
+  },
+  {
+    256,
+    16,
+    16,
+    16
+  },
+  {
+    272,
+    16,
+    16,
+    16
+  },
+  {
+    240,
+    32,
+    16,
+    16
+  },
+  {
+    256,
+    32,
+    16,
+    16
+  },
+  {
+    272,
+    32,
+    16,
+    16
+  },
+  {
+    360,
+    96,
+    24,
+    24
+  }
+}
+X2Map:SetNotifyAreaCoords(#notifyAreaCoords, notifyAreaCoords)
+AREA_COLOR_ALPHA = 0.5
+local notifyAreaColors = {
+  {
+    40,
+    148,
+    63,
+    AREA_COLOR_ALPHA
+  },
+  {
+    194,
+    96,
+    107,
+    AREA_COLOR_ALPHA
+  },
+  {
+    211,
+    163,
+    60,
+    AREA_COLOR_ALPHA
+  },
+  {
+    138,
+    166,
+    40,
+    AREA_COLOR_ALPHA
+  },
+  {
+    210,
+    106,
+    29,
+    AREA_COLOR_ALPHA
+  },
+  {
+    40,
+    148,
+    63,
+    AREA_COLOR_ALPHA
+  },
+  {
+    55,
+    95,
+    223,
+    AREA_COLOR_ALPHA
+  },
+  {
+    73,
+    167,
+    211,
+    AREA_COLOR_ALPHA
+  },
+  {
+    225,
+    150,
+    219,
+    AREA_COLOR_ALPHA
+  },
+  {
+    142,
+    76,
+    203,
+    AREA_COLOR_ALPHA
+  },
+  {
+    255,
+    227,
+    98,
+    AREA_COLOR_ALPHA
+  }
+}
+X2Map:SetNotifyAreaColors(#notifyAreaColors, notifyAreaColors)
+function StartNotifyQuestEffect(questType, start)
+  local decalIndex = GetNotifierDecal(questType)
+  if decalIndex ~= nil then
+    worldmap:StartNotifyQuestEffect(decalIndex, start)
+    roadmap:StartNotifyQuestEffect(decalIndex, start)
+  end
+end
+function CreateEffect(parent, anchor, type)
+  local path = "ui/effect/map.dds"
+  local effect = {}
+  effect[1] = parent:CreateEffectDrawable(path, "artwork")
+  if type == "portal" then
+    effect[1]:SetCoords(GetTextureInfo(path, "portal"):GetCoords())
+    effect[1]:SetExtent(14, 8)
+  elseif type == "ping" then
+    effect[1]:SetCoords(GetTextureInfo(path, "circle"):GetCoords())
+    effect[1]:SetExtent(14, 14)
+  else
+    effect[1]:SetCoords(GetTextureInfo(path, "default"):GetCoords())
+    effect[1]:SetExtent(14, 14)
+  end
+  effect[1]:SetRepeatCount(5)
+  effect[1]:SetEffectPriority(1, "alpha", 0.5, 0.4)
+  effect[1]:SetEffectScale(1, 1, 1.5, 1, 1.5)
+  effect[1]:SetEffectInitialColor(1, 1, 1, 1, 0.2)
+  effect[1]:SetEffectFinalColor(1, 1, 1, 1, 0.8)
+  effect[1]:SetEffectPriority(2, "alpha", 0.5, 0.3)
+  effect[1]:SetEffectScale(2, 1.5, 1.9, 1.5, 1.9)
+  effect[1]:SetEffectInitialColor(2, 1, 1, 1, 0.8)
+  effect[1]:SetEffectFinalColor(2, 1, 1, 1, 0)
+  effect[1]:AddAnchor("CENTER", anchor, 0, 0)
+  effect[2] = parent:CreateEffectDrawable(path, "artwork")
+  if type == "portal" then
+    effect[2]:SetCoords(GetTextureInfo(path, "portal"):GetCoords())
+    effect[2]:SetExtent(22, 14)
+  elseif type == "ping" then
+    effect[1]:SetCoords(GetTextureInfo(path, "circle"):GetCoords())
+    effect[1]:SetExtent(23, 23)
+  else
+    effect[2]:SetCoords(GetTextureInfo(path, "default"):GetCoords())
+    effect[2]:SetExtent(23, 23)
+  end
+  effect[2]:SetRepeatCount(5)
+  effect[2]:SetEffectPriority(1, "alpha", 0.5, 0.4)
+  effect[2]:SetEffectScale(1, 0.7, 1.5, 0.7, 1.5)
+  effect[2]:SetEffectInitialColor(1, 1, 1, 1, 0.2)
+  effect[2]:SetEffectFinalColor(1, 1, 1, 1, 0.8)
+  effect[2]:SetEffectPriority(2, "alpha", 0.5, 0.4)
+  effect[2]:SetEffectScale(2, 1.5, 1.9, 1.5, 1.9)
+  effect[2]:SetEffectInitialColor(2, 1, 1, 1, 0.8)
+  effect[2]:SetEffectFinalColor(2, 1, 1, 1, 0)
+  effect[2]:AddAnchor("CENTER", anchor, 0, 0)
+  function effect:SetStartEffect(isShow)
+    effect[1]:SetStartEffect(isShow)
+    effect[2]:SetStartEffect(isShow)
+  end
+  function effect:SetVisible(isShow)
+    effect[1]:SetVisible(isShow)
+    effect[2]:SetVisible(isShow)
+  end
+  function effect:SetRepeatCount(count)
+    effect[1]:SetRepeatCount(count)
+    effect[2]:SetRepeatCount(count)
+  end
+  return effect
+end
+function OnApplyMapLabelSytle(label)
+  if label then
+    label:SetExtent(100, 20)
+    label:SetAutoResize(false)
+    ApplyTextColor(label, FONT_COLOR.WHITE)
+    label.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE)
+    label.style:SetShadow(true)
+    label.style:SetEllipsis(true)
+    label.style:SetAlign(ALIGN_CENTER)
+    return true
+  end
+  return false
+end

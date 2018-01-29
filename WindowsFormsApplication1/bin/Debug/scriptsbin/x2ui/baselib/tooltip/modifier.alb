@@ -1,0 +1,335 @@
+local GetSign = function(value)
+  if value < 0 then
+    return "-"
+  else
+    return "+"
+  end
+end
+local GetMulValue = function(value)
+  local v = (1 - 1000 / (1000 + value)) * 1000
+  v = math.floor(value + 0.5) * 0.1
+  return v
+end
+local modifierStrTable = {
+  lung_capacity = function(value)
+    return string.format("%.1f%s", value * 0.001, GetUIText(TOOLTIP_TEXT, "second"))
+  end,
+  incoming_melee_damage_add = function(value)
+    return string.format("%d", math.abs(value))
+  end,
+  incoming_ranged_damage_add = function(value)
+    return string.format("%d", math.abs(value))
+  end,
+  incoming_spell_damage_add = function(value)
+    return string.format("%d", math.abs(value))
+  end,
+  incoming_melee_damage_add_anti_npc = function(value)
+    return string.format("%d", math.abs(value))
+  end,
+  incoming_ranged_damage_add_anti_npc = function(value)
+    return string.format("%d", math.abs(value))
+  end,
+  incoming_spell_damage_add_anti_npc = function(value)
+    return string.format("%d", math.abs(value))
+  end,
+  casting_tolerance = function(value)
+    return string.format("%d%%", (1 - 100 / (100 + value)) * 100)
+  end,
+  casting_time_mul = function(value)
+    return string.format("%.1f%%", math.abs(value * 0.1))
+  end,
+  move_speed_mul = function(value)
+    return string.format("%.1f%%", math.abs(value * 0.1))
+  end,
+  swim_speed_mul = function(value)
+    return string.format("%.1f%%", math.abs(value))
+  end,
+  aggro_mul = function(value)
+    return string.format("%.1f%%", math.abs(value))
+  end,
+  detect_stealth_range_mul = function(value)
+    return string.format("%.1f%%", math.abs(value))
+  end,
+  fall_damage_mul = function(value)
+    return string.format("%.1f%%", math.abs(value))
+  end,
+  persistent_health_regen = function(value)
+    return string.format("%d", value * 0.2)
+  end,
+  persistent_mana_regen = function(value)
+    return string.format("%d", value * 0.2)
+  end,
+  melee_critical_mul = function(value)
+    return string.format("%.1f%%", value * 0.1)
+  end,
+  ranged_critical_mul = function(value)
+    return string.format("%.1f%%", value * 0.1)
+  end,
+  spell_critical_mul = function(value)
+    return string.format("%.1f%%", value * 0.1)
+  end,
+  melee_damage_mul = function(value)
+    return string.format("%.1f%%", value * 0.1)
+  end,
+  ranged_damage_mul = function(value)
+    return string.format("%.1f%%", value * 0.1)
+  end,
+  spell_damage_mul = function(value)
+    return string.format("%.1f%%", value * 0.1)
+  end,
+  melee_damage_mul_anti_npc = function(value)
+    return string.format("%.1f%%", value * 0.1)
+  end,
+  ranged_damage_mul_anti_npc = function(value)
+    return string.format("%.1f%%", value * 0.1)
+  end,
+  spell_damage_mul_anti_npc = function(value)
+    return string.format("%.1f%%", value * 0.1)
+  end,
+  backattack_melee_damage_mul = function(value)
+    return string.format("%.1f%%", value * 0.1)
+  end,
+  backattack_ranged_damage_mul = function(value)
+    return string.format("%.1f%%", value * 0.1)
+  end,
+  backattack_spell_damage_mul = function(value)
+    return string.format("%.1f%%", value * 0.1)
+  end,
+  incoming_heal_mul = function(value)
+    return string.format("%.1f%%", value * 0.1)
+  end,
+  dodge_mul = function(value)
+    return string.format("%.1f%%", value * 0.1)
+  end,
+  block_mul = function(value)
+    return string.format("%.1f%%", value * 0.1)
+  end,
+  melee_parry_mul = function(value)
+    return string.format("%.1f%%", value * 0.1)
+  end,
+  incoming_damage_mul = function(value)
+    return string.format("%.1f%%", math.abs(value * 0.1))
+  end,
+  incoming_damage_mul_anti_npc = function(value)
+    return string.format("%.1f%%", math.abs(value * 0.1))
+  end,
+  melee_dps_inc = function(value)
+    return string.format("%.1f", value * 0.001)
+  end,
+  ranged_dps_inc = function(value)
+    return string.format("%.1f", value * 0.001)
+  end,
+  spell_dps_inc = function(value)
+    return string.format("%.1f", value * 0.001)
+  end,
+  heal_dps = function(value)
+    return string.format("%.1f%%", value * 0.001)
+  end,
+  heal_dps_inc = function(value)
+    return string.format("%.1f", value * 0.001)
+  end,
+  str = function(value)
+    return string.format("%d", math.abs(value))
+  end,
+  dex = function(value)
+    return string.format("%d", math.abs(value))
+  end,
+  sta = function(value)
+    return string.format("%d", math.abs(value))
+  end,
+  sta = function(value)
+    return string.format("%d", math.abs(value))
+  end,
+  spi = function(value)
+    return string.format("%d", math.abs(value))
+  end,
+  bulls_eye = function(value)
+    return string.format("%d", math.abs(value))
+  end,
+  battle_resist = function(value)
+    return string.format("%d", math.abs(value))
+  end,
+  flexibility = function(value)
+    return string.format("%d", math.abs(value))
+  end,
+  melee_critical_bonus = function(value)
+    return string.format("%.1f%%", math.abs(value * 0.2))
+  end,
+  ranged_critical_bonus = function(value)
+    return string.format("%.1f%%", math.abs(value * 0.2))
+  end,
+  spell_critical_bonus = function(value)
+    return string.format("%.1f%%", math.abs(value * 0.2))
+  end,
+  heal_critical_bonus = function(value)
+    return string.format("%.1f%%", math.abs(value * 0.2))
+  end,
+  melee_speed_mul = function(value)
+    return string.format("%.1f%%", GetMulValue(value))
+  end,
+  ranged_speed_mul = function(value)
+    return string.format("%.1f%%", GetMulValue(value))
+  end,
+  global_cooldown_mul = function(value)
+    return string.format("%.1f%%", GetMulValue(value))
+  end,
+  attack_anim_speed_mul = function(value)
+    return string.format("%.1f%%", GetMulValue(value))
+  end,
+  heal_mul = function(value)
+    return string.format("%.1f%%", value * 0.1)
+  end,
+  incoming_melee_damage_mul = function(value)
+    return string.format("%.1f%%", math.abs(value * 0.1))
+  end,
+  incoming_ranged_damage_mul = function(value)
+    return string.format("%.1f%%", math.abs(value * 0.1))
+  end,
+  incoming_spell_damage_mul = function(value)
+    return string.format("%.1f%%", math.abs(value * 0.1))
+  end,
+  heal_critical_mul = function(value)
+    return string.format("%.1f%%", value * 0.1)
+  end,
+  drop_rate_mul = function(value)
+    return string.format("%d%%", value)
+  end,
+  ignore_shield_chance = function(value)
+    return string.format("%.1f%%", value * 0.1)
+  end,
+  ignore_shield_bonus = function(value)
+    return string.format("%d", value)
+  end,
+  ignore_shield_bonus_mul = function(value)
+    return string.format("%.1f%%", value * 0.1)
+  end,
+  DPS = function(value)
+    return string.format("%.1f", value)
+  end,
+  magicDps = function(value)
+    return string.format("%d", value)
+  end,
+  healDps = function(value)
+    return string.format("%d", value)
+  end
+}
+local modifierStatusTable = {
+  increase = {
+    "lung_capacity",
+    "armor",
+    "max_health",
+    "max_mana",
+    "persistent_health_regen",
+    "persistent_mana_regen",
+    "melee_critical_mul",
+    "ranged_critical_mul",
+    "spell_critical_mul",
+    "melee_damage_mul",
+    "ranged_damage_mul",
+    "spell_damage_mul",
+    "melee_damage_mul_anti_npc",
+    "ranged_damage_mul_anti_npc",
+    "spell_damage_mul_anti_npc",
+    "backattack_melee_damage_mul",
+    "backattack_ranged_damage_mul",
+    "backattack_spell_damage_mul",
+    "incoming_heal_mul",
+    "dodge_mul",
+    "block_mul",
+    "melee_parry_mul",
+    "melee_dps_inc",
+    "ranged_dps_inc",
+    "spell_dps_inc",
+    "heal_dps_inc",
+    "heal_dps",
+    "melee_critical_bonus",
+    "ranged_critical_bonus",
+    "spell_critical_bonus",
+    "heal_critical_bonus",
+    "melee_speed_mul",
+    "ranged_speed_mul",
+    "global_cooldown_mul",
+    "attack_anim_speed_mul",
+    "heal_mul",
+    "ignore_armor",
+    "magic_penetration",
+    "magic_resist",
+    "heal_critical_mul",
+    "drop_rate_mul",
+    "ignore_shield_chance",
+    "ignore_shield_bonus",
+    "ignore_shield_bonus_mul"
+  },
+  decrease = {
+    "incoming_melee_damage_add",
+    "incoming_ranged_damage_add",
+    "incoming_spell_damage_add",
+    "incoming_melee_damage_add_anti_npc",
+    "incoming_ranged_damage_add_anti_npc",
+    "incoming_spell_damage_add_anti_npc",
+    "casting_tolerance",
+    "casting_time_mul",
+    "fall_damage_mul",
+    "incoming_damage_mul",
+    "incoming_damage_mul_anti_npc",
+    "incoming_melee_damage_mul",
+    "incoming_ranged_damage_mul",
+    "incoming_spell_damage_mul"
+  },
+  both = {
+    "move_speed_mul",
+    "swim_speed_mul",
+    "aggro_mul",
+    "detect_stealth_range_mul",
+    "bulls_eye",
+    "battle_resist",
+    "flexibility"
+  }
+}
+function GetModifierCalcValue(name, value)
+  if name == nil or value == nil then
+    return ""
+  end
+  if modifierStrTable[name] == nil then
+    return tostring(value)
+  end
+  return modifierStrTable[name](value)
+end
+local modifierStatusStr = {
+  increase = function(value)
+    return X2Locale:LocalizeUiText(TOOLTIP_TEXT, "inc")
+  end,
+  decrease = function(value)
+    return X2Locale:LocalizeUiText(TOOLTIP_TEXT, "dec")
+  end,
+  both = function(value)
+    if value < 0 then
+      return X2Locale:LocalizeUiText(TOOLTIP_TEXT, "dec")
+    else
+      return X2Locale:LocalizeUiText(TOOLTIP_TEXT, "inc")
+    end
+  end
+}
+local function GetStatusStrFoundKey(name, value)
+  local foundKey = ""
+  for k, v in pairs(modifierStatusTable) do
+    for k2, v2 in pairs(v) do
+      if v2 == name then
+        foundKey = k
+        break
+      end
+    end
+  end
+  return foundKey
+end
+function GetModiferStatusStr(name, value)
+  local foundKey = GetStatusStrFoundKey(name, value)
+  return foundKey ~= "" and modifierStatusStr[foundKey](value) or ""
+end
+function GetModifierColor(name, value)
+  local foundKey = GetStatusStrFoundKey(name, value)
+  if foundKey == "increase" or foundKey == "decrease" then
+    return FONT_COLOR_HEX.GREEN
+  end
+  return value < 0 and FONT_COLOR_HEX.RED or FONT_COLOR_HEX.GREEN
+end

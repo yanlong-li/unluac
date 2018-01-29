@@ -1,0 +1,147 @@
+battlefield = {}
+BFER_DISABLE = 0
+BFER_TIMEOVER_COMPARE_KILL_COUNT = 1
+BFER_TIMEOVER_COMPARE_ROUND_WIN_COUNT = 2
+BFER_TIMEOVER_COMPARE_ALIVE = 3
+BFER_TIMEOVER_DRAW = 4
+BFER_ACHIEVEMENT_KILL_COUNT = 5
+BFER_ACHIEVEMENT_ROUND_WIN_COUNT = 6
+BFER_ACHIEVEMENT_KILL_CORPS_HEAD = 7
+BFER_ACHIEVEMENT_SCORE = 8
+BFER_ACHIEVEMENT_ALL_KILL_CORPS = 9
+BFER_UNEARNED_WIN = 10
+battlefield.entranceWnd = nil
+battlefield.entranceAlarm = nil
+battlefield.scoreboard = nil
+battlefield.miniScoreboard = nil
+battlefield.actionbar = nil
+battlefield.waitingAlarm = nil
+battlefield.pickBuffList = nil
+BATTLEFIELD_TEAM = {
+  NONE = 0,
+  FIRST = 1,
+  SECOND = 2
+}
+BATTLEFIELD_MAX_WIN_CONDITION_COUNT = 5
+BATTLEFIELD_MAX_WIN_CONDITIONS_TYPE = {
+  "score",
+  "killCount",
+  "roundWinCount",
+  "destruction",
+  "timeOut"
+}
+function CreateTimeFrame(parent, styleType)
+  local timeFrame = parent:CreateChildWidget("emptywidget", "timeFrame", 0, true)
+  timeFrame:SetHeight(27)
+  if styleType == "miniScoreboard" then
+    local icon = timeFrame:CreateImageDrawable(TEXTURE_PATH.BATTLEFIELD_SCOREBOARD, "background")
+    icon:SetCoords(485, 60, 27, 27)
+    icon:SetExtent(27, 27)
+    icon:AddAnchor("LEFT", timeFrame, 0, 1)
+    timeFrame.icon = icon
+  elseif styleType == "scoreboard" then
+    local leaveTitle = timeFrame:CreateChildWidget("label", "leaveTitle", 0, true)
+    leaveTitle:SetAutoResize(true)
+    leaveTitle.style:SetFontSize(FONT_SIZE.XLARGE)
+    leaveTitle:SetText(X2Locale:LocalizeUiText(BATTLE_FIELD_TEXT, "leave_time"))
+    leaveTitle:SetHeight(FONT_SIZE.XLARGE)
+    leaveTitle:AddAnchor("LEFT", timeFrame, 0, 0)
+    ApplyTextColor(leaveTitle, FONT_COLOR.BATTLEFIELD_TIME)
+  elseif styleType == "expedition_war_scoreboard" then
+    local leaveTitle = timeFrame:CreateChildWidget("label", "leaveTitle", 0, true)
+    leaveTitle:SetAutoResize(true)
+    leaveTitle.style:SetFontSize(FONT_SIZE.XLARGE)
+    leaveTitle:SetText(X2Locale:LocalizeUiText(TOOLTIP_TEXT, "left_time"))
+    leaveTitle:SetHeight(FONT_SIZE.XLARGE)
+    leaveTitle:AddAnchor("LEFT", timeFrame, 0, 0)
+    ApplyTextColor(leaveTitle, FONT_COLOR.BATTLEFIELD_TIME)
+  end
+  local nowTime = timeFrame:CreateChildWidget("label", "nowTime", 0, true)
+  nowTime:SetAutoResize(true)
+  nowTime:SetHeight(FONT_SIZE.XXLARGE)
+  nowTime:AddAnchor("RIGHT", timeFrame, 0, 0)
+  nowTime.style:SetAlign(ALIGN_LEFT)
+  nowTime.style:SetFontSize(FONT_SIZE.XLARGE)
+  ApplyTextColor(nowTime, FONT_COLOR.BATTLEFIELD_TIME)
+  function timeFrame:UpdateTime(nowTime)
+    if nowTime <= 0 then
+      nowTime = 0
+    end
+    if styleType == "expedition_war_scoreboard" and nowTime == 0 then
+      self.nowTime:SetText("")
+    else
+      local hour, minute, second = GetHourMinuteSecondeFromSec(nowTime)
+      local timeStr = string.format("%02d : %02d : %02d", hour, minute, second)
+      self.nowTime:SetText(timeStr)
+    end
+    if self.leaveTitle ~= nil then
+      self:SetWidth(self.nowTime:GetWidth() + self.leaveTitle:GetWidth() + 10)
+    elseif self.icon ~= nil then
+      self:SetWidth(self.nowTime:GetWidth() + self.icon:GetWidth())
+    end
+  end
+  return timeFrame
+end
+function CreateWinConditionIcon(widget, conditionType)
+  local iconTable = {
+    score = function(icon)
+      icon:SetCoords(16, 0, 15, 14)
+      icon:SetExtent(15, 14)
+    end,
+    killCount = function(icon)
+      icon:SetCoords(16, 0, 15, 14)
+      icon:SetExtent(15, 14)
+    end,
+    roundWinCount = function(icon)
+      icon:SetCoords(16, 0, 15, 14)
+      icon:SetExtent(15, 14)
+    end,
+    destruction = function(icon)
+      icon:SetCoords(0, 0, 16, 16)
+      icon:SetExtent(16, 16)
+    end,
+    timeOut = function(icon)
+      icon:SetCoords(31, 0, 13, 13)
+      icon:SetExtent(13, 13)
+    end
+  }
+  local icon = widget:CreateImageDrawable(TEXTURE_PATH.BATTLEFIELD_WIN_CONDITION, "background")
+  iconTable[conditionType](icon)
+  return icon
+end
+function GetWinTeamName(info)
+  if info.myCorpsVictoryState == VS_DRAW then
+    return
+  end
+  if info.endReason == BFER_ACHIEVEMENT_KILL_COUNT then
+    if info.myCorpsVictoryState == VS_WIN then
+      return info.corpsName, info.myCorpsKill
+    elseif info.myCorpsVictoryState == VS_LOSE then
+      if info.corpsName1 == info.corpsName then
+        return info.corpsName2, info.myCorpsDeath
+      elseif info.corpsName2 == info.corpsName then
+        return info.corpsName1, info.myCorpsDeath
+      end
+    end
+  elseif info.endReason == BFER_ACHIEVEMENT_ROUND_WIN_COUNT then
+    if info.myCorpsVictoryState == VS_WIN then
+      return info.corpsName, info.myCorpsRoundWin
+    elseif info.myCorpsVictoryState == VS_LOSE then
+      if info.corpsName1 == info.corpsName then
+        return info.corpsName2, info.roundWinCount2
+      elseif info.corpsName2 == info.corpsName then
+        return info.corpsName1, info.roundWinCount1
+      end
+    end
+  elseif info.endReason == BFER_ACHIEVEMENT_KILL_CORPS_HEAD then
+    if info.myCorpsVictoryState == VS_WIN then
+      return info.corpsName
+    elseif info.myCorpsVictoryState == VS_LOSE then
+      if info.corpsName1 == info.corpsName then
+        return info.corpsName2
+      elseif info.corpsName2 == info.corpsName then
+        return info.corpsName1
+      end
+    end
+  end
+end

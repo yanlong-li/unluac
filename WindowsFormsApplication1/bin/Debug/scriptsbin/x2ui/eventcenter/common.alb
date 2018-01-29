@@ -1,0 +1,113 @@
+local CreateRewardItemButton = function(id, parent)
+  local btn = CreateItemIconButton(id, parent)
+  btn:SetExtent(34, 34)
+  local bg = parent:CreateImageDrawable(TEXTURE_PATH.ACHIEVEMENT_TODAY, "background")
+  bg:SetTextureInfo("complete_effect")
+  bg:AddAnchor("CENTER", btn, 0, 0)
+  bg:Show(false)
+  local label = btn:CreateChildWidget("label", "label", 0, true)
+  label:SetHeight(FONT_SIZE.MIDDLE)
+  label.style:SetAlign(ALIGN_LEFT)
+  label.style:SetFontSize(FONT_SIZE.MIDDLE)
+  label:SetAutoResize(true)
+  ApplyTextColor(label, FONT_COLOR.DEFAULT)
+  label:AddAnchor("BOTTOM", btn, "TOP", 0, 0)
+  local completeImg = btn:CreateImageDrawable(TEXTURE_PATH.ACHIEVEMENT_TODAY, "overlay")
+  completeImg:SetTextureInfo("taken")
+  completeImg:AddAnchor("CENTER", label, 2, 0)
+  completeImg:Show(false)
+  btn.completeImg = completeImg
+  function btn:Check(check)
+    label:Show(not check)
+    completeImg:Show(check)
+    bg:Show(check)
+  end
+  function btn:SetHidden(hidden)
+    if hidden then
+      bg:SetTextureInfo("lock_slot")
+      bg:Show(true)
+      btn:SetItemInfo(nil)
+    else
+      bg:SetTextureInfo("complete_effect")
+    end
+  end
+  return btn
+end
+function CreateEventCenterAdditionalRewardWnd(id, parent, count)
+  local wnd = parent:CreateChildWidget("emptywidget", id, 0, true)
+  local texturePath, offset, gap
+  if count == 3 then
+    texturePath = TEXTURE_PATH.EVENT_CENTER_TODAY
+    offset = 31
+    gap = 61
+  elseif count == 4 then
+    texturePath = TEXTURE_PATH.EVENT_CENTER_ATTENDANCE
+    offset = 20
+    gap = 37
+  else
+    return wnd
+  end
+  local bg = wnd:CreateImageDrawable(texturePath, "background")
+  bg:SetTextureInfo("step_back")
+  bg:AddAnchor("BOTTOM", wnd, 0, 0)
+  local w, h = bg:GetExtent()
+  wnd:SetExtent(w, h)
+  wnd.additionalRewardBtns = {}
+  for i = 1, count do
+    local additionalRewardBtn = CreateRewardItemButton("additionalRewardBtns[" .. i .. "]", wnd)
+    additionalRewardBtn:SetExtent(34, 34)
+    wnd.additionalRewardBtns[i] = additionalRewardBtn
+    if i == 1 then
+      additionalRewardBtn:AddAnchor("BOTTOMLEFT", wnd, offset, -11)
+    else
+      additionalRewardBtn:AddAnchor("LEFT", wnd.additionalRewardBtns[i - 1], "RIGHT", gap, 0)
+    end
+  end
+  function wnd:SetRewardInfos(infos)
+    for i = 1, #wnd.additionalRewardBtns do
+      if i > #infos then
+        wnd.additionalRewardBtns[i]:Show(false)
+        return
+      end
+      wnd.additionalRewardBtns[i]:Show(true)
+      wnd.additionalRewardBtns[i].count = infos[i].dayCount
+      wnd.additionalRewardBtns[i].label:SetText(tostring(infos[i].dayCount))
+      wnd.additionalRewardBtns[i]:SetItemInfo(infos[i])
+      wnd.additionalRewardBtns[i]:SetStack(infos[i].itemCount)
+      local itemInfo = X2Item:GetItemInfoByType(infos[i].itemType)
+      wnd.additionalRewardBtns[i]:SetTooltip(itemInfo)
+    end
+  end
+  function wnd:CheckRewardState(currentCount)
+    for i = 1, #wnd.additionalRewardBtns do
+      if wnd.additionalRewardBtns[i].count ~= nil then
+        if currentCount >= wnd.additionalRewardBtns[i].count then
+          wnd.additionalRewardBtns[i]:SetAlpha(1)
+          wnd.additionalRewardBtns[i]:Check(true)
+        else
+          wnd.additionalRewardBtns[i]:SetAlpha(0.7)
+          wnd.additionalRewardBtns[i]:Check(false)
+        end
+      end
+    end
+  end
+  function wnd:CheckTodayAssignmentRewardState(currentCount, totalCount)
+    wnd:CheckRewardState(currentCount)
+    for i = 1, #wnd.additionalRewardBtns do
+      if wnd.additionalRewardBtns[i].count ~= nil then
+        if totalCount < wnd.additionalRewardBtns[i].count then
+          wnd.additionalRewardBtns[i]:SetHidden(true)
+        else
+          wnd.additionalRewardBtns[i]:SetHidden(false)
+        end
+      end
+    end
+  end
+  return wnd
+end
+ATTENDANCE_VER_COUNT = 5
+ATTENDANCE_HORI_COUNT = 5
+function AttendanceActived()
+  local allAttended = X2EventCenter:GetAttendedDayCount() >= ATTENDANCE_HORI_COUNT * ATTENDANCE_VER_COUNT
+  return not allAttended and X2EventCenter:CheckAttendable()
+end

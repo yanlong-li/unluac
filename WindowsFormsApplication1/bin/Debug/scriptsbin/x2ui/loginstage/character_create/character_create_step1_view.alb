@@ -1,0 +1,350 @@
+characterCreate.step1 = {}
+local step1 = characterCreate.step1
+step1.content = CreateEmptyWindow("characterCreate.step1.content", characterCreate.bgWindow)
+step1.content:SetExtent(SCREEN_WIDTH, SCREEN_HEIGHT * 0.75)
+step1.content:AddAnchor("CENTER", characterCreate.bgWindow, "CENTER", 0, 0)
+step1.content:Clickable(false)
+step1.content.rightPanel = CreateRightPanel("step1.content.rightPanel", step1.content, 1)
+step1.content.rightPanel:SetWidth(455)
+local id = "step1.content.rightPanel"
+local rightPanel = step1.content.rightPanel
+local yOffset = 0
+step1.content.tooltipWindow = CreateEmptyWindow("step1.content.tooltipWindow", "UIParent")
+step1.content.tooltipWindow:AddAnchor("TOPLEFT", "UIParent", 0, 0)
+step1.content.tooltipWindow:SetExtent(1, 1)
+step1.content.tooltipWindow:EnablePick(false)
+step1.content.tooltipWindow:SetUILayer("system")
+step1.content.tooltipWindow:Show(true)
+step1.content.congestionTip = UIParent:CreateWidget("gametooltip", "step1.content.congestionTip", step1.content.tooltipWindow)
+step1.content.congestionTip:Show(false)
+step1.content.congestionTip:SetInset(10, 10, 10, 10)
+step1.content.congestionTip:SetLineSpace(3)
+step1.content.congestionTip.style:SetAlign(ALIGN_LEFT)
+ApplyTextColor(step1.content.congestionTip, FONT_COLOR.BLACK)
+step1.content.congestionTip.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE)
+step1.content.congestionTip_bg = step1.content.congestionTip:CreateThreePartDrawable(LOGIN_STAGE_TEXTURE_PATH.REMNANTS, "background")
+step1.content.congestionTip_bg:SetExtent(0, 50)
+step1.content.congestionTip_bg:SetCoords(118, 133, 34, 37)
+step1.content.congestionTip_bg:SetInset(9, 0, 24, 0)
+step1.content.congestionTip_bg:AddAnchor("TOPLEFT", step1.content.congestionTip, 0, 0)
+step1.content.congestionTip_bg:AddAnchor("BOTTOMRIGHT", step1.content.congestionTip, 0, 10)
+RACE_OF_GENDER_BUTTON_STYLE_TABLE = {}
+RACE_OF_GENDER_BUTTON_STYLE_TABLE[RACE_NUIAN] = {
+  BUTTON_LOGINSTAGE.RACE_NUIAN_MALE,
+  BUTTON_LOGINSTAGE.RACE_NUIAN_FEMALE
+}
+RACE_OF_GENDER_BUTTON_STYLE_TABLE[RACE_ELF] = {
+  BUTTON_LOGINSTAGE.RACE_ELF_MALE,
+  BUTTON_LOGINSTAGE.RACE_ELF_FEMALE
+}
+RACE_OF_GENDER_BUTTON_STYLE_TABLE[RACE_FERRE] = {
+  BUTTON_LOGINSTAGE.RACE_FERRE_MALE,
+  BUTTON_LOGINSTAGE.RACE_FERRE_FEMALE
+}
+RACE_OF_GENDER_BUTTON_STYLE_TABLE[RACE_HARIHARAN] = {
+  BUTTON_LOGINSTAGE.RACE_HARIHARAN_MALE,
+  BUTTON_LOGINSTAGE.RACE_HARIHARAN_FEMALE
+}
+RACE_OF_GENDER_BUTTON_STYLE_TABLE[RACE_DWARF] = {
+  BUTTON_LOGINSTAGE.RACE_NUIAN_MALE,
+  BUTTON_LOGINSTAGE.RACE_NUIAN_FEMALE
+}
+RACE_OF_GENDER_BUTTON_STYLE_TABLE[RACE_WARBORN] = {
+  BUTTON_LOGINSTAGE.RACE_ELF_MALE,
+  BUTTON_LOGINSTAGE.RACE_ELF_FEMALE
+}
+RACE_GENDER_VOICE_TABLE = {}
+RACE_GENDER_VOICE_TABLE[RACE_NUIAN] = {
+  "login_stage_character_create_nuian_male_selected",
+  "login_stage_character_create_nuian_female_selected"
+}
+RACE_GENDER_VOICE_TABLE[RACE_ELF] = {
+  "login_stage_character_create_elf_male_selected",
+  "login_stage_character_create_elf_female_selected"
+}
+RACE_GENDER_VOICE_TABLE[RACE_FERRE] = {
+  "login_stage_character_create_ferre_male_selected",
+  "login_stage_character_create_ferre_female_selected"
+}
+RACE_GENDER_VOICE_TABLE[RACE_HARIHARAN] = {
+  "login_stage_character_create_hariharan_male_selected",
+  "login_stage_character_create_hariharan_female_selected"
+}
+RACE_GENDER_VOICE_TABLE[RACE_DWARF] = {
+  "login_stage_character_create_nuian_male_selected",
+  "login_stage_character_create_nuian_female_selected"
+}
+RACE_GENDER_VOICE_TABLE[RACE_WARBORN] = {
+  "login_stage_character_create_elf_male_selected",
+  "login_stage_character_create_elf_female_selected"
+}
+function ChangeRaceButtonOfGender(button, race, gender)
+  ChangeButtonSkinTable(button, RACE_OF_GENDER_BUTTON_STYLE_TABLE[race][gender])
+end
+local deco = step1.content:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.START_AREA, "background")
+deco:SetCoords(255, 410, 257, 102)
+deco:SetExtent(257, 102)
+step1.content.raceBtn = {}
+local xOffset = 0
+for k = 1, #RACE_TYPE do
+  local race = RACE_TYPE[k]
+  xOffset = 342 - (#RACE_TYPE - k) * 98
+  if k <= #RACE_TYPE / 2 then
+    xOffset = xOffset - 55
+  end
+  local raceBtn = step1.content:CreateChildWidget("button", "raceBtn", k, true)
+  raceBtn:SetText(tostring(locale.raceText[race]))
+  raceBtn:AddAnchor("TOPLEFT", rightPanel, xOffset, 10)
+  ApplyButtonSkinTable(raceBtn, RACE_OF_GENDER_BUTTON_STYLE_TABLE[race][1])
+  raceBtn:Enable(true)
+end
+deco:AddAnchor("RIGHT", step1.content.raceBtn[#RACE_TYPE / 2 + 1], 0, 0)
+yOffset = yOffset + 110
+GENDER_BUTTON_STYLE = {
+  BUTTON_LOGINSTAGE.GENDER_MALE,
+  BUTTON_LOGINSTAGE.GENDER_FEMALE
+}
+rightPanel.genderBtn = {}
+for k = 1, 2 do
+  local genderBtn = rightPanel:CreateChildWidget("button", "genderBtn", k, true)
+  ApplyButtonSkinTable(genderBtn, GENDER_BUTTON_STYLE[k])
+end
+yOffset = yOffset + 170
+rightPanel.raceBgWindow = {}
+local raceTitleInfo = rightPanel:CreateChildWidget("textbox", "raceTitleInfo", 0, true)
+raceTitleInfo:Show(true)
+raceTitleInfo:SetExtent(360, 35)
+raceTitleInfo:AddAnchor("TOPLEFT", rightPanel, 5, yOffset)
+raceTitleInfo.style:SetAlign(ALIGN_LEFT)
+raceTitleInfo.style:SetSnap(true)
+raceTitleInfo:SetLineSpace(localeView.lineSpace.raceTitleInfo)
+raceTitleInfo.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.LARGE)
+ApplyTextColor(raceTitleInfo, FONT_COLOR.LOGIN_STAGE_BLUE)
+local raceName = rightPanel:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.RACE, "background")
+raceName:SetExtent(100, 30)
+rightPanel.raceName = raceName
+function ChangeRaceName(index)
+  local path = LOGIN_STAGE_TEXTURE_PATH.RACE
+  local coords_table = {
+    {
+      GetTextureInfo(path, "nuian"):GetCoords()
+    },
+    {
+      0,
+      0,
+      0,
+      0
+    },
+    {
+      GetTextureInfo(path, "dwarf"):GetCoords()
+    },
+    {
+      GetTextureInfo(path, "elf"):GetCoords()
+    },
+    {
+      GetTextureInfo(path, "harani"):GetCoords()
+    },
+    {
+      GetTextureInfo(path, "firran"):GetCoords()
+    },
+    {
+      0,
+      0,
+      0,
+      0
+    },
+    {
+      GetTextureInfo(path, "warborn"):GetCoords()
+    }
+  }
+  local anchor_table = characterCreateLocale.raceName.anchor
+  rightPanel.raceName:SetCoords(coords_table[index][1], coords_table[index][2], coords_table[index][3], coords_table[index][4])
+  rightPanel.raceName:SetExtent(coords_table[index][3], coords_table[index][4])
+  rightPanel.raceName:RemoveAllAnchors()
+  rightPanel.raceName:AddAnchor(anchor_table[index][1], raceTitleInfo, anchor_table[index][2], anchor_table[index][3], anchor_table[index][4])
+end
+local raceDetailInfo = rightPanel:CreateChildWidget("textbox", "raceDetailInfo", 0, true)
+raceDetailInfo:Show(true)
+raceDetailInfo:SetWidth(360)
+raceDetailInfo:AddAnchor("TOPLEFT", raceTitleInfo, "BOTTOMLEFT", 0, 5)
+raceDetailInfo.style:SetAlign(ALIGN_LEFT)
+raceDetailInfo.style:SetSnap(true)
+raceDetailInfo:SetLineSpace(3)
+raceDetailInfo.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.LARGE)
+ApplyTextColor(raceDetailInfo, FONT_COLOR.BLACK)
+local raceCinemaBtn = rightPanel:CreateChildWidget("button", "raceCinemaBtn", 0, true)
+raceCinemaBtn:SetExtent(200, 80)
+raceCinemaBtn:AddAnchor("CENTER", rightPanel, 0, 0)
+raceCinemaBtn:SetText(GetCommonText("btn_race_tales"))
+ApplyButtonSkinTable(raceCinemaBtn, BUTTON_LOGINSTAGE.RACE_CINEMA)
+for i = 1, #RACE_TYPE do
+  local race = RACE_TYPE[i]
+  rightPanel.raceBgWindow[i] = CreateLoginStageBgWindow(STEP1_BG_PATH[race])
+  rightPanel.raceBgWindow[i]:Show(false)
+end
+local raceCongestionInfo = rightPanel:CreateChildWidget("textbox", "raceCongestionInfo", 0, true)
+raceCongestionInfo:Show(false)
+raceCongestionInfo:SetExtent(360, 30)
+raceCongestionInfo:AddAnchor("TOPLEFT", raceDetailInfo, "BOTTOMLEFT", 0, 80)
+raceCongestionInfo:SetText(locale.characterCreate.race_congestion_warning)
+raceCongestionInfo.style:SetAlign(ALIGN_LEFT)
+raceCongestionInfo.style:SetSnap(true)
+raceCongestionInfo:SetLineSpace(3)
+raceCongestionInfo.style:SetFontSize(FONT_SIZE.LARGE)
+ApplyTextColor(raceCongestionInfo, FONT_COLOR.DARK_RED)
+function ShowCongestionTip(target, congestion, impossibleCreateAllRace)
+  congestion = congestion + 1
+  local tipText = locale.loginCrowded.tip[congestion]
+  if impossibleCreateAllRace then
+    tipText = GetCommonText("impossible_create_all_race")
+  end
+  step1.content.congestionTip_bg:SetColor(FONT_COLOR.CONGESTION[congestion][1], FONT_COLOR.CONGESTION[congestion][2], FONT_COLOR.CONGESTION[congestion][3], FONT_COLOR.CONGESTION[congestion][4])
+  step1.content.congestionTip:ClearLines()
+  step1.content.congestionTip:AddLine(tipText, "", 0, "left", ALIGN_LEFT, 0)
+  step1.content.congestionTip:RemoveAllAnchors()
+  step1.content.congestionTip:AddAnchor("TOPRIGHT", target, "TOPLEFT", 25, -7)
+  step1.content.congestionTip:Show(true)
+end
+function HideCongestionTip()
+  step1.content.congestionTip:RemoveAllAnchors()
+  step1.content.congestionTip:Show(false)
+end
+function UpdateSelectableRace()
+  local congestion = GetRaceCongestions()
+  local isPreSelectPeriod = X2World:IsPreSelectCharacterPeriod()
+  local isRecustomizing = X2LoginCharacter:IsRecustomizing()
+  local recustomingRace
+  if isRecustomizing then
+    recustomingRace = GetRaceNameIndex(X2LoginCharacter:GetEditUnitRace())
+  end
+  for i = 1, #RACE_TYPE do
+    do
+      local btn = step1.content.raceBtn[i]
+      local enable = true
+      if isRecustomizing then
+        if recustomingRace ~= nil and RACE_TYPE[i] ~= recustomingRace then
+          enable = false
+        end
+      elseif IsUnableRaceToCreate(RACE_TYPE[i]) then
+        enable = false
+      end
+      btn:Enable(enable)
+      function btn:OnEnter()
+        if isRecustomizing then
+          return
+        end
+        if IsUnableRaceToCreate(RACE_TYPE[i]) or isPreSelectPeriod then
+          ShowCongestionTip(btn, congestion[RACE_TYPE[i]], IsUnableAllRaceToCreate())
+        end
+      end
+      btn:SetHandler("OnEnter", btn.OnEnter)
+      function btn:OnLeave()
+        HideCongestionTip()
+      end
+      btn:SetHandler("OnLeave", btn.OnLeave)
+      if RACE_TYPE[i] == characterCreate.raceIndex then
+        local btn = step1.content.raceBtn[i]
+        local enable = btn:IsEnabled()
+        characterCreate.bgWindow.nextStepBtn:Enable(enable)
+        characterCreate.bgWindow.stepCompleteButton:Enable(enable)
+      end
+    end
+  end
+  if not isPreSelectPeriod and not isRecustomizing and IsUnableRaceToPlay(characterCreate.raceIndex) and not IsUnableRaceToCreate(characterCreate.raceIndex) then
+    step1.content.rightPanel.raceCongestionInfo:Show(true)
+  else
+    step1.content.rightPanel.raceCongestionInfo:Show(false)
+  end
+end
+local continentDescFrame = step1.content:CreateChildWidget("emptywidget", "continentDescFrame", 0, true)
+continentDescFrame:Show(false)
+continentDescFrame:SetWidth(420)
+continentDescFrame:AddAnchor("TOPLEFT", characterCreate.bgWindow, 30, 140)
+local nuiaImg = continentDescFrame:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.START_AREA, "background")
+nuiaImg:SetVisible(false)
+nuiaImg:SetExtent(224, 241)
+nuiaImg:AddAnchor("TOPLEFT", continentDescFrame, 0, 0)
+continentDescFrame.nuiaImg = nuiaImg
+local hariharaImg = continentDescFrame:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.START_AREA, "background")
+hariharaImg:SetVisible(false)
+hariharaImg:SetExtent(287, 204)
+hariharaImg:AddAnchor("TOPLEFT", nuiaImg, "TOPRIGHT", -85, 55)
+continentDescFrame.hariharaImg = hariharaImg
+local point = continentDescFrame:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.START_AREA, "artwork")
+point:SetExtent(20, 26)
+point:SetCoords(225, 410, 20, 26)
+continentDescFrame.point = point
+local str = X2Locale:LocalizeUiText(COMMON_TEXT, "RACE_CONTINENT_DESC", FONT_COLOR_HEX.SOFT_YELLOW, FONT_COLOR_HEX.SOFT_YELLOW, FONT_COLOR_HEX.BATTLEFIELD_RED)
+local desc = continentDescFrame:CreateChildWidget("textbox", "desc", 0, true)
+desc:SetWidth(continentDescFrame:GetWidth())
+desc:SetText(str)
+desc:SetLineSpace(TEXTBOX_LINE_SPACE.SMALL)
+desc:SetHeight(desc:GetTextHeight())
+desc:AddAnchor("BOTTOMLEFT", continentDescFrame, 0, 0)
+desc.style:SetShadow(true)
+desc.style:SetAlign(ALIGN_LEFT)
+local height = nuiaImg:GetHeight() + desc:GetHeight() + 20
+continentDescFrame:SetHeight(height)
+function continentDescFrame:SetRace(index)
+  if index == 0 or index == nil then
+    self.nuiaImg:SetVisible(false)
+    self.hariharaImg:SetVisible(false)
+  end
+  self:Show(true)
+  self.nuiaImg:SetVisible(true)
+  self.hariharaImg:SetVisible(true)
+  local pointAnchor = {
+    [RACE_NUIAN] = {
+      "TOPRIGHT",
+      self.nuiaImg,
+      "TOPRIGHT",
+      -26,
+      60
+    },
+    [RACE_ELF] = {
+      "TOP",
+      self.nuiaImg,
+      "TOP",
+      10,
+      45
+    },
+    [RACE_FERRE] = {
+      "TOP",
+      self.hariharaImg,
+      "TOP",
+      15,
+      65
+    },
+    [RACE_HARIHARAN] = {
+      "BOTTOM",
+      self.hariharaImg,
+      "BOTTOM",
+      -53,
+      -68
+    },
+    [RACE_DWARF] = {
+      "TOPRIGHT",
+      self.nuiaImg,
+      "TOPRIGHT",
+      -26,
+      60
+    },
+    [RACE_WARBORN] = {
+      "TOP",
+      self.hariharaImg,
+      "TOP",
+      15,
+      65
+    }
+  }
+  if index == RACE_NUIAN or index == RACE_ELF or index == RACE_DWARF then
+    self.nuiaImg:SetCoords(0, 0, 224, 241)
+    self.hariharaImg:SetCoords(225, 0, 287, 204)
+  elseif index == RACE_FERRE or index == RACE_HARIHARAN or index == RACE_WARBORN then
+    self.nuiaImg:SetCoords(0, 242, 224, 241)
+    self.hariharaImg:SetCoords(225, 205, 287, 204)
+  end
+  local anchorInfo = pointAnchor[index]
+  self.point:RemoveAllAnchors()
+  self.point:AddAnchor(anchorInfo[1], anchorInfo[2], anchorInfo[3], anchorInfo[4], anchorInfo[5])
+end

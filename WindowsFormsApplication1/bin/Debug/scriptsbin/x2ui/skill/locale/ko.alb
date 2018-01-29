@@ -1,0 +1,48 @@
+if skillLocale == nil then
+  skillLocale = {}
+end
+function skillLocale.SetAbilitySelectLayoutFunc(widget)
+  local yOffset = 50
+  for i = 1, #widget.recommends do
+    local btn = widget.recommends[i]
+    btn:Show(true)
+    btn:AddAnchor("TOP", widget, 5, yOffset)
+    yOffset = yOffset + 35
+  end
+  yOffset = yOffset + 20
+  local xOffset = 18
+  for i = 1, #widget.abilities do
+    local btn = widget.abilities[i]
+    btn:Show(true)
+    btn:AddAnchor("TOPLEFT", widget, xOffset, yOffset)
+    xOffset = xOffset + 80
+    if i % 2 == 0 then
+      xOffset = 18
+      yOffset = yOffset + 30
+    end
+  end
+end
+skillLocale.combatTab = {
+  jobName = {
+    AddAnchor = function(label, target, margin)
+      if X2Player:GetFeatureSet().uiAvi then
+        label:AddAnchor("TOPRIGHT", target, "TOPRIGHT", 0, margin / 1.5)
+      else
+        label:AddAnchor("BOTTOMRIGHT", target, "TOPRIGHT", 0, -5)
+      end
+    end
+  }
+}
+skillLocale.actabilityNotifySpaceLine = TEXTBOX_LINE_SPACE.SMALL
+skillLocale.actabilityGradeInfoWnd = {
+  width = 600,
+  columnWidth = {
+    140,
+    140,
+    140,
+    140
+  },
+  columnFontSize = FONT_SIZE.LARGE,
+  countOffset = 0
+}
+skillLocale.useUiAvi = false

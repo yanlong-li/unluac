@@ -1,0 +1,288 @@
+local CONDITION_LEVEL_UP = 1
+local CONDITION_QUEST_COMPLETE = 2
+local conditionList = {
+  {
+    condition = CONDITION_LEVEL_UP,
+    value = 2,
+    content = UIC_ACHIEVEMENT,
+    key = "level_up_2",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_LEVEL_UP,
+    value = 4,
+    content = UIC_ACHIEVEMENT,
+    key = "level_up_4",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_LEVEL_UP,
+    value = 9,
+    content = UIC_ACHIEVEMENT,
+    key = "level_up_9",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_LEVEL_UP,
+    value = 11,
+    content = UIC_ACHIEVEMENT,
+    key = "level_up_11",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_LEVEL_UP,
+    value = 12,
+    content = UIC_ACHIEVEMENT,
+    key = "level_up_12",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_LEVEL_UP,
+    value = 13,
+    content = UIC_ACHIEVEMENT,
+    key = "level_up_13",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_LEVEL_UP,
+    value = 16,
+    content = UIC_ACHIEVEMENT,
+    key = "level_up_16",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_LEVEL_UP,
+    value = 18,
+    content = UIC_ACHIEVEMENT,
+    key = "level_up_18",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_LEVEL_UP,
+    value = 21,
+    content = UIC_ACHIEVEMENT,
+    key = "level_up_21",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_LEVEL_UP,
+    value = 26,
+    content = UIC_ACHIEVEMENT,
+    key = "level_up_26",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_LEVEL_UP,
+    value = 27,
+    content = UIC_ACHIEVEMENT,
+    key = "level_up_27",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_LEVEL_UP,
+    value = 30,
+    content = UIC_ACHIEVEMENT,
+    key = "level_up_30",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_LEVEL_UP,
+    value = 31,
+    content = UIC_ACHIEVEMENT,
+    key = "level_up_31",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_LEVEL_UP,
+    value = 32,
+    content = UIC_ACHIEVEMENT,
+    key = "level_up_32",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_LEVEL_UP,
+    value = 33,
+    content = UIC_ACHIEVEMENT,
+    key = "level_up_33",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_LEVEL_UP,
+    value = 36,
+    content = UIC_ACHIEVEMENT,
+    key = "level_up_36",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_LEVEL_UP,
+    value = 38,
+    content = UIC_ACHIEVEMENT,
+    key = "level_up_38",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_LEVEL_UP,
+    value = 40,
+    content = UIC_ACHIEVEMENT,
+    key = "level_up_40",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_LEVEL_UP,
+    value = 41,
+    content = UIC_ACHIEVEMENT,
+    key = "level_up_41",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_LEVEL_UP,
+    value = 42,
+    content = UIC_ACHIEVEMENT,
+    key = "level_up_42",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_LEVEL_UP,
+    value = 43,
+    content = UIC_ACHIEVEMENT,
+    key = "level_up_43",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_LEVEL_UP,
+    value = 45,
+    content = UIC_ACHIEVEMENT,
+    key = "level_up_45",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_LEVEL_UP,
+    value = 47,
+    content = UIC_ACHIEVEMENT,
+    key = "level_up_47",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_LEVEL_UP,
+    value = 50,
+    content = UIC_ACHIEVEMENT,
+    key = "level_up_50",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_LEVEL_UP,
+    value = 51,
+    content = UIC_ACHIEVEMENT,
+    key = "level_up_51",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_LEVEL_UP,
+    value = 53,
+    content = UIC_ACHIEVEMENT,
+    key = "level_up_53",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_QUEST_COMPLETE,
+    value = 354,
+    content = UIC_ACHIEVEMENT,
+    key = "quest_horse",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_QUEST_COMPLETE,
+    value = 2396,
+    content = UIC_ACHIEVEMENT,
+    key = "quest_horse",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_QUEST_COMPLETE,
+    value = 1125,
+    content = UIC_ACHIEVEMENT,
+    key = "quest_horse",
+    data = {aId = 0}
+  },
+  {
+    condition = CONDITION_QUEST_COMPLETE,
+    value = 6352,
+    content = UIC_ACHIEVEMENT,
+    key = "quest_horse",
+    data = {aId = 0}
+  }
+}
+function GetContentStr(content)
+  if content == UIC_RANK then
+    return X2Locale:LocalizeUiText(RANKING_TEXT, "ranking")
+  elseif content == UIC_CHARACTER_INFO then
+    return X2Locale:LocalizeUiText(COMMON_TEXT, "character_main_widget_title")
+  elseif content == UIC_BAG then
+    return X2Locale:LocalizeUiText(INVEN_TEXT, "bagTitle")
+  elseif content == UIC_QUEST_LIST then
+    return X2Locale:LocalizeUiText(QUEST_TEXT, "widget_title")
+  elseif content == UIC_ACHIEVEMENT then
+    return X2Locale:LocalizeUiText(COMMON_TEXT, "assignment_system")
+  elseif content == UIC_SKILL then
+    return X2Locale:LocalizeUiText(SKILL_TEXT, "titleText")
+  elseif content == UIC_WORLDMAP then
+    return X2Locale:LocalizeUiText(MAP_TEXT, "title")
+  elseif content == UIC_CRAFT_BOOK then
+    return X2Locale:LocalizeUiText(CRAFT_TEXT, "craftBook")
+  elseif content == UIC_MY_FARM_INFO then
+    return X2Locale:LocalizeUiText(MAP_TEXT, "M_COMMON_FARM")
+  elseif content == UIC_EXPEDITION then
+    return X2Locale:LocalizeUiText(COMMUNITY_TEXT, "expedition")
+  elseif content == UIC_FRIEND then
+    return X2Locale:LocalizeUiText(COMMUNITY_TEXT, "relationship")
+  elseif content == UIC_NATION then
+    return X2Locale:LocalizeUiText(NATION_TEXT, "nation")
+  end
+  return nil
+end
+function GetContentGuideStr(content)
+  if content == UIC_RANK then
+    return X2Locale:LocalizeUiText(CONDITION_NOTIFY_TEXT, "guide_rank")
+  elseif content == UIC_CHARACTER_INFO then
+    return X2Locale:LocalizeUiText(CONDITION_NOTIFY_TEXT, "guide_character_info")
+  elseif content == UIC_BAG then
+    return X2Locale:LocalizeUiText(CONDITION_NOTIFY_TEXT, "guide_bag")
+  elseif content == UIC_QUEST_LIST then
+    return X2Locale:LocalizeUiText(CONDITION_NOTIFY_TEXT, "guide_quest_list")
+  elseif content == UIC_ACHIEVEMENT then
+    return X2Locale:LocalizeUiText(CONDITION_NOTIFY_TEXT, "guide_assignment")
+  elseif content == UIC_SKILL then
+    return X2Locale:LocalizeUiText(CONDITION_NOTIFY_TEXT, "guide_skill")
+  elseif content == UIC_WORLDMAP then
+    return X2Locale:LocalizeUiText(CONDITION_NOTIFY_TEXT, "guide_map")
+  elseif content == UIC_CRAFT_BOOK then
+    return X2Locale:LocalizeUiText(CONDITION_NOTIFY_TEXT, "guide_craft_book")
+  elseif content == UIC_MY_FARM_INFO then
+    return X2Locale:LocalizeUiText(CONDITION_NOTIFY_TEXT, "guide_common_facilities")
+  elseif content == UIC_EXPEDITION then
+    return X2Locale:LocalizeUiText(CONDITION_NOTIFY_TEXT, "guide_expedition")
+  elseif content == UIC_FRIEND then
+    return X2Locale:LocalizeUiText(CONDITION_NOTIFY_TEXT, "guide_relationship")
+  elseif content == UIC_NATION then
+    return X2Locale:LocalizeUiText(CONDITION_NOTIFY_TEXT, "guide_nation")
+  end
+  return nil
+end
+function GetLevelUpConditionInfo(level)
+  for i = 1, #conditionList do
+    local info = conditionList[i]
+    if info.condition == CONDITION_LEVEL_UP and info.value == level then
+      return info
+    end
+  end
+  return nil
+end
+function GetQuestCompleteConditionInfo(qType)
+  for i = 1, #conditionList do
+    local info = conditionList[i]
+    if info.condition == CONDITION_QUEST_COMPLETE and info.value == qType then
+      return info
+    end
+  end
+  return nil
+end

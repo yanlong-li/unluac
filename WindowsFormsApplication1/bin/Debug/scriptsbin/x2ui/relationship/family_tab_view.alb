@@ -1,0 +1,110 @@
+function SetViewOfFamilyTabWindow(window)
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  FAMILY_COL = {
+    NAME = 1,
+    TITLE = 2,
+    ROLE = 3,
+    ONLINE = 4
+  }
+  local showOffMember = CreateCheckButton(window:GetId() .. ".showOffMember", window, locale.friend.showOffMember)
+  showOffMember:SetButtonStyle("eyeShape")
+  showOffMember:AddAnchor("BOTTOMRIGHT", window, "TOPRIGHT", 0, -2)
+  window.showOffMember = showOffMember
+  local frame = CreatePageScrollListCtrl(window, "frame", 0)
+  frame:Show(true)
+  frame:AddAnchor("TOPLEFT", window, 0, sideMargin / 2)
+  frame:AddAnchor("BOTTOMRIGHT", window, 0, bottomMargin * 1.2)
+  frame.pageControl:Show(false)
+  local NameSetFunc = function(subItem, data, setValue)
+    if setValue then
+      subItem:SetText(data[SCROLLLIST_COMMON_COL.NAME])
+      ChangeSubItemTextColorForOnline(subItem, data[FAMILY_COL.ONLINE])
+    else
+      subItem:SetText("")
+    end
+  end
+  local TitleSetFunc = function(subItem, data, setValue)
+    if setValue then
+      subItem:SetText(data[FAMILY_COL.TITLE])
+      ChangeSubItemTextColorForOnline(subItem, data[FAMILY_COL.ONLINE])
+    else
+      subItem:SetText("")
+    end
+  end
+  local RoleDataSetFunc = function(subItem, data, setValue)
+    if setValue then
+      if data[FAMILY_COL.ROLE] ~= 0 then
+        subItem:SetText(locale.family.family_leader)
+      else
+        subItem:SetText("")
+      end
+      ChangeSubItemTextColorForOnline(subItem, data[FAMILY_COL.ONLINE])
+    else
+      subItem:SetText("")
+    end
+  end
+  local TitleAscendingSortFunc = function(a, b)
+    return a[ROWDATA_COLUMN_OFFSET + 1][FAMILY_COL.TITLE] < b[ROWDATA_COLUMN_OFFSET + 1][FAMILY_COL.TITLE] and true or false
+  end
+  local TitleDescendingSortFunc = function(a, b)
+    return a[ROWDATA_COLUMN_OFFSET + 1][FAMILY_COL.TITLE] > b[ROWDATA_COLUMN_OFFSET + 1][FAMILY_COL.TITLE] and true or false
+  end
+  local RoleAscendingSortFunc = function(a, b)
+    return a[ROWDATA_COLUMN_OFFSET + 1][FAMILY_COL.ROLE] < b[ROWDATA_COLUMN_OFFSET + 1][FAMILY_COL.ROLE] and true or false
+  end
+  local RoleDescendingSortFunc = function(a, b)
+    return a[ROWDATA_COLUMN_OFFSET + 1][FAMILY_COL.ROLE] > b[ROWDATA_COLUMN_OFFSET + 1][FAMILY_COL.ROLE] and true or false
+  end
+  local columnWidth = relationshipLocale.familyTab.columnWidth
+  frame:InsertColumn(locale.faction.name, columnWidth.name, LCCIT_STRING, NameSetFunc, NameAscendingSortFunc, NameDescendingSortFunc)
+  frame:InsertColumn(locale.family.title, columnWidth.title, LCCIT_STRING, TitleSetFunc, TitleAscendingSortFunc, TitleDescendingSortFunc)
+  frame:InsertColumn(locale.family.role, columnWidth.role, LCCIT_STRING, RoleDataSetFunc, RoleAscendingSortFunc, RoleDescendingSortFunc)
+  frame:InsertRows(10, false)
+  DrawListCtrlUnderLine(frame.listCtrl)
+  ListCtrlOverClickTextureSetting(frame.listCtrl)
+  for i = 1, #frame.listCtrl.column do
+    SettingListColumn(frame.listCtrl, frame.listCtrl.column[i])
+    DrawListCtrlColumnSperatorLine(frame.listCtrl.column[i], #frame.listCtrl.column, i)
+  end
+  for i = 1, #frame.listCtrl.items do
+    for j = 1, #frame.listCtrl.column do
+      local subItem = frame.listCtrl.items[i].subItems[j]
+      DefaultListItemSetting(subItem)
+    end
+  end
+  local namePolicyInfo = X2Util:GetNamePolicyInfo(VNT_CHAR)
+  local inputNameExtent = relationshipLocale.familyTab.inputName.extent
+  local inputName = window:CreateChildWidget("editbox", "inputName", 0, true)
+  inputName:SetExtent(inputNameExtent[1], inputNameExtent[2])
+  inputName:AddAnchor("BOTTOMLEFT", window, 0, 0)
+  inputName:SetMaxTextLength(namePolicyInfo.local_max)
+  ApplyEditSkin(inputName)
+  CreateEditGuideText(inputName, locale.common.input_name_guide)
+  local titlePolicyInfo = X2Util:GetNamePolicyInfo(VNT_FAMILY_TITLE)
+  local inputTitleExtent = relationshipLocale.familyTab.inputTitle.extent
+  local inputTitle = window:CreateChildWidget("editbox", "inputTitle", 0, true)
+  inputTitle:SetExtent(inputTitleExtent[1], inputTitleExtent[2])
+  inputTitle:AddAnchor("LEFT", inputName, "RIGHT", 5, 0)
+  inputTitle:SetMaxTextLength(titlePolicyInfo.local_max)
+  ApplyEditSkin(inputTitle)
+  CreateEditGuideText(inputTitle, locale.family.input_title_guide)
+  local appellation_guide = window:CreateChildWidget("label", "appellation_guide", 0, true)
+  appellation_guide:SetExtent(window:GetWidth(), FONT_SIZE.SMALL)
+  appellation_guide:AddAnchor("TOPLEFT", inputName, "BOTTOMLEFT", relationshipLocale.familyTab.guideAnchor.x, relationshipLocale.familyTab.guideAnchor.y)
+  appellation_guide.style:SetAlign(ALIGN_LEFT)
+  local namePolicyInfo = X2Util:GetNamePolicyInfo(VNT_FAMILY_TITLE)
+  appellation_guide:SetText(GetLimitInfoText(namePolicyInfo))
+  appellation_guide.style:SetFontSize(FONT_SIZE.SMALL)
+  ApplyTextColor(appellation_guide, FONT_COLOR.GRAY)
+  local addFamilyButton = window:CreateChildWidget("button", "addFamilyButton", 0, true)
+  addFamilyButton:Enable(false)
+  addFamilyButton:SetText(locale.family.add_family)
+  addFamilyButton:AddAnchor("BOTTOMLEFT", inputTitle, "BOTTOMRIGHT", 2, 1)
+  ApplyButtonSkin(addFamilyButton, BUTTON_BASIC.DEFAULT)
+  local numOfonlineMember = window:CreateChildWidget("textbox", "numOfonlineMember", 0, true)
+  numOfonlineMember:Show(true)
+  numOfonlineMember:SetExtent(220, 16)
+  numOfonlineMember:AddAnchor("BOTTOMLEFT", inputName, "TOPLEFT", 0, -4)
+  numOfonlineMember.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(numOfonlineMember, FONT_COLOR.TITLE)
+end

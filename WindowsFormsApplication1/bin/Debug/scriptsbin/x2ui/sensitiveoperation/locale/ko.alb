@@ -1,0 +1,3 @@
+if sensitiveOperationLocale == nil then
+  sensitiveOperationLocale = {}
+end

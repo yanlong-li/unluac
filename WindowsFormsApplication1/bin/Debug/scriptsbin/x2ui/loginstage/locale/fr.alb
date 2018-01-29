@@ -1,0 +1,58 @@
+if X2Util:GetGameProvider() == TRION and X2Locale:GetLocale() == "fr" then
+  loginStageCommonLocale.pageTitleCoords = {
+    selectCharacter = UIParent:GetTextureData(LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT, "SelectChractor").coords,
+    createRace = UIParent:GetTextureData(LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT, "SelectRace").coords,
+    createCustomizing = UIParent:GetTextureData(LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT, "Appearance").coords,
+    createAbility = UIParent:GetTextureData(LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT, "Skillset").coords
+  }
+  loginStageCommonLocale.made_html_path = "ui/login_stage/html/made_en.html"
+  BUTTON_LOGINSTAGE.EXIT = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coordsKey = "Exit",
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 10,
+        y = -2
+      }
+    }
+  }
+  BUTTON_LOGINSTAGE.OPTION = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coordsKey = "Options",
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 15,
+        y = -1
+      }
+    }
+  }
+  loginStageCommonLocale.max_character_count = 6
+end

@@ -1,0 +1,176 @@
+CLIENT_DRIVEN_WIDGET = {
+  TITLE = {
+    EXTENT = {782, 128}
+  },
+  TITLE_TEXT_BOX = {
+    EXTENT = {782, 108}
+  },
+  CONTENTS = {
+    EXTENT = {200, 100}
+  },
+  CONTENTS_TEXT_BOX = {
+    EXTENT = {400, 30}
+  },
+  CONTENTS_IMG = {
+    ["200_1"] = {
+      {
+        path = TEXTURE_PATH.KEY_WASD,
+        coord = {
+          0,
+          0,
+          123,
+          83
+        }
+      }
+    },
+    ["200_2"] = {
+      {
+        path = TEXTURE_PATH.KEY_F,
+        coord = {
+          0,
+          0,
+          41,
+          41
+        }
+      }
+    },
+    ["300_1"] = {
+      {
+        path = TEXTURE_PATH.KEY_MOUSE,
+        coord = {
+          GetTextureInfo(TEXTURE_PATH.KEY_MOUSE, "mouse"):GetCoords()
+        }
+      }
+    },
+    ["500_1"] = {
+      {
+        path = TEXTURE_PATH.KEY_F,
+        coord = {
+          0,
+          0,
+          41,
+          41
+        }
+      }
+    },
+    ["600_2"] = {
+      {
+        path = TEXTURE_PATH.KEY_F,
+        coord = {
+          0,
+          0,
+          41,
+          41
+        }
+      },
+      {
+        path = TEXTURE_PATH.KEY_W,
+        coord = {
+          0,
+          0,
+          41,
+          41
+        }
+      }
+    },
+    ["800_1"] = {
+      {
+        path = TEXTURE_PATH.KEY_F,
+        coord = {
+          0,
+          0,
+          41,
+          41
+        }
+      }
+    },
+    ["1000_1"] = {
+      {
+        path = TEXTURE_PATH.KEY_F,
+        coord = {
+          0,
+          0,
+          41,
+          41
+        }
+      }
+    },
+    ["1100_2"] = {
+      {
+        path = TEXTURE_PATH.KEY_R,
+        coord = {
+          0,
+          0,
+          41,
+          41
+        }
+      }
+    },
+    ["1300_1"] = {
+      {
+        path = TEXTURE_PATH.KEY_W,
+        coord = {
+          0,
+          0,
+          41,
+          41
+        }
+      }
+    },
+    ["1400_2"] = {
+      {
+        path = TEXTURE_PATH.KEY_F,
+        coord = {
+          0,
+          0,
+          41,
+          41
+        }
+      }
+    },
+    ["1600_1"] = {
+      {
+        path = TEXTURE_PATH.KEY_F,
+        coord = {
+          0,
+          0,
+          41,
+          41
+        }
+      }
+    },
+    ["1700_2"] = {
+      {
+        path = TEXTURE_PATH.KEY_R,
+        coord = {
+          0,
+          0,
+          41,
+          41
+        }
+      }
+    },
+    ["1900_3"] = {
+      {
+        path = TEXTURE_PATH.KEY_123,
+        coord = {
+          0,
+          0,
+          143,
+          41
+        }
+      }
+    },
+    ["2100_1"] = {
+      {
+        path = TEXTURE_PATH.KEY_F,
+        coord = {
+          0,
+          0,
+          41,
+          41
+        }
+      }
+    }
+  }
+}

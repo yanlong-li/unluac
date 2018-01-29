@@ -1,0 +1,12 @@
+if ingameshopLocale == nil then
+  ingameshopLocale = {}
+end
+ingameshopLocale.maxItemName = {
+  list = 12,
+  cart = 256,
+  result = 256,
+  confirmTitle = 256,
+  confirmDetail = 256,
+  confirmPackage = 256
+}
+ingameshopLocale.eventIconFixedExtent = false

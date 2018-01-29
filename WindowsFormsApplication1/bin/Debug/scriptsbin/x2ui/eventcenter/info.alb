@@ -1,0 +1,236 @@
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+local webFeatureset = X2Player:GetFeatureSet().eventWebLink
+local CreateEventInfoListWnd = function(id, parent)
+  local wnd = parent:CreateChildWidget("emptywidget", id, 0, true)
+  local title = wnd:CreateChildWidget("label", "title", 0, true)
+  title:SetAutoResize(true)
+  title:SetHeight(FONT_SIZE.LARGE)
+  title.style:SetAlign(ALIGN_CENTER)
+  title.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.LARGE)
+  ApplyTextColor(title, FONT_COLOR.MIDDLE_TITLE)
+  title:AddAnchor("TOPLEFT", wnd, 9, 20)
+  title:SetText(GetCommonText("events_in_this_month"))
+  local filter = {
+    GetCommonText("show_all"),
+    GetCommonText("period_in_progress"),
+    GetCommonText("period_scheduled"),
+    GetCommonText("period_ended")
+  }
+  local filterBtn = CreateComboBox(wnd)
+  filterBtn:AddAnchor("TOPRIGHT", wnd, -9, 14)
+  filterBtn:SetEllipsis(true)
+  filterBtn:ShowDropdownTooltip(true)
+  filterBtn:SetExtent(100, 25)
+  filterBtn.dropdownItem = filter
+  filterBtn:Select(1)
+  wnd.filterBtn = filterBtn
+  function filterBtn:SelectProc(selIdx)
+    X2EventCenter:SetGameEventInfoFilter(selIdx)
+  end
+  local function GetRightInset()
+    local longestWidth = 0
+    for i = 2, #filter do
+      local textWidth = filterBtn.style:GetTextWidth(filter[i])
+      if longestWidth < textWidth then
+        longestWidth = textWidth
+      end
+    end
+    return longestWidth
+  end
+  local listWnd = CreateScrollListBox(wnd, "list")
+  local listWidget = listWnd.content
+  listWnd:AddAnchor("TOPLEFT", wnd, 0, 49)
+  listWnd:AddAnchor("BOTTOMRIGHT", wnd, 0, 0)
+  listWidget.itemStyle:SetFontSize(FONT_SIZE.LARGE)
+  listWidget:SetHeight(FONT_SIZE.MIDDLE)
+  listWidget.itemStyle:SetAlign(ALIGN_LEFT)
+  listWidget:SetTreeTypeIndent(true, 20)
+  listWidget:SetInset(5, 5, GetRightInset(), 5)
+  listWidget:SetDefaultItemTextColor(FONT_COLOR.TITLE[1], FONT_COLOR.TITLE[2], FONT_COLOR.TITLE[3], FONT_COLOR.TITLE[4])
+  listWnd:RemoveDrawable(listWnd.bg)
+  local bg = listWnd:CreateImageDrawable(TEXTURE_PATH.DEFAULT, "background")
+  bg:SetCoords(361, 582, 274, 413)
+  ApplyTextureColor(bg, TEXTURE_COLOR.TYPE3_BROWN)
+  bg:AddAnchor("TOPLEFT", wnd, 4, 7)
+  bg:AddAnchor("BOTTOMRIGHT", wnd, -4, -7)
+  listWnd.bg = bg
+  local opened = listWidget:CreateOpenedImageDrawable("ui/button/grid.dds")
+  opened:SetCoords(0, 0, 21, 14)
+  opened:SetExtent(21, 14)
+  local closed = listWidget:CreateClosedImageDrawable("ui/button/grid.dds")
+  closed:SetCoords(44, 0, 13, 21)
+  closed:SetExtent(13, 21)
+  local inProgressList = wnd:CreateChildWidget("listbox", "inProgressList", 0, true)
+  inProgressList:AddAnchor("TOPLEFT", listWidget, "TOPRIGHT", -80, 0)
+  inProgressList:AddAnchor("BOTTOMRIGHT", listWidget, "BOTTOMRIGHT", 0, 0)
+  inProgressList:Clickable(false)
+  inProgressList:Show(true)
+  inProgressList.top = 0
+  InitList(inProgressList)
+  inProgressList.itemStyle:SetFontSize(FONT_SIZE.SMALL)
+  inProgressList.itemStyle:SetAlign(ALIGN_RIGHT)
+  inProgressList:SetDefaultItemTextColor(FONT_COLOR.BLUE[1], FONT_COLOR.BLUE[2], FONT_COLOR.BLUE[3], FONT_COLOR.BLUE[4])
+  inProgressList:SetHeight(FONT_SIZE.MIDDLE + FONT_SIZE.LARGE - FONT_SIZE.SMALL + FORM_ASSIGNMENT.COUNT_LIST_OFFSET)
+  function wnd:UpdateInProgressList()
+    inProgressList:ClearItem()
+    local inProgressStr
+    local viewItemInfos = listWidget:GetViewItemsInfo()
+    for i = 1, #viewItemInfos do
+      if viewItemInfos[i].value == GEIP_SCHEDULED then
+        inProgressStr = string.format("(%s)", GetCommonText("period_scheduled"))
+        inProgressList:SetItem(i - 1, inProgressStr, i, FONT_COLOR.RED[1], FONT_COLOR.RED[2], FONT_COLOR.RED[3], FONT_COLOR.RED[4])
+      elseif viewItemInfos[i].value == GEIP_IN_PROGRESS then
+        inProgressStr = string.format("(%s)", GetCommonText("period_in_progress"))
+        inProgressList:SetItem(i - 1, inProgressStr, i, FONT_COLOR.BLUE[1], FONT_COLOR.BLUE[2], FONT_COLOR.BLUE[3], FONT_COLOR.BLUE[4])
+      elseif viewItemInfos[i].value == GEIP_ENDED then
+        inProgressStr = string.format("(%s)", GetCommonText("period_ended"))
+        inProgressList:SetItem(i - 1, inProgressStr, i, FONT_COLOR.GRAY[1], FONT_COLOR.GRAY[2], FONT_COLOR.GRAY[3], FONT_COLOR.GRAY[4])
+      end
+    end
+  end
+  UIParent:SetEventHandler("GAME_EVENT_INFO_PROGRESS_STATE_CHANGED", wnd.UpdateInProgressList)
+  function wnd:UpdateList()
+    local titleList = X2EventCenter:GetGameEventInfoTitleList()
+    listWnd:SetItemTrees(titleList)
+    if X2EventCenter:GetGameEventInfoCount() > 0 then
+      listWidget:Select(1)
+    end
+    wnd:UpdateInProgressList()
+  end
+  UIParent:SetEventHandler("GAME_EVENT_INFO_LIST_UPDATED", wnd.UpdateList)
+  UIParent:SetEventHandler("GAME_EVENT_EMPTY", wnd.UpdateList)
+  local function ScrollChanged(self, _value)
+    self:OnSliderChanged(_value)
+    inProgressList:SetTop(_value)
+    inProgressList.top = _value
+    wnd:UpdateInProgressList()
+  end
+  listWnd.scroll.vs:SetHandler("OnSliderChanged", ScrollChanged)
+  local function OnListboxToggled()
+    wnd:UpdateInProgressList()
+    listWnd:SetMinMaxValues("vert", 0, listWidget:GetMaxTop())
+  end
+  listWidget:SetHandler("OnListboxToggled", OnListboxToggled)
+  return wnd
+end
+local function CreateEventInfoDescWnd(id, parent)
+  local wnd = parent:CreateChildWidget("emptywidget", id, 0, true)
+  wnd:SetExtent(eventcenterLocale.width.eventInfo.desc, 485)
+  local period = CreatePeriodWidget("period", wnd)
+  period:AddAnchor("TOPLEFT", wnd, 0, 20)
+  period:UseStatusIcon(false)
+  local titleWnd = parent:CreateChildWidget("emptywidget", "titleWnd", 0, true)
+  titleWnd:SetExtent(wnd:GetWidth(), 75)
+  titleWnd:AddAnchor("TOPLEFT", wnd, 0, 50)
+  local icon = wnd:CreateImageDrawable(TEXTURE_PATH.EVENT_CENTER_INFO_ICON, "background")
+  icon:SetTextureInfo("icon_event")
+  icon:AddAnchor("TOPLEFT", titleWnd, 0, 0)
+  local title = titleWnd:CreateChildWidget("label", "title", 0, true)
+  title:SetExtent(titleWnd:GetWidth() - icon:GetWidth() - MARGIN.WINDOW_SIDE / 2, FONT_SIZE.MIDDLE)
+  title.style:SetAlign(ALIGN_LEFT)
+  title.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.XLARGE)
+  ApplyTextColor(title, FONT_COLOR.MIDDLE_TITLE)
+  title:AddAnchor("LEFT", icon, "RIGHT", 0, 0)
+  title.style:SetEllipsis(true)
+  local bg = CreateContentBackground(wnd, "TYPE10", "BROWN")
+  bg:AddAnchor("TOPLEFT", titleWnd, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", titleWnd, 0, 0)
+  bg:SetVisible(true)
+  wnd.bg = bg
+  local scrollWnd = CreateScrollWindow(wnd, "scrollWnd", 0)
+  scrollWnd:AddAnchor("TOPLEFT", icon, "BOTTOMLEFT", 0, 9)
+  if webFeatureset then
+    scrollWnd:AddAnchor("BOTTOMRIGHT", wnd, 0, -43)
+  else
+    scrollWnd:AddAnchor("BOTTOMRIGHT", wnd, 0, 0)
+  end
+  local body = scrollWnd.content:CreateChildWidget("textbox", "body", 0, true)
+  body:AddAnchor("TOPLEFT", scrollWnd.content, 20, 9)
+  body:AddAnchor("TOPRIGHT", scrollWnd.content, -20, 0)
+  body:SetAutoResize(true)
+  body:SetLineSpace(10)
+  body.style:SetAlign(ALIGN_TOP_LEFT)
+  ApplyTextColor(body, FONT_COLOR.MIDDLE_TITLE)
+  local rewardWnd = CreateRewardWindow(scrollWnd.content, "rewardWnd", 10)
+  rewardWnd:AddAnchor("TOPLEFT", body, "BOTTOMLEFT", 0, 20)
+  rewardWnd:AddAnchor("TOPRIGHT", body, "BOTTOMRIGHT", 0, 20)
+  local linkBtn = wnd:CreateChildWidget("button", "linkBtn", 0, true)
+  linkBtn:AddAnchor("BOTTOMRIGHT", wnd, 0, 0)
+  linkBtn:SetText(GetCommonText("event_info_link_button"))
+  ApplyButtonSkin(linkBtn, BUTTON_BASIC.DEFAULT)
+  function linkBtn:OnClick()
+    if linkBtn.link ~= nil and linkBtn.link ~= "" then
+      local function DialogHandler(dialog)
+        dialog:SetTitle(GetCommonText("web_link_title"))
+        dialog:SetContent(GetCommonText("web_link_body"))
+        function dialog:OkProc()
+          X2Util:OpenWeb(linkBtn.link)
+        end
+      end
+      X2DialogManager:RequestDefaultDialog(DialogHandler, parent:GetId())
+    end
+  end
+  linkBtn:SetHandler("OnClick", linkBtn.OnClick)
+  function wnd:FillBody(idx)
+    local info
+    if #idx == 1 then
+      info = X2EventCenter:GetGameEventInfo(idx[1], -1)
+    elseif #idx == 2 then
+      info = X2EventCenter:GetGameEventInfo(idx[1], idx[2])
+    end
+    if info == nil then
+      return
+    end
+    period:SetPeriodWithCheckProgress(info.startTime, info.endTime)
+    title:SetText(info.title)
+    body:SetText(info.body)
+    body:SetHeight(body:GetTextHeight())
+    rewardWnd:FillReward(info)
+    local height = 9 + body:GetHeight() + 20 + rewardWnd:GetHeight() + 9
+    ResetScroll(scrollWnd, height)
+    if info.link == nil or info.link == "" or webFeatureset == false then
+      linkBtn:Show(false)
+      linkBtn.link = ""
+    else
+      linkBtn:Show(true)
+      linkBtn.link = info.link
+    end
+  end
+  return wnd
+end
+function CreateEventInfoWnd(parent)
+  parent.isEventInfoWnd = true
+  local listWnd = CreateEventInfoListWnd("listWnd", parent)
+  listWnd:SetExtent(eventcenterLocale.width.eventInfo.list, 485)
+  listWnd:AddAnchor("TOPLEFT", parent, 0, 10)
+  local descWnd = CreateEventInfoDescWnd("descWnd", parent)
+  descWnd:Show(false)
+  descWnd:AddAnchor("TOPLEFT", listWnd, "TOPRIGHT", MARGIN.WINDOW_SIDE / 2, 0)
+  local modalLoadingWindow = CreateLoadingTextureSet(parent)
+  modalLoadingWindow:AddAnchor("TOPLEFT", parent, 0, 0)
+  modalLoadingWindow:AddAnchor("BOTTOMRIGHT", parent, 0, 0)
+  local function OnInfoRequested()
+    parent:WaitPage(true)
+  end
+  UIParent:SetEventHandler("GAME_EVENT_INFO_REQUESTED", OnInfoRequested)
+  local function OnEventInfoUpdated()
+    parent:WaitPage(false)
+  end
+  UIParent:SetEventHandler("GAME_EVENT_INFO_LIST_UPDATED", OnEventInfoUpdated)
+  local function OnGameEventEmpty()
+    parent:WaitPage(false)
+  end
+  UIParent:SetEventHandler("GAME_EVENT_EMPTY", OnGameEventEmpty)
+  local listWidget = listWnd.list.content
+  function listWidget:OnSelChanged()
+    listWnd:UpdateInProgressList()
+    local idx = listWidget:GetSelectedIndex()
+    if idx == -1 then
+      return
+    end
+    local depthIdx = listWidget:GetSelectedIndexWithDepth()
+    descWnd:FillBody(depthIdx)
+    descWnd:Show(true)
+  end
+  listWidget:SetHandler("OnSelChanged", listWidget.OnSelChanged)
+end

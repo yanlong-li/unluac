@@ -1,0 +1,6 @@
+if combatTextLocale == nil then
+  combatTextLocale = {}
+end
+combatTextLocale.drawableAnchor = {x = 0, y = 0}
+combatTextLocale.fontSize = 60
+combatTextLocale.fontPath = "combat"

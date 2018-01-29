@@ -1,0 +1,17 @@
+local wnd
+local function CreateBuildCondition(id, parent)
+  if nil == wnd then
+    wnd = SetViewOfBuildCondition(id, parent)
+  else
+    wnd:Show(true)
+  end
+end
+local function ShowBuildCondition(param)
+  CreateBuildCondition("BuildCondition", "UIParent")
+  wnd:FillData(param)
+  function wnd.okBtn:OnClick()
+    wnd:Show(false)
+  end
+  wnd.okBtn:SetHandler("OnClick", wnd.okBtn.OnClick)
+end
+UIParent:SetEventHandler("BUILD_CONDITION", ShowBuildCondition)

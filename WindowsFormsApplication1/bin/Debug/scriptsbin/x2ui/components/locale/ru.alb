@@ -1,0 +1,8 @@
+if X2Util:GetGameProvider() == MAILRU then
+  componentsLocale.popupMenu = {offsetX = 5}
+  componentsLocale.noticePriceFontSize = FONT_SIZE.MIDDLE
+  function componentsLocale:GetExpeditionExpelText()
+    return GetUIText(EXPEDITION_TEXT, "kick")
+  end
+  componentsLocale.cashBuy.useEmbededWebBrowser = true
+end

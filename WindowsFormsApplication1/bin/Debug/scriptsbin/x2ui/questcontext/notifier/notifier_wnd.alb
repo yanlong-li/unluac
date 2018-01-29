@@ -1,0 +1,224 @@
+local notifierWnd = CreatNotifierWindow()
+function GetNotifierWnd()
+  return notifierWnd
+end
+local EmptyFunction = function()
+end
+notifierWnd:SetHandler("OnMouseDown", EmptyFunction)
+notifierWnd:SetHandler("OnMouseUp", EmptyFunction)
+function notifierWnd:SetAlphaBlending(alpha)
+  if self.questBtn ~= nil then
+    self.questBtn:SetAlpha(alpha and 0.45 or 1)
+  end
+  if self.assignmentBtn ~= nil then
+    self.assignmentBtn:SetAlpha(alpha and 0.45 or 1)
+  end
+  self.bg:SetColor(0, 0, 0, alpha and 0.3 or 0.7)
+  notifierWnd:ReleaseHandler("OnUpdate")
+end
+function notifierWnd:OnUpdate(dt)
+  notifierWnd.delay = notifierWnd.delay + dt
+  if notifierWnd.delay < 300 then
+    return
+  end
+  notifierWnd:SetAlphaBlending(false)
+end
+function notifierWnd:OnEnter()
+  notifierWnd.delay = 0
+  notifierWnd:SetHandler("OnUpdate", notifierWnd.OnUpdate)
+end
+notifierWnd:SetHandler("OnEnter", notifierWnd.OnEnter)
+function notifierWnd:OnLeave()
+  notifierWnd:SetAlphaBlending(true)
+end
+notifierWnd:SetHandler("OnLeave", notifierWnd.OnLeave)
+function notifierWnd:OnScale()
+  if self:CheckOutOfScreen() then
+    self:RemoveAllAnchors()
+    local x, y = self:CorrectOffsetByScreen()
+    self:AddAnchor("TOPLEFT", "UIParent", F_LAYOUT:CalcDontApplyUIScale(x), F_LAYOUT:CalcDontApplyUIScale(y))
+  end
+end
+notifierWnd:SetHandler("OnScale", notifierWnd.OnScale)
+local notifierEvent = {
+  ENTERED_INSTANT_GAME_ZONE = function()
+    notifierWnd:Show(false)
+  end,
+  INSTANT_GAME_START = function()
+    notifierWnd:Show(false)
+  end,
+  LEAVED_INSTANT_GAME_ZONE = function()
+    notifierWnd:Show(true)
+  end,
+  ENTERED_WORLD = function()
+    if X2BattleField:IsInInstantGame() then
+      notifierWnd:Show(false)
+    else
+      notifierWnd:Refresh()
+      notifierWnd:Show(true)
+    end
+  end,
+  LEFT_LOADING = function()
+    UpdateAllNotifierDecal()
+    notifierWnd:Refresh()
+  end,
+  DOMINION = function(action)
+    if action == "owner_changed" then
+      notifierWnd:Refresh()
+    end
+  end,
+  LEVEL_CHANGED = function(_, stringId)
+    if X2Unit:GetUnitId("player") ~= stringId then
+      return
+    end
+    notifierWnd:Refresh()
+  end,
+  QUEST_NOTIFIER_START = function()
+    InitQuestNotifierData()
+    notifierWnd:Refresh()
+  end,
+  UI_RELOADED = function()
+    InitQuestNotifierData()
+    notifierWnd:Refresh()
+  end
+}
+notifierWnd:SetHandler("OnEvent", function(this, event, ...)
+  notifierEvent[event](...)
+end)
+RegistUIEvent(notifierWnd, notifierEvent)
+function notifierWnd:SelectTab(index)
+  notifierWnd.index = index
+  if self.questBtn ~= nil then
+    self.questBtn:Enable(index == 2)
+  end
+  if self.assignmentBtn ~= nil then
+    self.assignmentBtn:Enable(index == 1)
+  end
+  if self.questNotifier ~= nil then
+    self.questNotifier:Show(index == 1)
+  end
+  if self.assignmentNotifier ~= nil then
+    self.assignmentNotifier:Show(index == 2)
+  end
+end
+function notifierWnd:SetOpenStatus(open)
+  if open == nil then
+    open = GetNotifierOpenState()
+  end
+  if open then
+    notifierWnd:SetHeight(GetNofifierHeight())
+  else
+    notifierWnd:SetHeight(30)
+  end
+  notifierWnd:UseResizing(open)
+  SetNotifierOpenState(open)
+  if open then
+    ChangeButtonSkin(notifierWnd.toggleBtn, BUTTON_HUD.QUEST_CLOSE)
+  else
+    ChangeButtonSkin(notifierWnd.toggleBtn, BUTTON_HUD.QUEST_OPEN)
+  end
+  if notifierWnd.questBtn ~= nil then
+    notifierWnd.questBtn:Show(open)
+  end
+  if notifierWnd.assignmentBtn ~= nil then
+    notifierWnd.assignmentBtn:Show(open)
+  end
+  if notifierWnd.questNotifier ~= nil then
+    notifierWnd.questNotifier:Show(open and notifierWnd.index == 1)
+  end
+  if notifierWnd.assignmentNotifier ~= nil then
+    notifierWnd.assignmentNotifier:Show(open and notifierWnd.index == 2)
+  end
+  notifierWnd.bg:SetVisible(open)
+  notifierWnd.moveWnd:Show(open)
+end
+function notifierWnd:ProcMovedSize()
+  SetNofifierHeight(notifierWnd:GetHeight())
+end
+function notifierWnd:ProcChangedAnchor()
+  if notifierWnd.questNotifier ~= nil then
+    notifierWnd.questNotifier:ResetScroll()
+  end
+  if notifierWnd.assignmentNotifier ~= nil then
+    notifierWnd.assignmentNotifier:ResetScroll()
+  end
+end
+function notifierWnd:ProcBoundChanged()
+end
+function notifierWnd.toggleBtn:OnClick()
+  notifierWnd:SetOpenStatus(not GetNotifierOpenState())
+  notifierWnd:Refresh(false)
+end
+notifierWnd.toggleBtn:SetHandler("OnClick", notifierWnd.toggleBtn.OnClick)
+function notifierWnd.moveWnd:OnDragStart(arg)
+  if arg == "LeftButton" and X2Input:IsShiftKeyDown() then
+    notifierWnd:StartMoving()
+    X2Cursor:ClearCursor()
+    X2Cursor:SetCursorImage(CURSOR_PATH.MOVE, 0, 0)
+  end
+end
+notifierWnd.moveWnd:SetHandler("OnDragStart", notifierWnd.moveWnd.OnDragStart)
+function notifierWnd.moveWnd:OnDragStop()
+  notifierWnd:StopMovingOrSizing()
+  X2Cursor:ClearCursor()
+end
+notifierWnd.moveWnd:SetHandler("OnDragStop", notifierWnd.moveWnd.OnDragStop)
+notifierWnd.moveWnd:SetHandler("OnMouseDown", EmptyFunction)
+notifierWnd.moveWnd:SetHandler("OnMouseUp", EmptyFunction)
+if notifierWnd.questBtn ~= nil then
+  function notifierWnd.questBtn:OnClick()
+    notifierWnd:SelectTab(1)
+  end
+  notifierWnd.questBtn:SetHandler("OnClick", notifierWnd.questBtn.OnClick)
+  function notifierWnd.questBtn:OnEnter()
+    SetVerticalTooltip(GetUIText(QUEST_TEXT, "quest"), self)
+  end
+  notifierWnd.questBtn:SetHandler("OnEnter", notifierWnd.questBtn.OnEnter)
+  function notifierWnd.questBtn:OnLeave()
+    HideTooltip()
+  end
+  notifierWnd.questBtn:SetHandler("OnLeave", notifierWnd.questBtn.OnLeave)
+end
+if notifierWnd.assignmentBtn ~= nil then
+  function notifierWnd.assignmentBtn:OnClick()
+    notifierWnd:SelectTab(2)
+  end
+  notifierWnd.assignmentBtn:SetHandler("OnClick", notifierWnd.assignmentBtn.OnClick)
+  function notifierWnd.assignmentBtn:OnEnter()
+    SetVerticalTooltip(GetUIText(COMMON_TEXT, "assignment_system"), self)
+  end
+  notifierWnd.assignmentBtn:SetHandler("OnEnter", notifierWnd.assignmentBtn.OnEnter)
+  function notifierWnd.assignmentBtn:OnLeave()
+    HideTooltip()
+  end
+  notifierWnd.assignmentBtn:SetHandler("OnLeave", notifierWnd.assignmentBtn.OnLeave)
+end
+function notifierWnd:Refresh(init)
+  if notifierWnd.questNotifier ~= nil then
+    SyncNotifierQuestList()
+    notifierWnd.questNotifier:MakeQuestNotifyList(nil, init)
+  end
+  if notifierWnd.assignmentNotifier ~= nil then
+    notifierWnd.assignmentNotifier:MakeList()
+  end
+  local _, nOffsetY = notifierWnd:GetOffset()
+  local nExtentX, nExtentY = notifierWnd:GetExtent()
+  local _, mOffsetY = notifierWnd.questNotifier.mainQuestWnd:GetOffset()
+  local _, mExtentY = notifierWnd.questNotifier.mainQuestWnd:GetExtent()
+  local contentLimitHeight = 90
+  local headerHeight = mOffsetY - nOffsetY
+  local openHeight = GetNofifierHeight()
+  if openHeight < headerHeight + mExtentY + contentLimitHeight then
+    SetNofifierHeight(headerHeight + mExtentY + contentLimitHeight)
+  end
+  notifierWnd:SetMinResizingExtent(nExtentX, headerHeight + mExtentY + contentLimitHeight)
+  notifierWnd:SetOpenStatus()
+end
+function notifierWnd:Init()
+  notifierWnd:Refresh(true)
+  notifierWnd:SelectTab(1)
+  notifierWnd:SetAlphaBlending(true)
+end
+notifierWnd:Init()
+AddUISaveHandlerByKey("questNotifier", notifierWnd)
+notifierWnd:ApplyLastWindowOffset()

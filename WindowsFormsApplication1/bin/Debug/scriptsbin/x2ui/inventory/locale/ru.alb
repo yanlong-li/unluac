@@ -1,0 +1,6 @@
+if X2Util:GetGameProvider() == MAILRU then
+  inventoryLocale.guideLineSpace = 16
+  inventoryLocale.evolving = {
+    resultWndWidthPercent = {name = 0.3, value = 0.7}
+  }
+end

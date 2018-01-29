@@ -1,0 +1,21 @@
+if X2Util:GetGameProvider() == TRION then
+  housingLocale.maintainWndWidth = 600
+  function housingLocale:DecoWndInsertColumn(listCtrl, NameDataFunc, NameLayoutFunc, ValueDataFunc, ValueLayoutFunc)
+    listCtrl:InsertColumn("", 195, LCCIT_STRING, NameDataFunc, nil, nil, NameLayoutFunc)
+    listCtrl:InsertColumn("", 80, LCCIT_STRING, ValueDataFunc, nil, nil, ValueLayoutFunc)
+  end
+  function housingLocale:DecoWndFillList(scrollListCtrl, count)
+    local index = 1
+    for i = 1, count do
+      local info = X2House:GetDecoActabilityPoint(index)
+      local nameInfo = {
+        idx = index,
+        name = info.name
+      }
+      scrollListCtrl:InsertData(i, 1, nameInfo)
+      local str = string.format("+|,%d;", info.decoPoint)
+      scrollListCtrl:InsertData(i, 2, str)
+      index = index + 1
+    end
+  end
+end

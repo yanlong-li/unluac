@@ -1,0 +1,6 @@
+if X2Util:GetGameProvider() == MAILRU then
+  tutorialLocale.width = {
+    window = 460,
+    button = BUTTON_SIZE.DEFAULT_LARGE.WIDTH
+  }
+end

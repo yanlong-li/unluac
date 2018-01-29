@@ -1,0 +1,84 @@
+local CreateConditionMsgWindow = function(id, parent)
+  local wnd = CreateCenterMessageFrame(id, parent, "TYPE1")
+  wnd:SetExtent(946, 190)
+  wnd.bg:SetExtent(782, 128)
+  wnd.iconBg:RemoveAllAnchors()
+  wnd.iconBg:AddAnchor("TOP", wnd, 0, 10)
+  wnd.icon:SetTexture(TEXTURE_PATH.ALARM_CONDITION)
+  wnd.icon:SetTextureInfo("target")
+  wnd.icon:RemoveAllAnchors()
+  wnd.icon:AddAnchor("CENTER", wnd.iconBg, 32, -3)
+  wnd.icon:SetVisible(true)
+  local title = wnd:CreateChildWidget("label", "title", 0, true)
+  title:SetHeight(FONT_SIZE.XLARGE)
+  title.style:SetShadow(true)
+  title.style:SetFontSize(FONT_SIZE.XLARGE)
+  title:AddAnchor("TOP", wnd.bg, 0, 20)
+  ApplyTextColor(title, FONT_COLOR.YELLOW)
+  title:SetAutoResize(true)
+  wnd.body.style:SetFontSize(FONT_SIZE.XXLARGE)
+  function wnd:OnUpdate(dt)
+    if self.delay < 3000 then
+      self.delay = self.delay + dt
+      return
+    end
+    self.delay = 0
+    self:Show(false, 300)
+    self:ReleaseHandler("OnUpdate")
+  end
+  function wnd:OnEndFadeOut()
+    StartNextImgEvent()
+  end
+  function wnd:SetInfo(titleStr, bodyStr)
+    self.delay = 0
+    if titleStr ~= nil then
+      title:SetText(titleStr)
+      title:Show(true)
+      wnd.body:RemoveAllAnchors()
+      wnd.body:AddAnchor("TOP", title, "BOTTOM", 0, 5)
+    else
+      title:Show(false)
+      wnd.body:RemoveAllAnchors()
+      wnd.body:AddAnchor("TOP", wnd.bg, 0, 20)
+    end
+    wnd.body:SetWidth(1000)
+    wnd.body:SetText(string.format("%s%s", FONT_COLOR_HEX.LABORPOWER_YELLOW, bodyStr))
+    wnd.body:SetExtent(wnd.body:GetLongestLineWidth() + 10, wnd.body:GetTextHeight())
+    wnd:Show(true, 300)
+    wnd:SetHandler("OnUpdate", wnd.OnUpdate)
+    if not wnd:HasHandler("OnEndFadeOut") then
+      wnd:SetHandler("OnEndFadeOut", wnd.OnEndFadeOut)
+    end
+  end
+  return wnd
+end
+local conditionMsgWnd = CreateConditionMsgWindow("conditionMsgWnd", "UIParent")
+conditionMsgWnd:Show(false)
+function ShowLevelUpConditionMsg(info)
+  local contentStr = GetContentStr(info.content)
+  local titleStr
+  if contentStr ~= nil then
+    titleStr = string.format("[%s] %s", contentStr, GetContentGuideStr(info.content))
+  end
+  local bodyStr = X2Locale:LocalizeUiText(CONDITION_NOTIFY_TEXT, info.key)
+  conditionMsgWnd:SetInfo(titleStr, bodyStr)
+  local shortcut = GetAssignmentShortcut()
+  if shortcut ~= nil then
+    shortcut:SetInfo(info.content, info.data)
+  end
+  return true
+end
+function ShowQuestCompleteConditionMsg(info)
+  local contentStr = GetContentStr(info.content)
+  local titleStr
+  if contentStr ~= nil then
+    titleStr = string.format("[%s] %s", contentStr, GetContentGuideStr(info.content))
+  end
+  local bodyStr = X2Locale:LocalizeUiText(CONDITION_NOTIFY_TEXT, info.key)
+  conditionMsgWnd:SetInfo(titleStr, bodyStr)
+  local shortcut = GetAssignmentShortcut()
+  if shortcut ~= nil then
+    shortcut:SetInfo(info.content, info.data)
+  end
+  return true
+end

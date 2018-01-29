@@ -1,0 +1,4 @@
+function CreateExpeditionTabOfNationMgr(window)
+  function window:Init()
+  end
+end

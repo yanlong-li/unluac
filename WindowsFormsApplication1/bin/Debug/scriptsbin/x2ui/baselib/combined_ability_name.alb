@@ -1,0 +1,64 @@
+local IsInvalidAbility = function(ability)
+  if ability == nil or ability <= ABILITY_GENERAL or ability >= ABILITY_MAX then
+    return true
+  end
+  return false
+end
+local jobs = {}
+jobs[ABILITY_FIGHT] = locale.newbieJobName.fight
+jobs[ABILITY_WILD] = locale.newbieJobName.wild
+jobs[ABILITY_MAGIC] = locale.newbieJobName.magic
+jobs[ABILITY_LOVE] = locale.newbieJobName.love
+jobs[ABILITY_DEATH] = locale.newbieJobName.death
+jobs[ABILITY_VOCATION] = locale.newbieJobName.vocation
+local function GetNewbieJobName(ability1, ability2)
+  local name = jobs[ability1]
+  if name ~= nil then
+    return name
+  end
+  name = jobs[ability2]
+  if name ~= nil then
+    return name
+  end
+  return GetUIText(COMBINED_ABILITY_NAME_TEXT, "name_9_9_9")
+end
+function GetCombinedAbilityName(index1, index2, index3)
+  index1 = index1 or ABILITY_MAX
+  index2 = index2 or ABILITY_MAX
+  index3 = index3 or ABILITY_MAX
+  local indices = {
+    index1,
+    index2,
+    index3
+  }
+  for i = 1, #indices do
+    if IsInvalidAbility(indices[i]) then
+      return GetNewbieJobName(indices[1], indices[2])
+    end
+  end
+  table.sort(indices)
+  local keyStr = string.format("name_%d_%d_%d", indices[1], indices[2], indices[3])
+  local name = GetUIText(COMBINED_ABILITY_NAME_TEXT, keyStr)
+  if name == nil then
+    name = GetUIText(COMBINED_ABILITY_NAME_TEXT, "name_9_9_9")
+  end
+  return name
+end
+function GetPlayerJobName(abilityType1, abilityType2, abilityType3)
+  local abilities = X2Ability:GetActiveAbility()
+  local abilityTypes = {}
+  local abilityCount = #abilities
+  for i = 1, abilityCount do
+    abilityTypes[i] = abilities[i].type
+  end
+  if abilityType1 ~= nil then
+    abilityTypes[1] = abilityType1
+  end
+  if abilityType2 ~= nil and abilityCount >= 1 then
+    abilityTypes[2] = abilityType2
+  end
+  if abilityType3 ~= nil and abilityCount >= 2 then
+    abilityTypes[3] = abilityType3
+  end
+  return GetCombinedAbilityName(abilityTypes[1], abilityTypes[2], abilityTypes[3])
+end

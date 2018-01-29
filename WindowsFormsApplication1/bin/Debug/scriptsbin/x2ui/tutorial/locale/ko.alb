@@ -1,0 +1,8 @@
+if tutorialLocale == nil then
+  tutorialLocale = {}
+end
+tutorialLocale.width = {
+  window = 450,
+  button = BUTTON_SIZE.DEFAULT_SMALL.WIDTH
+}
+tutorialLocale.lineSpace = 3

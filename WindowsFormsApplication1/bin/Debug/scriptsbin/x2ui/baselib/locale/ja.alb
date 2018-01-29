@@ -1,0 +1,16 @@
+if X2Util:GetGameProvider() == GAMEON then
+  TEXTBOX_LINE_SPACE = {
+    SMALL = -1,
+    MIDDLE = 1,
+    TOOLTIP = -1
+  }
+  baselibLocale.viewArcheLifeIcon = false
+  baselibLocale.bindingKeyName.APOSTROPHE = "^"
+  baselibLocale.useMileage = true
+  baselibLocale.premiumService.usePremiumGrade = false
+  function baselibLocale:SetEditCursor(edit)
+    edit:SetCursorHeight(1)
+    edit:SetCursorOffset(2)
+  end
+  baselibLocale.visibleAddedRefundInfo = false
+end

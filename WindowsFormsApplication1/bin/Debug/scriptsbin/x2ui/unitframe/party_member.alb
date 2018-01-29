@@ -1,0 +1,158 @@
+local PARTY_MEMBER_WIDTH = 180
+local PARTY_MEMBER_HEIGHT = 55
+function CreatePartyMemberFrame(id, parent)
+  local w = CreateUnitFrame(id, parent)
+  if baselibLocale.useQQTalk then
+    w.qqTalkIcon = w:CreateImageDrawable(TEXTURE_PATH.QQ_TALK, "background")
+    w.qqTalkIcon:SetTextureInfo("icon_noconversation")
+    w.qqTalkIcon:SetVisible(false)
+    w.qqTalkIcon:AddAnchor("LEFT", w.hpBar, "RIGHT", 0, 0)
+  end
+  local UpdateOffline = function(wnd, isOffline)
+    if isOffline == true then
+      ApplyTextColor(wnd.level.label, FONT_COLOR.GRAY)
+      ApplyTextColor(wnd.ability, FONT_COLOR.GRAY)
+      ApplyTextColor(wnd.name, FONT_COLOR.GRAY)
+      ApplyTextColor(wnd.hpBar.hpLabel, FONT_COLOR.GRAY)
+      wnd.hpBar.hpLabel:SetText(locale.unitFrame.offline)
+      wnd.hpBar:ApplyBarTexture(STATUSBAR_STYLE.S_HP_OFFLINE)
+      wnd.mpBar:ApplyBarTexture(STATUSBAR_STYLE.S_MP_OFFLINE)
+      wnd.buffWindow:Show(false)
+      wnd.debuffWindow:Show(false)
+    else
+      ApplyTextColor(wnd.level.label, FONT_COLOR.EXP_ORANGE)
+      ApplyTextColor(wnd.ability, FONT_COLOR.EXP_ORANGE)
+      ApplyTextColor(wnd.name, FONT_COLOR.WHITE)
+      ApplyTextColor(wnd.hpBar.hpLabel, FONT_COLOR.WHITE)
+      wnd.hpBar:ApplyBarTexture(STATUSBAR_STYLE.S_HP_PARTY)
+      wnd.mpBar:ApplyBarTexture(STATUSBAR_STYLE.S_MP)
+      wnd.buffWindow:Show(true)
+      wnd.debuffWindow:Show(true)
+    end
+    wnd.offlineLabel:Show(isOffline)
+    wnd.hpBar.hpLabel:Show(not isOffline and GetOptionItemValue("ShowHeatlthNumber") == 1)
+  end
+  function w:Set(index, target)
+    self.initialized = false
+    self.target = target
+    self.unitId = X2Unit:GetUnitId(target)
+    self.index = index
+    self.unableGageAni = true
+    self:UpdateAll()
+    local isOffline = X2Unit:UnitIsOffline(target) or false
+    UpdateOffline(self, isOffline)
+    self:UpdateQQTalk()
+    self:SetHandler("OnUpdate", self.OnUpdate)
+    self:Show(true)
+  end
+  function w:Release()
+    self.target = ""
+    self.unitId = ""
+    self.index = 0
+    self:ReleaseHandler("OnUpdate")
+    self:Show(false)
+  end
+  function w:SetOffline()
+    UpdateOffline(self, true)
+  end
+  function w:UpdateCombatIcon()
+    if self:IsVisible() and self.target ~= nil then
+      self:ShowCombatIcon(X2Unit:UnitCombatState(self.target))
+    end
+  end
+  function w:ApplyFrameStyle()
+    self.bg:SetCoords(305, 168, 154, 38)
+    self.bg:RemoveAllAnchors()
+    self.bg:AddAnchor("TOPLEFT", self.hpBar, -1, -4)
+    self.bg:AddAnchor("BOTTOMRIGHT", self.mpBar, 4, 4)
+    self.name:SetAutoResize(true)
+    self.hpBar:SetWidth(PARTY_MEMBER_WIDTH)
+    self.mpBar:SetWidth(PARTY_MEMBER_WIDTH)
+    self.line:SetCoords(305, 207, 152, 8)
+    self.line:RemoveAllAnchors()
+    self.line:AddAnchor("TOPLEFT", self.hpBar, "BOTTOMLEFT", -1, -3)
+    self.line:AddAnchor("TOPRIGHT", self.hpBar, "BOTTOMRIGHT", 1, -3)
+    self.buffWindow:AddAnchor("TOPLEFT", self.mpBar, "BOTTOMLEFT", 0, 4)
+    self.buffWindow:SetLayout(6, 26, 2, 2, false)
+    self.debuffWindow:SetLayout(6, 26, 2, 2, false)
+    if self.offlineLabel == nil then
+      local offlineLabel = self:CreateChildWidget("label", "offlineLabel", 0, true)
+    end
+    self.offlineLabel:Show(false)
+    self.offlineLabel:SetHeight(FONT_SIZE.SMALL)
+    self.offlineLabel:SetAutoResize(true)
+    self.offlineLabel:SetText(locale.unitFrame.offline)
+    self.offlineLabel:AddAnchor("BOTTOMRIGHT", self.hpBar, -1, -1)
+    self.offlineLabel.style:SetAlign(ALIGN_RIGHT)
+    self.offlineLabel.style:SetFontSize(FONT_SIZE.SMALL)
+    ApplyTextColor(self.offlineLabel, FONT_COLOR.DARK_GRAY)
+  end
+  local accumTime = 0
+  local INTERVAL = 100
+  function w:Update(dt)
+    accumTime = accumTime + dt
+    if accumTime < INTERVAL then
+      return false
+    end
+    accumTime = 0
+    self:UpdateLevel()
+    self:UpdateCombatIcon()
+    if X2Unit:UnitIsOffline(self.target) then
+      self:SetAlpha(1)
+      return
+    end
+    local distance = X2Unit:UnitDistance(self.target)
+    if distance == nil then
+      return
+    end
+    if distance >= UNIT_VISIBLE_MAX_DISTANCE then
+      self:SetAlpha(0.5)
+    else
+      self:SetAlpha(1)
+    end
+    return true
+  end
+  function w:UpdateMarkerAnchor()
+    self.marker:RemoveAllAnchors()
+    if self.leaderMark:IsVisible() then
+      self.marker:AddAnchor("LEFT", self.leaderMark, "RIGHT", -1, -2)
+    else
+      self.marker:AddAnchor("LEFT", self.name, "RIGHT", 0, 0)
+    end
+  end
+  function w:Click(arg)
+    if arg == "RightButton" then
+      ActivatePopupMenu(w, "team", self.index)
+    end
+  end
+  function w:UpdateQQTalk()
+    if self.qqTalkIcon == nil or self.unitId == nil then
+      return
+    end
+    local roomInfo = X2QQTalk:GetRoomInfo()
+    if roomInfo.roomType ~= "team" then
+      self.qqTalkIcon:SetVisible(false)
+      return
+    end
+    if X2QQTalk:IsEnteredTeamTalkRoom(self.index) then
+      self.qqTalkIcon:SetTextureInfo("icon_conversation")
+    else
+      self.qqTalkIcon:SetTextureInfo("icon_noconversation")
+    end
+    self.qqTalkIcon:SetVisible(true)
+    self:UpdateQQTalkAnchor()
+  end
+  function w:UpdateQQTalkAnchor()
+    if self.qqTalkIcon == nil or not self.qqTalkIcon:IsVisible() then
+      return
+    end
+    if self.lootIcon:IsVisible() or self.pvpIcon:IsVisible() then
+      self.qqTalkIcon:AddAnchor("LEFT", w.hpBar, "RIGHT", self.pvpIcon:GetWidth(), 5)
+    else
+      self.qqTalkIcon:AddAnchor("LEFT", w.hpBar, "RIGHT", 0, 5)
+    end
+  end
+  w:SetExtent(PARTY_MEMBER_WIDTH, PARTY_MEMBER_HEIGHT)
+  w:ApplyFrameStyle()
+  return w
+end

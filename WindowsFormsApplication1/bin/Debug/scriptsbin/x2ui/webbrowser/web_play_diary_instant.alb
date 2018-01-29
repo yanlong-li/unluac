@@ -1,0 +1,25 @@
+local diaryInstantWindow
+local WIDTH = 434
+local HEIGHT = 380
+local OFFSET = 0
+function ClearWebDiaryInstant()
+  diaryInstantWindow = nil
+end
+local function CreateDiaryInstantWindow(id, parent)
+  local window = SetViewOfWebbrowserWindow(id, parent, WIDTH, HEIGHT, OFFSET)
+  window:SetSounds("web_play_diary")
+  window.clearProc = ClearWebDiaryInstant
+  return window
+end
+local function OnToggleWebDiaryInstant(fileName)
+  if X2:IsWebEnable() and localeView.useWebContent and baselibLocale.useWebQuickDiary then
+    if diaryInstantWindow == nil then
+      diaryInstantWindow = CreateDiaryInstantWindow("diaryInstantWindow", "UIParent")
+      diaryInstantWindow.webBrowser:RequestPlayDiaryInstant(fileName)
+      diaryInstantWindow:Show(true)
+    elseif diaryInstantWindow:IsVisible() then
+      diaryInstantWindow:Show(false)
+    end
+  end
+end
+UIParent:SetEventHandler("TOGGLE_WEB_PLAY_DIARY_INSTANT", OnToggleWebDiaryInstant)

@@ -1,0 +1,156 @@
+funcNamespaceTable = {}
+MAX = {MY_ABILITY_COUNT = 3}
+SYSTEM_NATION = {
+  OUTLAW = 114,
+  NUIAN = 148,
+  HARIHARAN = 149
+}
+UNIT_VISIBLE_MAX_DISTANCE = 130
+AUTO_REGISTER_ACTIONBAR_NUM = 3
+BUTTON_STATE = {
+  NORMAL = 1,
+  HIGHLIGHTED = 2,
+  PUSHED = 3,
+  DISABLED = 4
+}
+PLAYER_EQUIP_SLOTS = {
+  ES_HEAD,
+  ES_NECK,
+  ES_CHEST,
+  ES_WAIST,
+  ES_LEGS,
+  ES_HANDS,
+  ES_FEET,
+  ES_ARMS,
+  ES_BACK,
+  ES_EAR_1,
+  ES_EAR_2,
+  ES_FINGER_1,
+  ES_FINGER_2,
+  ES_UNDERSHIRT,
+  ES_UNDERPANTS,
+  ES_MAINHAND,
+  ES_OFFHAND,
+  ES_RANGED,
+  ES_MUSICAL,
+  ES_BACKPACK,
+  ES_COSPLAY
+}
+function ChatLog(arg)
+  if X2Debug ~= nil and X2Debug:GetDevMode() then
+    X2Chat:DispatchChatMessage(CMF_SAY, tostring(arg))
+  end
+end
+function LuaAssert(msg)
+  if X2Debug ~= nil and X2Debug:GetDevMode() then
+    X2Chat:DispatchChatMessage(CMF_SAY, tostring(msg))
+  end
+  X2Util:RaiseLuaCallStack(msg)
+end
+function AddOnUpdateCooldown(target, windowType)
+  target:SetCoolDownMask("ui/icon/cooldown_mask.dds")
+  target:SetCoolDownMaskCoords(0, 0, 256, 256)
+  function target:OnContentUpdated(kind, arg1, arg2)
+    if kind == "item_cooldown" or kind == "skill_cooldown" then
+      local totalTime, remainTime = arg2, arg1
+      if 0 < (remainTime or 0) then
+        if self.coolTimeAni ~= nil then
+          self.coolTimeAni:Animation(false, false)
+          self.isCoolDownAnimationDone = false
+        end
+        self:SetCoolDown(remainTime, totalTime)
+      else
+        if self.coolTimeAni ~= nil and self.isCoolDownAnimationDone == false then
+          self.coolTimeAni:Animation(true, false)
+          self.isCoolDownAnimationDone = true
+        end
+        self:SetCoolDown(0, 0)
+      end
+    end
+  end
+  target:SetHandler("OnContentUpdated", target.OnContentUpdated)
+end
+function GetUnitType(target)
+  local unitType, detail = X2Unit:GetUnitTypeString(target)
+  return unitType or target, detail or target
+end
+function ResetScroll(target, contentHeight)
+  if contentHeight == nil then
+    contentHeight = 0
+  end
+  local height = target:GetHeight()
+  local scrollRange = math.floor(contentHeight - height)
+  if scrollRange < 0 then
+    scrollRange = 0
+  end
+  target:SetMinMaxValues("vert", 0, scrollRange)
+  return scrollRange
+end
+function RegistUIEvent(window, eventTable)
+  for key, _ in pairs(eventTable) do
+    window:RegisterEvent(key)
+  end
+end
+F_TEXT = {}
+funcNamespaceTable.F_TEXT = F_TEXT
+function F_TEXT:GetCommonText(key, a, b, c)
+  if a and b and c then
+    return X2Locale:LocalizeUiText(COMMON_TEXT, key, tostring(a), tostring(b), tostring(c))
+  end
+  if a and b then
+    return X2Locale:LocalizeUiText(COMMON_TEXT, key, tostring(a), tostring(b))
+  end
+  if a then
+    return X2Locale:LocalizeUiText(COMMON_TEXT, key, tostring(a))
+  end
+  return X2Locale:LocalizeUiText(COMMON_TEXT, key)
+end
+function F_TEXT:GetUIText(category, key, ...)
+  return X2Locale:LocalizeUiText(category, key, ...)
+end
+function F_TEXT:SetEnterString(str, addStr, enterCount)
+  if enterCount == nil then
+    enterCount = 1
+  end
+  local enterStr = ""
+  for i = 1, enterCount do
+    enterStr = string.format("%s\n", enterStr)
+  end
+  if str ~= "" then
+    str = string.format("%s%s%s", str, enterStr, addStr)
+  else
+    str = addStr
+  end
+  return str
+end
+function F_TEXT:ConvertAbbreviatedBindingText(text)
+  text = string.upper(text)
+  for k, v in pairs(baselibLocale.bindingKeyModifierName) do
+    text = string.gsub(text, k, v)
+  end
+  local offset = 0
+  for k, v in pairs(baselibLocale.bindingKeyModifierName) do
+    local l, r = string.find(text, v)
+    if r ~= nil then
+      offset = math.max(offset, r)
+    end
+  end
+  local key = string.sub(text, -(string.len(text) - offset))
+  local converted = baselibLocale.bindingKeyName[key]
+  if converted ~= nil then
+    text = string.gsub(text, key, converted)
+  end
+  return text
+end
+function GetCommonText(key, a, b, c)
+  return F_TEXT:GetCommonText(key, a, b, c)
+end
+function GetUIText(category, key, ...)
+  return F_TEXT:GetUIText(category, key, ...)
+end
+function SetEnterString(str, addStr, enterCount)
+  return F_TEXT:SetEnterString(str, addStr, enterCount)
+end
+function ConvertAbbreviatedBindingText(text)
+  return F_TEXT:ConvertAbbreviatedBindingText(text)
+end

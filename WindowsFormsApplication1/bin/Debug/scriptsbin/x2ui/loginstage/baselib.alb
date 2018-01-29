@@ -1,0 +1,182 @@
+RACE_TYPE = {
+  RACE_NUIAN,
+  RACE_ELF,
+  RACE_FERRE,
+  RACE_HARIHARAN
+}
+local featureSet = X2Player:GetFeatureSet()
+if featureSet ~= nil and featureSet.dwarfWarborn then
+  RACE_TYPE = {
+    RACE_NUIAN,
+    RACE_ELF,
+    RACE_DWARF,
+    RACE_FERRE,
+    RACE_HARIHARAN,
+    RACE_WARBORN
+  }
+end
+GENDER_TYPE = {GENDER_MALE, GENDER_FEMALE}
+RACE_COLOR_TABEL = {}
+RACE_COLOR_TABEL[RACE_NUIAN] = {
+  ConvertColor(177),
+  ConvertColor(191),
+  ConvertColor(160),
+  1
+}
+RACE_COLOR_TABEL[RACE_ELF] = {
+  ConvertColor(168),
+  ConvertColor(161),
+  ConvertColor(182),
+  1
+}
+RACE_COLOR_TABEL[RACE_FERRE] = {
+  ConvertColor(144),
+  ConvertColor(175),
+  ConvertColor(194),
+  1
+}
+RACE_COLOR_TABEL[RACE_HARIHARAN] = {
+  ConvertColor(209),
+  ConvertColor(202),
+  ConvertColor(147),
+  1
+}
+RACE_COLOR_TABEL[RACE_DWARF] = {
+  ConvertColor(177),
+  ConvertColor(191),
+  ConvertColor(160),
+  1
+}
+RACE_COLOR_TABEL[RACE_WARBORN] = {
+  ConvertColor(168),
+  ConvertColor(161),
+  ConvertColor(182),
+  1
+}
+STEP1_BG_PATH = {}
+STEP1_BG_PATH[RACE_NUIAN] = "ui/login_stage/background/step1_nuian.dds"
+STEP1_BG_PATH[RACE_ELF] = "ui/login_stage/background/step1_elf.dds"
+STEP1_BG_PATH[RACE_FERRE] = "ui/login_stage/background/step1_ferre.dds"
+STEP1_BG_PATH[RACE_HARIHARAN] = "ui/login_stage/background/step1_hariharan.dds"
+STEP1_BG_PATH[RACE_DWARF] = "ui/login_stage/background/step1_nuian.dds"
+STEP1_BG_PATH[RACE_WARBORN] = "ui/login_stage/background/step1_elf.dds"
+STEP2_BG_PATH = {}
+STEP2_BG_PATH[RACE_NUIAN] = "ui/login_stage/background/step1_nuian.dds"
+STEP2_BG_PATH[RACE_ELF] = "ui/login_stage/background/step1_elf.dds"
+STEP2_BG_PATH[RACE_FERRE] = "ui/login_stage/background/step1_ferre.dds"
+STEP2_BG_PATH[RACE_HARIHARAN] = "ui/login_stage/background/step1_hariharan.dds"
+STEP2_BG_PATH[RACE_DWARF] = "ui/login_stage/background/step1_nuian.dds"
+STEP2_BG_PATH[RACE_WARBORN] = "ui/login_stage/background/step1_elf.dds"
+STEP3_BG_PATH = {}
+STEP3_BG_PATH[RACE_NUIAN] = "ui/login_stage/background/step3_nuian.dds"
+STEP3_BG_PATH[RACE_ELF] = "ui/login_stage/background/step3_elf.dds"
+STEP3_BG_PATH[RACE_FERRE] = "ui/login_stage/background/step3_ferre.dds"
+STEP3_BG_PATH[RACE_HARIHARAN] = "ui/login_stage/background/step3_hariharan.dds"
+STEP3_BG_PATH[RACE_DWARF] = "ui/login_stage/background/step3_nuian.dds"
+STEP3_BG_PATH[RACE_WARBORN] = "ui/login_stage/background/step3_elf.dds"
+function GetRaceNameIndex(raceName)
+  for i = 1, #RACE_TYPE do
+    if raceName == X2Unit:GetRaceStr(RACE_TYPE[i]) then
+      return RACE_TYPE[i]
+    end
+  end
+  return nil
+end
+function GetGenderIndex(gender)
+  for i = 1, #GENDER_TYPE do
+    if gender == X2Unit:GetGenderStr(GENDER_TYPE[i]) then
+      return GENDER_TYPE[i]
+    end
+  end
+  return nil
+end
+FACE = 1
+EYES = 2
+NOSE = 3
+MOUTH = 4
+SHAPE = 5
+MAX_PRESET_TYPE = SHAPE
+local index = 0
+local function IncreaseIndex()
+  index = index + 1
+  return index
+end
+HAIR_TAB = IncreaseIndex()
+EYE_TAB = IncreaseIndex()
+MAKEUP_TAB = IncreaseIndex()
+SKIN_TAB = IncreaseIndex()
+TATTOO_TAB = IncreaseIndex()
+MAX_TAB_TYPE = index
+index = 0
+HAIR_TYPE = IncreaseIndex()
+HAIR_COLOR = IncreaseIndex()
+EYEBROW_TYPE = IncreaseIndex()
+EYEBROW_COLOR = IncreaseIndex()
+PUPIL_COLOR = IncreaseIndex()
+EYE_MAKEUP = IncreaseIndex()
+LIPS_COLOR = IncreaseIndex()
+CHEEK_TYPE = IncreaseIndex()
+MUSTACHE_TYPE = IncreaseIndex()
+MUSTACHE_COLOR = IncreaseIndex()
+SKIN_TYPE = IncreaseIndex()
+SKIN_COLOR = IncreaseIndex()
+WRINKLE_TYPE = IncreaseIndex()
+TATTOO_TYPE = IncreaseIndex()
+SCAR_TYPE = IncreaseIndex()
+MAX_STYLE_TYPE = index
+EMPTY_STYLE = IncreaseIndex()
+STYLE_PALLET = 1
+STYLE_COMPOUND = 2
+STYLE_PAGE_DEFAULT_COUNT = 3
+STYLE_PAGE_NOT_DEFAULT_COUNT = 4
+STYLE_PAGE_USE_SLIDER_DEFAULT_COUNT = 5
+STYLE_PAGE_USE_SLIDER_NOT_DEFAULT_COUNT = 6
+STYLE_HAIR_COLOR = 7
+STYLE_WINDOW_TYPE = {
+  STYLE_PAGE_DEFAULT_COUNT,
+  STYLE_HAIR_COLOR,
+  STYLE_PAGE_DEFAULT_COUNT,
+  STYLE_PALLET,
+  STYLE_PALLET,
+  STYLE_PAGE_USE_SLIDER_NOT_DEFAULT_COUNT,
+  STYLE_PALLET,
+  STYLE_PAGE_USE_SLIDER_NOT_DEFAULT_COUNT,
+  STYLE_PAGE_USE_SLIDER_NOT_DEFAULT_COUNT,
+  STYLE_PALLET,
+  STYLE_PAGE_DEFAULT_COUNT,
+  STYLE_PAGE_DEFAULT_COUNT,
+  STYLE_PAGE_USE_SLIDER_DEFAULT_COUNT,
+  STYLE_PAGE_NOT_DEFAULT_COUNT,
+  STYLE_COMPOUND
+}
+STYLE_DELETE = {
+  false,
+  false,
+  true,
+  false,
+  false,
+  true,
+  false,
+  true,
+  true,
+  false,
+  false,
+  false,
+  true,
+  true,
+  true
+}
+CUSTOMIZE_INSET = 15
+CUSTOMIZE_ITEM_WIDTH = 126
+CUSTOMIZE_ITEM_BIG = 126
+CUSTOMIZE_ITEM_NORMAL = 100
+CUSTOMIZE_ITEM_SMALL = 85
+CUSTOMIZE_ITEM_PAGE = 84
+PRESET_ITEM_WIDTH = 125
+PRESET_ITEM_HEIGHT = 120
+CUSTOMIZE_ITEM_HEIGHT = {
+  CUSTOMIZE_ITEM_BIG,
+  CUSTOMIZE_ITEM_NORMAL,
+  CUSTOMIZE_ITEM_SMALL,
+  CUSTOMIZE_ITEM_PAGE
+}

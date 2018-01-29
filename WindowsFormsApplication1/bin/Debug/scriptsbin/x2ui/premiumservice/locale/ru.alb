@@ -1,0 +1,13 @@
+if X2Util:GetGameProvider() == MAILRU then
+  premiumServiceLocale.useAAPoint = false
+  premiumServiceLocale.useCashCharge = true
+  premiumServiceLocale.pointRuleButton = false
+  premiumServiceLocale.pointProgressBar = false
+  premiumServiceLocale.showPcbangBenefit = false
+  premiumServiceLocale.warringMsg = false
+  function premiumServiceLocale.GetDateToPremiumServiceFormat(df)
+    local output = string.format("%s : %s:%s %s-%s-%s", X2Locale:LocalizeUiText(PREMIUM_TEXT, "end"), tostring(df.hour), tostring(df.minute), tostring(df.day), tostring(df.month), tostring(df.year))
+    return output
+  end
+  premiumServiceLocale.showWeb = false
+end

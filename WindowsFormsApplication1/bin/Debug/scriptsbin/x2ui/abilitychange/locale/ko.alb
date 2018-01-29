@@ -1,0 +1,24 @@
+if abilityChangeLocale == nil then
+  abilityChangeLocale = {}
+end
+abilityChangeLocale.abilityChangeFrame = {
+  extent = {w = 510, h = 360}
+}
+function abilityChangeLocale.SetAbilityChangeLayoutFunc(parentWindow)
+  local x = 15
+  local y = 0
+  local buttonTable = {}
+  for j = 1, #locale.common.abilityCategoryName do
+    local all_ability_button = parentWindow:CreateChildWidget("button", "all_ability_button", j, true)
+    all_ability_button:SetText(locale.common.abilityCategoryName[j])
+    all_ability_button:AddAnchor("TOPLEFT", parentWindow, x, y)
+    ApplyButtonSkin(all_ability_button, BUTTON_CONTENTS.ALL_ABILITY)
+    x = x + 90
+    if j % 5 == 0 then
+      x = 15
+      y = y + 45
+    end
+    table.insert(buttonTable, all_ability_button)
+  end
+  AdjustBtnLongestTextWidth(buttonTable, 85)
+end

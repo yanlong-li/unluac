@@ -1,0 +1,199 @@
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+function CreateSlaveEquipmentWnd(id, parent)
+  local width = WINDOW_SIZE.SMALL
+  local height = 528 + titleMargin + sideMargin
+  local window = CreateWindow(id, parent)
+  window:SetExtent(width, height)
+  window:Show(false)
+  window:SetTitle(GetCommonText("equipment_info"))
+  local equipWnd = window:CreateChildWidget("emptywidget", "equipWnd", 0, true)
+  equipWnd:AddAnchor("TOP", window, 0, titleMargin - sideMargin / 2)
+  equipWnd:SetExtent(284, 528)
+  local slaveBg = equipWnd:CreateImageDrawable(TEXTURE_PATH.DEFAULT, "background")
+  slaveBg:AddAnchor("TOPLEFT", equipWnd, 0, 0)
+  slaveBg:AddAnchor("BOTTOMRIGHT", equipWnd, 0, 0)
+  equipWnd.bg = slaveBg
+  local possibleWnd = equipWnd:CreateChildWidget("emptywidget", "possibleWnd", 0, true)
+  possibleWnd:SetExtent(40, 40)
+  possibleWnd:AddAnchor("TOPRIGHT", equipWnd, -2, 0)
+  local possible = possibleWnd:CreateImageDrawable(TEXTURE_PATH.SLAVE_ETC, "background")
+  possible:SetExtent(90, 52)
+  possible:AddAnchor("TOPRIGHT", equipWnd, -2, 0)
+  equipWnd.possible = possible
+  equipWnd.slots = {}
+  for i = ES_HEAD, ES_COSPLAY do
+    local equipSlot = CreateItemIconButton(string.format("equip[%d]", i), equipWnd)
+    equipSlot:AddAnchor("CENTER", equipWnd, 0, 0)
+    equipSlot:Show(false)
+    equipSlot:Init()
+    equipWnd.slots[i] = equipSlot
+  end
+  local autoToggleBtn = CreateCheckButton("autoToggleBtn", window, GetCommonText("toggle_with_slave_info"))
+  autoToggleBtn:AddAnchor("TOPLEFT", equipWnd, "BOTTOMLEFT", 5, 3)
+  window.autoToggleBtn = autoToggleBtn
+  function autoToggleBtn:CheckBtnCheckChagnedProc(checked)
+    X2:SetAutoToggleSlaveEquipmentUiData(checked)
+  end
+  local changable
+  function window:ShowProc()
+    self:CheckPossibleToChange()
+  end
+  function window:CheckPossibleToChange()
+    local can = X2SiegeWeapon:CanExchangeSlaveEquipment()
+    local blueColor = FONT_COLOR_HEX.SKYBLUE
+    if can then
+      possible:SetCoords(91, 0, 90, 52)
+      equipWnd:Enable(true)
+      possibleWnd.tooltip = GetCommonText("enable_to_exchange_equip", blueColor)
+    else
+      possible:SetCoords(0, 0, 90, 52)
+      equipWnd:Enable(false)
+      possibleWnd.tooltip = X2Util:ApplyUIMacroString(GetCommonText("disable_to_exchange_equip", FONT_COLOR_HEX.RED, blueColor))
+    end
+    if changable ~= can then
+      changable = can
+      for i = 1, #equipWnd.slots do
+        if equipWnd.slots[i].Update ~= nil then
+          equipWnd.slots[i]:Update(false)
+        end
+      end
+    end
+  end
+  function possibleWnd:OnEnter()
+    SetTooltip(self.tooltip, self)
+  end
+  possibleWnd:SetHandler("OnEnter", possibleWnd.OnEnter)
+  function possibleWnd:OnLeave()
+    HideTooltip()
+  end
+  possibleWnd:SetHandler("OnLeave", possibleWnd.OnLeave)
+  function window:InitEquipment(type)
+    changable = nil
+    for i = ES_HEAD, ES_COSPLAY do
+      local equipSlot = equipWnd.slots[i]
+      equipSlot.slotType = nil
+      equipSlot:Init()
+      equipSlot:RemoveAllAnchors()
+      equipSlot:AddAnchor("CENTER", equipWnd, "TOP", 0, 0)
+      equipSlot:Show(false)
+      ApplySlotSkin(equipSlot, equipSlot.back, SLOT_STYLE.BAG_DEFAULT)
+      equipSlot:ReleaseHandler("OnEvent")
+      equipSlot:ReleaseHandler("OnClick")
+      equipSlot:ReleaseHandler("OnDragStart")
+      equipSlot:ReleaseHandler("OnDragReceive")
+    end
+    if type == nil then
+      return
+    end
+    local customizing_style = SLAVE_CUSTOMIZING_STYLE[type]
+    if customizing_style == nil then
+      return
+    end
+    if customizing_style.path ~= nil then
+      local coords = customizing_style.coords
+      slaveBg:SetTexture(customizing_style.path)
+      slaveBg:SetCoords(coords[1], coords[2], coords[3], coords[4])
+      slaveBg:SetVisible(true)
+    else
+      slaveBg:SetVisible(false)
+    end
+    local bgOffset = 1
+    for i = 1, #customizing_style do
+      do
+        local styleInfo = customizing_style[i]
+        local equipSlot = equipWnd.slots[i]
+        equipSlot:RemoveAllAnchors()
+        equipSlot:AddAnchor("CENTER", equipWnd, "TOP", styleInfo.posX + bgOffset, styleInfo.posY)
+        equipSlot:OverlayInvisible()
+        equipSlot.slotType = styleInfo.slotType - 1
+        equipSlot.skin = styleInfo.skinInfo
+        equipSlot:RegisterForDrag("LeftButton")
+        function equipSlot:OnClick(arg)
+          if arg == "LeftButton" then
+            X2SiegeWeapon:PickEquipSlotOfSlave(equipSlot.slotType)
+          elseif arg == "RightButton" then
+            X2SiegeWeapon:UninstallEquipSlotOfSlave(equipSlot.slotType)
+          end
+        end
+        equipSlot:SetHandler("OnClick", equipSlot.OnClick)
+        function equipSlot:OnDragStart(arg)
+          if arg == "LeftButton" then
+            X2SiegeWeapon:PickEquipSlotOfSlave(equipSlot.slotType)
+          end
+        end
+        equipSlot:SetHandler("OnDragStart", equipSlot.OnDragStart)
+        function equipSlot:OnDragReceive(arg)
+          if arg == "LeftButton" then
+            X2SiegeWeapon:PickEquipSlotOfSlave(equipSlot.slotType)
+          end
+        end
+        equipSlot:SetHandler("OnDragReceive", equipSlot.OnDragReceive)
+        function equipSlot:Update(reload)
+          if reload then
+            do
+              local slotInfo = X2SiegeWeapon:GetSlaveEquipSlotInfo(equipSlot.slotType)
+              if slotInfo ~= nil and slotInfo.has then
+                if slotInfo.itemInfo ~= nil then
+                  equipSlot:SetItemInfo(slotInfo.itemInfo)
+                  ApplySlotSkin(equipSlot, equipSlot.back, SLOT_STYLE.BAG_DEFAULT)
+                  equipSlot.procOnEnter = nil
+                  HideTooltip()
+                else
+                  equipSlot:Init()
+                  ApplySlotSkin(equipSlot, equipSlot.back, equipSlot.skin)
+                  function equipSlot.procOnEnter()
+                    SetTargetAnchorTooltip(slotInfo.name, "TOPRIGHT", equipSlot, "BOTTOMLEFT", 10, -10)
+                  end
+                end
+                equipSlot:Show(true)
+              else
+                equipSlot:Init()
+                equipSlot:Show(false)
+              end
+            end
+          end
+          if equipSlot.slotType ~= nil then
+            local result = X2SiegeWeapon:CanRepairEquipSlot(equipSlot.slotType)
+            if result then
+              equipSlot:SetAlpha(1)
+              equipSlot:Enable(true)
+            else
+              result = X2SiegeWeapon:CanSlaveEquipPickedItem(equipSlot.slotType)
+              if result == nil then
+                equipSlot:SetAlpha(1)
+                equipSlot:Enable((equipWnd:IsEnabled()))
+              elseif result then
+                equipSlot:SetAlpha(1)
+                equipSlot:Enable((equipWnd:IsEnabled()))
+              else
+                equipSlot:SetAlpha(0.3)
+                equipSlot:Enable(false)
+              end
+            end
+          end
+        end
+        equipSlot:Update(true)
+      end
+    end
+    local autoToggle = X2:GetAutoToggleSlaveEquipmentUiData()
+    self:Show(autoToggle)
+    autoToggleBtn:SetChecked(autoToggle, false)
+  end
+  ADDON:RegisterContentWidget(UIC_SLAVE_EQUIPMENT, window)
+  window:Show(false)
+  local slaveEquipEventHandler = {
+    UPDATE_SLAVE_EQUIPMENT_SLOT = function(reload)
+      for i = 1, #equipWnd.slots do
+        local equipSlot = equipWnd.slots[i]
+        if equipSlot.slotType ~= nil then
+          equipSlot:Update(reload)
+        end
+      end
+    end
+  }
+  window:SetHandler("OnEvent", function(this, event, ...)
+    slaveEquipEventHandler[event](...)
+  end)
+  RegistUIEvent(window, slaveEquipEventHandler)
+  return window
+end

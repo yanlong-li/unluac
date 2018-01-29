@@ -1,0 +1,14 @@
+if X2Util:GetGameProvider() == TRION then
+  tooltipLocale = {
+    forclyUseLeftSection = true,
+    uccFrontIcon = {
+      anchor = "BOTTOMLEFT",
+      offset = {1, 3}
+    },
+    skillSynergySection = {startOffsetY = 20},
+    GradeString = function(evolveStr, grade)
+      return string.format("%s(~%s)", evolveStr, grade)
+    end
+  }
+  FORM_WIDGET_TOOPTIP = {SOCKET_ANCHOR_OFFSET = 2}
+end

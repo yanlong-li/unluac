@@ -1,0 +1,64 @@
+if X2Util:GetGameProvider() == TENCENT then
+  BATTLE_FIELD_ROUND_COUNT = {
+    {
+      0,
+      344,
+      25,
+      60
+    },
+    {
+      60,
+      344,
+      40,
+      60
+    },
+    {
+      120,
+      344,
+      37,
+      60
+    },
+    {
+      180,
+      344,
+      37,
+      60
+    },
+    {
+      240,
+      344,
+      37,
+      60
+    },
+    {
+      300,
+      344,
+      39,
+      60
+    },
+    {
+      360,
+      344,
+      36,
+      60
+    },
+    {
+      420,
+      344,
+      39,
+      60
+    },
+    {
+      0,
+      404,
+      38,
+      60
+    }
+  }
+  ROUND_RESULT_STRING_ORDER = {
+    COUNT = 1,
+    ROUND = 2,
+    RESULT = 3
+  }
+  ENTER_BUTTON_ENABLE_ALWAYS = false
+end

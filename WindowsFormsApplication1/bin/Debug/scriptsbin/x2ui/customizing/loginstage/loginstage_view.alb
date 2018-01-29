@@ -1,0 +1,107 @@
+local titleMargin, sideMargin, bottomMargin = GetWindowMargin()
+function CreateCustomizingWindow(id, parent)
+  local window = parent:CreateChildWidget("emptywidget", id, 0, true)
+  return window
+end
+function CreateCustomMouseGuide(id, parent)
+  local window = parent:CreateChildWidget("emptywidget", id, 0, true)
+  window:Show(true)
+  window:SetExtent(62, 54)
+  local texture = window:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.REMNANTS, "overlay")
+  texture:SetCoords(674, 312, 62, 54)
+  texture:AddAnchor("TOPLEFT", window, -5, -2)
+  texture:AddAnchor("BOTTOMRIGHT", window, -5, -2)
+  local guideContent = window:CreateChildWidget("emptywidget", "guideContent", 0, true)
+  guideContent:Show(false)
+  guideContent:Raise()
+  local extentValue = loginstageLocale.guideContentExtent
+  guideContent:SetExtent(extentValue[1], extentValue[2])
+  guideContent:AddAnchor("RIGHT", window, "LEFT", 0, -3)
+  local bg = guideContent:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.REMNANTS, "background")
+  bg:SetCoords(787, 243, -347, 62)
+  bg:AddAnchor("TOPLEFT", guideContent, -35, 0)
+  bg:AddAnchor("BOTTOMRIGHT", guideContent, 40, 3)
+  local textbox = guideContent:CreateChildWidget("textbox", "textbox", 0, true)
+  textbox:AddAnchor("TOPLEFT", guideContent, 0, -2)
+  textbox:AddAnchor("BOTTOMRIGHT", guideContent, 0, 0)
+  textbox:SetLineSpace(TEXTBOX_LINE_SPACE.SMALL)
+  textbox:SetText(locale.characterCreate.mouseGuideDesc)
+  textbox.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(textbox, FONT_COLOR.BLACK)
+  function window:OnEnter()
+    guideContent:Show(true)
+  end
+  window:SetHandler("OnEnter", window.OnEnter)
+  function window:OnLeave()
+    guideContent:Show(false)
+  end
+  window:SetHandler("OnLeave", window.OnLeave)
+  function guideContent:OnShow()
+    self:SetScaleAnimation(0.3, 1, 0.1, 0.1, "RIGHT")
+    self:SetAlphaAnimation(0, 1, 0.1, 0.1)
+    self:SetStartAnimation(true, true)
+  end
+  guideContent:SetHandler("OnShow", guideContent.OnShow)
+  return window
+end
+function CreateSaveWindow(id, parent)
+  local window = CreateEmptyWindow(id, parent)
+  window:Show(true)
+  window:SetExtent(205, 42)
+  local bg = window:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.REMNANTS, "background")
+  bg:SetCoords(384, 305, 290, 61)
+  bg:AddAnchor("TOPLEFT", window, -sideMargin / 4, -sideMargin / 4)
+  bg:AddAnchor("BOTTOMRIGHT", window, sideMargin / 4, sideMargin / 4)
+  bg:SetColor(1, 1, 1, 0.7)
+  local temporarilySave = window:CreateChildWidget("button", "temporarilySave", 0, true)
+  temporarilySave:AddAnchor("LEFT", window, 0, 0)
+  temporarilySave:SetText(locale.characterCreate.temporarilySave)
+  ApplyButtonSkin(temporarilySave, BUTTON_BASIC.DEFAULT)
+  temporarilySave.style:SetSnap(true)
+  window.saveButton = temporarilySave
+  window.cnt = 0
+  function temporarilySave:OnClick(arg)
+    if arg == "LeftButton" and window.cnt < 5 then
+      window.cnt = window.cnt + 1
+      X2Customizer:SaveCurrentParam(window.cnt)
+      SetBGHighlighted(window.stepButton[window.cnt], true)
+      window.stepButton[window.cnt]:Enable(true)
+    end
+  end
+  temporarilySave:SetHandler("OnClick", temporarilySave.OnClick)
+  function temporarilySave:OnEnter()
+    SetTargetAnchorTooltip(locale.characterCreate.descTemporarilySave, "BOTTOMRIGHT", self, "TOPLEFT", 10, 10)
+  end
+  temporarilySave:SetHandler("OnEnter", temporarilySave.OnEnter)
+  function temporarilySave:OnLeave()
+    HideTooltip()
+  end
+  temporarilySave:SetHandler("OnLeave", temporarilySave.OnLeave)
+  local stepWindow = window:CreateChildWidget("label", "stepWindow", 0, true)
+  stepWindow:SetExtent(120, 35)
+  stepWindow:AddAnchor("RIGHT", window, 0, 0)
+  window.stepButton = {}
+  for i = 1, 5 do
+    do
+      local stepButton = window:CreateChildWidget("button", "stepButton" .. i, 0, true)
+      stepButton:AddAnchor("LEFT", stepWindow, (i - 1) * 23, 0)
+      ApplyButtonSkin(stepButton, BUTTON_LOGINSTAGE.STEP_CIRCLE)
+      stepButton:SetExtent(20, 20)
+      window.stepButton[i] = stepButton
+      function stepButton:OnClick()
+        parent:ClearSelectedItem()
+        X2Customizer:LoadSavedParam(i)
+        SetCustomItemToParam(FACE, nil, false, false)
+      end
+      stepButton:SetHandler("OnClick", stepButton.OnClick)
+    end
+  end
+  function window:ResetData()
+    window.cnt = 0
+    for i = 1, 5 do
+      SetBGHighlighted(window.stepButton[i], false)
+      window.stepButton[i]:Enable(false)
+    end
+  end
+  return window
+end

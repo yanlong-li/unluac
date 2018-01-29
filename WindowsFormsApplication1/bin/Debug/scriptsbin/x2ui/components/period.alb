@@ -1,0 +1,90 @@
+function CreatePeriodWidget(id, parent, anchorPoint, iconKeys)
+  local frame = parent:CreateChildWidget("emptywidget", id, 0, true)
+  frame:SetExtent(100, FONT_SIZE.LARGE)
+  if anchorPoint == nil then
+    anchorPoint = "LEFT"
+  end
+  local periodLabel = frame:CreateChildWidget("label", "periodLabel", 0, false)
+  periodLabel:SetAutoResize(true)
+  periodLabel:SetHeight(FONT_SIZE.LARGE)
+  periodLabel.style:SetFontSize(FONT_SIZE.LARGE)
+  ApplyTextColor(periodLabel, FONT_COLOR.MIDDLE_TITLE)
+  local icon = parent:CreateImageDrawable(TEXTURE_PATH.PERIOD, "artwork")
+  local inProgressLabel = frame:CreateChildWidget("label", "inProgressLabel", 0, false)
+  inProgressLabel:SetAutoResize(true)
+  inProgressLabel:SetHeight(FONT_SIZE.LARGE)
+  inProgressLabel.style:SetFontSize(FONT_SIZE.LARGE)
+  if anchorPoint == "LEFT" then
+    periodLabel:AddAnchor("LEFT", frame, 0, 0)
+    icon:AddAnchor("LEFT", periodLabel, "RIGHT", 3, 1)
+    inProgressLabel:AddAnchor("LEFT", periodLabel, "RIGHT", 3, 1)
+  else
+    inProgressLabel:AddAnchor("RIGHT", frame, 0, 0)
+    icon:AddAnchor("RIGHT", frame, 0, 0)
+    periodLabel:AddAnchor("RIGHT", icon, "LEFT", -3, -1)
+  end
+  frame.useStatusIcon = true
+  local coordsKey = {}
+  if iconKeys == nil then
+    coordsKey.inProgress = "inprog"
+    coordsKey.ended = "ended"
+  else
+    coordsKey.inProgress = iconKeys.inProgress
+    coordsKey.ended = iconKeys.ended
+  end
+  function frame:UseStatusIcon(use)
+    self.useStatusIcon = use
+  end
+  function frame:SetPeriod(periodStr, inProgress, existEnded)
+    local key = ""
+    local color = FONT_COLOR.MIDDLE_TITLE
+    if inProgress then
+      key = coordsKey.inProgress
+    else
+      key = coordsKey.ended
+      if existEnded then
+        color = FONT_COLOR.GRAY
+      end
+    end
+    local width = 0
+    icon:SetVisible(self.useStatusIcon)
+    if self.useStatusIcon then
+      icon:SetTextureInfo(key)
+      width = icon:GetWidth() + 3
+    else
+      icon:SetExtent(0, 0)
+    end
+    if periodStr ~= nil then
+      periodLabel:SetText(periodStr)
+      width = width + periodLabel:GetWidth()
+    end
+    ApplyTextColor(periodLabel, color)
+    self:SetWidth(width)
+  end
+  function frame:SetPeriodWithCheckProgress(startTime, endTime)
+    local startFilter = FORMAT_FILTER.YEAR + FORMAT_FILTER.MONTH + FORMAT_FILTER.DAY + FORMAT_FILTER.HOUR + FORMAT_FILTER.MINUTE
+    local endFilter = FORMAT_FILTER.MONTH + FORMAT_FILTER.DAY + FORMAT_FILTER.HOUR + FORMAT_FILTER.MINUTE
+    local str = string.format("%s: %s", GetUIText(COMMON_TEXT, "period"), locale.common.from_to(locale.time.GetDateToDateFormat(startTime, startFilter), locale.time.GetDateToDateFormat(endTime, endFilter)))
+    local function CheckProgressState(dt)
+      local curTime = X2Time:GetServerTime()
+      local compare1 = X2Time:CompareTime(startTime, curTime)
+      local compare2 = X2Time:CompareTime(curTime, endTime)
+      periodLabel:SetText(str)
+      local inProgressStr
+      if compare1 == 1 and compare2 == 1 then
+        inProgressStr = string.format("(%s)", GetCommonText("period_in_progress"))
+        ApplyTextColor(inProgressLabel, FONT_COLOR.BLUE)
+      elseif compare2 == -1 then
+        inProgressStr = string.format("(%s)", GetCommonText("period_ended"))
+        ApplyTextColor(inProgressLabel, FONT_COLOR.GRAY)
+      else
+        inProgressStr = string.format("(%s)", GetCommonText("period_scheduled"))
+        ApplyTextColor(inProgressLabel, FONT_COLOR.RED)
+      end
+      inProgressLabel:SetText(inProgressStr)
+    end
+    frame:SetHandler("OnUpdate", CheckProgressState)
+    CheckProgressState()
+  end
+  return frame
+end

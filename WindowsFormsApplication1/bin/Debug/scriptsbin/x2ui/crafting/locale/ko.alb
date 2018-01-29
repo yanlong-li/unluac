@@ -1,0 +1,9 @@
+if craftingLocale == nil then
+  craftingLocale = {}
+end
+craftingLocale.abilityGroup = {
+  btnFontSize = FONT_SIZE.LARGE,
+  btnStartOffset = 0,
+  btnOffsetX = 12
+}
+craftingLocale.windowWidth = 600

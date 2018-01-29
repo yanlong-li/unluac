@@ -1,0 +1,601 @@
+local CreateHeroElectionRuleWindow = function(id, parent)
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local window = CreateWindow(id, parent)
+  window:SetExtent(900, 560)
+  window:SetTitle(GetUIText(COMMON_TEXT, "hero_election"))
+  local function CreateMethodSection(id, parent)
+    local section = window:CreateChildWidget("emptywidget", id, 0, false)
+    section:SetExtent(window:GetWidth() - MARGIN.WINDOW_SIDE, 50)
+    local title = section:CreateChildWidget("label", "title", 0, false)
+    title:SetExtent(section:GetWidth(), FONT_SIZE.LARGE)
+    title.style:SetFontSize(FONT_SIZE.LARGE)
+    title.style:SetAlign(ALIGN_LEFT)
+    title:SetText(GetUIText(COMMON_TEXT, "hero_election_method"))
+    title:AddAnchor("TOPLEFT", section, 0, 0)
+    ApplyTextColor(title, FONT_COLOR.MIDDLE_TITLE)
+    local img = section:CreateImageDrawable(TEXTURE_PATH.HERO_ELECTION_RULE, "background")
+    img:SetTextureInfo("graph")
+    img:AddAnchor("TOPLEFT", title, "BOTTOMLEFT", 0, 7)
+    local offsetY = 7
+    local function CreateItem(id, str, iconKey, useDingbat)
+      if useDingbat == nil then
+        useDingbat = true
+      end
+      local item = section:CreateChildWidget("textbox", id, 0, false)
+      item:SetExtent(section:GetWidth() - MARGIN.WINDOW_SIDE / 2, FONT_SIZE.MIDDLE)
+      item.style:SetAlign(ALIGN_LEFT)
+      local width = item:GetWidth()
+      local offsetX = 5
+      if useDingbat then
+        DrawRoundDingbat(item)
+        item.dingbat:RemoveAllAnchors()
+        item.dingbat:AddAnchor("TOPRIGHT", item, "TOPLEFT", -2, 3)
+        width = item:GetWidth() - item.dingbat:GetWidth() - 3
+        offsetX = offsetX + item.dingbat:GetWidth() + 3
+      end
+      item:SetWidth(width)
+      item:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+      item:SetText(str)
+      item:SetHeight(item:GetTextHeight())
+      item:AddAnchor("TOPLEFT", img, "BOTTOMLEFT", offsetX, offsetY)
+      ApplyTextColor(item, FONT_COLOR.DEFAULT)
+      if iconKey ~= nil then
+        local icon = item:CreateImageDrawable(TEXTURE_PATH.HERO_ELECTION_ALERT, "background")
+        icon:SetTextureInfo(iconKey)
+        local lineCount = item:GetLineCount()
+        local length = item:GetLineLength(lineCount)
+        local requireEnter = false
+        if length >= item:GetWidth() - icon:GetWidth() - item.dingbat:GetWidth() + MARGIN.WINDOW_SIDE then
+          requireEnter = true
+        end
+        local offset = 0
+        if lineCount == 1 then
+          offset = item:GetLongestLineWidth() + 5
+        else
+          offset = length + 3
+        end
+        if requireEnter then
+          icon:AddAnchor("TOPLEFT", item, "BOTTOMLEFT", 0, 3)
+          offsetY = offsetY + icon:GetHeight() + 3
+        else
+          icon:AddAnchor("BOTTOMLEFT", item, offset, 3)
+        end
+      end
+      offsetY = offsetY + item:GetHeight() + 6
+      return item
+    end
+    local period = CreateItem("period", GetUIText(COMMON_TEXT, "hero_election_method_period"))
+    local palce = CreateItem("period", GetUIText(COMMON_TEXT, "hero_election_method_place"))
+    local votingRight = CreateItem("period", GetUIText(COMMON_TEXT, "hero_election_method_voting_right"), "icon_vote01")
+    local checkHeroEleciton = CreateItem("period", GetUIText(COMMON_TEXT, "hero_election_method_check_hero_election"))
+    local userNationHero = CreateItem("period", GetUIText(COMMON_TEXT, "hero_election_method_user_nation_hero"), nil, false)
+    ApplyTextColor(userNationHero, FONT_COLOR.GREEN)
+    local _, height = F_LAYOUT:GetExtentWidgets(title, userNationHero)
+    section:SetHeight(height)
+    return section
+  end
+  local methodSection = CreateMethodSection("methodSection", window)
+  methodSection:AddAnchor("TOP", window, 0, titleMargin)
+  local function CreateSection(id, titleStr, contentStr, imgKey)
+    local section = window:CreateChildWidget("emptywidget", id, 0, false)
+    section:SetExtent(window:GetWidth() - sideMargin * 2, 50)
+    local title = section:CreateChildWidget("label", "title", 0, false)
+    title:SetExtent(section:GetWidth(), FONT_SIZE.LARGE)
+    title.style:SetFontSize(FONT_SIZE.LARGE)
+    title.style:SetAlign(ALIGN_LEFT)
+    title:SetText(titleStr)
+    title:AddAnchor("TOPLEFT", section, 0, 0)
+    ApplyTextColor(title, FONT_COLOR.MIDDLE_TITLE)
+    local content = section:CreateChildWidget("textbox", "content", 0, false)
+    content:SetExtent(section:GetWidth(), 30)
+    content:AddAnchor("BOTTOMLEFT", section, 0, 0)
+    content:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+    content.style:SetAlign(ALIGN_LEFT)
+    content:SetText(contentStr)
+    content:SetHeight(content:GetTextHeight())
+    ApplyTextColor(content, FONT_COLOR.DEFAULT)
+    local height = title:GetHeight() + content:GetHeight() + sideMargin / 2
+    section:SetHeight(height)
+    return section
+  end
+  local heroEquipmentSection = CreateSection("heroEquipmentSection", GetUIText(COMMON_TEXT, "hero_equipment_provision"), GetUIText(COMMON_TEXT, "hero_equipment_provision_content"))
+  heroEquipmentSection:AddAnchor("TOP", methodSection, "BOTTOM", 0, sideMargin)
+  local mobilizationOrderSection = CreateSection("mobilizationOrderSection", GetUIText(COMMON_TEXT, "issuance_of_mobilization_order"), GetUIText(COMMON_TEXT, "issuance_of_mobilization_order_detail_info"))
+  mobilizationOrderSection:AddAnchor("TOP", heroEquipmentSection, "BOTTOM", 0, sideMargin)
+  local _, height = F_LAYOUT:GetExtentWidgets(window.titleBar, mobilizationOrderSection)
+  local okButtonHeight = 60
+  height = height + okButtonHeight + sideMargin
+  window:SetHeight(height)
+  local okButton = window:CreateChildWidget("button", "okButton", 0, true)
+  okButton:SetText(locale.common.ok)
+  okButton:AddAnchor("BOTTOM", window, 0, BUTTON_COMMON_INSET.MESSAGEBOX_BOTTOM)
+  ApplyButtonSkin(okButton, BUTTON_BASIC.DEFAULT)
+  local function OkButtonLeftClickFunc()
+    window:Show(false)
+  end
+  ButtonOnClickHandler(okButton, OkButtonLeftClickFunc)
+  return window
+end
+local CreateHeroBonusDescWindow = function(id, parent)
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local windowHeight = 425
+  local myBonusInfo = X2Hero:GetMyHeroBonusInfo()
+  if myBonusInfo ~= nil then
+    windowHeight = 460
+  end
+  local window = CreateWindow(id, parent)
+  window:SetExtent(POPUP_WINDOW_WIDTH, windowHeight)
+  window:SetTitle(GetUIText(COMMON_TEXT, "hero_bonus_desc"))
+  local contentWidth = window:GetWidth() - sideMargin * 2
+  local listCtrl = CreateListCtrl("listCtrl", window)
+  listCtrl:SetExtent(contentWidth, 275)
+  listCtrl:AddAnchor("TOP", window, 0, titleMargin)
+  local GradeLayoutSetFunc = function(widget, rowIndex, colIndex, subItem)
+    local bg = CreateContentBackground(subItem, "TYPE11")
+    bg:SetWidth(widget.listCtrl:GetWidth())
+    bg:AddAnchor("TOPLEFT", subItem, 0, 0)
+    bg:AddAnchor("BOTTOM", subItem, 0, 0)
+    subItem.bg = bg
+    local icon = subItem:CreateImageDrawable(TEXTURE_PATH.RANKING_GRADE, "overlay")
+    icon:AddAnchor("CENTER", subItem, 0, 0)
+    subItem.icon = icon
+  end
+  local GradeDataSetFunc = function(subItem, data, setValue)
+    if setValue then
+      subItem.bg:SetVisible(false)
+      subItem.icon:SetVisible(false)
+      if data == nil then
+        return
+      end
+      SetRankingGradeDataFunc(subItem.bg, subItem.icon, data)
+    else
+      subItem.bg:SetVisible(false)
+      subItem.icon:SetVisible(false)
+    end
+  end
+  local ConditionLayoutSetFunc = function(widget, rowIndex, colIndex, subItem)
+    local textbox = subItem:CreateChildWidget("textbox", "textbox", 0, true)
+    textbox:AddAnchor("TOPLEFT", subItem, 0, 0)
+    textbox:AddAnchor("BOTTOMRIGHT", subItem, 0, 0)
+    textbox.style:SetAlign(ALIGN_CENTER)
+    textbox:SetAutoResize(true)
+    textbox:SetLineSpace(TEXTBOX_LINE_SPACE.SMALL)
+    textbox.style:SetFontSize(FONT_SIZE.SMALL)
+    ApplyTextColor(textbox, FONT_COLOR.DEFAULT)
+    subItem.textbox = textbox
+  end
+  local ConditionDataSetFunc = function(subItem, data, setValue)
+    if setValue then
+      local condition1 = GetUIText(COMMON_TEXT, "hero_bonus_leadership_condition", tostring(data.leadershipPoint))
+      local condition2 = GetUIText(COMMON_TEXT, "hero_bonus_mobilization_order_condition", tostring(data.mobilizationOrderCount))
+      subItem.textbox:SetText(string.format([[
+%s
+%s]], condition1, condition2))
+    else
+      subItem.textbox:SetText("")
+    end
+  end
+  local RewardLayoutSetFunc = function(widget, rowIndex, colIndex, subItem)
+    local itemIcon = CreateSlotItemButton(subItem:GetId() .. ".itemIcon", subItem)
+    itemIcon:SetExtent(ICON_SIZE.APPELLAITON, ICON_SIZE.APPELLAITON)
+    itemIcon:RemoveAllAnchors()
+    itemIcon:AddAnchor("CENTER", subItem, 0, 0)
+    subItem.itemIcon = itemIcon
+  end
+  local RewardDataSetFunc = function(subItem, data, setValue)
+    if setValue then
+      subItem.itemIcon:Show(false)
+      if data.itemInfo ~= nil then
+        subItem.itemIcon:Show(true)
+        subItem.itemIcon:SetItem(data.itemInfo.type, data.itemInfo.grade, data.itemInfo.count)
+      end
+    else
+      subItem.itemIcon:Show(false)
+    end
+  end
+  listCtrl:InsertColumn(locale.ranking.rank, 70, LCCIT_WINDOW, GradeLayoutSetFunc, GradeDataSetFunc)
+  listCtrl:InsertColumn(GetUIText(COMMON_TEXT, "hero_bonus_conditon"), contentWidth - 140, LCCIT_WINDOW, ConditionLayoutSetFunc, ConditionDataSetFunc)
+  listCtrl:InsertColumn(GetUIText(COMMON_TEXT, "hero_bonus_reward"), 70, LCCIT_WINDOW, RewardLayoutSetFunc, RewardDataSetFunc)
+  listCtrl:InsertRows(3, false)
+  DrawListCtrlUnderLine(listCtrl.listCtrl, nil, false)
+  for i = 1, #listCtrl.listCtrl.column do
+    SettingListColumn(listCtrl.listCtrl, listCtrl.listCtrl.column[i])
+    DrawListCtrlColumnSperatorLine(listCtrl.listCtrl.column[i], #listCtrl.listCtrl.column, i, f)
+  end
+  ListCtrlItemGuideLine(listCtrl.listCtrl.items, listCtrl:GetRowCount() + 1)
+  for i = 1, #listCtrl.listCtrl.items do
+    local item = listCtrl.listCtrl.items[i]
+    item.line:SetVisible(true)
+  end
+  local heroBonus = X2Hero:GetHeroBonus()
+  for i = 1, #heroBonus do
+    listCtrl:InsertData(i, 1, i)
+    local conditionInfo = {
+      leadershipPoint = heroBonus[i].leadershipPoint,
+      mobilizationOrderCount = heroBonus[i].mobilizationOrderCount
+    }
+    listCtrl:InsertData(i, 2, conditionInfo)
+    local bonusItemInfo = {
+      itemInfo = heroBonus[i].item
+    }
+    listCtrl:InsertData(i, 3, bonusItemInfo)
+  end
+  if myBonusInfo ~= nil then
+    local myBonusInfoBox = window:CreateChildWidget("textbox", "myBonusInfoBox", 0, true)
+    myBonusInfoBox:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, 40)
+    myBonusInfoBox:AddAnchor("TOPLEFT", listCtrl, "BOTTOMLEFT", 5, sideMargin / 1.5)
+    myBonusInfoBox.style:SetAlign(ALIGN_LEFT)
+    myBonusInfoBox:SetAutoResize(true)
+    myBonusInfoBox:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+    myBonusInfoBox.style:SetFontSize(FONT_SIZE.MIDDLE)
+    local str1 = GetUIText(COMMON_TEXT, "hero_bonus_cur_leadership_point")
+    local str2 = GetUIText(COMMON_TEXT, "hero_bonus_cur_mobilization_order_count")
+    local str3 = GetUIText(COMMON_TEXT, "hero_bonus_due_date")
+    myBonusInfoBox:SetText(string.format([[
+%s%s : %s%d
+%s%s : %s%d
+%s]], FONT_COLOR_HEX.DEFAULT, str1, FONT_COLOR_HEX.BLUE, myBonusInfo.leadershipPoint, FONT_COLOR_HEX.DEFAULT, str2, FONT_COLOR_HEX.BLUE, myBonusInfo.mobilizationOrderCount, str3))
+    local OnEnter = function(self)
+      SetTooltip(string.format("%s", GetUIText(COMMON_TEXT, "hero_bonus_cur_leadership_point_tip")), self, false)
+    end
+    myBonusInfoBox:SetHandler("OnEnter", OnEnter)
+  end
+  local okButton = window:CreateChildWidget("button", "okButton", 0, true)
+  okButton:SetText(locale.common.ok)
+  okButton:AddAnchor("BOTTOM", window, 0, BUTTON_COMMON_INSET.MESSAGEBOX_BOTTOM)
+  ApplyButtonSkin(okButton, BUTTON_BASIC.DEFAULT)
+  local function OkButtonLeftClickFunc()
+    window:Show(false)
+  end
+  ButtonOnClickHandler(okButton, OkButtonLeftClickFunc)
+  return window
+end
+local SetViewOfHeroCurrentStatus = function(tabWindow)
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local factionCombobox = CreateHeroFactionCombobox(tabWindow, X2Hero:GetHeroFactions())
+  tabWindow.factionCombobox = factionCombobox
+  local period = CreatePeriodWidget("period", tabWindow, "RIGHT")
+  period:UseStatusIcon(false)
+  period:AddAnchor("TOPRIGHT", tabWindow, 0, sideMargin)
+  tabWindow.period = period
+  local heroElectionRule = tabWindow:CreateChildWidget("button", "heroElectionRule", 0, true)
+  heroElectionRule:AddAnchor("TOPRIGHT", period, "BOTTOMRIGHT", 0, 7)
+  heroElectionRule:SetText(GetUIText(COMMON_TEXT, "hero_election_method"))
+  ApplyButtonSkin(heroElectionRule, BUTTON_BASIC.DEFAULT)
+  local heroBonusDesc = tabWindow:CreateChildWidget("button", "heroBonusDesc", 0, true)
+  heroBonusDesc:AddAnchor("TOPRIGHT", heroElectionRule, "BOTTOMRIGHT", 0, 2)
+  heroBonusDesc:SetText(GetUIText(COMMON_TEXT, "hero_bonus_desc"))
+  ApplyButtonSkin(heroBonusDesc, BUTTON_BASIC.DEFAULT)
+  local buttonTable = {heroElectionRule, heroBonusDesc}
+  AdjustBtnLongestTextWidth(buttonTable)
+  local kingName = tabWindow:CreateChildWidget("label", "kingName", 0, true)
+  kingName:SetAutoResize(true)
+  kingName:AddAnchor("TOPLEFT", factionCombobox, "BOTTOMLEFT", 0, sideMargin / 2)
+  kingName:SetHeight(FONT_SIZE.LARGE)
+  ApplyTextColor(kingName, FONT_COLOR.BLUE)
+  kingName.style:SetFontSize(FONT_SIZE.LARGE)
+  local emptyHeroListStr = tabWindow:CreateChildWidget("label", "emptyHeroListStr", 0, true)
+  emptyHeroListStr:SetAutoResize(true)
+  emptyHeroListStr:AddAnchor("CENTER", tabWindow, "TOP", 0, 240)
+  emptyHeroListStr:SetHeight(FONT_SIZE.LARGE)
+  ApplyTextColor(emptyHeroListStr, FONT_COLOR.BLUE)
+  emptyHeroListStr.style:SetFontSize(FONT_SIZE.LARGE)
+  emptyHeroListStr:SetText(GetUIText(COMMON_TEXT, "empty_hero_list"))
+  local decoTexture = tabWindow:CreateImageDrawable(TEXTURE_PATH.HERO_CURRENT_STATUS_TEXT, "background")
+  decoTexture:SetTextureInfo("text")
+  decoTexture:AddAnchor("TOP", tabWindow, 0, 0)
+  local epheriumInset = sideMargin
+  tabWindow.item = {}
+  local function CreateItem(grade)
+    local textureInfos = {
+      {
+        enablekey = "level_01",
+        disableKey = "disable_01",
+        anchor = "TOP"
+      },
+      {
+        enablekey = "level_02",
+        disableKey = "disable_01",
+        anchor = "TOPRIGHT"
+      },
+      {
+        enablekey = "level_03",
+        disableKey = "disable_01",
+        anchor = "TOPLEFT"
+      },
+      {
+        enablekey = "level_04",
+        disableKey = "disable_02",
+        anchor = "TOPRIGHT",
+        offsetX = 13
+      },
+      {
+        enablekey = "level_05",
+        disableKey = "disable_02",
+        anchor = "TOP",
+        offsetX = 5
+      },
+      {
+        enablekey = "level_06",
+        disableKey = "disable_02",
+        anchor = "TOPLEFT"
+      },
+      {
+        enablekey = "level_07",
+        disableKey = "disable_03",
+        anchor = "TOPLEFT"
+      },
+      {
+        enablekey = "level_07",
+        disableKey = "disable_03",
+        anchor = "TOPLEFT"
+      },
+      {
+        enablekey = "level_07",
+        disableKey = "disable_03",
+        anchor = "TOPLEFT"
+      },
+      {
+        enablekey = "level_07",
+        disableKey = "disable_03",
+        anchor = "TOPLEFT"
+      }
+    }
+    local nameWidgetOffset = {
+      -3,
+      -15,
+      -15,
+      -20,
+      -20,
+      -20,
+      sideMargin,
+      sideMargin,
+      sideMargin,
+      sideMargin
+    }
+    local itemWidth = {
+      260,
+      285,
+      285,
+      tabWindow:GetWidth() / 3,
+      tabWindow:GetWidth() / 3,
+      tabWindow:GetWidth() / 3,
+      tabWindow:GetWidth() / 2 - epheriumInset,
+      tabWindow:GetWidth() / 2 - epheriumInset,
+      tabWindow:GetWidth() / 2 - epheriumInset,
+      tabWindow:GetWidth() / 2 - epheriumInset
+    }
+    local item = tabWindow:CreateChildWidget("emptywidget", "item", grade, true)
+    item:SetWidth(itemWidth[grade])
+    item.grade = grade
+    local gradeIcon = item:CreateImageDrawable(TEXTURE_PATH.HERO_CURRENT_STATUS, "background")
+    local function SetGradeIcon(grade, enable)
+      local textureInfo = textureInfos[grade]
+      if enable then
+        local offsetX = textureInfo.offsetX ~= nil and textureInfo.offsetX or 0
+        gradeIcon:SetTextureInfo(textureInfo.enablekey)
+        gradeIcon:RemoveAllAnchors()
+        gradeIcon:AddAnchor(textureInfo.anchor, item, offsetX, 0)
+      else
+        local myAnchor = "TOP"
+        if grade > 6 then
+          myAnchor = "LEFT"
+        end
+        gradeIcon:SetTextureInfo(textureInfo.disableKey)
+        gradeIcon:RemoveAllAnchors()
+        gradeIcon:AddAnchor(myAnchor, item, 0, 0)
+      end
+    end
+    SetGradeIcon(grade, true)
+    local name = item:CreateChildWidget("characternamelabel", "name", 0, false)
+    name:SetHeight(FONT_SIZE.LARGE)
+    name.style:SetFontSize(FONT_SIZE.LARGE)
+    ApplyTextColor(name, FONT_COLOR.MIDDLE_TITLE)
+    local leadershipPoint = item:CreateChildWidget("label", "leadershipPoint", 0, false)
+    leadershipPoint:SetAutoResize(true)
+    leadershipPoint:SetHeight(FONT_SIZE.MIDDLE)
+    ApplyTextColor(leadershipPoint, FONT_COLOR.DEFAULT)
+    local OnEnter = function(self)
+      SetTooltip(string.format("%s/%s", GetUIText(COMMON_TEXT, "leadership_point"), GetUIText(COMMON_TEXT, "accumulated_leadership_point")), self)
+    end
+    leadershipPoint:SetHandler("OnEnter", OnEnter)
+    local expedition = item:CreateChildWidget("label", "expedition", 0, true)
+    expedition:SetHeight(FONT_SIZE.MIDDLE)
+    ApplyTextColor(expedition, FONT_COLOR.DEFAULT)
+    local textWidth = item:GetWidth()
+    local align = ALIGN_CENTER
+    if grade <= 6 then
+      item:SetHeight(150)
+      name:AddAnchor("TOP", item, 0, gradeIcon:GetHeight() + nameWidgetOffset[grade])
+      leadershipPoint:AddAnchor("TOP", name, "BOTTOM", 0, 5)
+      expedition:AddAnchor("TOP", leadershipPoint, "BOTTOM", 0, 3)
+    else
+      item:SetHeight(gradeIcon:GetHeight())
+      name:AddAnchor("TOPLEFT", gradeIcon, "TOPRIGHT", 5, nameWidgetOffset[grade])
+      leadershipPoint:AddAnchor("TOPLEFT", name, "BOTTOMLEFT", 0, 5)
+      expedition:AddAnchor("TOPLEFT", leadershipPoint, "BOTTOMLEFT", 0, 3)
+      textWidth = textWidth - gradeIcon:GetWidth() - 5
+      align = ALIGN_LEFT
+    end
+    name:SetWidth(textWidth)
+    expedition:SetWidth(textWidth)
+    name.style:SetAlign(align)
+    leadershipPoint.style:SetAlign(align)
+    expedition.style:SetAlign(align)
+    function item:SetInfo(info)
+      leadershipPoint:Show(false)
+      expedition:Show(false)
+      if info == nil or info.name == nil then
+        name:SetText(GetUIText(COMMON_TEXT, "vacancy"))
+        name:SetAlpha(0.3)
+        SetGradeIcon(self.grade, false)
+        return
+      end
+      name:SetText(info.name)
+      name:SetAlpha(1)
+      leadershipPoint:Show(true)
+      leadershipPoint:SetText(string.format("%s: %d/%d", GetUIText(COMMON_TEXT, "leadership_point"), info.score, info.leadership))
+      if info.expedition == nil then
+        expedition:Show(false)
+      else
+        expedition:Show(true)
+        expedition:SetText(string.format("%s: %s", GetUIText(COMMON_TEXT, "expedition"), info.expedition))
+      end
+      SetGradeIcon(self.grade, true)
+    end
+    return item
+  end
+  local function GetAnchorInfo(grade)
+    local info = {
+      {anchor = "TOP", offsetX = 0},
+      {
+        anchor = "TOP",
+        offsetX = -(tabWindow.item[grade]:GetWidth() / 2)
+      },
+      {
+        anchor = "TOP",
+        offsetX = tabWindow.item[grade]:GetWidth() / 2
+      },
+      {
+        anchor = "TOP",
+        offsetX = -tabWindow.item[grade]:GetWidth()
+      },
+      {anchor = "TOP", offsetX = 0},
+      {
+        anchor = "TOP",
+        offsetX = tabWindow.item[grade]:GetWidth()
+      },
+      {anchor = "TOPLEFT", offsetX = epheriumInset},
+      {
+        anchor = "TOPRIGHT",
+        offsetX = -epheriumInset
+      },
+      {anchor = "TOPLEFT", offsetX = epheriumInset},
+      {
+        anchor = "TOPRIGHT",
+        offsetX = -epheriumInset
+      }
+    }
+    return info[grade]
+  end
+  local function NeedEnter(grade)
+    local info = {}
+    if grade == 1 or grade == 3 then
+      return true, -sideMargin + 5
+    elseif grade == 6 then
+      return true, sideMargin
+    elseif grade == 8 then
+      return true, 5
+    end
+    return false
+  end
+  local offsetY = 110
+  for i = 1, MAX_HERO do
+    local item = CreateItem(i)
+    local info = GetAnchorInfo(i)
+    item:AddAnchor(info.anchor, tabWindow, info.offsetX, offsetY)
+    local needEnter, inset = NeedEnter(i)
+    if needEnter then
+      offsetY = offsetY + item:GetHeight() + inset
+    end
+  end
+  local line = CreateLine(tabWindow, "TYPE1")
+  line:AddAnchor("TOPLEFT", tabWindow.item[4], "BOTTOMLEFT", 0, sideMargin / 2)
+  line:AddAnchor("TOPRIGHT", tabWindow.item[6], "BOTTOMRIGHT", 0, sideMargin / 2)
+end
+function CreateHeroCurrentStatus(tabWindow)
+  SetViewOfHeroCurrentStatus(tabWindow)
+  local heroElectionRuleWnd
+  local heroElectionRule = tabWindow.heroElectionRule
+  local function HeroElectionRuleFunc()
+    if heroElectionRuleWnd == nil then
+      heroElectionRuleWnd = CreateHeroElectionRuleWindow("heroElectionRuleWnd", "UIParent")
+      heroElectionRuleWnd:Show(true)
+      heroElectionRuleWnd:EnableHidingIsRemove(true)
+      heroElectionRuleWnd:AddAnchor("CENTER", "UIParent", 0, 0)
+      local function OnHide()
+        heroElectionRuleWnd = nil
+      end
+      heroElectionRuleWnd:SetHandler("OnHide", OnHide)
+    else
+      heroElectionRuleWnd:Show(not heroElectionRuleWnd:IsVisible())
+    end
+  end
+  ButtonOnClickHandler(heroElectionRule, HeroElectionRuleFunc)
+  local heroBonusDescWnd
+  local heroBonusDesc = tabWindow.heroBonusDesc
+  if not X2Player:GetFeatureSet().heroBonus then
+    heroBonusDesc:Show(false)
+  end
+  local function HeroBonusDescFunc()
+    if heroBonusDescWnd == nil then
+      heroBonusDescWnd = CreateHeroBonusDescWindow("heroBonusDescWnd", "UIParent")
+      heroBonusDescWnd:Show(true)
+      heroBonusDescWnd:EnableHidingIsRemove(true)
+      heroBonusDescWnd:AddAnchor("CENTER", "UIParent", 0, 0)
+      local function OnHide()
+        heroBonusDescWnd = nil
+      end
+      heroBonusDescWnd:SetHandler("OnHide", OnHide)
+    else
+      heroBonusDescWnd:SetHandler(not heroBonusDescWnd:IsVisible())
+    end
+  end
+  ButtonOnClickHandler(heroBonusDesc, HeroBonusDescFunc)
+  local comboBox = tabWindow.factionCombobox
+  local function FillPeriod()
+    local periodInfo = X2Hero:GetActivedHeroPeriod(HERO_PERIOD_SCHEDULE)
+    if periodInfo ~= nil then
+      local periodStr = locale.common.from_to(locale.time.GetDateToDateFormat(periodInfo.periodStart, startFilter), locale.time.GetDateToDateFormat(periodInfo.periodEnd, endFilter))
+      local str = string.format("%s: %s", GetUIText(COMMON_TEXT, "activity_period"), periodStr)
+      tabWindow.period:SetPeriod(str, true)
+    end
+  end
+  local function FillKingName()
+    local selFactionId = comboBox:GetSelFactionId()
+    if selFactionId == nil or selFactionId == 0 then
+      return
+    end
+    local isNation = X2Nation:IsNationFaction(selFactionId)
+    local ownerName = ""
+    if isNation then
+      ownerName = X2Hero:GetFactionOwnerName(selFactionId)
+    elseif selFactionId == SYSTEM_NATION.OUTLAW then
+      ownerName = GetUIText(COMMON_TEXT, "outlaw_union_king_name")
+    elseif selFactionId == SYSTEM_NATION.NUIAN then
+      ownerName = GetUIText(COMMON_TEXT, "nuia_union_king_name")
+    elseif selFactionId == SYSTEM_NATION.HARIHARAN then
+      ownerName = GetUIText(COMMON_TEXT, "harihara_union_king_name")
+    end
+    tabWindow.kingName:SetText(string.format("%s: %s", GetUIText(NATION_TEXT, "king"), ownerName))
+  end
+  local function FillHeroList()
+    for i = 1, MAX_HERO do
+      tabWindow.item[i]:SetInfo(nil)
+    end
+    local selFactionId = comboBox:GetSelFactionId()
+    if selFactionId == nil or selFactionId == 0 then
+      tabWindow.emptyHeroListStr:Show(true)
+      return
+    else
+      tabWindow.emptyHeroListStr:Show(false)
+    end
+    local heroList = X2Hero:GetHeroList(selFactionId)
+    if heroList == nil then
+      return
+    end
+    for i = 1, MAX_HERO do
+      local info = heroList[i] or nil
+      tabWindow.item[i]:SetInfo(info)
+    end
+  end
+  local function FillPage()
+    FillPeriod()
+    FillKingName()
+    FillHeroList()
+  end
+  FillPage()
+  function comboBox:SelectedProc()
+    FillPage()
+  end
+end

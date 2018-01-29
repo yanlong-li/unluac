@@ -1,0 +1,127 @@
+function CreateScrollWindow(parent, ownId, index)
+  local frame = parent:CreateChildWidget("emptywidget", ownId, index, true)
+  frame:Show(true)
+  local content = frame:CreateChildWidget("emptywidget", "content", 0, true)
+  content:EnableScroll(true)
+  content:Show(true)
+  frame.content = content
+  local scroll = CreateScroll("scroll", frame)
+  scroll:AddAnchor("TOPRIGHT", frame, 0, 0)
+  scroll:AddAnchor("BOTTOMRIGHT", frame, 0, 0)
+  frame.scroll = scroll
+  content:AddAnchor("TOPLEFT", frame, 0, 0)
+  content:AddAnchor("BOTTOM", frame, 0, 0)
+  content:AddAnchor("RIGHT", scroll, "LEFT", -5, 0)
+  frame.x = 0
+  frame.y = 0
+  frame.WheelUp = 40
+  frame.WheelDown = 40
+  frame.buttonUp = 5
+  frame.buttonDown = 5
+  local function UpButtonLeftClickFunc()
+    scroll.vs:Up(frame.buttonUp)
+  end
+  ButtonOnClickHandler(scroll.upButton, UpButtonLeftClickFunc)
+  local function DownButtonLeftClickFunc()
+    scroll.vs:Down(frame.buttonDown)
+  end
+  ButtonOnClickHandler(scroll.downButton, DownButtonLeftClickFunc)
+  function scroll.vs:OnSliderChanged(_value)
+    local a, b = scroll.vs:GetMinMaxValues()
+    frame.content:ChangeChildAnchorByScrollValue("vert", _value)
+    if frame.SliderChangedProc ~= nil then
+      frame:SliderChangedProc(_value)
+    end
+  end
+  scroll.vs:SetHandler("OnSliderChanged", scroll.vs.OnSliderChanged)
+  function frame:SetEnable(enable)
+    self:Enable(enable)
+    scroll:SetEnable(enable)
+  end
+  frame.lock = false
+  function frame:Lock(enable)
+    self.lock = enable
+    local visible = not enable
+    local _, maxValue = scroll.vs:GetMinMaxValues()
+    if maxValue == 0 and visible then
+      self.scroll:Show(false)
+      return
+    end
+    self.scroll:Show(visible)
+    self:SetEnable(visible)
+  end
+  function frame:OnScroll(scrollType, _visible)
+    if self.lock == true then
+      return
+    end
+    if _visible == false then
+      return
+    end
+    local _, smin, smax = self:GetMinMaxValues(scrollType)
+    local offsetx = 0
+    local offsety = 0
+    self:SetMinMaxValues(scrollType, smin, smax)
+    frame.content:AddAnchor("BOTTOMRIGHT", parent, -20, -20, false)
+    if scrollType == "vert" then
+      self.scroll:Show(_visible)
+      if _visible then
+        offsety = 20
+        offsetx = 30
+        frame.content:AddAnchor("BOTTOMRIGHT", parent, offsety * -1, offsetx * -1, false)
+      else
+        offsety = 0
+      end
+    else
+      self.scroll:Show(false)
+    end
+    if self == actionWnd.scrollframe then
+      frame.content:AddAnchor("BOTTOMRIGHT", parent, 0, 0, false)
+    end
+  end
+  frame:SetHandler("OnScroll", frame.OnScroll)
+  function frame:OnWheelUp()
+    if not scroll.vs.thumb:IsEnabled() then
+      return
+    end
+    if self.lock == true then
+      return
+    end
+    scroll.vs:Up(frame.WheelUp)
+  end
+  frame:SetHandler("OnWheelUp", frame.OnWheelUp)
+  function frame:OnWheelDown()
+    if not scroll.vs.thumb:IsEnabled() then
+      return
+    end
+    if self.lock == true then
+      return
+    end
+    scroll.vs:Down(frame.WheelDown)
+  end
+  frame:SetHandler("OnWheelDown", frame.OnWheelDown)
+  function frame:SetValue(_value)
+    frame.content:ChangeChildAnchorByScrollValue("vert", _value)
+    scroll.vs:SetValue(_value, false)
+  end
+  function frame:SetMinMaxValues(scrollType, _min, _max)
+    local x, y = frame:GetExtent()
+    scroll.vs:SetMinMaxValues(_min, _max)
+    scroll.vs:SetPageStep(y)
+    if self.lock then
+      self.scroll:Show(false)
+      return
+    end
+    self.scroll:Show(true)
+    if _max <= 0 then
+      self:SetEnable(false)
+    else
+      self:SetEnable(true)
+      local value = scroll.vs:GetValue()
+      self:SetValue(value)
+    end
+  end
+  function frame:SetValueStep(v)
+    scroll.vs:SetValueStep(v)
+  end
+  return frame
+end

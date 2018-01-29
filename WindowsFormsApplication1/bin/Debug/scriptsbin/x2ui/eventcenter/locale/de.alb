@@ -1,0 +1,7 @@
+if X2Util:GetGameProvider() == TRION and X2Locale:GetLocale() == "de" then
+  eventcenterLocale.attendancePopup = false
+  eventcenterLocale.width = {
+    eventInfo = {list = 340, desc = 510}
+  }
+  eventcenterLocale.timeZone = {x = 73, y = 213}
+end

@@ -1,0 +1,268 @@
+local WATCH_TARGET_FRAME_WIDTH = 120
+function CreateWatchTargetFrame(id, parent)
+  local w = CreateUnitFrame(id, parent)
+  w:Show(false)
+  local playerFrame = ADDON:GetContent(UIC_PLAYER_UNITFRAME)
+  if playerFrame == nil then
+    return
+  end
+  function w:MakeOriginWindowPos(reset)
+    if w == nil then
+      return
+    end
+    w:RemoveAllAnchors()
+    if X2Player:GetFeatureSet().mateTypeSummon then
+      if reset then
+        w:AddAnchor("TOPLEFT", "UIParent", F_LAYOUT:CalcDontApplyUIScale(401), F_LAYOUT:CalcDontApplyUIScale(345))
+      else
+        w:AddAnchor("TOPLEFT", "UIParent", 401, 345)
+      end
+    else
+      w:AddAnchor("TOPLEFT", "UIParent", 325, 145)
+    end
+    w:SetWidth(WATCH_TARGET_FRAME_WIDTH)
+  end
+  w:MakeOriginWindowPos()
+  function w:ApplyFrameStyle()
+    self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.S_HP_FRIENDLY)
+    self.mpBar:ApplyBarTexture(STATUSBAR_STYLE.S_MP)
+    self.name:SetExtent(90, FONT_SIZE.MIDDLE)
+    self.name:SetLimitWidth(true)
+    self.bg:RemoveAllAnchors()
+    self.bg:AddAnchor("TOPLEFT", self.hpBar, -1, -4)
+    self.bg:AddAnchor("BOTTOMRIGHT", self.mpBar, 3, 4)
+    self.line:SetCoords(305, 207, 152, 8)
+    self.line:RemoveAllAnchors()
+    self.line:AddAnchor("TOPLEFT", self.hpBar, "BOTTOMLEFT", -1, -3)
+    self.line:AddAnchor("TOPRIGHT", self.hpBar, "BOTTOMRIGHT", 1, -3)
+    self.hpBar:SetWidth(WATCH_TARGET_FRAME_WIDTH)
+    self.mpBar:SetWidth(WATCH_TARGET_FRAME_WIDTH)
+    self.buffWindow:SetLayout(5, 24, 2, 2, false)
+    self.buffWindow:AddAnchor("TOPLEFT", self.mpBar, "BOTTOMLEFT", 0, 4)
+    self.debuffWindow:SetLayout(5, 24, 2, 2, false)
+    self.leaderMark:Show(false)
+    self.lootIcon:Show(false)
+  end
+  function w:UpdateNameWidth(unitType)
+    if unitType == "npc" then
+      self.name:SetAutoResize(false)
+      self.name:SetLimitWidth(true)
+      local width = self:GetWidth() - self.level:GetWidth() - 5
+      self.name:SetWidth(width)
+    else
+      self.name:SetAutoResize(true)
+      self.name:SetLimitWidth(false)
+      self.leaderMark:RemoveAllAnchors()
+      self.leaderMark:AddAnchor("LEFT", self.name, "RIGHT", 3, 1)
+    end
+  end
+  function w:ChangedTarget()
+    local factionInfo = X2Unit:GetCombatRelationshipStr(self.target)
+    local unitType, detailType = GetUnitType(self.target)
+    local unitGrade = GetUnitGrade(self.target)
+    self:UpdateNameWidth(unitType)
+    if unitType == "player" or unitType == "character" then
+      self:ChangeHpBarTexture_forPc(factionInfo, socialInfo)
+    else
+      self:ChangeHpBarTexture_forNpc(unitGrade, factionInfo)
+      if detailType == "npc" then
+        self:UpdateHpBarTexture_FirstHitByMe(unitGrade, X2Unit:UnitCombatState(self.target))
+      end
+    end
+  end
+  function w:Click(arg)
+    if arg == "RightButton" then
+      ActivatePopupMenu(w, "watchtarget")
+    end
+  end
+  function w:ChangeVisibleState(isFar)
+    if isFar then
+      self:SetAlpha(0.5)
+    else
+      self:SetAlpha(1)
+    end
+  end
+  function w:UpdateHpMp()
+    if self.target == nil then
+      return
+    end
+    local distance = X2Unit:UnitDistance(self.target)
+    if distance == nil then
+      self:ChangeVisibleState(true)
+      return
+    end
+    local curHp = X2Unit:UnitHealth(self.target)
+    local maxHp = X2Unit:UnitMaxHealth(self.target)
+    local curMp = X2Unit:UnitMana(self.target)
+    local maxMp = X2Unit:UnitMaxMana(self.target)
+    local isFar = distance >= UNIT_VISIBLE_MAX_DISTANCE
+    self:ChangeVisibleState(isFar)
+    if isFar == false then
+      if curHp ~= nil and maxHp ~= nil then
+        w.initialized = true
+        self:SetHp(curHp, maxHp)
+      end
+      if curMp ~= nil and maxMp ~= nil then
+        self:SetMp(curMp, maxMp)
+      end
+    end
+  end
+  function w:UpdateMarkerAnchor(unitType)
+    self.marker:RemoveAllAnchors()
+    if unitType == "npc" then
+      local width = self.name.style:GetTextWidth(self.name:GetText())
+      local labelWidth = self.name:GetWidth()
+      if width >= labelWidth then
+        width = labelWidth - 10
+      end
+      self.marker:AddAnchor("LEFT", self.name, width, 0)
+    elseif self.leaderMark:IsVisible() then
+      self.marker:AddAnchor("LEFT", self.leaderMark, "RIGHT", -1, -1)
+    else
+      self.marker:AddAnchor("LEFT", self.name, "RIGHT", 0, 0)
+    end
+  end
+  function w:Enter()
+    local distance = X2Unit:UnitDistance("watchtarget")
+    if distance == nil then
+      self.tooltipText = locale.dominion.unknown
+    else
+      w:UpdateTooltip()
+    end
+  end
+  function w:OnShow()
+    self:UpdateAll()
+  end
+  w:SetHandler("OnShow", w.OnShow)
+  w:ApplyFrameStyle()
+  w:SetTarget("watchtarget")
+  return w
+end
+local events = {
+  SET_OVERHEAD_MARK = function(unitId, markerIndex, visible)
+    local watchTargetId = X2Unit:GetUnitId("watchtarget")
+    if watchTargetId ~= unitId then
+      return
+    end
+    if not visible then
+      watchTargetFrame.marker:SetVisible(false)
+      return
+    end
+    local unitType, detailType = GetUnitType("watchtarget")
+    watchTargetFrame:SetMarker(watchTargetId, watchTargetFrame:UpdateMarkerAnchor(unitType))
+  end,
+  ENTERED_WORLD = function()
+    local watchTargetId = X2Unit:GetUnitId("watchtarget")
+    local unitType, detailType = GetUnitType("watchtarget")
+    watchTargetFrame.marker:SetVisible(false)
+    watchTargetFrame:SetMarker(watchTargetId, watchTargetFrame:UpdateMarkerAnchor(unitType))
+  end,
+  LEFT_LOADING = function()
+    local watchTargetId = X2Unit:GetUnitId("watchtarget")
+    if not watchTargetId then
+      watchTargetFrame:Show(false)
+    end
+  end,
+  TEAM_MEMBERS_CHANGED = function(arg1, arg2, arg3, arg4, arg5)
+    if arg1 == "joined_by_self" then
+      watchTargetFrame.marker:SetVisible(false)
+      local targetId = X2Unit:GetUnitId("target")
+      watchTargetFrame:SetMarker(targetId, watchTargetFrame:UpdateMarkerAnchor("character"))
+    elseif arg1 == "leaved_by_self" then
+      watchTargetFrame.marker:SetVisible(false)
+    elseif arg1 == "leaved" then
+      watchTargetFrame:UpdateLootIcon()
+      watchTargetFrame:UpdateLeaderMark()
+    elseif arg1 == "dismissed" or arg1 == "kicked_by_self" then
+      watchTargetFrame:ShowLeaderMark(false)
+      watchTargetFrame:ShowLootIcon(false)
+      watchTargetFrame.marker:SetVisible(false)
+    elseif arg1 == "owner_changed" then
+      local myMemberIndex = X2Team:GetTeamPlayerIndex()
+      if arg4 == myMemberIndex or arg5 == myMemberIndex then
+        watchTargetFrame:UpdateLeaderMark()
+      end
+    end
+  end,
+  UNIT_NAME_CHANGED = function(unitId)
+    local watchTargetId = X2Unit:GetUnitId("watchtarget")
+    if watchTargetId == nil then
+      return
+    end
+    if unitId ~= watchTargetId then
+      return
+    end
+    local unitType, detailType = GetUnitType("watchtarget")
+    watchTargetFrame:UpdateName()
+    watchTargetFrame:UpdateMarkerAnchor(unitType)
+  end
+}
+watchTargetFrame = CreateWatchTargetFrame("watchTargetFrame", "UIParent")
+watchTargetFrame:SetHandler("OnEvent", function(this, event, ...)
+  events[event](...)
+end)
+RegistUIEvent(watchTargetFrame, events)
+AddUISaveHandlerByKey("watchtarget", watchTargetFrame)
+watchTargetFrame:ApplyLastWindowOffset()
+watchTargetCastingBar = CreateCastingBar("watchTargetCastingBar", watchTargetFrame, "watchtarget")
+watchTargetCastingBar:Show(false)
+watchTargetCastingBar:SetWidth(120)
+watchTargetCastingBar:AddAnchor("TOPLEFT", watchTargetFrame.debuffWindow, "BOTTOMLEFT", 0, 0)
+watchTargetCastingBar:RegisterEvent("SPELLCAST_START")
+watchTargetCastingBar:RegisterEvent("SPELLCAST_STOP")
+watchTargetCastingBar:RegisterEvent("SPELLCAST_SUCCEEDED")
+local SetWatchTarget = function(bar, stringId)
+  if stringId == nil then
+    bar.unit = "none"
+  elseif X2Unit:GetUnitId("player") == stringId then
+    bar.unit = "player"
+  elseif X2Unit:GetUnitId("target") == stringId then
+    bar.unit = "target"
+  elseif X2Unit:GetUnitId("targettarget") == stringId then
+    bar.unit = "targettarget"
+  else
+    bar.unit = "watchtarget"
+  end
+end
+local targetChangeEvent = {
+  TARGET_CHANGED = function(stringId, targetType)
+    local watchTargetId = X2Unit:GetUnitId("watchtarget")
+    SetWatchTarget(watchTargetCastingBar, watchTargetId)
+    watchTargetCastingBar:Refresh()
+  end,
+  TARGET_TO_TARGET_CHANGED = function(stringId, targetType)
+    local watchTargetId = X2Unit:GetUnitId("watchtarget")
+    SetWatchTarget(watchTargetCastingBar, watchTargetId)
+    watchTargetCastingBar:Refresh()
+  end
+}
+watchTargetCastingBar:SetEventProc(targetChangeEvent)
+watchTargetCastingBar:RegisterEvent("TARGET_CHANGED")
+watchTargetCastingBar:RegisterEvent("TARGET_TO_TARGET_CHANGED")
+function ToggleWatchTargetFrame(isShow)
+  if watchTargetFrame ~= nil then
+    watchTargetFrame:Show(isShow)
+  end
+  if isShow then
+    watchTargetFrame:UpdateAll()
+    watchTargetFrame:SetTarget("watchtarget")
+    local unitType, detailType = GetUnitType("watchtarget")
+    local watchTargetId = X2Unit:GetUnitId("watchtarget")
+    SetWatchTarget(watchTargetCastingBar, watchTargetId)
+    watchTargetFrame.marker:SetVisible(false)
+    watchTargetFrame:SetMarker(watchTargetId, watchTargetFrame:UpdateMarkerAnchor(unitType))
+  else
+    watchTargetCastingBar.unit = "none"
+  end
+end
+local WatchTargetChanged = function(stringId)
+  local isShow = stringId and true or false
+  ToggleWatchTargetFrame(isShow)
+end
+UIParent:SetEventHandler("WATCH_TARGET_CHANGED", WatchTargetChanged)
+local watchTargetUnitId = X2Unit:GetUnitId("watchtarget")
+if watchTargetUnitId then
+  ToggleWatchTargetFrame(true)
+else
+  X2Unit:ReleaseWatchTarget()
+end

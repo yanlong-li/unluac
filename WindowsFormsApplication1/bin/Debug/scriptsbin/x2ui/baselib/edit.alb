@@ -1,0 +1,85 @@
+local MAX_SILVER = 100000000
+function CreateMoneyEdit(id, parent)
+  parent = parent or "UIParent"
+  local edit = SetViewOfMoneyEdit(id, parent)
+  edit:SetText("0")
+  edit.minValue = 0
+  edit.maxValue = MAX_SILVER
+  edit.lastChar = "0"
+  edit.lastMsg = "0"
+  function edit:OnTextChanged()
+    local text = self:GetText()
+    local char = string.sub(text, string.len(text), string.len(text))
+    local number = tonumber(text)
+    if number ~= nil then
+      if number > edit.maxValue then
+        edit.value = edit.maxValue
+      elseif number < edit.minValue then
+        edit.value = edit.minValue
+      else
+        edit.value = number
+      end
+      edit:SetText(tostring(edit.value))
+    else
+      edit:SetText(edit.lastMsg)
+    end
+    edit.lastMsg = self:GetText()
+  end
+  function edit:OnEnterPressed()
+    self:ClearFocus()
+  end
+  function edit:SetMinMaxValues(_min, _max)
+    if _min == nil or _max == nil then
+      return
+    end
+    if _min < _max then
+      self.minValue = _min
+      self.maxValue = _max
+    end
+  end
+  edit:SetHandler("OnTextChanged", edit.OnTextChanged)
+  edit:SetHandler("OnEnterPressed", edit.OnEnterPressed)
+  return edit
+end
+function CreateAAPointEdit(id, parent)
+  parent = parent or "UIParent"
+  local edit = SetViewOfAAPointEdit(id, parent)
+  edit:SetText("0")
+  edit.minValue = 0
+  edit.maxValue = MAX_SILVER
+  edit.lastChar = "0"
+  edit.lastMsg = "0"
+  function edit:OnTextChanged()
+    local text = self:GetText()
+    local char = string.sub(text, string.len(text), string.len(text))
+    local number = tonumber(text)
+    if number ~= nil then
+      if number > edit.maxValue then
+        edit.value = edit.maxValue
+      elseif number < edit.minValue then
+        edit.value = edit.minValue
+      else
+        edit.value = number
+      end
+      edit:SetText(tostring(edit.value))
+    else
+      edit:SetText(edit.lastMsg)
+    end
+    edit.lastMsg = self:GetText()
+  end
+  function edit:OnEnterPressed()
+    self:ClearFocus()
+  end
+  function edit:SetMinMaxValues(_min, _max)
+    if _min == nil or _max == nil then
+      return
+    end
+    if _min < _max then
+      self.minValue = _min
+      self.maxValue = _max
+    end
+  end
+  edit:SetHandler("OnTextChanged", edit.OnTextChanged)
+  edit:SetHandler("OnEnterPressed", edit.OnEnterPressed)
+  return edit
+end

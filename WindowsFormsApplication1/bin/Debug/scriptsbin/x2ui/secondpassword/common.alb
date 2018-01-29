@@ -1,0 +1,134 @@
+testKeys = {}
+for i = 1, 10 do
+  testKeys[i] = i - 1
+end
+secondPassword = {}
+secondPassword.set = nil
+secondPassword.clearWnd = nil
+secondPassword.checkWnd = nil
+secondPassword.dialog = nil
+MAX_KEYBOARD_COUNT = 1
+KEY_MAX_NUM = 11
+MAX_PASSWORD_INPUT = 12
+function CreatePasswordEdit(id, parent, titleStr, width)
+  local editbox = parent:CreateChildWidget("editbox", id, 0, true)
+  editbox:SetExtent(185, DEFAULT_SIZE.EDIT_HEIGHT)
+  editbox:SetPassword(true)
+  editbox:SetDigit(true)
+  editbox:SetMaxTextLength(12)
+  InitEdit(editbox)
+  ApplyEditSkin(editbox, "brown")
+  editbox.style:SetAlign(ALIGN_CENTER)
+  local title = editbox:CreateChildWidget("label", "title", 0, true)
+  title:SetAutoResize(true)
+  title:SetText(titleStr)
+  title:SetHeight(FONT_SIZE.LARGE)
+  title.style:SetFontSize(FONT_SIZE.LARGE)
+  ApplyTextColor(title, FONT_COLOR.DEFAULT)
+  title:AddAnchor("BOTTOMLEFT", editbox, "TOPLEFT", 0, -5)
+  local guide = editbox:CreateChildWidget("label", "guide", 0, false)
+  guide:SetAutoResize(true)
+  guide:SetText(locale.secondPassword.passwordGuide)
+  ApplyTextColor(guide, FONT_COLOR.GRAY)
+  guide:SetHeight(FONT_SIZE.MIDDLE)
+  guide:AddAnchor("BOTTOMLEFT", title, "BOTTOMRIGHT", 4, 0)
+  local status = editbox:CreateChildWidget("label", "status", 0, true)
+  status:SetAutoResize(true)
+  status:SetHeight(FONT_SIZE.MIDDLE)
+  ApplyTextColor(status, FONT_COLOR.RED)
+  status:AddAnchor("LEFT", editbox, "RIGHT", 5, 0)
+end
+function CreateVirtualKeyboard(id, parent, index)
+  local keyboard = parent:CreateChildWidget("emptywidget", id, index, true)
+  keyboard:Show(true)
+  keyboard:SetExtent(185, 75)
+  local img = keyboard:CreateImageDrawable(TEXTURE_PATH.VIRTUAL_KEYBOARD, "background")
+  img:SetCoords(0, 0, 166, 64)
+  img:AddAnchor("TOPLEFT", keyboard, 0, 0)
+  img:AddAnchor("BOTTOMRIGHT", keyboard, 0, 0)
+  local x = 11
+  local y = 10
+  for i = 1, KEY_MAX_NUM do
+    do
+      local button = keyboard:CreateChildWidget("button", "button", i, true)
+      button:SetExtent(24, 24)
+      button:AddAnchor("TOPLEFT", keyboard, x, y)
+      x = x + 27
+      if i == 6 then
+        x = 11
+        y = 40
+      end
+      if i == KEY_MAX_NUM then
+        button:SetExtent(52, 24)
+      end
+      local function ButtonLeftClickFunc(self)
+        if keyboard.editbox == nil then
+          return
+        end
+        local length = string.len(keyboard.editbox:GetText())
+        if i ~= KEY_MAX_NUM and length >= MAX_PASSWORD_INPUT then
+          return
+        end
+        if keyboard.editbox:GetText() == "" then
+          if i == KEY_MAX_NUM then
+            return
+          end
+          keyboard.editbox:SetText(tostring(self.keyValue))
+        else
+          if i == KEY_MAX_NUM then
+            local str = string.sub(keyboard.editbox:GetText(), 1, length - 1)
+            keyboard.editbox:SetText(str)
+            return
+          end
+          local str = string.format("%s%s", keyboard.editbox:GetText(), self.keyValue)
+          keyboard.editbox:SetText(str)
+        end
+      end
+      ButtonOnClickHandler(button, ButtonLeftClickFunc)
+    end
+  end
+  function keyboard:FillData(strTable, editbox)
+    for i = 1, 10 do
+      self.button[i]:SetText(tostring(strTable[i]))
+      self.button[i].keyValue = strTable[i]
+    end
+    self.editbox = editbox
+  end
+end
+function CreateVirtualKeyboardSet(id, parent)
+  for i = 1, MAX_KEYBOARD_COUNT do
+    CreateVirtualKeyboard(id, parent, i)
+  end
+end
+function ToggleSecondPasswordWnd()
+  if X2Security:IsSecondPasswordLocked() then
+    AllHideSecondPasswordWindows()
+    AlertMsgToSecondPasswordUnlockRemainTime()
+  elseif X2Security:IsSecondPasswordCreated() then
+    ShowSecondPasswordDialog()
+  elseif IsVisibleSecondPasswordCreateWnd() then
+    secondPassword.set:Show(false)
+  else
+    X2Security:StartSecondPasswordCreation()
+  end
+end
+ADDON:RegisterContentTriggerFunc(UIC_SECOND_PASSWORD, ToggleSecondPasswordWnd)
+function AllHideSecondPasswordWindows()
+  if secondPassword.set ~= nil then
+    secondPassword.set:Show(false)
+  end
+  if secondPassword.clearWnd ~= nil then
+    secondPassword.clearWnd:Show(false)
+  end
+  if secondPassword.checkWnd ~= nil then
+    secondPassword.checkWnd:Show(false)
+  end
+  if secondPassword.dialog ~= nil then
+    secondPassword.dialog:Show(false)
+  end
+end
+UIParent:SetEventHandler("SECOND_PASSWORD_CREATION_COMPLETED", AllHideSecondPasswordWindows)
+UIParent:SetEventHandler("SECOND_PASSWORD_CHANGE_COMPLETED", AllHideSecondPasswordWindows)
+UIParent:SetEventHandler("SECOND_PASSWORD_CLEAR_COMPLETED", AllHideSecondPasswordWindows)
+UIParent:SetEventHandler("SECOND_PASSWORD_CHECK_COMPLETED", AllHideSecondPasswordWindows)
+UIParent:SetEventHandler("SECOND_PASSWORD_CHECK_OVER_FAILED", AllHideSecondPasswordWindows)

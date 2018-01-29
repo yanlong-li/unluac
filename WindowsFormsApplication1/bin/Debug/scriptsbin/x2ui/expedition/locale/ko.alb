@@ -1,0 +1,49 @@
+if expeditionLocale == nil then
+  expeditionLocale = {}
+end
+expeditionLocale.titleFontSize = FONT_SIZE.LARGE
+expeditionLocale.jobLayoutFunc = nil
+function expeditionLocale.jobDataFunc(subItem, data, setValue)
+  if setValue then
+    local str = GetCombinedAbilityName(data[EXPEDITION_MEMBER_COL.CLASS][1], data[EXPEDITION_MEMBER_COL.CLASS][2], data[EXPEDITION_MEMBER_COL.CLASS][3])
+    subItem:SetText(str)
+    ChangeSubItemTextColorForOnline(subItem, data[EXPEDITION_MEMBER_COL.ONLINE])
+  end
+end
+expeditionLocale.jobTooltipSettingFunc = nil
+expeditionLocale.intputNameLabel = {anchorHeight = -16, guideWidth = 250}
+expeditionLocale.width = {
+  memberListColumn = {
+    240,
+    80,
+    90,
+    80,
+    80,
+    240
+  }
+}
+expeditionLocale.useBarracks = true
+expeditionLocale.texts = {
+  accept = GetCommonText("accept"),
+  reject = GetCommonText("no"),
+  recruitComboBox = {
+    GetCommonText("register_day"),
+    GetCommonText("number_of_people"),
+    GetCommonText("level"),
+    GetCommonText("name")
+  }
+}
+expeditionLocale.inset = {
+  infoMultiline = {
+    8,
+    8,
+    16,
+    8
+  },
+  recruitRecruitment = {
+    10,
+    10,
+    20,
+    10
+  }
+}

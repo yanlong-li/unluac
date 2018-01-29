@@ -1,0 +1,552 @@
+NATION_TAB = {
+  NATION = 1,
+  PEOPLE = 2,
+  DOMINION = 3,
+  RELATION = 4
+}
+NATION_RELATION = {
+  INVAILD = 0,
+  HOSTILE = 1,
+  NATIVE = 2,
+  FRIENDLY = 3
+}
+RelationWeekDay = {
+  GetCommonText("sunday"),
+  GetCommonText("monday"),
+  GetCommonText("tuesday"),
+  GetCommonText("wednesday"),
+  GetCommonText("thursday"),
+  GetCommonText("friday"),
+  GetCommonText("saturday")
+}
+local CUR_FACTION_ID, BelongExpeditionList
+function ShowBelongExpeditionList(show)
+  if BelongExpeditionList then
+    BelongExpeditionList:Show(show)
+  end
+end
+local CreateNationAuthorityIcon = function(parent)
+  local nationAuthority = parent:CreateChildWidget("label", "nationAuthority", 0, true)
+  nationAuthority:SetHeight(FONT_SIZE.MIDDLE)
+  nationAuthority:SetAutoResize(true)
+  nationAuthority:SetText(string.format("%s:", locale.nationMgr.nation_authority))
+  ApplyTextColor(nationAuthority, FONT_COLOR.DEFAULT)
+  local coords = {}
+  coords = {
+    GetTextureInfo(TEXTURE_PATH.NATION_ARMY, "icon_diplomacy_dis"):GetCoords()
+  }
+  local diplomacyIcon = parent:CreateChildWidget("emptywidget", "diplomacyIcon", 0, false)
+  diplomacyIcon:SetExtent(coords[3], coords[4])
+  local diplomacyIconBg = diplomacyIcon:CreateImageDrawable(TEXTURE_PATH.NATION_ARMY, "background")
+  diplomacyIconBg:SetCoords(coords[1], coords[2], coords[3], coords[4])
+  diplomacyIconBg:AddAnchor("TOPLEFT", diplomacyIcon, 0, 0)
+  diplomacyIconBg:AddAnchor("BOTTOMRIGHT", diplomacyIcon, 0, 0)
+  parent.diplomacyIcon = diplomacyIcon
+  function diplomacyIcon:SetBgCoords(newCoords)
+    diplomacyIconBg:SetCoords(newCoords[1], newCoords[2], newCoords[3], newCoords[4])
+  end
+  diplomacyIcon:AddAnchor("LEFT", nationAuthority, "RIGHT", 4, 0)
+  local OnEnter = function(self)
+    local str = GetUIText(NATION_TEXT, "nation_authority_relation")
+    SetTargetAnchorTooltip(str, "TOPLEFT", self, "BOTTOMRIGHT", 0, 0)
+  end
+  diplomacyIcon:SetHandler("OnEnter", OnEnter)
+  local OnLeave = function()
+    HideTooltip()
+  end
+  diplomacyIcon:SetHandler("OnLeave", OnLeave)
+  coords = {
+    GetTextureInfo(TEXTURE_PATH.NATION_ARMY, "icon_military_dis"):GetCoords()
+  }
+  local militaryIcon = parent:CreateChildWidget("emptywidget", "militaryIcon", 0, false)
+  militaryIcon:SetExtent(30, 19)
+  local militaryIconBg = militaryIcon:CreateImageDrawable(TEXTURE_PATH.NATION_ARMY, "background")
+  militaryIconBg:SetCoords(coords[1], coords[2], coords[3], coords[4])
+  militaryIconBg:AddAnchor("TOPLEFT", militaryIcon, 0, 0)
+  militaryIconBg:AddAnchor("BOTTOMRIGHT", militaryIcon, 0, 0)
+  parent.militaryIcon = militaryIcon
+  function militaryIcon:SetBgCoords(newCoords)
+    militaryIconBg:SetCoords(newCoords[1], newCoords[2], newCoords[3], newCoords[4])
+  end
+  militaryIcon:AddAnchor("LEFT", diplomacyIcon, "RIGHT", 4, 0)
+  local OnEnter = function(self)
+  end
+  militaryIcon:SetHandler("OnEnter", OnEnter)
+  local OnLeave = function()
+  end
+  militaryIcon:SetHandler("OnLeave", OnLeave)
+end
+local function CreateBelongExpeditionList(id, parent)
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local window = CreateWindow(id, parent)
+  window:Show(false)
+  window:EnableHidingIsRemove(true)
+  window:SetExtent(POPUP_WINDOW_WIDTH, 380)
+  window:SetTitle(locale.nationMgr.belongExpeditionInfo)
+  local listCtrl = window:CreateChildWidget("listCtrl", "listCtrl", 0, true)
+  listCtrl:Show(true)
+  listCtrl:SetExtent(300, 270)
+  listCtrl:AddAnchor("TOP", window, 0, titleMargin)
+  listCtrl:InsertColumn(300, LCCIT_STRING)
+  listCtrl.column[1]:SetText(locale.nationMgr.expedition)
+  listCtrl.column[1].style:SetFontSize(FONT_SIZE.LARGE)
+  listCtrl:InsertRows(10, false)
+  for i = 1, #listCtrl.column do
+    listCtrl.column[i]:Enable(false)
+    SettingListColumn(listCtrl, listCtrl.column[i])
+    DrawListCtrlColumnSperatorLine(listCtrl.column[i], #listCtrl.column, i)
+  end
+  DrawListCtrlUnderLine(listCtrl)
+  local CreateExpeditionNameWindow = function(widget)
+    local dominionIcon = CreateLabel(widget:GetId() .. "expedition.dominionIcon", widget)
+    dominionIcon:Show(false)
+    dominionIcon:SetExtent(21, 17)
+    dominionIcon:AddAnchor("LEFT", widget, 3, 0)
+    widget.dominionIcon = dominionIcon
+    local bg = dominionIcon:CreateImageDrawable(TEXTURE_PATH.SIEGE_TAB, "background")
+    local coords = {
+      GetTextureInfo(TEXTURE_PATH.SIEGE_TAB, "icon"):GetCoords()
+    }
+    bg:SetCoords(coords[1], coords[2], coords[3], coords[4])
+    bg:AddAnchor("TOPLEFT", dominionIcon, 0, 0)
+    bg:AddAnchor("BOTTOMRIGHT", dominionIcon, 0, 0)
+    local expeditionNameLabel = widget:CreateChildWidget("label", "expeditionNameLabel", 0, true)
+    expeditionNameLabel:Show(true)
+    expeditionNameLabel:AddAnchor("TOPLEFT", widget, 0, 0)
+    expeditionNameLabel:AddAnchor("BOTTOMRIGHT", widget, 0, 0)
+    expeditionNameLabel:SetInset(26, 2, 7, 0)
+    expeditionNameLabel:SetLimitWidth(true)
+    expeditionNameLabel.style:SetSnap(true)
+    expeditionNameLabel.style:SetAlign(ALIGN_LEFT)
+    expeditionNameLabel:SetHeight(FONT_SIZE.MIDDLE)
+    ApplyTextColor(expeditionNameLabel, FONT_COLOR.DEFAULT)
+  end
+  for i = 1, #listCtrl.items do
+    local items = listCtrl.items[i]
+    CreateExpeditionNameWindow(items)
+  end
+  local pageControl = CreatePageControl(window:GetId() .. ".pageControl", window)
+  pageControl:Show(true)
+  pageControl:AddAnchor("TOP", listCtrl, "BOTTOM", 0, 0)
+  window.pageControl = pageControl
+  function pageControl:OnPageChanged(pageIndex, countPerPage)
+    window:FillData(pageIndex)
+  end
+  function window:FillData(page)
+    if page == nil then
+      page = 1
+    end
+    self.listCtrl:DeleteAllDatas()
+    if CUR_FACTION_ID == nil then
+      return
+    end
+    local expeditionList, totalCnt = X2Nation:GetExpeditionList(CUR_FACTION_ID, page)
+    if expeditionList == nil then
+      return
+    end
+    self.pageControl:SetPageByItemCount(totalCnt, #self.listCtrl.items)
+    for i = 1, #expeditionList do
+      do
+        local items = self.listCtrl.items[i]
+        items.expeditionNameLabel:SetText(expeditionList[i].name)
+        local function OnEnter(self)
+          if expeditionList[i].haveDominion then
+            local str = string.format("%s %s", expeditionList[i].haveDominionName, locale.nationMgr.own)
+            SetTargetAnchorTooltip(str, "TOPLEFT", self, "BOTTOMRIGHT", 0, 0)
+          end
+        end
+        items.dominionIcon:SetHandler("OnEnter", OnEnter)
+        local OnLeave = function()
+          HideTooltip()
+        end
+        items.dominionIcon:SetHandler("OnLeave", OnLeave)
+        if expeditionList[i].haveDominion then
+          items.dominionIcon:Show(true)
+          items.dominionIcon:Raise()
+        else
+          items.dominionIcon:Show(false)
+        end
+      end
+    end
+  end
+  return window
+end
+function CreateNationInfos(id, window, isMyNation)
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local frame = UIParent:CreateWidget("emptywidget", id, window)
+  local nationName = frame:CreateChildWidget("label", "nationName", 0, true)
+  nationName:AddAnchor("TOPLEFT", frame, sideMargin - 5, sideMargin - 7)
+  nationName:SetAutoResize(true)
+  nationName.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(nationName, FONT_COLOR.HIGH_TITLE)
+  local inset = 10
+  local nationOwner = frame:CreateChildWidget("label", "nationOwner", 0, true)
+  nationOwner:AddAnchor("TOPLEFT", nationName, "BOTTOMLEFT", 0, inset + 7)
+  nationOwner:SetHeight(FONT_SIZE.MIDDLE)
+  nationOwner:SetAutoResize(true)
+  ApplyTextColor(nationOwner, FONT_COLOR.DEFAULT)
+  local independenceDay = frame:CreateChildWidget("label", "independenceDay", 0, true)
+  independenceDay:AddAnchor("TOPLEFT", nationOwner, "BOTTOMLEFT", 0, inset)
+  independenceDay:SetHeight(FONT_SIZE.MIDDLE)
+  independenceDay:SetAutoResize(true)
+  ApplyTextColor(independenceDay, FONT_COLOR.DEFAULT)
+  local dominionCnt = frame:CreateChildWidget("label", "dominionCnt", 0, true)
+  dominionCnt:AddAnchor("TOPLEFT", independenceDay, "BOTTOMLEFT", 0, inset + 7)
+  dominionCnt:SetHeight(FONT_SIZE.MIDDLE)
+  dominionCnt:SetAutoResize(true)
+  ApplyTextColor(dominionCnt, FONT_COLOR.DEFAULT)
+  local guide = CreateGuideIconWidget(frame)
+  guide:AddAnchor("LEFT", dominionCnt, "RIGHT", 3, 0)
+  frame.guide = guide
+  local OnEnter = function(self)
+    if self.tip == nil then
+      return
+    end
+    local anchorsInfo = {
+      myAnchor = "TOPLEFT",
+      targetAnchor = "BOTTOMRIGHT",
+      x = 0,
+      y = 0
+    }
+    ShowTextTooltip(self, nil, self.tip, anchorsInfo)
+  end
+  frame.guide:SetHandler("OnEnter", OnEnter)
+  local OnLeave = function()
+    HideTextTooltip()
+  end
+  frame.guide:SetHandler("OnLeave", OnLeave)
+  local expeditionCnt = frame:CreateChildWidget("label", "expeditionCnt", 0, true)
+  expeditionCnt:SetHeight(FONT_SIZE.MIDDLE)
+  expeditionCnt:SetAutoResize(true)
+  ApplyTextColor(expeditionCnt, FONT_COLOR.DEFAULT)
+  CreateNationAuthorityIcon(frame)
+  local viewListButton = frame:CreateChildWidget("button", "viewListButton", 0, true)
+  ApplyButtonSkin(viewListButton, BUTTON_CONTENTS.SEARCH)
+  local function OnClick()
+    if BelongExpeditionList == nil then
+      BelongExpeditionList = CreateBelongExpeditionList("belongExpeditionList", "UIParent")
+      BelongExpeditionList:AddAnchor("TOPLEFT", frame, "TOPRIGHT", 0, -82)
+      BelongExpeditionList:FillData()
+      local function OnHide()
+        BelongExpeditionList = nil
+      end
+      BelongExpeditionList:SetHandler("OnHide", OnHide)
+    end
+    BelongExpeditionList:Show(not BelongExpeditionList:IsVisible())
+  end
+  viewListButton:SetHandler("OnClick", OnClick)
+  if isMyNation then
+    frame:SetExtent(475, 268)
+    nationName:SetHeight(FONT_SIZE.XLARGE)
+    nationName.style:SetFontSize(FONT_SIZE.XLARGE)
+    frame.nationAuthority:AddAnchor("TOPLEFT", dominionCnt, "BOTTOMLEFT", 0, inset)
+    expeditionCnt:AddAnchor("TOPLEFT", frame.nationAuthority, "BOTTOMLEFT", 0, inset)
+    viewListButton:AddAnchor("LEFT", expeditionCnt, "RIGHT", 4, 0)
+  else
+    frame:SetExtent(330, 210)
+    nationName:SetHeight(FONT_SIZE.LARGE)
+    nationName.style:SetFontSize(FONT_SIZE.LARGE)
+    expeditionCnt:AddAnchor("TOPLEFT", dominionCnt, "BOTTOMLEFT", 0, inset)
+    viewListButton:AddAnchor("LEFT", expeditionCnt, "RIGHT", 4, 0)
+  end
+  local peopleCnt = frame:CreateChildWidget("textbox", "peopleCnt", 0, true)
+  peopleCnt.style:SetAlign(ALIGN_LEFT)
+  peopleCnt:AddAnchor("TOPLEFT", expeditionCnt, "BOTTOMLEFT", 0, inset)
+  peopleCnt:SetExtent(frame:GetWidth() - MARGIN.WINDOW_SIDE * 2, FONT_SIZE.MIDDLE)
+  ApplyTextColor(peopleCnt, FONT_COLOR.DEFAULT)
+  local CreateSampleWidget = function(id, parent, sampleText, color)
+    local label = UIParent:CreateWidget("label", id, parent)
+    label.style:SetAlign(ALIGN_LEFT)
+    label:SetText(sampleText)
+    ApplyTextColor(label, FONT_COLOR.DEFAULT)
+    local sampleIcon = CreateContentBackground(label, "TYPE1")
+    sampleIcon:SetExtent(16, 16)
+    sampleIcon:AddAnchor("LEFT", label, 0, 0)
+    sampleIcon:SetColor(color[1], color[2], color[3], color[4])
+    label:SetInset(20, 0, 0, 0)
+    label:SetExtent(parent:GetWidth() / 2, FONT_SIZE.MIDDLE)
+    return label
+  end
+  local function RemarkList(id, parent)
+    local widget = parent:CreateChildWidget("emptywidget", id, 0, true)
+    if isMyNation then
+      widget:SetExtent(460, 59)
+      local bg = CreateContentBackground(widget, "TYPE2")
+      bg:AddAnchor("TOPLEFT", widget, 0, 0)
+      bg:AddAnchor("BOTTOMRIGHT", widget, 0, 0)
+      ApplyTextureColor(bg, TEXTURE_COLOR.BOX_BROWN)
+    else
+      widget:SetExtent(315, 40)
+    end
+    local remarkInfo = {
+      {
+        color = NATION_RELATION_LIST_COLOR.NATIVE,
+        text = locale.nationMgr.nativeDominion
+      },
+      {
+        color = NATION_RELATION_LIST_COLOR.FRIENDLY,
+        text = locale.nationMgr.friendlyNation
+      },
+      {
+        color = NATION_RELATION_LIST_COLOR.NONE_OWNER,
+        text = locale.nationMgr.noOwner
+      },
+      {
+        color = NATION_RELATION_LIST_COLOR.HOSTILE,
+        text = locale.nationMgr.hostileNation
+      }
+    }
+    local colorSamples = {}
+    local xOffSet = 0
+    local yOffSet = 0
+    local xPos = 0
+    local yPos = 5
+    if isMyNation then
+      xPos = MARGIN.WINDOW_SIDE / 1.5
+      yPos = 13
+    end
+    for i = 1, #remarkInfo do
+      local colorSample = CreateSampleWidget(string.format("colorSample[%d]", i), widget, remarkInfo[i].text, remarkInfo[i].color)
+      if i % 2 == 1 then
+        colorSample:AddAnchor("TOPLEFT", widget, xPos, yPos + yOffSet)
+        yOffSet = yOffSet + 20
+      else
+        colorSample:AddAnchor("TOPLEFT", colorSamples[i - 1], "TOPRIGHT", 0, 0)
+      end
+      colorSamples[i] = colorSample
+    end
+  end
+  RemarkList("remarkList", frame, isMyNation)
+  frame.remarkList:AddAnchor("TOPLEFT", peopleCnt, "BOTTOMLEFT", 0, 0)
+  function frame:Init(info, factionId)
+    local myName = X2Unit:UnitName("player")
+    local isNation = X2Nation:IsNationFaction(factionId)
+    CUR_FACTION_ID = factionId
+    self.dominionCnt:RemoveAllAnchors()
+    if self.viewListButton ~= nil then
+      self.viewListButton:Show(true)
+    end
+    self.independenceDay:Show(true)
+    self.expeditionCnt:Show(true)
+    self.peopleCnt:Show(true)
+    if isMyNation then
+      self.nationAuthority:Show(true)
+      self.diplomacyIcon:Show(true)
+      self.militaryIcon:Show(false)
+    else
+      self.nationAuthority:Show(false)
+      self.diplomacyIcon:Show(false)
+      self.militaryIcon:Show(false)
+    end
+    if info.name ~= nil then
+      self.nationName:SetText(info.name)
+    end
+    if not isNation then
+      local owner = ""
+      local tip = ""
+      if factionId == SYSTEM_NATION.NUIAN then
+        owner = X2Locale:LocalizeUiText(NATION_TEXT, "king_west")
+        tip = X2Locale:LocalizeUiText(COMMUNITY_TEXT, "west")
+      elseif factionId == SYSTEM_NATION.HARIHARAN then
+        owner = X2Locale:LocalizeUiText(NATION_TEXT, "king_east")
+        tip = X2Locale:LocalizeUiText(COMMUNITY_TEXT, "east")
+      end
+      self.nationOwner:SetText(string.format("%s: %s", locale.nationMgr.king, owner))
+      self.dominionCnt:SetText(string.format("%s: %d", locale.nationMgr.dominionList, 1))
+      self.guide.tip = tip
+      self.dominionCnt:AddAnchor("TOPLEFT", self.nationOwner, "BOTTOMLEFT", 0, inset)
+      if self.viewListButton ~= nil then
+        self.viewListButton:Show(false)
+      end
+      self.independenceDay:Show(false)
+      self.expeditionCnt:Show(false)
+      self.peopleCnt:Show(false)
+      self.remarkList:AddAnchor("TOPLEFT", self.dominionCnt, "BOTTOMLEFT", 0, inset)
+      return
+    end
+    self.dominionCnt:AddAnchor("TOPLEFT", self.independenceDay, "BOTTOMLEFT", 0, inset + 7)
+    if info.owner ~= nil then
+      self.nationOwner:SetText(string.format("%s: %s", locale.nationMgr.king, info.owner))
+    end
+    if info.indepenceDay ~= nil then
+      local str = locale.time.GetDateToDateFormat(info.indepenceDay, 112)
+      independenceDay:SetText(string.format("%s: %s", locale.nationMgr.independenceDay, str))
+    end
+    local list = X2Nation:GetDominionList(factionId)
+    if list == nil or #list == 0 then
+      self.dominionCnt:SetText(string.format("%s: %s(%s)", locale.nationMgr.dominionList, locale.tooltip.nobody, locale.nationMgr.noDominionList))
+      ApplyTextColor(self.dominionCnt, FONT_COLOR.RED)
+      self.guide:Show(false)
+    else
+      self.dominionCnt:SetText(string.format("%s: %d", locale.nationMgr.dominionList, #list))
+      ApplyTextColor(self.dominionCnt, FONT_COLOR.DEFAULT)
+      self.guide:Show(true)
+    end
+    local tip = ""
+    for i = 1, #list do
+      if i == 1 then
+        tip = X2Dominion:GetZoneGroupName(list[i])
+      elseif i % 2 == 0 then
+        tip = string.format("%s, %s\n", tip, X2Dominion:GetZoneGroupName(list[i]))
+      else
+        tip = string.format("%s%s", tip, X2Dominion:GetZoneGroupName(list[i]))
+      end
+    end
+    self.guide.tip = tip
+    local countInfo
+    if factionId == X2Faction:GetMyTopLevelFaction() then
+      countInfo = X2Nation:GetMyNationMemberCount()
+    else
+      countInfo = X2Nation:GetNationMemberCount(factionId)
+    end
+    if countInfo ~= nil then
+      local str = string.format("%s: %s%d|r / %d", locale.nationMgr.peopleCnt, FONT_COLOR_HEX.BLUE, countInfo.memberCount, countInfo.memberCountMax)
+      self.peopleCnt:SetText(string.format("%s", str))
+    end
+    self.expeditionCnt:SetText(string.format("%s: %d", locale.nationMgr.expeditionCnt, info.expeditionCnt))
+    self.remarkList:AddAnchor("TOPLEFT", self.peopleCnt, "BOTTOMLEFT", 0, inset - 3)
+    if self.InitProc ~= nil then
+      self:InitProc(info)
+    end
+  end
+  function frame:SetNationAuthorityIcon(relation)
+    local coords = {}
+    if relation then
+      coords = {
+        GetTextureInfo(TEXTURE_PATH.NATION_ARMY, "icon_diplomacy"):GetCoords()
+      }
+    else
+      coords = {
+        GetTextureInfo(TEXTURE_PATH.NATION_ARMY, "icon_diplomacy_dis"):GetCoords()
+      }
+    end
+    self.diplomacyIcon:SetBgCoords(coords)
+  end
+  return frame
+end
+function CreateNationMap(id, parent, isMyNation)
+  local dominionRegion = parent:CreateChildWidget("emptywidget", id, 0, true)
+  dominionRegion.isMyNation = isMyNation
+  local bg = dominionRegion:CreateImageDrawable(TEXTURE_PATH.NATION_MAP_BG, "background")
+  bg:SetCoords(0, 0, 0, 0)
+  bg:AddAnchor("TOPLEFT", dominionRegion, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", dominionRegion, 0, 0)
+  local over = dominionRegion:CreateImageDrawable(TEXTURE_PATH.NATION_MAP_COLOR, "overlay")
+  local zoneColor = {
+    {
+      zoneGroup = 33,
+      color = {
+        66,
+        255,
+        61
+      }
+    },
+    {
+      zoneGroup = 34,
+      color = {
+        255,
+        77,
+        77
+      }
+    },
+    {
+      zoneGroup = 43,
+      color = {
+        255,
+        247,
+        59
+      }
+    },
+    {
+      zoneGroup = 44,
+      color = {
+        255,
+        75,
+        207
+      }
+    },
+    {
+      zoneGroup = 54,
+      color = {
+        5,
+        168,
+        0
+      }
+    },
+    {
+      zoneGroup = 56,
+      color = {
+        162,
+        29,
+        0
+      }
+    }
+  }
+  X2Nation:SetDominionColors(zoneColor)
+  local relationColor = {
+    {
+      relation = NR_INVALID,
+      color = {
+        NATION_MAP_COLOR.NONE_OWNER[1],
+        NATION_MAP_COLOR.NONE_OWNER[2],
+        NATION_MAP_COLOR.NONE_OWNER[3]
+      }
+    },
+    {
+      relation = NR_WAR,
+      color = {
+        NATION_MAP_COLOR.WAR[1],
+        NATION_MAP_COLOR.WAR[2],
+        NATION_MAP_COLOR.WAR[3]
+      }
+    },
+    {
+      relation = NR_HOSTILE,
+      color = {
+        NATION_MAP_COLOR.HOSTILE[1],
+        NATION_MAP_COLOR.HOSTILE[2],
+        NATION_MAP_COLOR.HOSTILE[3]
+      }
+    },
+    {
+      relation = NR_FRIENDLY,
+      color = {
+        NATION_MAP_COLOR.FRIENDLY[1],
+        NATION_MAP_COLOR.FRIENDLY[2],
+        NATION_MAP_COLOR.FRIENDLY[3]
+      }
+    },
+    {
+      relation = NR_NATIVE,
+      color = {
+        NATION_MAP_COLOR.NATIVE[1],
+        NATION_MAP_COLOR.NATIVE[2],
+        NATION_MAP_COLOR.NATIVE[3]
+      }
+    },
+    {
+      relation = NR_LIGEANCE,
+      color = {
+        NATION_MAP_COLOR.LIGEANCE[1],
+        NATION_MAP_COLOR.LIGEANCE[2],
+        NATION_MAP_COLOR.LIGEANCE[3]
+      }
+    }
+  }
+  X2Nation:SetNationRelationColors(relationColor)
+  if isMyNation then
+    dominionRegion:SetExtent(279, 258)
+  else
+    dominionRegion:SetExtent(227, 210)
+  end
+  function dominionRegion:FillMapInfo(factionId)
+    X2Nation:AdjustDomionRelation(over, TEXTURE_PATH.NATION_MAP_COLOR, factionId)
+    over:SetCoords(0, 0, 0, 0)
+    if self.isMyNation then
+      over:SetExtent(279, 258)
+    else
+      over:SetExtent(227, 210)
+    end
+    over:AddAnchor("TOP", dominionRegion, 0, 0)
+  end
+end

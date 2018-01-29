@@ -1,0 +1,68 @@
+local diaryWindow
+local WIDTH = 604
+local HEIGHT = 604
+local OFFSET = 38
+local TYPE = "NONE"
+function ClearWebDiary()
+  diaryWindow = nil
+  TYPE = "NONE"
+end
+local function CreateDiaryWindow(id, parent)
+  local window = SetViewOfWebbrowserWindow(id, parent, WIDTH, HEIGHT, OFFSET)
+  window.clearProc = ClearWebDiary
+  function window:RequestPlayDiary(onTarget)
+    TYPE = "DIARY"
+    if onTarget then
+      if type(onTarget) == "boolean" then
+        window.webBrowser:RequestPlayDiaryOnTarget()
+      elseif type(onTarget) == "string" then
+        window.webBrowser:RequestPlayDiaryByPcName(onTarget)
+      end
+    else
+      window.webBrowser:RequestPlayDiary()
+    end
+  end
+  function window:RequestMessenger(onTarget)
+    TYPE = "MESSENGER"
+    if onTarget then
+      if type(onTarget) == "boolean" then
+        window.webBrowser:RequestMessengerOnTarget()
+      elseif type(onTarget) == "string" then
+        window.webBrowser:RequestMessengerByPcName(onTarget)
+      end
+    else
+      window.webBrowser:RequestMessenger()
+    end
+  end
+  return window
+end
+function OnToggleWebDiary(target)
+  if X2:IsWebEnable() and localeView.useWebContent and baselibLocale.useWebDiary then
+    if diaryWindow == nil then
+      diaryWindow = CreateDiaryWindow("diaryWindow", "UIParent")
+    end
+    diaryWindow:SetSounds("web_play_diary")
+    if target ~= nil or TYPE ~= "DIARY" then
+      diaryWindow:RequestPlayDiary(target)
+      diaryWindow:Show(true)
+    else
+      diaryWindow:Show(false)
+    end
+  end
+end
+ADDON:RegisterContentTriggerFunc(UIC_WEB_PLAY_DIARY, OnToggleWebDiary)
+function OnToggleWebMessenger(target)
+  if X2:IsWebEnable() and localeView.useWebContent and baselibLocale.useWebMessenger then
+    if diaryWindow == nil then
+      diaryWindow = CreateDiaryWindow("diaryWindow", "UIParent")
+    end
+    diaryWindow:SetSounds("web_messenger")
+    if target ~= nil or TYPE ~= "MESSENGER" then
+      diaryWindow:RequestMessenger(target)
+      diaryWindow:Show(true)
+    else
+      diaryWindow:Show(false)
+    end
+  end
+end
+ADDON:RegisterContentTriggerFunc(UIC_WEB_MESSENGER, OnToggleWebMessenger)

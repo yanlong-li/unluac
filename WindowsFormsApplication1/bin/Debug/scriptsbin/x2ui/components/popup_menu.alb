@@ -1,0 +1,185 @@
+local popupMenu
+function GetDefaultPopupInfoTable()
+  local infoTable = {}
+  infoTable.target = nil
+  infoTable.hideProcedure = nil
+  infoTable.infos = {}
+  function infoTable:AddInfo(text, proc, arg, hasChild, tooltipData)
+    local index = #self.infos + 1
+    self.infos[index] = {}
+    self.infos[index].text = text or ""
+    self.infos[index].proc = proc or nil
+    self.infos[index].arg = arg
+    self.infos[index].hasChild = hasChild or false
+    self.infos[index].tooltipData = tooltipData or nil
+  end
+  function infoTable:AddLayoutInfo(text_inset)
+    local index = #self.infos
+    self.infos[index].text_inset = text_inset or nil
+  end
+  function infoTable:AddTextButtonColor(text_color)
+    local index = #self.infos
+    self.infos[index].text_color = text_color
+  end
+  function infoTable:AddRadioBtn(isChecked)
+    local index = #self.infos
+    self.infos[index].radio = isChecked
+  end
+  function infoTable:AddCheckBtn(isShow, isHighlight)
+    local index = #self.infos
+    self.infos[index].check = {isShow = isShow, value = isHighlight}
+  end
+  function infoTable:AddImage(image)
+    local index = #self.infos
+    self.infos[index].image = image
+  end
+  function infoTable:AddImageAnchorInfo(anchorInfo)
+    local index = #self.infos
+    self.infos[index].anchorInfo = anchorInfo
+  end
+  function infoTable:AddDisableStatus(disable)
+    local index = #self.infos
+    self.infos[index].disable = disable
+  end
+  function infoTable:GetPopupInfoTableCount()
+    return #self.infos
+  end
+  return infoTable
+end
+function HidePopUpMenu(parent)
+  if popupMenu == nil then
+    return
+  end
+  if parent ~= nil then
+    if parent:GetAttachedWidget() == popupMenu then
+      popupMenu:Show(false)
+    end
+  else
+    popupMenu:Show(false)
+  end
+end
+local SafeCallFunc = function(func, ...)
+  if func ~= nil then
+    func(...)
+  end
+end
+function ShowPopUpMenu(id, stickTo, infoTable, isChild, myAnchor, targetAnchor, offsetX, offsetY)
+  if infoTable:GetPopupInfoTableCount() == 0 then
+    return
+  end
+  if isChild == nil then
+    isChild = false
+  end
+  local parent = "UIParent"
+  if isChild then
+    parent = stickTo
+  end
+  local popup = SetViewOfPopupMenuFrame(id, parent)
+  if isChild then
+    parent.childPopup = popup
+  end
+  function popup:ClearChild()
+    for i = 1, #self.buttons do
+      local btn = self.buttons[i]
+      if btn.childPopup ~= nil then
+        btn.childPopup:Show(false)
+        btn.childPopup = nil
+      end
+    end
+  end
+  for i = 1, #infoTable.infos do
+    do
+      local info = infoTable.infos[i]
+      local btn = popup:AddButton(info)
+      function btn:OnClick()
+        if info.proc ~= nil then
+          if info.hasChild then
+            popup:ClearChild()
+            info.proc(infoTable.target, info.arg, btn)
+          else
+            info.proc(infoTable.target, info.arg)
+            HidePopUpMenu()
+            SafeCallFunc(infoTable.hideProcedure, self:GetParent())
+          end
+        end
+      end
+      btn:SetHandler("OnClick", btn.OnClick)
+      function btn:OnEnter()
+        popup:ClearChild()
+        if info.proc ~= nil then
+          if info.hasChild and info.disable ~= true then
+            info.proc(infoTable.target, info.arg, btn)
+          elseif info.hasChild == false and info.tooltipData ~= nil then
+            SetTargetAnchorTooltip(info.tooltipData.text, info.tooltipData.myAnchor, self, info.tooltipData.targetAnchor, info.tooltipData.offsetX, info.tooltipData.offsetY)
+          end
+        end
+      end
+      btn:SetHandler("OnEnter", btn.OnEnter)
+      function btn:OnLeave()
+        if info.hasChild == false and info.tooltipData ~= nil then
+          HideTooltip()
+        end
+      end
+      btn:SetHandler("OnLeave", btn.OnLeave)
+      if btn.radioBtn ~= nil then
+        btn.radioBtn:SetHandler("OnClick", btn.OnClick)
+      end
+      if info.disable == true then
+        btn:Enable(false)
+      end
+    end
+  end
+  popup:Resize()
+  function popup:AnchorToMousePosition()
+    local mouseX, mouseY = X2Input:GetMousePos()
+    local screenWidth = UIParent:GetScreenWidth()
+    local screenHeight = UIParent:GetScreenHeight()
+    local width, height = self:GetEffectiveExtent()
+    local vertOver = screenHeight <= mouseY + height
+    local horzOver = screenWidth <= mouseX + width
+    mouseX = F_LAYOUT:CalcDontApplyUIScale(mouseX)
+    mouseY = F_LAYOUT:CalcDontApplyUIScale(mouseY)
+    if vertOver and horzOver then
+      self:AddAnchor("BOTTOMRIGHT", "UIParent", "TOPLEFT", mouseX, mouseY)
+    elseif horzOver then
+      self:AddAnchor("TOPRIGHT", "UIParent", "TOPLEFT", mouseX, mouseY)
+    elseif vertOver then
+      self:AddAnchor("BOTTOMLEFT", "UIParent", "TOPLEFT", mouseX, mouseY)
+    else
+      self:AddAnchor("TOPLEFT", "UIParent", mouseX, mouseY)
+    end
+  end
+  popup:RemoveAllAnchors()
+  if not isChild then
+    if popupMenu ~= nil then
+      HidePopUpMenu()
+    end
+    popupMenu = popup
+    stickTo:AttachWidget(popup)
+    function popupMenu:OnHide()
+      stickTo:DetachWidget()
+      popupMenu = nil
+    end
+    popupMenu:SetHandler("OnHide", popup.OnHide)
+    do
+      local events = {
+        MOUSE_DOWN = function(widgetId)
+          if popupMenu:IsVisible() == true and popupMenu:IsDescendantWidget(widgetId) == false then
+            HidePopUpMenu()
+            SafeCallFunc(infoTable.hideProcedure, popupMenu)
+          end
+        end
+      }
+      popupMenu:SetHandler("OnEvent", function(this, event, ...)
+        events[event](...)
+      end)
+      popupMenu:RegisterEvent("MOUSE_DOWN")
+    end
+  end
+  popup:Show(true)
+  if myAnchor == nil then
+    popup:AnchorToMousePosition()
+  else
+    popup:AddAnchor(myAnchor, stickTo, targetAnchor, offsetX, offsetY)
+  end
+end

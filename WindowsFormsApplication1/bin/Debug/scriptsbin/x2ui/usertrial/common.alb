@@ -1,0 +1,148 @@
+userTrial = {}
+userTrial.reportCrimeWnd = nil
+userTrial.defendantWaitWnd = nil
+userTrial.setupBountyWnd = nil
+userTrial.crimeRecords = nil
+userTrial.verdictWnd = nil
+userTrial.botRecords = nil
+userTrial.rulingStatusWnd = nil
+userTrial.bountyBulletWnd = nil
+USER_TRIAL = {MAX_ITEM_COUNT = 10, MAX_CRIME_TYPE = 4}
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+function CreateIdentikitPicture(id, parent)
+  local frame = parent:CreateChildWidget("emptywidget", "frame", 0, false)
+  frame:SetExtent(196, 250)
+  local picture = frame:CreateImageDrawable(TEXTURE_PATH.USER_TRIAL_VERDICT, "background")
+  picture:SetTextureInfo("criminals")
+  picture:AddAnchor("TOPLEFT", frame, 0, 0)
+  frame.picture = picture
+  local faction = frame:CreateChildWidget("label", "faction", 0, true)
+  faction:SetAutoResize(true)
+  faction:SetHeight(FONT_SIZE.MIDDLE)
+  faction:AddAnchor("BOTTOM", picture, 0, -sideMargin)
+  ApplyTextColor(faction, FONT_COLOR.USER_TRAL_RED)
+  local race = frame:CreateChildWidget("label", "race", 0, true)
+  race:SetAutoResize(true)
+  race:SetHeight(FONT_SIZE.MIDDLE)
+  race:AddAnchor("BOTTOM", faction, "TOP", 0, -sideMargin / 4)
+  ApplyTextColor(race, FONT_COLOR.USER_TRAL_RED)
+  local name = frame:CreateChildWidget("label", "name", 0, true)
+  name:SetAutoResize(true)
+  name:SetHeight(FONT_SIZE.LARGE)
+  name:AddAnchor("BOTTOM", race, "TOP", 0, -sideMargin / 2)
+  name.style:SetFontSize(FONT_SIZE.LARGE)
+  ApplyTextColor(name, FONT_COLOR.BLACK)
+  function frame:FillInfo(faction, race, name)
+    self.faction:SetText(faction)
+    self.race:SetText(race)
+    self.name:SetText(name)
+  end
+  return frame
+end
+function CreateRecordsLeftFrame(id, parent)
+  local frame = parent:CreateChildWidget("emptywidget", id, 0, false)
+  local identikitPicture = CreateIdentikitPicture("identikitPicture", frame)
+  identikitPicture:AddAnchor("TOPLEFT", frame, 0, 0)
+  frame.identikitPicture = identikitPicture
+  local function CreateItem(id, target)
+    local item = frame:CreateChildWidget("label", id, 0, true)
+    item:SetAutoResize(true)
+    item:SetHeight(FONT_SIZE.MIDDLE)
+    item.style:SetAlign(ALIGN_LEFT)
+    ApplyTextColor(item, FONT_COLOR.TITLE)
+    DrawRoundDingbat(item)
+    local value = item:CreateChildWidget("label", "value", 0, true)
+    value:SetAutoResize(true)
+    value:SetHeight(FONT_SIZE.MIDDLE)
+    value:AddAnchor("LEFT", item, "RIGHT", 5, 0)
+    value.style:SetAlign(ALIGN_LEFT)
+    ApplyTextColor(value, FONT_COLOR.DEFAULT)
+    function item:FillItem(itemStr, value)
+      self:SetText(itemStr)
+      self.value:SetText(value)
+    end
+  end
+  local function Anchor(widget, target)
+    widget:AddAnchor("TOPLEFT", target, 0, sideMargin * 1.2)
+  end
+  CreateItem("crimePoint", identikitPicture)
+  frame.crimePoint:AddAnchor("TOPLEFT", identikitPicture, "BOTTOMLEFT", sideMargin, sideMargin / 2)
+  frame.crimePoint.value:SetHeight(FONT_SIZE.XLARGE)
+  frame.crimePoint.value.style:SetFontSize(FONT_SIZE.XLARGE)
+  ApplyTextColor(frame.crimePoint.value, FONT_COLOR.RED)
+  CreateItem("totalReportCount")
+  Anchor(frame.totalReportCount, frame.crimePoint)
+  CreateItem("takeCount")
+  Anchor(frame.takeCount, frame.totalReportCount)
+  CreateItem("rulingHistory")
+  Anchor(frame.rulingHistory, frame.takeCount)
+  CreateItem("totalImprisonmentTime")
+  Anchor(frame.totalImprisonmentTime, frame.rulingHistory)
+  frame:SetExtent(identikitPicture:GetWidth(), 370)
+  return frame
+end
+function CreateStepInfoFrame(id, parent)
+  local frame = parent:CreateChildWidget("window", id, 0, false)
+  frame:Show(true)
+  frame:SetExtent(200, 20)
+  local step = frame:CreateChildWidget("label", "step", 0, true)
+  step:SetAutoResize(true)
+  step:SetHeight(FONT_SIZE.LARGE)
+  step:AddAnchor("RIGHT", frame, 0, 0)
+  step.style:SetFontSize(FONT_SIZE.LARGE)
+  ApplyTextColor(step, FONT_COLOR.BLACK)
+  local stepIcon = step:CreateImageDrawable(TEXTURE_PATH.USER_TRIAL_VERDICT, "overlay")
+  stepIcon:SetTextureInfo("person")
+  stepIcon:AddAnchor("RIGHT", step, "LEFT", 1, 0)
+  local remainTime = frame:CreateChildWidget("label", "remainTime", 0, true)
+  remainTime:SetAutoResize(true)
+  remainTime:SetHeight(FONT_SIZE.LARGE)
+  remainTime:AddAnchor("RIGHT", stepIcon, "LEFT", -5, 0)
+  remainTime.style:SetFontSize(FONT_SIZE.LARGE)
+  ApplyTextColor(remainTime, FONT_COLOR.BLACK)
+  local remainTimeIcon = remainTime:CreateImageDrawable(TEXTURE_PATH.USER_TRIAL_VERDICT, "overlay")
+  remainTimeIcon:SetTextureInfo("clock")
+  remainTimeIcon:AddAnchor("RIGHT", remainTime, "LEFT", -3, 0)
+  local bg = step:CreateImageDrawable(TEXTURE_PATH.MONEY_WINDOW, "background")
+  bg:SetCoords(0, 0, 190, 29)
+  bg:AddAnchor("TOPLEFT", remainTimeIcon, -10, -7)
+  bg:AddAnchor("BOTTOMRIGHT", step, 25, 10)
+  return frame
+end
+function CreateCrimeTypeIcon(widget, index)
+  local icon = widget:CreateChildWidget("label", "icon", index, false)
+  icon:AddAnchor("CENTER", widget, 0, 0)
+  icon:SetExtent(70, 24)
+  icon.style:SetFontSize(userTrialLocale.rulingStatusWnd.fontSize.crimeListWndTitle)
+  ApplyTextColor(icon, FONT_COLOR.DEFAULT)
+  local texture = widget:CreateImageDrawable(TEXTURE_PATH.USER_TRIAL_CHARGE, "artwork")
+  texture:AddAnchor("CENTER", icon, 5, 0)
+  icon.texture = texture
+  local coords = {
+    {
+      GetTextureInfo(TEXTURE_PATH.USER_TRIAL_CHARGE, "etc"):GetCoords()
+    },
+    {
+      GetTextureInfo(TEXTURE_PATH.USER_TRIAL_CHARGE, "fist"):GetCoords()
+    },
+    {
+      GetTextureInfo(TEXTURE_PATH.USER_TRIAL_CHARGE, "blood"):GetCoords()
+    },
+    {
+      GetTextureInfo(TEXTURE_PATH.USER_TRIAL_CHARGE, "hood"):GetCoords()
+    }
+  }
+  icon.coords = coords
+  function icon:SetTypeIcon(crimeType)
+    local coord
+    coord = self.coords[crimeType]
+    if coord == nil then
+      self.texture:SetVisible(false)
+      return
+    end
+    self.texture:SetCoords(coord[1], coord[2], coord[3], coord[4])
+    self.texture:SetExtent(coord[3], coord[4])
+    self.texture:SetVisible(true)
+  end
+  return icon
+end

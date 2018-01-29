@@ -1,0 +1,11 @@
+if X2Util:GetGameProvider() == TRION then
+  premiumServiceLocale.useAAPoint = false
+  premiumServiceLocale.pointRuleButton = false
+  premiumServiceLocale.pointProgressBar = false
+  premiumServiceLocale.showPcbangBenefit = false
+  premiumServiceLocale.showWeb = true
+  function premiumServiceLocale.GetDateToPremiumServiceFormat(df)
+    local output = string.format("%s : %s:%s %s-%s-%s", X2Locale:LocalizeUiText(PREMIUM_TEXT, "end"), tostring(df.hour), tostring(df.minute), tostring(df.day), tostring(df.month), tostring(df.year))
+    return output
+  end
+end

@@ -1,0 +1,563 @@
+local mainWindow = backgroundWindow.mainWindow
+local enterWorldBtn = backgroundWindow.enterWorldBtn
+local warningLabel = backgroundWindow.warningLabel
+local queueWindow = backgroundWindow.queueWindow
+local refreshButton = backgroundWindow.refreshButton
+local worldIntegrationWnd = backgroundWindow.worldIntegrationWnd
+local MIN_SERVER_LIST_SIZE = 12
+local MAX_SERVER_LIST_COUNT = 2
+mainWindow.worldList = {}
+local handledBtn
+local function SetButtonHandler(button, text)
+  handledBtn = button
+  SetButtonFontColor(handledBtn, GetWhiteCheckButtonFontColor())
+  local delay = 0
+  local cnt = -1
+  function handledBtn:OnUpdate(dt)
+    delay = delay - dt
+    if delay < 0 then
+      delay = 500
+      cnt = (cnt + 1) % 4
+      local str = text
+      for i = 1, cnt do
+        str = str .. "."
+      end
+      handledBtn:SetText(str)
+    end
+  end
+  handledBtn:SetHandler("OnUpdate", handledBtn.OnUpdate)
+end
+local function ReleaseButtonHandler()
+  if handledBtn ~= nil then
+    SetButtonFontColor(handledBtn, GetLoginStageDefaultFontColor())
+    handledBtn:ReleaseHandler("OnUpdate")
+    handledBtn = nil
+  end
+end
+local isReadyToSelectServer = false
+local function SetReadyToSelectServer(isReady)
+  isReadyToSelectServer = isReady
+  mainWindow:Enable(isReady, true)
+  refreshButton:Enable(isReady)
+  if isReady then
+    ReleaseButtonHandler()
+    enterWorldBtn:SetText(locale.server.enter)
+  else
+    enterWorldBtn:Enable(false)
+    refreshButton:ReleaseHandler("OnUpdate")
+    SetButtonHandler(enterWorldBtn, tostring(locale.login.connecting))
+  end
+end
+local function SelectServer(worldIndex, zoneId)
+  if worldIndex == nil or not isReadyToSelectServer then
+    return
+  end
+  if zoneId == nil then
+    local defaultZoneStr = Console:GetAttribute("client_default_zone")
+    if defaultZoneStr ~= nil then
+      zoneId = tonumber(defaultZoneStr)
+    end
+    if X2Debug:GetDevMode() then
+      local testZoneId = backgroundWindow.zoneList.zoneIdList[backgroundWindow.zoneList:GetSelectedIndex()]
+      if testZoneId ~= nil then
+        zoneId = testZoneId
+      end
+    end
+    if zoneId == nil then
+      zoneId = -1
+    end
+  end
+  F_SOUND:PlayUISound("login_stage_world_select")
+  X2World:EnterWorld(worldIndex, zoneId)
+  SetReadyToSelectServer(false)
+end
+function backgroundWindow:OnScale()
+  backgroundWindow:AddAnchor("TOPLEFT", "UIParent", 0, 0)
+  backgroundWindow:AddAnchor("BOTTOMRIGHT", "UIParent", 0, 0)
+end
+backgroundWindow:SetHandler("OnScale", backgroundWindow.OnScale)
+local CheckRaceCongestionFull = function(congestion)
+  for i = 1, #RACE_TYPE do
+    if congestion[X2Unit:GetRaceStr(RACE_TYPE[i])] < RACE_CONGESTION.HIGH then
+      return false
+    end
+  end
+  return true
+end
+local function ConvertSereverState(data)
+  local state
+  if data.available then
+    state = data.congestion
+    if X2World:IsPreSelectCharacterPeriod() and CheckRaceCongestionFull(data.raceCongestions) then
+      return RACE_CONGESTION.PRE_SELECT_RACE_FULL
+    end
+    return data.congestion
+  else
+    return RACE_CONGESTION.CHECK
+  end
+end
+local SortWorldListInfo = function(info)
+  local worldName = X2LoginCharacter:GetLastPlayedWorldInfo()
+  worldName = worldName or ""
+  for i = 1, #info - 1 do
+    for j = 1, #info - i do
+      if info[j].name ~= worldName then
+        local swap = false
+        local c1 = GetWorldCharacterCount(info[j].id)
+        local c2 = GetWorldCharacterCount(info[j + 1].id)
+        if info[j].name == worldName then
+          swap = false
+        elseif info[j + 1].name == worldName then
+          swap = true
+        elseif c1 ~= 0 and c2 == 0 then
+          swap = false
+        elseif c1 == 0 and c2 ~= 0 then
+          swap = true
+        elseif info[j].id > info[j + 1].id then
+          swap = true
+        end
+        if swap then
+          local tmp = info[j + 1]
+          info[j + 1] = info[j]
+          info[j] = tmp
+        end
+      end
+    end
+  end
+  return info
+end
+local function CalcServerListSize(serverCount)
+  local count = 0
+  local list_size = 0
+  if serverCount > MAX_SERVER_LIST_COUNT * MIN_SERVER_LIST_SIZE then
+    list_size = serverCount - math.floor(serverCount / MAX_SERVER_LIST_COUNT)
+    count = MAX_SERVER_LIST_COUNT
+  elseif serverCount > MIN_SERVER_LIST_SIZE then
+    list_size = MIN_SERVER_LIST_SIZE
+    count = MAX_SERVER_LIST_COUNT
+  else
+    list_size = MIN_SERVER_LIST_SIZE
+    count = 1
+  end
+  return count, list_size
+end
+local function InitServerList()
+  local worldInfo = GetWorldListInfo()
+  worldInfo = SortWorldListInfo(worldInfo)
+  if #worldInfo == 0 then
+    return
+  end
+  local count, size = CalcServerListSize(#worldInfo)
+  mainWindow:InsertDataInfo(worldInfo, count, size)
+  local worldName = X2LoginCharacter:GetLastPlayedWorldInfo()
+  if worldName ~= nil and worldInfo[1].name ~= nil and worldName == worldInfo[1].name then
+    mainWindow:SelectByDataKey(worldInfo[1].id)
+  end
+end
+local function UpdateServerList()
+  local worldInfo = GetWorldListInfo()
+  worldInfo = SortWorldListInfo(worldInfo)
+  local lastKey = mainWindow:GetSelectedDataKey()
+  local count, size = CalcServerListSize(#worldInfo)
+  mainWindow:InsertDataInfo(worldInfo, count, size)
+  mainWindow:SelectByDataKey(lastKey)
+end
+function mainWindow:Unselect(index)
+  for i = 1, #mainWindow.worldList do
+    if i ~= index then
+      mainWindow.worldList[i]:ClearSelection()
+    end
+  end
+end
+function mainWindow:GetSelectedDataKey()
+  for i = 1, #mainWindow.worldList do
+    local key = mainWindow.worldList[i]:GetSelectedDataKey()
+    if key ~= nil then
+      return key
+    end
+  end
+end
+function mainWindow:SelectByDataKey(key)
+  for i = 1, #mainWindow.worldList do
+    mainWindow.worldList[i]:SelectByDataKey(key)
+  end
+end
+function mainWindow:InsertDataInfo(worldInfo, count, size)
+  for i = 1, #mainWindow.worldList do
+    mainWindow.worldList[i]:Show(false)
+    mainWindow.worldList[i]:DeleteAllDatas()
+  end
+  for i = 1, count do
+    if mainWindow.worldList[i] == nil then
+      do
+        local widget = CreateWorldList("serverList", mainWindow, i, size)
+        function widget:InsertDataInfo(infos, from, to, incr)
+          for j = from, to, incr do
+            local serverId = infos[j].id
+            local charCount = GetWorldCharacterCount(serverId)
+            local serverState = ConvertSereverState(infos[j])
+            widget:InsertData(serverId, 1, infos[j])
+            widget:InsertData(serverId, 2, charCount)
+            widget:InsertData(serverId, 3, infos[j].raceCongestions)
+            widget:InsertData(serverId, 4, serverState)
+          end
+        end
+        function widget:SelChangedProc(selDataViewIdx, selDataIdx, selDataKey, doubleClick)
+          if selDataIdx > 0 and selDataIdx <= #self.datas then
+            local data = self:GetDataByDataIndex(selDataIdx, 1)
+            local characterCount = self:GetDataByDataIndex(selDataIdx, 2)
+            local full_race = self:GetDataByDataIndex(selDataIdx, 3)
+            if data.available == false or not isReadyToSelectServer then
+              enterWorldBtn:Enable(false)
+            elseif GetEnableCreateCharacter_worldSelect() then
+              if X2World:IsPreSelectCharacterPeriod() then
+                enterWorldBtn:Enable(full_race ~= RACE_CONGESTION.PRE_SELECT_RACE_FULL)
+              else
+                enterWorldBtn:Enable(true)
+              end
+            else
+              enterWorldBtn:Enable(characterCount > 0)
+            end
+            mainWindow:Unselect(i)
+          end
+          if enterWorldBtn:IsEnabled() and doubleClick then
+            enterWorldBtn:OnClick()
+          end
+        end
+        mainWindow.worldList[i] = widget
+      end
+    end
+    mainWindow.worldList[i]:SetRowCount(size)
+    mainWindow.worldList[i]:Show(true)
+  end
+  local column_heihgt = 50
+  local itemHeight = 25
+  local line_offsetY = 2
+  if count == 1 then
+    self.worldList[1]:InsertDataInfo(worldInfo, 1, #worldInfo, 1)
+    self.worldList[1]:SetHeight(column_heihgt + itemHeight * mainWindow.worldList[1]:GetRowCount() + line_offsetY)
+  else
+    self.worldList[1]:InsertDataInfo(worldInfo, 1, size, 1)
+    self.worldList[2]:InsertDataInfo(worldInfo, #worldInfo, size + 1, -1)
+    self.worldList[1]:SetHeight(column_heihgt + itemHeight * mainWindow.worldList[1]:GetRowCount() + line_offsetY)
+    self.worldList[2]:SetHeight(column_heihgt + itemHeight * mainWindow.worldList[2]:GetRowCount() + line_offsetY)
+  end
+  mainWindow:SetExtent(self.worldList[1].listCtrl:GetWidth() * count + 25 * (count - 1), self.worldList[1]:GetHeight())
+end
+function refreshButton:OnEnter()
+  if self:IsEnabled() then
+    SetTargetAnchorTooltip(locale.server.refresh, "LEFT", self, "RIGHT", 0, 0)
+  else
+    SetTargetAnchorTooltip(locale.server.refresh_disable, "LEFT", self, "RIGHT", 0, 0)
+  end
+end
+refreshButton:SetHandler("OnEnter", refreshButton.OnEnter)
+function refreshButton:OnLeave()
+  HideTooltip()
+end
+refreshButton:SetHandler("OnLeave", refreshButton.OnLeave)
+function refreshButton:OnUpdate(dt)
+  self.time = dt + self.time
+  if self.time > 15000 then
+    self:Enable(true)
+    self:ReleaseHandler("OnUpdate")
+  end
+end
+function refreshButton:OnClick()
+  X2World:RequestWorldListRefresh()
+  self:Enable(false)
+  self.time = 0
+  self:SetHandler("OnUpdate", self.OnUpdate)
+end
+refreshButton:SetHandler("OnClick", refreshButton.OnClick)
+function enterWorldBtn:OnClick()
+  SelectServer(mainWindow:GetSelectedDataKey())
+end
+enterWorldBtn:SetHandler("OnClick", enterWorldBtn.OnClick)
+function warningLabel:UpdateWarningText()
+  if X2World:IsPreSelectCharacterPeriod() then
+    warningLabel:SetText(locale.server.pre_select_character_warning)
+  else
+    warningLabel:SetText(locale.server.max_character_count_warning(X2World:GetCharactersDefaultLimitPerWorld(), X2World:GetCharactersDefaultLimitPerAccount(), X2World:GetCharacterExpandableLimit()))
+  end
+  warningLabel:SetHeight(warningLabel:GetTextHeight())
+end
+function UpdateQueueWindow()
+  local key = mainWindow:GetSelectedDataKey()
+  local list = GetWorldListInfo()
+  local data
+  for i = 1, #list do
+    if list[i].id == key then
+      data = list[i]
+      break
+    end
+  end
+  if data == nil then
+    return
+  end
+  local serverName = data.name
+  queueWindow.guideText:SetText(locale.server.GetGuideText(serverName))
+  local expected = X2LoginCharacter:GetWorldQueueExpectedTime()
+  local timeString
+  if expected < 0 then
+    timeString = locale.server.timeCalculating
+  elseif expected < 60 then
+    timeString = locale.server.timeBelowOneMinute
+  elseif expected < 3600 then
+    timeString = locale.server.paramTimeAboutMinutes(expected / 60 + 1)
+  else
+    timeString = locale.server.timeAboveOneHour
+  end
+  local usePremium = X2LoginCharacter:UsePremiumEntrance()
+  usePremium = false
+  queueWindow:SetPremiumWainting(usePremium)
+  local position = X2LoginCharacter:GetWorldQueuePosition()
+  queueWindow.waitingLabel:ClearLines()
+  queueWindow.waitingLabel:AddLine(locale.server.myWaitingOrder(position), "", 0, "left", ALIGN_CENTER, 0)
+  queueWindow.timeLabel:SetText(locale.server.expectedWaitingTime(timeString))
+  if usePremium then
+    local queueType = X2LoginCharacter:IsInPremiumQueue()
+    queueWindow.waitingQueueType:SetText(locale.server.waitingQueueType(queueType and locale.server.premium or locale.server.normal))
+    queueWindow.normalLengthLabel:SetText(locale.server.waitingLength(locale.server.normal, X2LoginCharacter:GetWorldNormalQueueLength()))
+    queueWindow.premiumLengthLabel:SetText(locale.server.waitingLength(locale.server.premium, X2LoginCharacter:GetWorldPremiumQueueLength()))
+  end
+end
+local function LeftButtonLeftClickFunc()
+  X2LoginCharacter:CancelWorldQueue()
+  queueWindow:Show(false)
+end
+queueWindow.leftButton:SetHandler("OnClick", LeftButtonLeftClickFunc)
+local RightButtonLeftClickFunc = function()
+  Console:ExecuteString("quit")
+end
+queueWindow.rightButton:SetHandler("OnClick", RightButtonLeftClickFunc)
+local InitZoneList = function()
+  local zoneList = backgroundWindow.zoneList
+  local zoneCount = X2World:GetZoneCount()
+  local list = {}
+  local zoneIdList = {}
+  for k = 1, zoneCount do
+    local zoneInfo = X2World:GetZoneInfo(k)
+    list[k] = string.format("[%d] %s", zoneInfo.id, zoneInfo.name)
+    zoneIdList[k] = zoneInfo.id
+  end
+  zoneList.dropdownItem = list
+  zoneList.zoneIdList = zoneIdList
+end
+local isConnecting = false
+local worldSelectEvents = {
+  FADE_INOUT_DONE = function(param)
+    if param == "CONNECT_TO_WORLD" then
+      X2LoginCharacter:ConnectToWorld()
+      isConnecting = true
+    end
+  end,
+  OPEN_WORLD_QUEUE = function()
+    if isConnecting then
+      return
+    end
+    UpdateQueueWindow()
+    queueWindow:Show(true)
+    ReleaseButtonHandler()
+    backgroundWindow.exitButton:Enable(false)
+  end,
+  REFRESH_WORLD_QUEUE = function()
+    if isConnecting then
+      return
+    end
+    UpdateQueueWindow()
+  end,
+  READY_TO_CONNECT_WORLD = function()
+    queueWindow:Show(false)
+    X2LoginCharacter:ConnectToWorld()
+    F_SOUND:PlayUISound("login_stage_ready_to_connect_world")
+    isConnecting = true
+  end,
+  SHOW_SERVER_SELECT_WINDOW = function(visible)
+    UIParent:LogAlways("SHOW_SERVER_SELECT_WINDOW")
+    if visible then
+      mainWindow:Show(true)
+      backgroundWindow.exitButton:Enable(true)
+      UpdateServerList()
+    else
+      mainWindow:Show(false, 1300)
+    end
+  end,
+  ENTERED_WORLD_SELECT = function()
+    UIParent:LogAlways("ENTERED_WORLD_SELECT")
+    backgroundWindow:Show(true, 0)
+    mainWindow:Show(true)
+    warningLabel:UpdateWarningText()
+    SetReadyToSelectServer(true)
+    UpdateServerList()
+  end,
+  UI_RELOADED = function()
+    backgroundWindow:Show(true, 0)
+  end,
+  ENTER_WORLD_CANCELLED = function()
+    SetReadyToSelectServer(true)
+  end,
+  DISCONNECT_FROM_AUTH = function()
+    if not isConnecting then
+      queueWindow:Show(false)
+      ReleaseButtonHandler()
+      local DialogNoticeHandler = function(wnd)
+        local data = locale.messageBox.error_disconnect_from_auth
+        wnd:SetTitle(data.title)
+        wnd:SetContent(data.body)
+        function wnd:OkProc()
+          Console:ExecuteString("quit")
+        end
+      end
+      X2DialogManager:RequestNoticeDialog(DialogNoticeHandler, backgroundWindow:GetId())
+    end
+  end
+}
+backgroundWindow:SetHandler("OnEvent", function(this, event, ...)
+  worldSelectEvents[event](...)
+end)
+RegistUIEvent(backgroundWindow, worldSelectEvents)
+local serverTable
+local testServerCount = 0
+local testCharacterCount = false
+local testRaceCongestion = false
+local testCongestion = false
+function SetTestServer(count, chCount, raceCon, cong)
+  testServerCount = count
+  testCharacterCount = chCount or false
+  testRaceCongestion = raceCon or false
+  testCongestion = cong or false
+  InitServerList()
+end
+function GetWorldListInfo()
+  local serverList = {
+    {id = 31, name = "\236\149\136\237\131\136\235\161\160"},
+    {id = 32, name = "\237\129\172\235\157\188\236\188\132"},
+    {
+      id = 34,
+      name = "\235\133\184\236\149\132\235\165\180\237\131\128"
+    },
+    {
+      id = 51,
+      name = "\237\130\164\235\166\172\236\152\164\236\138\164"
+    },
+    {id = 35, name = "\235\136\132\236\157\180"},
+    {
+      id = 2,
+      name = "\236\152\164\237\130\164\235\147\156\235\130\152"
+    },
+    {
+      id = 5,
+      name = "\235\169\156\235\166\172\236\130\172\235\157\188"
+    },
+    {id = 10, name = "\236\152\172\235\161\156"},
+    {id = 3, name = "\237\131\128\236\150\145"},
+    {
+      id = 7,
+      name = "\236\149\132\235\158\128\236\160\156\235\184\140"
+    },
+    {
+      id = 9,
+      name = "\236\149\132\235\158\128\236\160\156\235\185\132\236\149\132"
+    },
+    {id = 11, name = "\236\157\180\235\133\185"},
+    {id = 12, name = "\235\130\152\236\157\180\235\167\136"},
+    {
+      id = 13,
+      name = "\235\141\184\237\148\188\235\130\152\235\147\156"
+    },
+    {
+      id = 14,
+      name = "\236\151\144\236\149\132\235\130\152\235\147\156"
+    },
+    {
+      id = 15,
+      name = "\236\185\180\237\142\152\235\165\180\235\130\152\236\155\128"
+    },
+    {
+      id = 16,
+      name = "\235\178\160\235\130\152\235\160\136\236\130\172\236\138\164"
+    },
+    {
+      id = 17,
+      name = "\236\151\144\237\142\152\235\166\172\236\155\128"
+    },
+    {
+      id = 18,
+      name = "\237\158\136\235\157\188\235\167\136\236\185\184\235\147\156"
+    },
+    {id = 19, name = "\236\151\144\235\133\184\236\149\132"},
+    {id = 20, name = "\235\169\148\236\150\180"},
+    {
+      id = 21,
+      name = "\237\148\132\235\160\136\237\140\140\236\132\184\236\138\164"
+    },
+    {id = 22, name = "\237\142\152\235\158\128"},
+    {id = 23, name = "\237\133\140\235\160\136\235\130\152"},
+    {id = 24, name = "\236\149\136\235\141\184\237\148\132"},
+    {id = 25, name = "\236\157\180\237\148\132\235\130\152"}
+  }
+  if X2Util:GetGameProvider() == TRION then
+    serverList[1] = {id = 1, name = "Aranzeb"}
+    serverList[2] = {id = 2, name = "Kyprosa"}
+    serverList[3] = {id = 4, name = "Tahyang"}
+    serverList[4] = {id = 51, name = "Kraken"}
+    serverList[5] = {id = 52, name = "Nazar"}
+    serverList[6] = {id = 53, name = "Hanure"}
+    serverList[7] = {id = 13, name = "Morpheus"}
+  end
+  serverTable = {}
+  for i = 1, testServerCount do
+    local data = {}
+    data.id = serverList[i].id or i
+    data.name = serverList[i].name or string.format("server_%d", i)
+    data.characterCount = 0
+    data.congestion = testCongestion and math.floor(math.random(0, 2)) or 0
+    data.available = testCongestion and math.random(0, 100) < 90 and true or false
+    data.raceCongestions = {
+      nuian = testRaceCongestion and math.random(0, 2) or 0,
+      elf = testRaceCongestion and math.random(0, 2) or 0,
+      ferre = testRaceCongestion and math.random(0, 2) or 0,
+      hariharan = testRaceCongestion and math.random(0, 2) or 0
+    }
+    serverTable[#serverTable + 1] = data
+  end
+  if testServerCount ~= 0 and testCharacterCount then
+    local maxCount = math.random(0, 6)
+    for i = 1, maxCount do
+      local index = math.random(1, testServerCount)
+      serverTable[index].characterCount = serverTable[index].characterCount + 1
+    end
+  end
+  local world = X2World:GetWorldInfo()
+  for i = 1, #world do
+    world[i].characterCount = X2World:GetCharactersCountPerWorld(world[i].id)
+    local flag = true
+    for j = 1, #serverTable do
+      if world[i].id == serverTable[j].id then
+        serverTable[j] = world[i]
+        flag = false
+        break
+      end
+    end
+    if flag then
+      serverTable[#serverTable + 1] = world[i]
+    end
+  end
+  return serverTable
+end
+function GetWorldCharacterCount(worldId)
+  for i = 1, #serverTable do
+    local data = serverTable[i]
+    if data.id == worldId then
+      return data.characterCount
+    end
+  end
+end
+if X2Debug:GetDevMode() then
+  InitZoneList()
+end
+InitServerList()
+if worldSelectLocale.notifyIndex ~= nil and 0 < worldSelectLocale.notifyIndex then
+  worldIntegrationWnd:ShowInfo()
+end

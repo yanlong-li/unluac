@@ -1,0 +1,108 @@
+racingMsg = {}
+racingMsg.default = nil
+racingMsg.countdown = nil
+local SetTextForTextbox = function(widget, str)
+  widget:SetWidth(1000)
+  widget:SetText(str)
+  widget:SetExtent(widget:GetLongestLineWidth() + 5, widget:GetTextHeight())
+end
+function CreateRacingMsg(id, parent)
+  local frame = CreateCenterMessageFrame(id, parent, "TYPE3")
+  frame:EnableHidingIsRemove(true)
+  local OnEndFadeOut = function()
+    StartNextImgEvent()
+    racingMsg.default = nil
+  end
+  frame:SetHandler("OnEndFadeOut", OnEndFadeOut)
+  function frame:FillMsg(condition, trackName, timeStr)
+    self.smallLayoutContent:Show(false)
+    self.bigLayoutContent:Show(false)
+    local function CommonLayout()
+      self.bigLayoutContent:Show(true)
+      self.bigLayoutContent.body:RemoveAllAnchors()
+      self.bigLayoutContent.body:AddAnchor("TOP", self.bigLayoutContent.iconBg, "BOTTOM", 0, -3)
+      self.bigLayoutContent.body.style:SetFontSize(FONT_SIZE.LARGE)
+      self.bigLayoutContent.icon:RemoveAllAnchors()
+      self.bigLayoutContent.icon:AddAnchor("CENTER", self.bigLayoutContent.iconBg, 0, -5)
+      self.bigLayoutContent.icon:SetTexture(TEXTURE_PATH.RACING_START)
+      self.bigLayoutContent.icon:SetCoords(0, 0, 103, 62)
+      self.bigLayoutContent.icon:SetExtent(103, 62)
+    end
+    if condition == RACE_COND_WAIT then
+      CommonLayout()
+      local str = locale.racing.wait(trackName, timeStr)
+      SetTextForTextbox(self.bigLayoutContent.body, str)
+      self:SetHandler("OnUpdate", self.OnUpdate)
+    elseif condition == RACE_COND_READY then
+      CommonLayout()
+      local str = locale.racing.ready(trackName, timeStr)
+      SetTextForTextbox(self.bigLayoutContent.body, str)
+      self:SetHandler("OnUpdate", self.OnUpdate)
+    elseif condition == RACE_COND_PLAY then
+      CommonLayout()
+      local str = locale.racing.start(trackName, timeStr)
+      SetTextForTextbox(self.bigLayoutContent.body, str)
+      self:SetHandler("OnUpdate", self.OnUpdate)
+    elseif condition == RACE_COND_END then
+      if X2Racing:IsEnteredRace() then
+        F_SOUND:PlayUISound("racing_end_fail_finish")
+      else
+        CommonLayout()
+        local str = locale.racing.racing_condition_end(trackName)
+        SetTextForTextbox(self.bigLayoutContent.body, str)
+        self:SetHandler("OnUpdate", self.OnUpdate)
+      end
+    end
+  end
+  function frame:FillChcekpoingMsg(str)
+    self.smallLayoutContent:Show(false)
+    self.bigLayoutContent:Show(false)
+    self.smallLayoutContent:Show(true)
+    self.smallLayoutContent.icon:RemoveAllAnchors()
+    self.smallLayoutContent.icon:AddAnchor("LEFT", self.smallLayoutContent, 0, 10)
+    self.smallLayoutContent.icon:SetTexture(TEXTURE_PATH.RACING_CHECKPOINT)
+    self.smallLayoutContent.icon:SetCoords(0, 0, 62, 64)
+    self.smallLayoutContent.icon:SetExtent(87, 88)
+    self.smallLayoutContent.body:RemoveAllAnchors()
+    self.smallLayoutContent.body:AddAnchor("LEFT", self.smallLayoutContent, 100, 15)
+    ApplyTextColor(self.smallLayoutContent.body, FONT_COLOR.BATTLEFIELD_BLUE)
+    self.smallLayoutContent:SetTextWidth(str, 340)
+    F_SOUND:PlayUISound("racing_checkpoint_pass")
+    self:SetHandler("OnUpdate", self.OnUpdate)
+  end
+  return frame
+end
+function ShowRacingConditionMsg(trackType, condition, remainTime)
+  if racingMsg.default == nil then
+    racingMsg.default = CreateRacingMsg("racingMsg.default", systemLayerParent)
+  end
+  local trackName = string.format("%s%s", FONT_COLOR_HEX.BATTLEFIELD_BLUE, X2Racing:GetTrackName(trackType))
+  local timeTable = {}
+  timeTable.year, timeTable.month, timeTable.day = 0, 0, 0
+  timeTable.hour, timeTable.minute, timeTable.second = GetHourMinuteSecondeFromMsec(remainTime)
+  local timeStr = string.format("%s%s|r", FONT_COLOR_HEX.BATTLEFIELD_BLUE, locale.time.GetRemainDateToDateFormat(timeTable, DEFAULT_FORMAT_FILTER + FORMAT_FILTER.SECOND))
+  racingMsg.default:FillMsg(condition, trackName, timeStr)
+  racingMsg.default:Show(true)
+  return true
+end
+function ShowRacingStateMsg(condition, recordTime, checkpoint)
+  if condition == RACE_COND_START then
+    return
+  end
+  if condition == RACE_COND_END then
+    F_SOUND:PlayUISound("racing_the_goal_line_pass")
+    return
+  end
+  local hour, minute, second = GetHourMinuteSecondeFromMsec(recordTime)
+  local str = string.format("[%s] %02d:%02d:%02d", locale.racing.point(checkpoint), hour, minute, second)
+  if racingMsg.default == nil then
+    racingMsg.default = CreateRacingMsg("racingMsg.default", systemLayerParent)
+  end
+  racingMsg.default:FillChcekpoingMsg(str)
+  racingMsg.default:Show(true)
+end
+function ShowRacingCountDown(trackType, condition, remainTime)
+  if racingMsg.countdown == nil then
+    racingMsg.countdown = CreateRacingMsg("racingMsg.default", systemLayerParent)
+  end
+end

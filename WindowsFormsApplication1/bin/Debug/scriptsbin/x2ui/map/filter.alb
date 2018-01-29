@@ -1,0 +1,245 @@
+local category_filter_table = {
+  "NPC_SHOW",
+  "DOODAD_SHOW",
+  "HOUSE_SHOW"
+}
+local normalCheckGroup = mapFrame.scrollFilterWindow.normalCheckGroup
+local npcFolder = mapFrame.scrollFilterWindow.npcFolder
+local doodadFolder = mapFrame.scrollFilterWindow.doodadFolder
+local houseFolder = mapFrame.scrollFilterWindow.houseFolder
+local npcAllCheck = mapFrame.scrollFilterWindow.npcFolder.allCheck
+local doodadAllCheck = mapFrame.scrollFilterWindow.doodadFolder.allCheck
+local houseAllCheck = mapFrame.scrollFilterWindow.houseFolder.allCheck
+local uiMapIconDatas = {}
+function LoadUIMapIconData()
+  uiMapIconDatas = X2:GetCharacterUiData("uiMapIconDatas")
+  CheckAndDefaultUIMapIconData()
+end
+function SaveUIMapIconData()
+  X2:SetCharacterUiData("uiMapIconDatas", uiMapIconDatas)
+end
+function CheckAndDefaultUIMapIconData()
+  if uiMapIconDatas == nil then
+    uiMapIconDatas = {}
+  end
+  local default_filter_table = {
+    MST_CORPSE_POS,
+    MST_NPC_STATION,
+    MST_COMMON_FARM,
+    MST_FACTION_HQ,
+    MST_HOUSING_HOUSE,
+    MST_HOUSING_FARM,
+    MST_HOUSING_FISHFARM,
+    MST_NPC_STABLER,
+    MST_NPC_STORE_BANK,
+    MST_NPC_STORE_AUCTION_HOUSE,
+    MST_NPC_ABILITY_CHANGER,
+    MST_NPC_STORE_TRADE,
+    MST_NPC_STORE_DELPHINAD,
+    MST_DOODAD_MAIL,
+    MST_DOODAD_INN,
+    MST_DOODAD_SPECIAL_PRODUCT,
+    MST_LIGHT_HOUSE,
+    MST_DOODAD_PORTAL,
+    MST_DOODAD_PORTAL_ARCHEMALL,
+    MST_DOODAD_PORTAL_DUNGEON,
+    MST_DOODAD_RAID_PURITY,
+    MST_HOUSE_NORMAL_HOUSE,
+    MST_HOUSE_SEA_FARM_HOUSE,
+    MST_HOUSE_HIGH_HOUSE,
+    MST_HOUSE_PUMPKIN_HOUSE,
+    MST_HOUSE_FARM_HOUSE,
+    MST_HOUSE_BENNY_HOUSE,
+    MST_HOUSE_BUNGALOW_HOUSE
+  }
+  if not X2Player:GetFeatureSet().hero then
+    for i = 1, #default_filter_table do
+      local index = default_filter_table[i]
+      if index == MST_FACTION_HQ then
+        table.remove(default_filter_table, i)
+      end
+    end
+  end
+  for i = 1, #category_filter_table do
+    local key = category_filter_table[i]
+    if uiMapIconDatas[key] == nil then
+      uiMapIconDatas[key] = true
+    end
+  end
+  for i = 1, #default_filter_table do
+    local index = default_filter_table[i]
+    if uiMapIconDatas[X2Map:GetMapIconText(index)] == nil then
+      uiMapIconDatas[X2Map:GetMapIconText(index)] = true
+    end
+  end
+  for i = 1, #mapLocale.filtericon_table do
+    local index = mapLocale.filtericon_table[i]
+    if uiMapIconDatas[X2Map:GetMapIconText(index)] == nil then
+      uiMapIconDatas[X2Map:GetMapIconText(index)] = false
+    end
+  end
+  for i = 1, #mapLocale.filtericon_npc_table do
+    local index = mapLocale.filtericon_npc_table[i]
+    if uiMapIconDatas[X2Map:GetMapIconText(index)] == nil then
+      uiMapIconDatas[X2Map:GetMapIconText(index)] = false
+    end
+  end
+  for i = 1, #mapLocale.filtericon_doodad_table do
+    local index = mapLocale.filtericon_doodad_table[i]
+    if uiMapIconDatas[X2Map:GetMapIconText(index)] == nil then
+      uiMapIconDatas[X2Map:GetMapIconText(index)] = false
+    end
+  end
+  for i = 1, #mapLocale.filtericon_house_table do
+    local index = mapLocale.filtericon_house_table[i]
+    if uiMapIconDatas[X2Map:GetMapIconText(index)] == nil then
+      uiMapIconDatas[X2Map:GetMapIconText(index)] = false
+    end
+  end
+  for i = 1, MST_MAX do
+    local key = X2Map:GetMapIconText(i)
+    if uiMapIconDatas[key] ~= nil then
+      SetMapFilter(i, uiMapIconDatas[key])
+    end
+  end
+  X2Map:SetNpcShowFilter(uiMapIconDatas[category_filter_table[1]])
+  X2Map:SetDoodadShowFilter(uiMapIconDatas[category_filter_table[2]])
+  X2Map:SetHouseShowFilter(uiMapIconDatas[category_filter_table[3]])
+  UpdateAllDrawableAnchor()
+end
+function UpdateAllDrawableAnchor()
+  worldmap:UpdateAllDrawableAnchor()
+  roadmap:UpdateAllDrawableAnchor()
+end
+function SetMapFilter(npcType, isShow)
+  X2Map:SetMapFilter(npcType, isShow)
+end
+function SetMapIconCheck()
+  for i = 1, #normalCheckGroup.checks do
+    local iconType = normalCheckGroup.checks[i].iconType
+    local checked = uiMapIconDatas[X2Map:GetMapIconText(iconType)]
+    normalCheckGroup.checks[i]:SetChecked(checked, false)
+  end
+  for i = 1, #npcFolder.detailCheck.group.subChecks do
+    local iconType = npcFolder.detailCheck.group.subChecks[i].iconType
+    local checked = uiMapIconDatas[X2Map:GetMapIconText(iconType)]
+    npcFolder.detailCheck.group.subChecks[i]:SetChecked(checked, false)
+  end
+  for i = 1, #doodadFolder.detailCheck.group.subChecks do
+    local iconType = doodadFolder.detailCheck.group.subChecks[i].iconType
+    local checked = uiMapIconDatas[X2Map:GetMapIconText(iconType)]
+    doodadFolder.detailCheck.group.subChecks[i]:SetChecked(checked, false)
+  end
+  for i = 1, #houseFolder.detailCheck.group.subChecks do
+    local iconType = houseFolder.detailCheck.group.subChecks[i].iconType
+    local checked = uiMapIconDatas[X2Map:GetMapIconText(iconType)]
+    houseFolder.detailCheck.group.subChecks[i]:SetChecked(checked, false)
+  end
+  local checked = uiMapIconDatas[category_filter_table[1]]
+  npcFolder.allCheck:SetChecked(checked, false)
+  checked = uiMapIconDatas[category_filter_table[2]]
+  doodadFolder.allCheck:SetChecked(checked, false)
+  checked = uiMapIconDatas[category_filter_table[3]]
+  houseFolder.allCheck:SetChecked(checked, false)
+end
+function IsAllCheck()
+  local isAll = true
+  for j = 1, #npcFolder.detailCheck.group.subChecks do
+    local iconType = npcFolder.detailCheck.group.subChecks[j].iconType
+    local checked = uiMapIconDatas[X2Map:GetMapIconText(iconType)]
+    if not uiMapIconDatas[X2Map:GetMapIconText(iconType)] then
+      isAll = false
+      break
+    end
+  end
+  npcFolder.detailCheck.group.checks[1]:SetChecked(isAll, false)
+  isAll = true
+  for j = 1, #doodadFolder.detailCheck.group.subChecks do
+    local iconType = doodadFolder.detailCheck.group.subChecks[j].iconType
+    local checked = uiMapIconDatas[X2Map:GetMapIconText(iconType)]
+    if not uiMapIconDatas[X2Map:GetMapIconText(iconType)] then
+      isAll = false
+      break
+    end
+  end
+  doodadFolder.detailCheck.group.checks[1]:SetChecked(isAll, false)
+  isAll = true
+  for j = 1, #houseFolder.detailCheck.group.subChecks do
+    local iconType = houseFolder.detailCheck.group.subChecks[j].iconType
+    local checked = uiMapIconDatas[X2Map:GetMapIconText(iconType)]
+    if not uiMapIconDatas[X2Map:GetMapIconText(iconType)] then
+      isAll = false
+      break
+    end
+  end
+  houseFolder.detailCheck.group.checks[1]:SetChecked(isAll, false)
+end
+function CheckFilter(btn, checked)
+  uiMapIconDatas[X2Map:GetMapIconText(btn.iconType)] = checked
+  SetMapFilter(btn.iconType, checked)
+end
+function normalCheckGroup:ChildCheckProcedure(btn, checked)
+  CheckFilter(btn, checked)
+  UpdateAllDrawableAnchor()
+  SaveUIMapIconData()
+end
+function npcFolder.allCheck:CheckBtnCheckChagnedProc(checked)
+  uiMapIconDatas[category_filter_table[1]] = checked
+  X2Map:SetNpcShowFilter(checked)
+  UpdateAllDrawableAnchor()
+  SaveUIMapIconData()
+end
+function doodadFolder.allCheck:CheckBtnCheckChagnedProc(checked)
+  uiMapIconDatas[category_filter_table[2]] = checked
+  X2Map:SetDoodadShowFilter(checked)
+  UpdateAllDrawableAnchor()
+  SaveUIMapIconData()
+end
+function houseFolder.allCheck:CheckBtnCheckChagnedProc(checked)
+  uiMapIconDatas[category_filter_table[3]] = checked
+  X2Map:SetHouseShowFilter(checked)
+  UpdateAllDrawableAnchor()
+  SaveUIMapIconData()
+end
+function npcFolder.detailCheck.group:ChildCheckProcedure(btn, checked)
+  if btn == npcFolder.detailCheck.group.checks[1] then
+    local npcAll = checked
+    for i = 1, #npcFolder.detailCheck.group.subChecks do
+      uiMapIconDatas[X2Map:GetMapIconText(npcFolder.detailCheck.group.subChecks[i].iconType)] = npcAll
+      SetMapFilter(npcFolder.detailCheck.group.subChecks[i].iconType, npcAll)
+    end
+  else
+    CheckFilter(btn, checked)
+  end
+  UpdateAllDrawableAnchor()
+  SaveUIMapIconData()
+end
+function doodadFolder.detailCheck.group:ChildCheckProcedure(btn, checked)
+  if btn == doodadFolder.detailCheck.group.checks[1] then
+    local doodadAll = checked
+    for i = 1, #doodadFolder.detailCheck.group.subChecks do
+      uiMapIconDatas[X2Map:GetMapIconText(doodadFolder.detailCheck.group.subChecks[i].iconType)] = doodadAll
+      SetMapFilter(doodadFolder.detailCheck.group.subChecks[i].iconType, doodadAll)
+    end
+  else
+    CheckFilter(btn, checked)
+  end
+  UpdateAllDrawableAnchor()
+  SaveUIMapIconData()
+end
+function houseFolder.detailCheck.group:ChildCheckProcedure(btn, checked)
+  if btn == houseFolder.detailCheck.group.checks[1] then
+    local doodadAll = checked
+    for i = 1, #houseFolder.detailCheck.group.subChecks do
+      uiMapIconDatas[X2Map:GetMapIconText(houseFolder.detailCheck.group.subChecks[i].iconType)] = doodadAll
+      SetMapFilter(houseFolder.detailCheck.group.subChecks[i].iconType, doodadAll)
+    end
+  else
+    CheckFilter(btn, checked)
+  end
+  UpdateAllDrawableAnchor()
+  SaveUIMapIconData()
+end
+LoadUIMapIconData()
+SetMapIconCheck()
+IsAllCheck()

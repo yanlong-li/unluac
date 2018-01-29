@@ -1,0 +1,58 @@
+FORM_QUEST_NOTIFIER = {
+  DAY_QUEST_ICON_COORDS = {
+    {
+      GetTextureInfo(TEXTURE_PATH.QUEST_NOTIFIER, "sunday"):GetCoords()
+    },
+    {
+      GetTextureInfo(TEXTURE_PATH.QUEST_NOTIFIER, "monday"):GetCoords()
+    },
+    {
+      GetTextureInfo(TEXTURE_PATH.QUEST_NOTIFIER, "tuesday"):GetCoords()
+    },
+    {
+      GetTextureInfo(TEXTURE_PATH.QUEST_NOTIFIER, "wednesday"):GetCoords()
+    },
+    {
+      GetTextureInfo(TEXTURE_PATH.QUEST_NOTIFIER, "thursday"):GetCoords()
+    },
+    {
+      GetTextureInfo(TEXTURE_PATH.QUEST_NOTIFIER, "friday"):GetCoords()
+    },
+    {
+      GetTextureInfo(TEXTURE_PATH.QUEST_NOTIFIER, "saturday"):GetCoords()
+    },
+    {
+      GetTextureInfo(TEXTURE_PATH.QUEST_NOTIFIER, "daily"):GetCoords()
+    }
+  }
+}
+FORM_QUEST_DIRECTING = {
+  PANEL_COLOR = {
+    ACCEPT = {
+      0,
+      0,
+      0,
+      0.8
+    },
+    COMPLETE = {
+      ConvertColor(4),
+      ConvertColor(26),
+      ConvertColor(44),
+      0.8
+    }
+  },
+  TITLE_FONT_COLOR = {
+    MAIN_QUEST = {
+      ConvertColor(172),
+      ConvertColor(222),
+      ConvertColor(38),
+      1
+    },
+    NOT_MAIN_QUEST = {
+      ConvertColor(236),
+      ConvertColor(235),
+      ConvertColor(119),
+      1
+    }
+  }
+}

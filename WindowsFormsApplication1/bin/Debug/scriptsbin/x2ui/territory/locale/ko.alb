@@ -1,0 +1,9 @@
+if territoryLocale == nil then
+  territoryLocale = {}
+end
+territoryLocale.width = 430
+territoryLocale.peaceTitleFontSize = FONT_SIZE.XLARGE
+territoryLocale.territoryTab = {
+  listCtrlFontSize = FONT_SIZE.MIDDLE,
+  listCtrlFontAlign = ALIGN_LEFT
+}

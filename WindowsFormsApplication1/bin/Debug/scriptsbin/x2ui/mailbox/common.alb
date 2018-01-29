@@ -1,0 +1,124 @@
+PAGE_PER_MAIL_MAX_COUNT = 14
+function CheckInputTextVisible(widget)
+  if widget.style == nil then
+    return true
+  end
+  local textWidth = widget.style:GetTextWidth(widget:GetText())
+  if textWidth < widget:GetWidth() then
+    return true
+  end
+  return false
+end
+function GetMailIdx(pageCurrentIdx, pagePerCount, idx)
+  return (pageCurrentIdx - 1) * pagePerCount + idx
+end
+function DefaultMailTitleLayoutFunc(frame, rowIndex, colIndex, subItem)
+  local checkbox = CreateCheckButton(subItem:GetId() .. ".checkbox", subItem)
+  checkbox:AddAnchor("LEFT", subItem, 0, 1)
+  subItem.checkbox = checkbox
+  function checkbox:CheckBtnCheckChagnedProc(checked)
+    frame:UpdateData(rowIndex, colIndex, "chk", checked)
+    if not checked then
+      frame.allSelectCheck:SetChecked(false, false)
+    else
+      frame.allSelectCheck:SetChecked(frame:IsAllChecked(), false)
+    end
+    if frame.CheckProc_DeleteButton ~= nil then
+      frame:CheckProc_DeleteButton()
+    end
+  end
+  local icon = CreateAttachItemIconWidget(subItem)
+  icon:Show(false)
+  icon:AddAnchor("LEFT", checkbox, "RIGHT", 0, 0)
+  local mailTypeIcon = CreateMailTypeIconWidget("mailTypeIcon", subItem)
+  mailTypeIcon:Show(false)
+  mailTypeIcon:AddAnchor("LEFT", icon, "RIGHT", 2, 0)
+  local titleLabel = subItem:CreateChildWidget("label", "titleLabel", 0, true)
+  titleLabel:Show(true)
+  titleLabel:SetExtent(215, 25)
+  titleLabel:SetLimitWidth(true)
+  titleLabel:AddAnchor("LEFT", checkbox, "RIGHT", 0, 0)
+  titleLabel.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(titleLabel, FONT_COLOR.DEFAULT)
+  local OnEnter = function(self)
+    if CheckInputTextVisible(self) then
+      return
+    end
+    SetTooltip(self:GetText(), self)
+  end
+  titleLabel:SetHandler("OnEnter", OnEnter)
+end
+function DefaultMailNameLayoutFunc(frame, rowIndex, colIndex, subItem)
+  local nameLabel = subItem:CreateChildWidget("label", "nameLabel", 0, true)
+  nameLabel:Show(true)
+  local width, height = subItem:GetExtent()
+  nameLabel:SetExtent(width - 10, height)
+  nameLabel:SetLimitWidth(true)
+  nameLabel:AddAnchor("LEFT", subItem, 10, 1)
+  nameLabel.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(nameLabel, FONT_COLOR.DEFAULT)
+end
+function DefaultMailNameDataFunc(subItem, data, setValue)
+  if setValue then
+    subItem.nameLabel:SetText(data.name)
+    if data.isRead then
+      ApplyTextColor(subItem.nameLabel, FONT_COLOR.GRAY)
+    else
+      ApplyTextColor(subItem.nameLabel, FONT_COLOR.BLUE)
+    end
+  else
+    subItem.nameLabel:SetText("")
+  end
+end
+function GetMailListInfo(mailType)
+  local mailCount
+  local GetMailTitleInfo = function(mailType, index)
+    if mailType == "receidved" then
+      return X2Mail:GetReceivedMailTitleInfo(index)
+    elseif mailType == "mia" then
+      return X2MiaMail:GetReceivedMailTitleInfo(index)
+    end
+  end
+  if mailType == "receidved" then
+    mailCount = X2Mail:GetReceivedMailCount()
+  elseif mailType == "mia" then
+    mailCount = X2MiaMail:GetReceivedMailCount()
+  elseif mailType == "send" then
+    local mailCount = X2Mail:GetPostedMailCount()
+    local readedMailList = {}
+    for i = 1, mailCount do
+      local mailInfo = X2Mail:GetPostedMailTitleInfo(i)
+      table.insert(readedMailList, mailInfo.mail_id)
+    end
+    return readedMailList
+  end
+  local unreadMailCount = 0
+  local allUnread = false
+  local hasItem = false
+  local hasItemMailCount = 0
+  local allHasItem = false
+  local readedMailList = {}
+  for i = 1, mailCount do
+    local mailInfo = GetMailTitleInfo(mailType, i)
+    if mailInfo == nil then
+      break
+    end
+    if mailInfo.is_read then
+      if not mailInfo.hasItem then
+        table.insert(readedMailList, mailInfo.mail_id)
+      else
+        hasItem = true
+        hasItemMailCount = hasItemMailCount + 1
+      end
+    else
+      unreadMailCount = unreadMailCount + 1
+    end
+  end
+  if unreadMailCount == mailCount then
+    allUnread = true
+  end
+  if hasItemMailCount == mailCount - unreadMailCount then
+    allHasItem = true
+  end
+  return readedMailList, allUnread, allHasItem, hasItem
+end

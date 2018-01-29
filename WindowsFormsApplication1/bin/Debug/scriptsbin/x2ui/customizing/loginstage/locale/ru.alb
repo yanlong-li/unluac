@@ -1,0 +1,3 @@
+if X2Util:GetGameProvider() == MAILRU then
+  loginstageLocale.guideContentExtent = {225, 50}
+end

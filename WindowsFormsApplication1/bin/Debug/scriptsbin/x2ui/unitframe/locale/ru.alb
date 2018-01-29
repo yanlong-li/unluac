@@ -1,0 +1,3 @@
+if X2Util:GetGameProvider() == MAILRU then
+  unitframeLocale.tooltipForceLeft = true
+end

@@ -1,0 +1,39 @@
+if X2Util:GetGameProvider() == TENCENT then
+  premiumServiceLocale.showWeb = false
+  premiumServiceLocale.warringMsg = false
+  premiumServiceLocale.premiumWndWidth = 900
+  premiumServiceLocale.premiumServeiceWidth = 360
+  premiumServiceLocale.defaultWidth = 851
+  premiumServiceLocale.firstPremiumServiceBuy = true
+  premiumServiceLocale.progressBarOffsetY = 40
+  premiumServiceLocale.tableOffsetY = 37
+  premiumServiceLocale.useAAPoint = true
+  premiumServiceLocale.showPcbangBenefit = true
+  premiumServiceLocale.pcbangBenefit = {
+    {
+      title = locale.premium.benefit,
+      width = 0.55,
+      align = ALIGN_CENTER,
+      color = FONT_COLOR.TITLE
+    },
+    {
+      title = GetUIText(COMMON_TEXT, "pcbang_type_gold"),
+      width = 0.15,
+      align = ALIGN_CENTER,
+      color = FONT_COLOR.DEFAULT
+    },
+    {
+      title = GetUIText(COMMON_TEXT, "pcbang_type_silver"),
+      width = 0.15,
+      align = ALIGN_CENTER,
+      color = FONT_COLOR.DEFAULT
+    },
+    {
+      title = GetUIText(COMMON_TEXT, "pcbang_type_cooper"),
+      width = 0.15,
+      align = ALIGN_CENTER,
+      color = FONT_COLOR.DEFAULT
+    }
+  }
+  premiumServiceLocale.pcbangBenefitRowHeight = 33
+end

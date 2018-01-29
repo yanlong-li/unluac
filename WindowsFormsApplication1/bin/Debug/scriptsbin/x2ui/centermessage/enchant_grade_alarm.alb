@@ -1,0 +1,221 @@
+local CreateGradeEnchantAlarmMessage = function(id, parent)
+  local path = TEXTURE_PATH.GRADE_ENCHANT_ALARM
+  local frame = CreateEmptyWindow(id, parent)
+  frame:AddAnchor("TOP", parent, 0, 70)
+  frame:SetSounds("dialog_common")
+  SetttingUIAnimation(frame)
+  local squareFrame = frame:CreateChildWidget("emptywidget", "squareFrame", 0, true)
+  squareFrame:AddAnchor("TOPLEFT", frame, 0, 0)
+  squareFrame:AddAnchor("BOTTOMRIGHT", frame, 0, 0)
+  local bg = squareFrame:CreateImageDrawable(path, "background")
+  bg:SetTextureInfo("bg_paper")
+  bg:AddAnchor("CENTER", squareFrame, 0, 0)
+  frame:SetExtent(bg:GetWidth(), bg:GetHeight() + 10)
+  local stateTexture = squareFrame:CreateImageDrawable(path, "background")
+  stateTexture:AddAnchor("TOP", squareFrame, 0, MARGIN.WINDOW_SIDE)
+  squareFrame.stateTexture = stateTexture
+  local line = CreateLine(squareFrame, "TYPE1")
+  line:SetExtent(300, 3)
+  line:SetColor(1, 1, 1, 0.3)
+  line:AddAnchor("TOP", squareFrame, 0, MARGIN.WINDOW_TITLE * 2.3)
+  local leftGrade = squareFrame:CreateChildWidget("label", "leftGrade", 0, true)
+  leftGrade:SetAutoResize(true)
+  leftGrade:SetHeight(FONT_SIZE.MIDDLE)
+  local arrow = CreateIcon(squareFrame, "arrow")
+  arrow:AddAnchor("TOP", stateTexture, "BOTTOM", 0, MARGIN.WINDOW_SIDE / 3)
+  ApplyTextureColor(arrow, TEXTURE_COLOR.ARROW_BROWN)
+  squareFrame.arrow = arrow
+  leftGrade:AddAnchor("RIGHT", arrow, "LEFT", -5, 0)
+  local rightGrade = squareFrame:CreateChildWidget("label", "rightGrade", 0, true)
+  rightGrade:SetAutoResize(true)
+  rightGrade:SetHeight(FONT_SIZE.MIDDLE)
+  rightGrade:AddAnchor("LEFT", arrow, "RIGHT", 3, 0)
+  local desc = squareFrame:CreateChildWidget("textbox", "desc", 0, true)
+  desc:SetExtent(frame:GetWidth() - MARGIN.WINDOW_SIDE * 4, FONT_SIZE.MIDDLE)
+  desc:SetAutoResize(true)
+  desc:SetHeight(FONT_SIZE.MIDDLE)
+  desc:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  desc:AddAnchor("BOTTOM", line, "TOP", 0, -MARGIN.WINDOW_SIDE / 3)
+  local itemIcon = CreateItemIconButton(squareFrame:GetId() .. "itemIcon", squareFrame)
+  itemIcon:SetExtent(ICON_SIZE.XLARGE, ICON_SIZE.XLARGE)
+  itemIcon:AddAnchor("TOP", line, "BOTTOM", 0, MARGIN.WINDOW_SIDE)
+  squareFrame.itemIcon = itemIcon
+  local greatFailTexture = itemIcon:CreateImageDrawable(TEXTURE_PATH.ITEM_DIAGONAL_LINE, "overlay")
+  greatFailTexture:SetVisible(false)
+  greatFailTexture:SetCoords(0, 0, 55, 55)
+  greatFailTexture:SetExtent(55, 55)
+  greatFailTexture:AddAnchor("CENTER", itemIcon, 0, 0)
+  itemIcon.greatFailTexture = greatFailTexture
+  local itemBgDeco = squareFrame:CreateImageDrawable(path, "background")
+  itemBgDeco:AddAnchor("CENTER", itemIcon, 0, -1)
+  itemBgDeco:SetExtent(202, 80)
+  squareFrame.itemBgDeco = itemBgDeco
+  local rewardArrow = CreateIcon(squareFrame, "arrow")
+  rewardArrow:SetVisible(false)
+  rewardArrow:AddAnchor("TOP", line, "BOTTOM", 0, MARGIN.WINDOW_SIDE * 2)
+  ApplyTextureColor(rewardArrow, TEXTURE_COLOR.ARROW_BROWN)
+  squareFrame.rewardArrow = rewardArrow
+  local breakRewardItemIcon = CreateItemIconButton(squareFrame:GetId() .. "breakRewardItemIcon", squareFrame)
+  breakRewardItemIcon:SetExtent(ICON_SIZE.XLARGE, ICON_SIZE.XLARGE)
+  breakRewardItemIcon:AddAnchor("LEFT", rewardArrow, "RIGHT", 8, 0)
+  squareFrame.breakRewardItemIcon = breakRewardItemIcon
+  local itemName = squareFrame:CreateChildWidget("textbox", "itemName", 0, true)
+  itemName:SetHeight(FONT_SIZE.LARGE)
+  itemName:AddAnchor("TOP", rewardArrow, "BOTTOM", 0, MARGIN.WINDOW_SIDE * 1.5)
+  itemName.style:SetFontSize(FONT_SIZE.LARGE)
+  local bg = CreateContentBackground(itemName, "TYPE7")
+  bg:SetHeight(35)
+  bg:AddAnchor("TOPLEFT", itemName, -MARGIN.WINDOW_SIDE, -5)
+  bg:AddAnchor("BOTTOMRIGHT", itemName, MARGIN.WINDOW_SIDE, 5)
+  itemName.bg = bg
+  local okButton = squareFrame:CreateChildWidget("button", "okButton", 0, false)
+  okButton:SetText(locale.common.ok)
+  okButton:AddAnchor("TOP", itemName, "BOTTOM", 0, MARGIN.WINDOW_SIDE / 1.2)
+  ApplyButtonSkin(okButton, BUTTON_BASIC.DEFAULT)
+  local function OkButtonLeftClickFunc()
+    frame:Show(false)
+  end
+  ButtonOnClickHandler(okButton, OkButtonLeftClickFunc)
+  local rectangleFrame = frame:CreateChildWidget("window", "rectangleFrame", 0, true)
+  rectangleFrame:AddAnchor("TOPLEFT", frame, 0, 0)
+  rectangleFrame:AddAnchor("BOTTOMRIGHT", frame, 0, 0)
+  rectangleFrame.titleStyle:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.XLARGE)
+  rectangleFrame.titleStyle:SetAlign(ALIGN_CENTER)
+  rectangleFrame.titleStyle:SetShadow(true)
+  rectangleFrame:SetTitleInset(0, 2, 0, 0)
+  ApplyTitleFontColor(rectangleFrame, FONT_COLOR.RED)
+  local bg = CreateContentBackground(rectangleFrame, "TYPE8")
+  bg:AddAnchor("TOPLEFT", rectangleFrame, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", rectangleFrame, 0, 0)
+  local function SetGradeChange(oldGradeName, oldGradeColor, newGradeName, newGradeColor)
+    frame.squareFrame.leftGrade:Show(true)
+    frame.squareFrame.leftGrade:SetText(oldGradeName)
+    ApplyTextColor(frame.squareFrame.leftGrade, oldGradeColor)
+    frame.squareFrame.rightGrade:Show(true)
+    frame.squareFrame.rightGrade:SetText(newGradeName)
+    ApplyTextColor(frame.squareFrame.rightGrade, newGradeColor)
+  end
+  local function SetStageTexture(resultCode)
+    local key
+    if resultCode == ENCHANT_RESULT.BREAK then
+      key = "majorfailure"
+    elseif resultCode == ENCHANT_RESULT.FAIL or resultCode == ENCHANT_RESULT.DOWNGRADE then
+      key = "failure"
+    elseif resultCode == ENCHANT_RESULT.SUCCESS then
+      key = "success"
+    elseif resultCode == ENCHANT_RESULT.GREATE_SUCCESS then
+      key = "greatsuccess"
+    end
+    if key == nil then
+      return
+    end
+    frame.squareFrame.stateTexture:SetTexture(path)
+    frame.squareFrame.stateTexture:SetTextureInfo(key)
+  end
+  local function SetArrowTextrue(isUpgrade, resultCode, newGradeColor)
+    if resultCode == ENCHANT_RESULT.FAIL or resultCode == ENCHANT_RESULT.BREAK then
+      return
+    end
+    frame.squareFrame.arrow:SetVisible(true)
+    ApplyTextureColor(frame.squareFrame.arrow, newGradeColor)
+    if resultCode == ENCHANT_RESULT.SUCCESS then
+      frame.squareFrame.arrow:SetCoords(624, 364, 28, 17)
+      frame.squareFrame.arrow:SetExtent(28, 17)
+    elseif resultCode == ENCHANT_RESULT.GREATE_SUCCESS then
+      frame.squareFrame.arrow:SetCoords(624, 364, 54, 17)
+      frame.squareFrame.arrow:SetExtent(54, 17)
+    elseif resultCode == ENCHANT_RESULT.DOWNGRADE then
+      frame.squareFrame.arrow:SetCoords(652, 364, -28, 17)
+      frame.squareFrame.arrow:SetExtent(28, 17)
+    end
+  end
+  function frame:SetResult(resultCode, itemLink, oldGrade, newGrade, breakRewardItemType, breakRewardItemCount, breakRewardByMail)
+    local itemInfo = X2Item:InfoFromLink(itemLink)
+    self.squareFrame:Show(false)
+    self.rectangleFrame:Show(false)
+    self:Show(true)
+    self:SetStartAnimation(true, true)
+    self.squareFrame:Show(true)
+    self.squareFrame.arrow:SetVisible(false)
+    local oldGradeColor = X2Item:GradeColor(oldGrade)
+    oldGradeColor = Hex2Dec(oldGradeColor)
+    local oldGradeName = X2Item:GradeName(oldGrade)
+    oldGradeName = string.format("[%s]", oldGradeName)
+    local newGradeColor = X2Item:GradeColor(newGrade)
+    newGradeColor = Hex2Dec(newGradeColor)
+    local newGradeName = X2Item:GradeName(newGrade)
+    newGradeName = string.format("[%s]", newGradeName)
+    local name = centerMessageLocale:GetEnchantResultItemStr(newGradeName, itemInfo.name)
+    self.squareFrame.itemBgDeco:SetTexture(path)
+    self.squareFrame.itemBgDeco:SetTextureInfo("pattern_01")
+    self.squareFrame.itemBgDeco:SetVisible(true)
+    self.squareFrame.itemName:SetWidth(1000)
+    self.squareFrame.itemName:SetText(name)
+    self.squareFrame.itemName:SetWidth(self.squareFrame.itemName:GetLongestLineWidth() + 10)
+    self.squareFrame.itemName:SetHeight(self.squareFrame.itemName:GetTextHeight())
+    ApplyTextColor(self.squareFrame.itemName, newGradeColor)
+    self.squareFrame.leftGrade:Show(false)
+    self.squareFrame.rightGrade:Show(false)
+    self.squareFrame.desc:Show(false)
+    self.squareFrame.rewardArrow:SetVisible(false)
+    self.squareFrame.breakRewardItemIcon:Show(false)
+    self.squareFrame.itemIcon:OverlayInvisible()
+    self.squareFrame.itemIcon.greatFailTexture:SetVisible(false)
+    self.squareFrame.arrow:RemoveAllAnchors()
+    self.squareFrame.arrow:AddAnchor("TOP", self.squareFrame.stateTexture, "BOTTOM", 0, MARGIN.WINDOW_SIDE / 1.2)
+    self.squareFrame.itemIcon:SetItemInfo(itemInfo)
+    self.squareFrame.itemIcon:SetItemIcon(itemInfo.lookType, newGrade)
+    self.squareFrame.itemIcon:RemoveAllAnchors()
+    self.squareFrame.itemIcon:AddAnchor("TOP", line, "BOTTOM", 0, MARGIN.WINDOW_SIDE)
+    SetStageTexture(resultCode)
+    if resultCode == ENCHANT_RESULT.BREAK or resultCode == ENCHANT_RESULT.FAIL or resultCode == ENCHANT_RESULT.DOWNGRADE then
+      self.squareFrame.itemBgDeco:SetTextureInfo("pattern_02")
+      self.squareFrame.itemName.bg:SetColor(ConvertColor(234), ConvertColor(215), ConvertColor(211), 1)
+      self.squareFrame.desc:Show(true)
+      ApplyTextColor(self.squareFrame.desc, FONT_COLOR.RED)
+      if resultCode == ENCHANT_RESULT.BREAK then
+        local str = string.format("%s.", locale.physicalEnchant.great_fail)
+        if breakRewardItemType ~= nil and breakRewardItemType ~= 0 and breakRewardItemCount ~= nil then
+          self.squareFrame.itemBgDeco:SetVisible(false)
+          self.squareFrame.rewardArrow:SetVisible(true)
+          self.squareFrame.itemIcon:RemoveAllAnchors()
+          self.squareFrame.itemIcon:AddAnchor("RIGHT", self.squareFrame.rewardArrow, "LEFT", -5, 0)
+          self.squareFrame.breakRewardItemIcon:Show(true)
+          self.squareFrame.breakRewardItemIcon:SetItemInfo(X2Item:GetItemInfoByType(breakRewardItemType))
+          self.squareFrame.breakRewardItemIcon:SetStack(breakRewardItemCount)
+          if breakRewardByMail then
+            str = string.format([[
+%s
+%s]], str, X2Locale:LocalizeUiText(COMMON_TEXT, "item_grade_enchant_fail_break_reward_mail_msg"))
+          end
+        else
+          self.squareFrame.itemBgDeco:SetVisible(true)
+        end
+        self.squareFrame.itemIcon:SetOverlayColor(ICON_BUTTON_OVERLAY_COLOR.RED)
+        self.squareFrame.itemIcon.greatFailTexture:SetVisible(true)
+        self.squareFrame.desc:SetText(str)
+      elseif resultCode == ENCHANT_RESULT.FAIL then
+        self.squareFrame.desc:SetText(string.format("%s.", locale.physicalEnchant.fail))
+      elseif resultCode == ENCHANT_RESULT.DOWNGRADE then
+        self.squareFrame.desc:SetText(string.format("%s.", X2Locale:LocalizeUiText(ITEM_GRADE, "enchant_downgrade")))
+        self.squareFrame.itemName.bg:SetColor(1, 1, 1, 1)
+        SetArrowTextrue(false, resultCode, newGradeColor)
+        SetGradeChange(newGradeName, newGradeColor, oldGradeName, oldGradeColor)
+        self.squareFrame.arrow:RemoveAllAnchors()
+        self.squareFrame.arrow:AddAnchor("TOP", self.squareFrame.stateTexture, "BOTTOM", 0, -3)
+      end
+    else
+      self.squareFrame.itemName.bg:SetColor(1, 1, 1, 1)
+      SetArrowTextrue(true, resultCode, newGradeColor)
+      SetGradeChange(oldGradeName, oldGradeColor, newGradeName, newGradeColor)
+    end
+  end
+  return frame
+end
+gradeEnchantAlarm = CreateGradeEnchantAlarmMessage("gradeEnchantAlarm", "UIParent")
+function ShowGradeEnchantAlarmMessage(resultCode, itemLink, oldGrade, newGrade, breakRewardItemType, breakRewardItemCount, breakRewardByMail)
+  gradeEnchantAlarm:SetResult(resultCode, itemLink, oldGrade, newGrade, breakRewardItemType, breakRewardItemCount, breakRewardByMail)
+  gradeEnchantAlarm:Raise()
+  gradeEnchantAlarm:RemoveAllAnchors()
+  gradeEnchantAlarm:AddAnchor("TOP", "UIParent", 0, 70)
+end

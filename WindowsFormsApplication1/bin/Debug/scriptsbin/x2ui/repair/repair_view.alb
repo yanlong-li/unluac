@@ -1,0 +1,109 @@
+function SetViewOfRepairWindow()
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local window = CreateWindow("repairWindow", "UIParent")
+  window:RemoveAllAnchors()
+  window:EnableHidingIsRemove(true)
+  window:SetExtent(WINDOW_SIZE.SMALL, 400)
+  window:SetTitle(GetUIText(REPAIR_TEXT, "ui_title"))
+  window:AddAnchor("CENTER", "UIParent", 0, 0)
+  local function CreatePart(id, titleStr, buttonStr, imageCoords)
+    local contentWidth = window:GetWidth() - sideMargin * 2
+    local partFrame = window:CreateChildWidget("emptywidget", id, 0, true)
+    partFrame:SetWidth(contentWidth)
+    local title = partFrame:CreateChildWidget("label", "title", 0, true)
+    title:SetAutoResize(true)
+    title:SetText(titleStr)
+    title:SetHeight(FONT_SIZE.LARGE)
+    title.style:SetFontSize(FONT_SIZE.LARGE)
+    ApplyTextColor(title, FONT_COLOR.TITLE)
+    title:AddAnchor("TOPLEFT", partFrame, 0, 0)
+    local decoImg = partFrame:CreateImageDrawable(TEXTURE_PATH.REPAIR, "background")
+    decoImg:SetCoords(imageCoords[1], imageCoords[2], imageCoords[3], imageCoords[4])
+    decoImg:SetExtent(imageCoords[3], imageCoords[4])
+    partFrame.decoImg = decoImg
+    local button = partFrame:CreateChildWidget("button", "button", 0, true)
+    button:SetText(buttonStr)
+    button:AddAnchor("BOTTOM", partFrame, 0, 0)
+    return partFrame
+  end
+  local str = GetUIText(REPAIR_TEXT, "single_repair")
+  local selectionRepairFrame = CreatePart("selectionRepairFrame", str, str, {
+    132,
+    0,
+    91,
+    82
+  })
+  selectionRepairFrame:AddAnchor("TOPLEFT", window, sideMargin, titleMargin)
+  local desc = selectionRepairFrame:CreateChildWidget("textbox", "desc", 0, true)
+  desc:SetLineSpace(TEXTBOX_LINE_SPACE.SMALL)
+  desc:SetWidth(repairLocale.width.partDesc)
+  desc:SetText(GetUIText(REPAIR_TEXT, "part_repair_desc"))
+  desc:SetHeight(desc:GetTextHeight())
+  desc.style:SetAlign(ALIGN_LEFT)
+  desc:AddAnchor("TOPLEFT", selectionRepairFrame.title, "BOTTOMLEFT", 0, sideMargin / 1.5)
+  ApplyTextColor(desc, FONT_COLOR.DEFAULT)
+  selectionRepairFrame.decoImg:AddAnchor("RIGHT", selectionRepairFrame, 0, -sideMargin / 2)
+  local w, h = F_LAYOUT:GetExtentWidgets(selectionRepairFrame.title, desc)
+  selectionRepairFrame:SetHeight(h + BUTTON_SIZE.DEFAULT_XXLARGE.HEIGHT + sideMargin)
+  local line = CreateLine(selectionRepairFrame, "TYPE1")
+  line:AddAnchor("TOPLEFT", selectionRepairFrame, "BOTTOMLEFT", 0, sideMargin / 1.5)
+  line:AddAnchor("TOPRIGHT", selectionRepairFrame, "BOTTOMRIGHT", 0, sideMargin / 1.5)
+  local titleStr = GetUIText(REPAIR_TEXT, "equipment_all_repair")
+  local btnStr = GetUIText(REPAIR_TEXT, "equipment_repair")
+  local totalRepairFrame = CreatePart("totalRepairFrame", titleStr, btnStr, {
+    0,
+    0,
+    131,
+    95
+  })
+  totalRepairFrame:AddAnchor("TOPLEFT", line, "BOTTOMLEFT", 0, sideMargin / 1.5)
+  local repairCost = CreateTitleMoneyWindow("repairCost", totalRepairFrame, GetUIText(REPAIR_TEXT, "repair_cost"), "vertical")
+  repairCost:SetWidth(150)
+  repairCost:AddAnchor("TOPLEFT", totalRepairFrame.title, "BOTTOMLEFT", 0, sideMargin / 1.5)
+  totalRepairFrame.repairCost = repairCost
+  DrawMinusDingbat(repairCost.money)
+  totalRepairFrame.decoImg:AddAnchor("TOPLEFT", repairCost, "TOPRIGHT", sideMargin / 2, sideMargin / 2)
+  local leftMoney = CreateTitleMoneyWindow("leftMoney", totalRepairFrame, GetUIText(REPAIR_TEXT, "left_money"), "vertical")
+  leftMoney:SetWidth(150)
+  leftMoney:AddAnchor("TOPLEFT", repairCost, "BOTTOMLEFT", 0, sideMargin / 2)
+  totalRepairFrame.leftMoney = leftMoney
+  local w, h = F_LAYOUT:GetExtentWidgets(totalRepairFrame.title, leftMoney)
+  totalRepairFrame:SetHeight(h + BUTTON_SIZE.DEFAULT_XXLARGE.HEIGHT + sideMargin / 1.5)
+  ApplyButtonSkin(selectionRepairFrame.button, BUTTON_BASIC.DEFAULT)
+  ApplyButtonSkin(totalRepairFrame.button, BUTTON_BASIC.DEFAULT)
+  local buttonTable = {
+    selectionRepairFrame.button,
+    totalRepairFrame.button
+  }
+  AdjustBtnLongestTextWidth(buttonTable)
+  window:SetHeight(titleMargin + selectionRepairFrame:GetHeight() + totalRepairFrame:GetHeight() + sideMargin * 2.4)
+  return window
+end
+function SetViewOfRepairNotifier(id, parent)
+  local widget = CreateEmptyWindow("repairNotifier", "UIParent")
+  local MAX_REPAIR_ICON_COUNT = 5
+  local bg = widget:CreateNinePartDrawable(TEXTURE_PATH.HUD, "background")
+  bg:SetTextureInfo("red_balloon")
+  bg:AddAnchor("TOPLEFT", widget, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", widget, 0, 0)
+  widget.bg = bg
+  widget:SetExtent(0, 78)
+  widget:Show(false)
+  local damageLabel = widget:CreateChildWidget("label", "damageLabel", 0, true)
+  damageLabel:SetExtent(100, 20)
+  damageLabel:AddAnchor("TOPLEFT", widget, 13, 5)
+  damageLabel:SetText(GetUIText(REPAIR_TEXT, "damaged"))
+  damageLabel.style:SetFontSize(FONT_SIZE.SMALL)
+  ApplyTextColor(damageLabel, FONT_COLOR.RED)
+  widget.iconBtns = {}
+  for i = 1, MAX_REPAIR_ICON_COUNT do
+    local button = CreateItemIconButton("icons[" .. i .. "]", widget, "cooldown")
+    button:Show(false)
+    button:SetExtent(ICON_SIZE.APPELLAITON, ICON_SIZE.APPELLAITON)
+    widget.iconBtns[i] = button
+  end
+  local closeButton = widget:CreateChildWidget("button", "closeButton", 0, true)
+  closeButton:AddAnchor("TOPRIGHT", widget, -5, 5)
+  ApplyButtonSkin(closeButton, BUTTON_BASIC.WINDOW_SMALL_CLOSE)
+  return widget
+end

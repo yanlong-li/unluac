@@ -1,0 +1,38 @@
+if portalLocale == nil then
+  portalLocale = {}
+end
+portalLocale.width = {
+  window = 510,
+  column = {
+    180,
+    110,
+    100,
+    80
+  },
+  columnIndun = {
+    180,
+    110,
+    45,
+    80,
+    55
+  },
+  columnIndunUseDaily = {
+    160,
+    80,
+    40,
+    75,
+    75,
+    40
+  }
+}
+function portalLocale:SetLocationColumn(subItem)
+  subItem:SetInset(0, 2, 0, 0)
+  subItem.style:SetSnap(true)
+  ApplyTextColor(subItem, FONT_COLOR.DEFAULT)
+end
+function portalLocale:FillLocationColumn(listCtrl, subItem, key, index, data)
+  listCtrl:InsertData(key, index, tostring(data))
+end
+function portalLocale:ResetLocationColumn(subItem)
+  return
+end

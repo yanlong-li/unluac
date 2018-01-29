@@ -1,0 +1,304 @@
+BIG_ICON_SIZE = 48
+NORMAL_ICON_SIZE = 32
+inGameShopFrame = nil
+function SettingGoodPriceText(priceText, priceType, color, itemType)
+  if tonumber(priceText) == 0 then
+    return string.format("%s%s", FONT_COLOR_HEX.GREEN, GetUIText(COMMON_TEXT, "price_free"))
+  end
+  return SettingPriceText(priceText, priceType, color, itemType)
+end
+function GetPeriod(minutes)
+  if minutes == nil then
+    return ""
+  end
+  local HOUR = 60
+  local DAY = HOUR * 24
+  dateFormat = {}
+  dateFormat.year = 0
+  dateFormat.month = 0
+  dateFormat.day = math.floor(minutes / DAY)
+  if 0 < dateFormat.day then
+    dateFormat.hour = 0
+    dateFormat.minute = 0
+    dateFormat.second = 0
+  else
+    dateFormat.hour = math.floor(minutes / HOUR)
+    if 0 < dateFormat.hour then
+      minutes = minutes - dateFormat.hour * HOUR or minutes
+    end
+    dateFormat.minute = minutes
+    dateFormat.second = 0
+  end
+  local remainTimeString = locale.time.GetRemainDateToDateFormat(dateFormat)
+  return remainTimeString
+end
+function MakeGroupBackgroundDrawable(parentWidget)
+  local bg = CreateContentBackground(parentWidget, "TYPE2")
+  bg:AddAnchor("TOPLEFT", parentWidget, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", parentWidget, 0, 0)
+  ApplyTextureColor(bg, TEXTURE_COLOR.BOX_BROWN)
+  return bg
+end
+function MakeUnderline(widget)
+  local underLineL, underLineR = CreateLine(widget, "TYPE2", "artwork")
+  underLineL:AddAnchor("BOTTOMLEFT", widget, "BOTTOMLEFT", 0, 2)
+  underLineL:SetColor(1, 1, 1, 0.5)
+  widget.underLineL = underLineL
+  underLineR:AddAnchor("LEFT", underLineL, "RIGHT", 0, 0)
+  underLineR:SetColor(1, 1, 1, 0.5)
+  widget.underLineR = underLineR
+end
+function MakeUpperline(widget)
+  local upperLineL, upperLineR = CreateLine(widget, "TYPE2", "artwork")
+  upperLineL:AddAnchor("TOPLEFT", widget, "TOPLEFT", 0, -2)
+  upperLineL:SetColor(1, 1, 1, 0.5)
+  widget.upperLineL = upperLineL
+  upperLineR:AddAnchor("LEFT", upperLineL, "RIGHT", 0, 0)
+  upperLineR:SetColor(1, 1, 1, 0.5)
+  widget.upperLineR = upperLineR
+end
+function SetUpperLineVisible(widget, visible)
+  if widget.upperLineL ~= nil then
+    widget.upperLineL:SetVisible(visible)
+    widget.upperLineR:SetVisible(visible)
+  end
+end
+function CheckEndWidget(endWidget, widget)
+  if widget:IsVisible() then
+    endWidget = widget
+  end
+  return endWidget
+end
+MONEY_VIEW_CURRENT = 1
+MONEY_VIEW_AFTER = 2
+function CreateInGameShopMoneyView(parent, viewType)
+  local moneyView = parent:CreateChildWidget("emptywidget", "moneyView", 0, true)
+  moneyView.viewType = viewType
+  moneyView.secondPriceType = X2InGameShop:GetSecondPriceType()
+  if viewType == MONEY_VIEW_CURRENT then
+    local moneyViewHeight = 30
+    if moneyView.secondPriceType == PRICE_TYPE_AA_BONUS_CASH then
+      moneyViewHeight = 60
+    end
+    local bgWidth = 245
+    local width = (bgWidth + 2) * 2
+    moneyView:SetExtent(width, moneyViewHeight)
+    local cashBg = CreateContentBackground(moneyView, "TYPE2")
+    cashBg:AddAnchor("TOPLEFT", moneyView, 0, 0)
+    cashBg:SetExtent(bgWidth, 30)
+    local commonWidth = moneyView:GetWidth() / 2 - 30
+    local cashTitleOffsetX = MARGIN.WINDOW_SIDE / 2
+    local cashTitle = moneyView:CreateChildWidget("label", "cashTitle", 0, true)
+    cashTitle:AddAnchor("LEFT", cashBg, cashTitleOffsetX, 0)
+    cashTitle:SetExtent(commonWidth, FONT_SIZE.MIDDLE)
+    cashTitle:SetAutoResize(true)
+    cashTitle.style:SetFontSize(FONT_SIZE.MIDDLE)
+    cashTitle.style:SetAlign(ALIGN_LEFT)
+    ApplyTextColor(cashTitle, baselibLocale.inGameShop.aa_cash_color)
+    cashTitle:SetText(string.format("\194\183%s", locale.inGameShop.myCash))
+    local cashOffsetX = -(MARGIN.WINDOW_SIDE / 2)
+    local cash = moneyView:CreateChildWidget("textbox", "cash", 0, true)
+    cash:AddAnchor("RIGHT", cashBg, cashOffsetX, 0)
+    cash:SetExtent(commonWidth, FONT_SIZE.MIDDLE)
+    cash:SetHeight(FONT_SIZE.MIDDLE)
+    cash.style:SetFontSize(FONT_SIZE.MIDDLE)
+    cash.style:SetAlign(ALIGN_RIGHT)
+    ApplyTextColor(cash, FONT_COLOR.DEFAULT)
+    cash:SetText(SettingPriceText(0, PRICE_TYPE_AA_CASH, nil))
+    if moneyView.secondPriceType ~= nil then
+      local anchorPoint = {
+        "TOPRIGHT",
+        "BOTTOMLEFT",
+        "BOTTOMRIGHT"
+      }
+      local titleStr = {
+        [PRICE_TYPE_AA_POINT] = GetUIText(INGAMESHOP_TEXT, "myAAPoint"),
+        [PRICE_TYPE_BM_MILEAGE] = GetUIText(ATTRIBUTE_TEXT, "bmmileage"),
+        [PRICE_TYPE_AA_BONUS_CASH] = GetUIText(INGAMESHOP_TEXT, "myAACoin")
+      }
+      local secondPrice = {}
+      local secondPriceTitle = {}
+      local secondPriceBg = {}
+      local secondPrices = {
+        moneyView.secondPriceType
+      }
+      if moneyView.secondPriceType == PRICE_TYPE_AA_BONUS_CASH then
+        table.insert(secondPrices, PRICE_TYPE_BM_MILEAGE)
+        table.insert(secondPrices, PRICE_TYPE_AA_POINT)
+      end
+      for i = 1, #secondPrices do
+        secondPriceBg[i] = CreateContentBackground(moneyView, "TYPE2")
+        secondPriceBg[i]:AddAnchor(anchorPoint[i], moneyView, 0, 0)
+        secondPriceBg[i]:SetExtent(bgWidth, 30)
+        secondPriceTitle[i] = moneyView:CreateChildWidget("label", "secondPriceTitle" .. i, 0, true)
+        secondPriceTitle[i]:SetAutoResize(true)
+        secondPriceTitle[i]:AddAnchor("LEFT", secondPriceBg[i], cashTitleOffsetX, 0)
+        secondPriceTitle[i]:SetExtent(commonWidth, FONT_SIZE.MIDDLE)
+        secondPriceTitle[i].style:SetFontSize(FONT_SIZE.MIDDLE)
+        secondPriceTitle[i].style:SetAlign(ALIGN_LEFT)
+        ApplyTextColor(secondPriceTitle[i], Hex2Dec(GetPriceTextColor(secondPrices[i])))
+        if titleStr[secondPrices[i]] ~= nil then
+          secondPriceTitle[i]:SetText(string.format("\194\183%s", titleStr[secondPrices[i]]))
+        end
+        secondPrice[i] = moneyView:CreateChildWidget("textbox", "secondPrice" .. i, 0, true)
+        secondPrice[i]:AddAnchor("RIGHT", secondPriceBg[i], cashOffsetX, 0)
+        secondPrice[i]:SetExtent(commonWidth, FONT_SIZE.MIDDLE)
+        secondPrice[i].style:SetFontSize(FONT_SIZE.MIDDLE)
+        secondPrice[i].style:SetAlign(ALIGN_RIGHT)
+        ApplyTextColor(secondPrice[i], FONT_COLOR.DEFAULT)
+        secondPrice[i]:SetText(SettingPriceText(0, secondPrices[i], nil))
+      end
+      moneyView.secondPrice = secondPrice
+    else
+      moneyView:SetExtent(bgWidth, moneyViewHeight)
+    end
+  elseif viewType == MONEY_VIEW_AFTER then
+    moneyView:SetExtent(380, 55)
+    local insetX = 10
+    local insetY = 12
+    local offetX = 0
+    local usedTotalMoneyTitle = moneyView:CreateChildWidget("label", "usedTotalMoneyTitle", 0, true)
+    usedTotalMoneyTitle:AddAnchor("TOPLEFT", moneyView, insetX, insetY)
+    usedTotalMoneyTitle:SetExtent(80, FONT_SIZE.MIDDLE)
+    usedTotalMoneyTitle.style:SetAlign(ALIGN_TOP_LEFT)
+    ApplyTextColor(usedTotalMoneyTitle, FONT_COLOR.MIDDLE_TITLE)
+    local usedTotalCash = moneyView:CreateChildWidget("textbox", "usedTotalCash", 0, true)
+    usedTotalCash:AddAnchor("LEFT", usedTotalMoneyTitle, "RIGHT", 0, 0)
+    usedTotalCash:SetExtent(130, FONT_SIZE.MIDDLE)
+    usedTotalCash:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+    usedTotalCash.style:SetAlign(ALIGN_RIGHT)
+    ApplyTextColor(usedTotalCash, FONT_COLOR.DEFAULT)
+    usedTotalCash:SetText(SettingPriceText(0, PRICE_TYPE_AA_CASH, nil))
+    if moneyView.secondPriceType ~= nil then
+      local usedTotalSecondPrice = moneyView:CreateChildWidget("textbox", "usedTotalSecondPrice", 0, true)
+      usedTotalSecondPrice:AddAnchor("LEFT", usedTotalCash, "RIGHT", 0, 0)
+      usedTotalSecondPrice:SetExtent(145, FONT_SIZE.MIDDLE)
+      usedTotalSecondPrice.style:SetAlign(ALIGN_RIGHT)
+      ApplyTextColor(usedTotalSecondPrice, FONT_COLOR.DEFAULT)
+      usedTotalSecondPrice:SetText(SettingPriceText(0, PRICE_TYPE_AA_POINT, nil))
+    end
+    local afterTitle = moneyView:CreateChildWidget("label", "afterTitle", 0, true)
+    afterTitle:AddAnchor("TOPLEFT", usedTotalMoneyTitle, "BOTTOMLEFT", 0, 5)
+    afterTitle:SetExtent(80, FONT_SIZE.MIDDLE)
+    afterTitle:SetHeight(FONT_SIZE.MIDDLE)
+    afterTitle.style:SetAlign(ALIGN_TOP_LEFT)
+    ApplyTextColor(afterTitle, FONT_COLOR.MIDDLE_TITLE)
+    local afterCash = moneyView:CreateChildWidget("textbox", "afterCash", 0, true)
+    afterCash:AddAnchor("LEFT", afterTitle, "RIGHT", 0, 0)
+    afterCash:SetExtent(130, FONT_SIZE.MIDDLE)
+    afterCash:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+    afterCash.style:SetAlign(ALIGN_RIGHT)
+    ApplyTextColor(afterCash, FONT_COLOR.DEFAULT)
+    afterCash:SetText(SettingPriceText(0, PRICE_TYPE_AA_CASH, nil))
+    if moneyView.secondPriceType ~= nil then
+      local afterSecondPrice = moneyView:CreateChildWidget("textbox", "afterSecondPrice", 0, true)
+      afterSecondPrice:AddAnchor("LEFT", afterCash, "RIGHT", 0, 0)
+      afterSecondPrice:SetExtent(145, FONT_SIZE.MIDDLE)
+      afterSecondPrice.style:SetAlign(ALIGN_RIGHT)
+      afterSecondPrice:SetText(SettingPriceText(0, PRICE_TYPE_AA_POINT, nil))
+      ApplyTextColor(afterSecondPrice, FONT_COLOR.DEFAULT)
+    end
+  end
+  function moneyView:UpdateCurrent(cashText, aapointText, bmMileageText, aacoinText)
+    if self.viewType == MONEY_VIEW_CURRENT then
+      self.cash:SetText(SettingPriceText(cashText, PRICE_TYPE_AA_CASH, nil))
+      if moneyView.secondPriceType ~= nil then
+        if moneyView.secondPriceType == PRICE_TYPE_AA_POINT then
+          self.secondPrice[1]:SetText(SettingPriceText(aapointText, PRICE_TYPE_AA_POINT, nil))
+        elseif moneyView.secondPriceType == PRICE_TYPE_BM_MILEAGE then
+          self.secondPrice[1]:SetText(SettingPriceText(bmMileageText, PRICE_TYPE_BM_MILEAGE, nil))
+        elseif moneyView.secondPriceType == PRICE_TYPE_AA_BONUS_CASH then
+          self.secondPrice[1]:SetText(SettingPriceText(aacoinText, PRICE_TYPE_AA_BONUS_CASH, nil))
+          self.secondPrice[2]:SetText(SettingPriceText(bmMileageText, PRICE_TYPE_BM_MILEAGE, nil))
+          self.secondPrice[3]:SetText(SettingPriceText(aapointText, PRICE_TYPE_AA_POINT, nil))
+        end
+      end
+    end
+  end
+  function moneyView:UpdateAfter(totalTitle, totalCashText, totalAAPointText, totalBmMileageText, totalAaBonusCash, afterTitle, afterCashText, afterAAPointText, afterBmMileageText, afterAaBonusCash, secondPriceType)
+    if self.viewType == MONEY_VIEW_AFTER then
+      self:SetHeight(55)
+      self.usedTotalMoneyTitle:SetHeight(FONT_SIZE.MIDDLE)
+      self.afterTitle:SetHeight(FONT_SIZE.MIDDLE)
+      self.usedTotalCash:SetExtent(130, FONT_SIZE.MIDDLE)
+      self.afterCash:SetExtent(130, FONT_SIZE.MIDDLE)
+      self.usedTotalMoneyTitle:SetText(totalTitle)
+      self.usedTotalCash:SetText(SettingPriceText(totalCashText, PRICE_TYPE_AA_CASH))
+      self.afterTitle:SetText(afterTitle)
+      self.afterCash:SetText(SettingPriceText(afterCashText, PRICE_TYPE_AA_CASH))
+      if secondPriceType == nil then
+        secondPriceType = moneyView.secondPriceType
+      end
+      if secondPriceType ~= nil then
+        self.usedTotalSecondPrice:Show(true)
+        self.afterSecondPrice:Show(true)
+        if secondPriceType == PRICE_TYPE_AA_POINT then
+          self.usedTotalSecondPrice:SetText(SettingPriceText(totalAAPointText, PRICE_TYPE_AA_POINT))
+          self.afterSecondPrice:SetText(SettingPriceText(afterAAPointText, PRICE_TYPE_AA_POINT))
+        elseif secondPriceType == PRICE_TYPE_BM_MILEAGE then
+          self.usedTotalSecondPrice:SetText(SettingPriceText(totalBmMileageText, PRICE_TYPE_BM_MILEAGE))
+          self.afterSecondPrice:SetText(SettingPriceText(afterBmMileageText, PRICE_TYPE_BM_MILEAGE))
+        elseif secondPriceType == PRICE_TYPE_AA_BONUS_CASH then
+          self.usedTotalSecondPrice:SetText(SettingPriceText(totalAaBonusCash, PRICE_TYPE_AA_BONUS_CASH))
+          self.afterSecondPrice:SetText(SettingPriceText(afterAaBonusCash, PRICE_TYPE_AA_BONUS_CASH))
+        end
+      end
+    end
+  end
+  function moneyView:UpdateAfterByPayItem(totalTitle, afterTitle, payItemInfos)
+    if self.viewType ~= MONEY_VIEW_AFTER then
+      return
+    end
+    self.usedTotalMoneyTitle:SetText(totalTitle)
+    self.afterTitle:SetText(afterTitle)
+    local usedStr = ""
+    local afterStr = ""
+    for i = 1, #payItemInfos do
+      local info = payItemInfos[i]
+      if usedStr ~= "" then
+        usedStr = string.format([[
+%s
+%s]], usedStr, SettingPriceText(info.count, PRICE_TYPE_ITEM, nil, info.type))
+      else
+        usedStr = SettingPriceText(info.count, PRICE_TYPE_ITEM, nil, info.type)
+      end
+      if afterStr ~= "" then
+        afterStr = string.format([[
+%s
+%s]], afterStr, SettingPriceText(X2Bag:GetCountInBag(info.type), PRICE_TYPE_ITEM, nil, info.type))
+      else
+        afterStr = SettingPriceText(X2Bag:GetCountInBag(info.type), PRICE_TYPE_ITEM, nil, info.type)
+      end
+    end
+    self.usedTotalCash:SetText(usedStr)
+    self.afterCash:SetText(afterStr)
+    local usedHeight = self.usedTotalCash:GetTextHeight()
+    local afterHeight = self.afterCash:GetTextHeight()
+    self.usedTotalCash:SetExtent(290, usedHeight)
+    self.afterCash:SetExtent(290, afterHeight)
+    self.usedTotalMoneyTitle:SetHeight(usedHeight)
+    self.afterTitle:SetHeight(afterHeight)
+    self:SetHeight(usedHeight + afterHeight + 30)
+    if moneyView.secondPriceType ~= nil then
+      self.usedTotalSecondPrice:Show(false)
+      self.afterSecondPrice:Show(false)
+    end
+  end
+  function moneyView:UpdateByEvent(event, arg1, arg2, arg3, arg4)
+    if moneyView.viewType == MONEY_VIEW_AFTER then
+    elseif moneyView.viewType == MONEY_VIEW_CURRENT and (event == "PLAYER_AA_POINT" or event == "PLAYER_BM_POINT" or event == "UPDATE_INGAME_SHOP" and arg1 == "money") then
+      local cashText = X2Player:GetMyCash()
+      local aapointText = X2Util:GetMyAAPointString()
+      local bmMileageText = X2Player:GetBmPoint()
+      local aaCoinText = X2Player:GetAaCoin()
+      moneyView:UpdateCurrent(cashText, aapointText, bmMileageText, aaCoinText)
+    end
+  end
+  moneyView:SetHandler("OnEvent", function(this, event, ...)
+    moneyView:UpdateByEvent(event, ...)
+  end)
+  moneyView:RegisterEvent("PLAYER_AA_POINT")
+  moneyView:RegisterEvent("UPDATE_INGAME_SHOP")
+  moneyView:RegisterEvent("PLAYER_BM_POINT")
+  return moneyView
+end

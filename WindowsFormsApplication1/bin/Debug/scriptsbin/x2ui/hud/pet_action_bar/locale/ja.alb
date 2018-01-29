@@ -1,0 +1,3 @@
+if X2Util:GetGameProvider() == GAMEON then
+  petLocale.width = {window = 430, attributeLabel = 130}
+end

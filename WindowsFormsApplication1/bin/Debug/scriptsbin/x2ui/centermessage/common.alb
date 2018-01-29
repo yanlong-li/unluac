@@ -1,0 +1,245 @@
+function GetMessageWidgetHeight(widget)
+  local lineSpace = 0
+  local maxLine = widget:GetMaxLines()
+  if maxLine > 1 then
+    lineSpace = (maxLine - 1) * widget:GetLineSpace()
+  end
+  local height = maxLine * (widget.style:GetLineHeight() + 2)
+  return height + lineSpace
+end
+CENTER_MSG_MAX_LINE = {SYS_ALERT = 2}
+systemLayerParent = UIParent:CreateWidget("window", "systemLayerParent", "UIParent")
+systemLayerParent:Show(true)
+systemLayerParent:SetExtent(1, 1)
+systemLayerParent:AddAnchor("TOPLEFT", "UIParent", 1, 1)
+systemLayerParent:SetUILayer("system")
+function SetHandlerOnUpdate(widget)
+  local showingTime = 0
+  function widget:OnUpdate(dt)
+    showingTime = dt + showingTime
+    if showingTime > 5000 then
+      self:Show(false, 1000)
+      self:ReleaseHandler("OnUpdate")
+    end
+  end
+end
+local CreateCenterMessageFrameType1 = function(id, parent)
+  local window = UIParent:CreateWidget("window", id, parent)
+  window:Show(false)
+  window:SetExtent(946, 150)
+  window:AddAnchor("TOP", "UIParent", 0, 60)
+  window:Clickable(false)
+  window:SetUILayer("system")
+  local bg = window:CreateImageDrawable(TEXTURE_PATH.ALARM_DECO, "background")
+  bg:SetCoords(0, 0, 782, 128)
+  bg:SetExtent(625.60004, 102.4)
+  bg:AddAnchor("BOTTOM", window, 0, 0)
+  window.bg = bg
+  local iconBg = window:CreateImageDrawable(TEXTURE_PATH.ALARM_DECO, "background")
+  iconBg:SetExtent(109.65, 70.55)
+  iconBg:SetCoords(782, 0, 129, 83)
+  iconBg:AddAnchor("TOP", window, 0, 0)
+  window.iconBg = iconBg
+  local icon = window:CreateImageDrawable(TEXTURE_PATH.SIEGE_PERIOD, "artwork")
+  icon:AddAnchor("CENTER", window.iconBg, 0, 0)
+  window.icon = icon
+  local body = window:CreateChildWidget("textbox", "body", 0, true)
+  body:SetLineSpace(8)
+  body.style:SetFontSize(FONT_SIZE.LARGE)
+  body.style:SetShadow(true)
+  body.style:SetAlign(ALIGN_CENTER)
+  body:Clickable(false)
+  SetHandlerOnUpdate(window)
+  return window
+end
+local CreateCenterMessageFrameType2 = function(id, parent)
+  local frame = UIParent:CreateWidget("window", id, parent)
+  frame:Show(false)
+  frame:AddAnchor("TOP", "UIParent", 0, 60)
+  frame:Clickable(false)
+  local bg = CreateContentBackground(frame, "TYPE8")
+  bg:AddAnchor("TOPLEFT", frame, -MARGIN.WINDOW_SIDE, MARGIN.WINDOW_SIDE / 1.5)
+  bg:AddAnchor("BOTTOMRIGHT", frame, 0, MARGIN.WINDOW_SIDE / 1.5)
+  frame.bg = bg
+  local icon = frame:CreateImageDrawable(TEXTURE_PATH.SIEGE_PERIOD, "overlay")
+  icon:AddAnchor("LEFT", frame, -13, -7)
+  frame.icon = icon
+  local body = frame:CreateChildWidget("textbox", "body", 0, true)
+  body:AddAnchor("LEFT", frame, 75, 5)
+  body:SetLineSpace(2)
+  body:SetExtent(1000, 30)
+  body.style:SetSnap(true)
+  body.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.XLARGE)
+  body.style:SetAlign(ALIGN_CENTER)
+  body.style:SetShadow(true)
+  body:Clickable(false)
+  function frame:SetTextWidth(str, minWidth)
+    self.body:SetWidth(1000)
+    self.body:SetText(str)
+    local width = self.body:GetLongestLineWidth() + 5
+    self.body:SetWidth(width)
+    local height = self.body:GetTextHeight()
+    width = width + self.icon:GetWidth()
+    if minWidth > width then
+      width = minWidth
+    end
+    self:SetExtent(width, height + MARGIN.WINDOW_SIDE * 2.5)
+  end
+  return frame
+end
+local function CreateCenterMessageFrameType3(id, parent)
+  local window = UIParent:CreateWidget("window", id, parent)
+  window:Show(false)
+  window:SetExtent(0, 0)
+  window:AddAnchor("TOP", "UIParent", 0, 60)
+  window:Clickable(false)
+  window:SetUILayer("system")
+  local smallLayoutContent = CreateCenterMessageFrameType2("smallLayoutContent", window)
+  window.smallLayoutContent = smallLayoutContent
+  smallLayoutContent:ReleaseHandler("OnUpdate")
+  local bigLayoutContent = CreateCenterMessageFrameType1("bigLayoutContent", window)
+  window.bigLayoutContent = bigLayoutContent
+  bigLayoutContent:ReleaseHandler("OnUpdate")
+  SetHandlerOnUpdate(window)
+  return window
+end
+local CreateCenterMessageFrameType4 = function(id, parent)
+  local window = UIParent:CreateWidget("window", id, parent)
+  window:Show(false)
+  window:SetExtent(946, 150)
+  window:AddAnchor("TOP", "UIParent", 0, 60)
+  window:Clickable(false)
+  window:SetUILayer("system")
+  local bg = window:CreateImageDrawable(TEXTURE_PATH.ALARM_DECO, "background")
+  bg:SetCoords(0, 0, 782, 128)
+  bg:SetExtent(625.60004, 102.4)
+  bg:AddAnchor("BOTTOM", window, 0, 0)
+  window.bg = bg
+  local iconBg = window:CreateImageDrawable(TEXTURE_PATH.ALARM_DECO, "background")
+  iconBg:SetExtent(109.65, 70.55)
+  iconBg:SetCoords(782, 0, 129, 83)
+  iconBg:AddAnchor("TOP", window, 0, 0)
+  window.iconBg = iconBg
+  local icon = window:CreateImageDrawable(TEXTURE_PATH.SIEGE_PERIOD, "artwork")
+  icon:AddAnchor("CENTER", window.iconBg, 0, 0)
+  window.icon = icon
+  local textImg = window:CreateImageDrawable(TEXTURE_PATH.NATION_ALARM, "overlay")
+  textImg:AddAnchor("TOP", window, "BOTTOM", 0, MARGIN.WINDOW_SIDE / 4)
+  window.textImg = textImg
+  local body = window:CreateChildWidget("textbox", "body", 0, true)
+  body:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  body.style:SetFontSize(FONT_SIZE.LARGE)
+  body.style:SetShadow(true)
+  body.style:SetAlign(ALIGN_CENTER)
+  body:Clickable(false)
+  SetHandlerOnUpdate(window)
+  return window
+end
+function CreateCenterMessageFrame(id, parent, styleType)
+  if styleType == nil or styleType == "" then
+    return
+  end
+  if styleType == "TYPE1" then
+    return CreateCenterMessageFrameType1(id, parent)
+  elseif styleType == "TYPE2" then
+    return CreateCenterMessageFrameType2(id, parent)
+  elseif styleType == "TYPE3" then
+    return CreateCenterMessageFrameType3(id, parent)
+  elseif styleType == "TYPE4" then
+    return CreateCenterMessageFrameType4(id, parent)
+  end
+end
+local imgEventDrawing = false
+local imgEventQueue = {}
+local imgEventPriority = {
+  UNIT_KILL_STREAK = 1,
+  ITEM_SOCKETING_RESULT = 2,
+  ITEM_ENCHANT_MAGICAL_RESULT = 2,
+  GRADE_ENCHANT_RESULT = 2,
+  ABILITY_CHANGED = 3,
+  LEVEL_CHANGED = 4,
+  LOOT_PACK_ITEM_BROADCAST = 5,
+  SHOW_ADDED_ITEM = 6,
+  DOMINION_SIEGE_PERIOD_CHANGED = 7,
+  DOMINION_SIEGE_UPDATE_TIMER = 7,
+  DOMINION = 7,
+  NATION_INDEPENDENCE = 8,
+  EXPEDITION_LEVEL_UP = 9,
+  COMPLETE_ACHIEVEMENT = 10,
+  UPDATE_TODAY_ASSIGNMENT = 10,
+  HPW_ZONE_STATE_WAR_END = 11,
+  GRADE_ENCHANT_BROADCAST = 12,
+  TOWER_DEFENSE_MSG = 12,
+  ZONEGROUP_STATE_START = 12,
+  ZONEGROUP_STATE_WINNER = 12,
+  DOODAD_PHASE_UI_MSG = 13,
+  CONDITION_MSG = 14,
+  EVENT_SCHEDULE_START = 15,
+  EVENT_SCHEDULE_STOP = 15,
+  RACING_CONDITION = 16,
+  RACING_STATE = 16,
+  RANK_ALARM_MSG = 16,
+  EXPEDITION_WAR_STATE = 17,
+  HERO_SEASON_OFF = 18,
+  HERO_CANDIDATES_ANNOUNCED = 18,
+  HERO_CANDIDATE_NOTI = 18,
+  HERO_ELECTION_RESULT = 18,
+  HERO_NOTI = 18,
+  HERO_ELECTION_DAY_ALERT = 18
+}
+for k, v in pairs(imgEventPriority) do
+  imgEventQueue[v] = {}
+end
+function MakeImgEventInfo(eventKey, pfunc, argList)
+  local num = imgEventPriority[eventKey]
+  if num == nil then
+    return nil
+  end
+  local imgEventInfo = {
+    key = eventKey,
+    priority = imgEventPriority[eventKey],
+    func = pfunc,
+    params = argList
+  }
+  return imgEventInfo
+end
+function AddImgEventQueue(eventInfo)
+  if eventInfo == nil then
+    return
+  end
+  local queueTable = imgEventQueue[eventInfo.priority]
+  local finded = false
+  for i = 1, #queueTable do
+    if queueTable[i].key == eventInfo.key then
+      queueTable[i] = eventInfo
+      finded = true
+      break
+    end
+  end
+  if not finded then
+    queueTable[#queueTable + 1] = eventInfo
+  end
+  if not imgEventDrawing then
+    StartNextImgEvent()
+  end
+end
+function StartNextImgEvent()
+  imgEventDrawing = false
+  local eventInfo, index
+  for i = 1, #imgEventQueue do
+    for j = 1, #imgEventQueue[i] do
+      if eventInfo == nil and imgEventQueue[i][j] ~= nil then
+        eventInfo = imgEventQueue[i][j]
+        index = j
+        break
+      end
+    end
+  end
+  if eventInfo ~= nil then
+    imgEventDrawing = eventInfo.func(eventInfo.params[1], eventInfo.params[2], eventInfo.params[3], eventInfo.params[4], eventInfo.params[5], eventInfo.params[6], eventInfo.params[7], eventInfo.params[8], eventInfo.params[9])
+    local queueTable = imgEventQueue[eventInfo.priority]
+    if index ~= nil then
+      table.remove(queueTable, index)
+    end
+  end
+end

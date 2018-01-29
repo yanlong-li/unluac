@@ -1,0 +1,161 @@
+local iconOffset = 4
+local moneyOffset = 3
+function CreateTwoLineMoneyWindow(id, parent)
+  local window = SetViewOfTwoLineMoneyWindow(id, parent)
+  local alpha = 0.2
+  function window:Update(money)
+    if type(money) == "number" then
+      money = X2Util:NumberToString(money)
+    end
+    local gold, silver, copper = GoldSilverCopperStringFromMoneyStr(money)
+    gold = F_MONEY:RemoveHeadZero(gold)
+    silver = F_MONEY:RemoveHeadZero(silver)
+    copper = F_MONEY:RemoveHeadZero(copper)
+    if gold ~= "0" then
+      self.goldLabel:SetText(gold)
+      self.goldLabel:SetAlpha(1)
+      self.goldIcon:SetColor(1, 1, 1, 1)
+    else
+      self.goldLabel:SetText("")
+      self.goldLabel:SetAlpha(alpha)
+      self.goldIcon:SetColor(1, 1, 1, alpha)
+    end
+    if silver ~= "0" then
+      self.silverLabel:SetText(silver)
+      self.silverLabel:SetAlpha(1)
+      self.silverIcon:SetColor(1, 1, 1, 1)
+    else
+      self.silverLabel:SetText("")
+      self.silverLabel:SetAlpha(alpha)
+      self.silverIcon:SetColor(1, 1, 1, alpha)
+    end
+    if copper ~= "0" then
+      self.copperLabel:SetText(copper)
+      self.copperLabel:SetAlpha(1)
+      self.copperIcon:SetColor(1, 1, 1, 1)
+    else
+      self.copperLabel:SetText("")
+      self.copperLabel:SetAlpha(alpha)
+      self.copperIcon:SetColor(1, 1, 1, alpha)
+    end
+  end
+  return window
+end
+function CreateTwoLineAAPointWindow(id, parent)
+  local window = SetViewOfTwoLineAAPointWindow(id, parent)
+  local alpha = 0.2
+  function window:Update(aaPoint)
+    if type(aaPoint) == "number" then
+      aaPoint = X2Util:NumberToString(aaPoint)
+    end
+    local gold, silver, copper = GoldSilverCopperStringFromMoneyStr(aaPoint)
+    gold = F_MONEY:RemoveHeadZero(gold)
+    silver = F_MONEY:RemoveHeadZero(silver)
+    copper = F_MONEY:RemoveHeadZero(copper)
+    if gold ~= "0" then
+      self.goldLabel:SetText(gold)
+      self.goldLabel:SetAlpha(1)
+      self.goldIcon:SetColor(1, 1, 1, 1)
+    else
+      self.goldLabel:SetText("")
+      self.goldLabel:SetAlpha(alpha)
+      self.goldIcon:SetColor(1, 1, 1, alpha)
+    end
+    if silver ~= "0" then
+      self.silverLabel:SetText(silver)
+      self.silverLabel:SetAlpha(1)
+      self.silverIcon:SetColor(1, 1, 1, 1)
+    else
+      self.silverLabel:SetText("")
+      self.silverLabel:SetAlpha(alpha)
+      self.silverIcon:SetColor(1, 1, 1, alpha)
+    end
+    if copper ~= "0" then
+      self.copperLabel:SetText(copper)
+      self.copperLabel:SetAlpha(1)
+      self.copperIcon:SetColor(1, 1, 1, 1)
+    else
+      self.copperLabel:SetText("")
+      self.copperLabel:SetAlpha(alpha)
+      self.copperIcon:SetColor(1, 1, 1, alpha)
+    end
+  end
+  return window
+end
+function CreateDefaultMoneyWindow(id, parent, width, height)
+  local widget = UIParent:CreateWidget("textbox", id, parent)
+  widget:Show(true)
+  widget:SetExtent(width, height)
+  widget.style:SetAlign(ALIGN_RIGHT)
+  ApplyTextColor(widget, FONT_COLOR.BLUE)
+  function widget:Update(amount)
+    self.amount = tostring(amount)
+    local currency = self.currency or CURRENCY_GOLD
+    widget:SetText(string.format(F_MONEY.currency.pipeString[currency], self.amount))
+  end
+  widget:Update(0)
+  return widget
+end
+function CreateTitleMoneyWindow(id, parent, titleText, direction, layoutType)
+  local widget = SetViewOfTitleMoneyWindow(id, parent, titleText, direction, layoutType)
+  function widget:Update(money)
+    if money == "" then
+      widget.money:SetText("")
+      return
+    elseif money == -1 then
+      widget.money:SetText(locale.money.sold_out)
+      return
+    end
+    local moneyStr = ""
+    if type(money) == "number" then
+      moneyStr = string.format("|m%i;", money)
+    else
+      moneyStr = string.format("|m%s;", money)
+    end
+    self.money:SetText(moneyStr)
+    if self.direction == "horizon" then
+      self.money:SetWidth(500)
+      self.money:SetWidth(self.money:GetLongestLineWidth() + 17)
+    end
+  end
+  function widget:UpdateHonorPoint(honorPoint)
+    local honorPoint = string.format("|h%s;", honorPoint)
+    widget.money:SetText(honorPoint)
+    if self.direction == "horizon" then
+      self.money:SetWidth(500)
+      self.money:SetWidth(self.money:GetLongestLineWidth() + 17)
+    end
+  end
+  function widget:UpdateLivingPoint(livingPoint)
+    local livingPoint = string.format("|l%s;", livingPoint)
+    widget.money:SetText(livingPoint)
+    if self.direction == "horizon" then
+      self.money:SetWidth(500)
+      self.money:SetWidth(self.money:GetLongestLineWidth() + 17)
+    end
+  end
+  function widget:UpdateContributionPoint(contPoint)
+    local contPoint = string.format("|w%s", contPoint)
+    widget.money:SetText(contPoint)
+    if self.direction == "horizon" then
+      self.money:SetWidth(500)
+      self.money:SetWidth(self.money:GetLongestLineWidth() + 17)
+    end
+  end
+  function widget:UpdateAAPoint(aaPoint)
+    if aaPoint == "" then
+      self.money:SetText("")
+      return
+    elseif aaPoint == -1 then
+      self.money:SetText(locale.money.sold_out)
+      return
+    end
+    local aaPointStr = string.format(F_MONEY.currency.pipeString[CURRENCY_AA_POINT], tostring(aaPoint))
+    self.money:SetText(aaPointStr)
+    if self.direction == "horizon" then
+      self.money:SetWidth(500)
+      self.money:SetWidth(self.money:GetLongestLineWidth() + 17)
+    end
+  end
+  return widget
+end

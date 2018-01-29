@@ -1,0 +1,91 @@
+local SetViewOfRoleMark = function(id, parent)
+  local mark = CreateEmptyButton(id .. "leaderMark", parent)
+  mark:SetExtent(21, 18)
+  local bg = mark:CreateImageDrawable(TEXTURE_PATH.RAID, "background")
+  bg:AddAnchor("CENTER", mark, 0, 0)
+  mark.bg = bg
+  function mark:SetMarkTexture(style)
+    mark:Show(true)
+    if style == TMROLE_TANKER then
+      bg:SetExtent(16, 18)
+      bg:SetCoords(56, 123, 16, 18)
+    elseif style == TMROLE_HEALER then
+      bg:SetExtent(21, 14)
+      bg:SetCoords(103, 123, 21, 14)
+    elseif style == TMROLE_DEALER then
+      bg:SetExtent(18, 17)
+      bg:SetCoords(35, 123, 18, 17)
+    elseif self:IsEnabled() then
+      bg:SetExtent(13, 16)
+      bg:SetCoords(45, 143, 8, 6)
+    end
+  end
+  mark:SetMarkTexture(nil)
+  return mark
+end
+function CreateRoleMark(id, parent)
+  local roleMark = SetViewOfRoleMark(id, parent)
+  local text = " "
+  function roleMark:SetMark(role, showTooltip)
+    self.role = role
+    self:SetMarkTexture(role)
+    if role == TMROLE_TANKER then
+      text = locale.role.tanker
+    elseif role == TMROLE_HEALER then
+      text = locale.role.healer
+    elseif role == TMROLE_DEALER then
+      text = locale.role.dealer
+    else
+      text = locale.role.norole
+    end
+    local function OnEnter(self)
+      if showTooltip == nil or showTooltip then
+        SetTooltip(text, self)
+      end
+    end
+    self:SetHandler("OnEnter", OnEnter)
+  end
+  return roleMark
+end
+function SetViewOfRaidTeamManagerMember(id, parent, slot)
+  local w = CreateEmptyWindow(id, parent)
+  w:Show(false)
+  local roleMark = CreateRoleMark(id .. ".roleMark", w)
+  roleMark:AddAnchor("LEFT", w, 0, 0)
+  roleMark:Show(true)
+  w.roleMark = roleMark
+  local leaderMark = CreateLeaderMark(id .. ".leaderMark", w)
+  leaderMark:AddAnchor("LEFT", roleMark, "RIGHT", 0, 0)
+  w.leaderMark = leaderMark
+  CreateLootIconWidget(w)
+  w.lootIcon:AddAnchor("LEFT", roleMark, "RIGHT", -1, 0)
+  local eventWindow = w:CreateChildWidget("emptywidget", "eventWindow", 0, true)
+  eventWindow:AddAnchor("TOPLEFT", w, 0, 0)
+  eventWindow:AddAnchor("BOTTOMRIGHT", w, 0, 0)
+  eventWindow:Show(true)
+  w.eventWindow = eventWindow
+  local bg = w:CreateImageDrawable(TEXTURE_PATH.RAID, "artwork")
+  bg:SetCoords(0, 151, 103, 30)
+  bg:SetColor(1, 1, 1, 0.8)
+  bg:AddAnchor("TOPLEFT", eventWindow, -5, -6)
+  bg:AddAnchor("BOTTOMRIGHT", eventWindow, 0, 8)
+  bg:SetVisible(false)
+  eventWindow.bg = bg
+  local levelLabel = w:CreateChildWidget("label", "levelLabel", 0, true)
+  levelLabel:SetExtent(15, 13)
+  levelLabel:AddAnchor("RIGHT", w, -5, 0)
+  levelLabel.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(levelLabel, FONT_COLOR.BLACK)
+  local nameLabel = w:CreateChildWidget("label", "nameLabel", 0, true)
+  nameLabel:Show(true)
+  nameLabel:SetLimitWidth(true)
+  nameLabel:SetHeight(13)
+  nameLabel:AddAnchor("LEFT", leaderMark, "RIGHT", 0, 0)
+  nameLabel:AddAnchor("RIGHT", levelLabel, -2, 0)
+  nameLabel.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(nameLabel, FONT_COLOR.ROLE_NONE)
+  eventWindow:Raise()
+  roleMark:Raise()
+  leaderMark:Raise()
+  return w
+end

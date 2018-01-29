@@ -1,0 +1,249 @@
+MAX_EXTEND_TAB = 10
+local tabIconCoords = {}
+tabIconCoords[1] = {
+  0,
+  0,
+  32,
+  32
+}
+tabIconCoords[2] = {
+  0,
+  32,
+  32,
+  32
+}
+tabIconCoords[3] = {
+  0,
+  64,
+  32,
+  32
+}
+tabIconCoords[4] = {
+  0,
+  96,
+  32,
+  32
+}
+tabIconCoords[5] = {
+  0,
+  128,
+  32,
+  32
+}
+tabIconCoords[6] = {
+  0,
+  160,
+  32,
+  32
+}
+tabIconCoords[7] = {
+  0,
+  192,
+  32,
+  32
+}
+tabIconCoords[8] = {
+  0,
+  224,
+  32,
+  32
+}
+tabIconCoords[9] = {
+  128,
+  0,
+  32,
+  32
+}
+tabIconCoords[10] = {
+  128,
+  32,
+  32,
+  32
+}
+tabIconCoords[11] = {
+  128,
+  64,
+  32,
+  32
+}
+tabIconCoords[12] = {
+  128,
+  96,
+  32,
+  32
+}
+tabIconCoords[13] = {
+  128,
+  128,
+  32,
+  32
+}
+tabIconCoords[14] = {
+  128,
+  160,
+  32,
+  32
+}
+tabIconCoords[15] = {
+  128,
+  192,
+  32,
+  32
+}
+tabIconCoords[16] = {
+  128,
+  224,
+  32,
+  32
+}
+tabIconCoords[17] = {
+  256,
+  0,
+  32,
+  32
+}
+tabIconCoords[18] = {
+  256,
+  32,
+  32,
+  32
+}
+MAX_TAB_ICON_COORDS = #tabIconCoords
+function GetTabIconCoords(index)
+  return tabIconCoords[index]
+end
+function SetGuideTooltipIncludeItemGrade(target, upperStr)
+  local function CreateGuideToolip()
+    local tooltip = target:CreateChildWidget("emptywidget", "tooltip", 0, false)
+    tooltip:SetExtent(500, 500)
+    CreateTooltipDrawable(tooltip)
+    local upperSection = tooltip:CreateChildWidget("textbox", "upperSection", 0, true)
+    local width = DEFAULT_SIZE.TOOLTIP_MAX_WIDTH
+    local longestWidth = upperSection.style:GetTextWidth(upperStr) + 5
+    if width > longestWidth then
+      width = longestWidth
+    end
+    upperSection:SetExtent(width, 300)
+    upperSection:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+    upperSection:AddAnchor("TOPLEFT", tooltip, 15, 15)
+    upperSection.style:SetAlign(ALIGN_LEFT)
+    upperSection:SetAutoResize(true)
+    upperSection:SetText(upperStr)
+    local upperWidth, upperHeight = upperSection:GetExtent()
+    local lowerSection = tooltip:CreateChildWidget("emptywidget", "lowerSection", 0, true)
+    lowerSection:SetWidth(upperSection:GetWidth())
+    lowerSection:AddAnchor("TOPLEFT", upperSection, "BOTTOMLEFT", 0, 15)
+    local title = lowerSection:CreateChildWidget("label", "title", 0, true)
+    title:SetAutoResize(true)
+    title:SetHeight(FONT_SIZE.MIDDLE)
+    title:SetText(GetUIText(COMMON_TEXT, "item_grade"))
+    title.style:SetAlign(ALIGN_LEFT)
+    title:AddAnchor("TOPLEFT", lowerSection, 0, 0)
+    ApplyTextColor(title, FONT_COLOR.SOFT_YELLOW)
+    local lowerSectionChild = {}
+    local leftDrawable = lowerSection:CreateImageDrawable(TEXTURE_PATH.INVENTORY_GRADE, "background")
+    leftDrawable:SetCoords(0, 0, 28, 188)
+    leftDrawable:SetExtent(28, 188)
+    leftDrawable:AddAnchor("TOPLEFT", title, "BOTTOMLEFT", 0, 8)
+    table.insert(lowerSectionChild, leftDrawable)
+    local grades = X2Item:AllGradeTypes()
+    local leftTexts = ""
+    local rightTexts = ""
+    local AddText = function(originalText, gradeText)
+      if originalText == "" then
+        return gradeText
+      else
+        return string.format([[
+%s
+%s]], originalText, gradeText)
+      end
+    end
+    for i = 1, #grades do
+      local grade = grades[i]
+      local gradeText = X2Item:GradeName(grade)
+      local gradeColor = X2Item:GradeColor(grade)
+      if i == 2 then
+        gradeColor = "FFFFFFFF"
+      end
+      if i % 2 == 0 then
+        rightTexts = AddText(rightTexts, string.format("|c%s%s|r", gradeColor, gradeText))
+      else
+        leftTexts = AddText(leftTexts, string.format("|c%s%s|r", gradeColor, gradeText))
+      end
+    end
+    local inset = inventoryLocale.guideInset
+    local leftText = lowerSection:CreateChildWidget("textbox", "leftText", 0, true)
+    leftText:SetWidth(500)
+    leftText:SetText(leftTexts)
+    leftText:SetInset(inset[1], inset[2], inset[3], inset[4])
+    leftText:SetLineSpace(inventoryLocale.guideLineSpace)
+    leftText.style:SetAlign(ALIGN_LEFT)
+    leftText:SetExtent(leftText:GetLongestLineWidth() + 5, leftText:GetTextHeight())
+    leftText:AddAnchor("TOPLEFT", leftDrawable, "TOPRIGHT", 5, 7)
+    table.insert(lowerSectionChild, leftText)
+    local rightDrawable = lowerSection:CreateImageDrawable(TEXTURE_PATH.INVENTORY_GRADE, "background")
+    rightDrawable:SetCoords(28, 0, 28, 188)
+    rightDrawable:SetExtent(28, 188)
+    table.insert(lowerSectionChild, rightDrawable)
+    local rightText = lowerSection:CreateChildWidget("textbox", "rightText", 0, true)
+    rightText:SetWidth(500)
+    rightText:SetText(rightTexts)
+    rightText:SetInset(inset[1], inset[2], inset[3], inset[4])
+    rightText:SetLineSpace(inventoryLocale.guideLineSpace)
+    rightText.style:SetAlign(ALIGN_LEFT)
+    rightText:SetExtent(rightText:GetLongestLineWidth() + 5, rightText:GetTextHeight())
+    rightText:AddAnchor("TOPLEFT", rightDrawable, "TOPRIGHT", 5, 7)
+    table.insert(lowerSectionChild, rightText)
+    lowerSection:SetHeight(rightDrawable:GetHeight() + title:GetHeight() + 15)
+    local width = leftDrawable:GetWidth() + leftText:GetWidth() + rightDrawable:GetWidth() + rightText:GetWidth() + 25
+    if upperWidth < width then
+      lowerSection:SetWidth(width)
+      local offset = leftDrawable:GetWidth() + leftText:GetWidth() + 20
+      rightDrawable:AddAnchor("TOPLEFT", title, "BOTTOMLEFT", offset, 8)
+    else
+      local offset = (lowerSection:GetWidth() - leftDrawable:GetWidth() - rightDrawable:GetWidth() - leftText:GetWidth() - rightText:GetWidth()) / 2
+      rightDrawable:AddAnchor("TOPLEFT", leftText, "TOPRIGHT", offset, -7)
+    end
+    local function GetWidth()
+      local lowerWidth = 0
+      for i = 1, #lowerSectionChild do
+        lowerWidth = lowerWidth + lowerSectionChild[i]:GetWidth()
+      end
+      lowerWidth = lowerWidth + 35
+      if lowerWidth < upperWidth then
+        return upperWidth + 30
+      else
+        return lowerWidth + 20
+      end
+    end
+    local function GetHeight()
+      return upperHeight + lowerSection:GetHeight() + 40
+    end
+    tooltip:SetExtent(GetWidth(), GetHeight())
+    local function OnHide()
+      target.tooltip = nil
+    end
+    tooltip:SetHandler("OnHide", OnHide)
+    return tooltip
+  end
+  local function OnEnter(self)
+    if target.tooltip == nil then
+      target.tooltip = CreateGuideToolip(self, upperStr)
+    end
+    SetDefaultTooltipAnchor(target, target.tooltip)
+  end
+  target:SetHandler("OnEnter", OnEnter)
+  local function OnLeave()
+    target.tooltip:Show(false)
+  end
+  target:SetHandler("OnLeave", OnLeave)
+end
+function UpdateSlot(slot, itemInfo, useLookType)
+  if itemInfo ~= nil then
+    local type = useLookType ~= nil and itemInfo.lookType or itemInfo.itemType
+    slot:SetItemInfo(itemInfo)
+    slot:SetItemIcon(type, itemInfo.itemGrade)
+  else
+    slot:Init()
+  end
+end

@@ -1,0 +1,263 @@
+function SetViewOfExpBar(id, parent)
+  local window = parent:CreateChildWidget("emptywidget", id, 0, true)
+  window:Show(true)
+  window:SetExtent(UIParent:GetScreenWidth(), 5)
+  local bg = window:CreateImageDrawable(TEXTURE_PATH.HUD, "background")
+  bg:SetCoords(0, 215, 506, 4)
+  bg:AddAnchor("TOPLEFT", window, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+  bg:SetColor(ConvertColor(80), ConvertColor(55), ConvertColor(42), 0.5)
+  local statusBar = window:CreateChildWidget("statusbar", "statusBar", 0, true)
+  statusBar:AddAnchor("TOPLEFT", window, 0, 0)
+  statusBar:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+  statusBar:SetBarTexture(TEXTURE_PATH.HUD, "artwork")
+  statusBar:SetBarTextureCoords(0, 215, 506, 4)
+  statusBar:SetOrientation("HORIZONTAL")
+  statusBar:SetBarColor(ConvertColor(238), ConvertColor(148), ConvertColor(42), 1)
+  statusBar:SetMinMaxValues(0, 1000)
+  statusBar:SetValue(1000)
+  statusBar:Show(true)
+  return window
+end
+function SetViewOfLaborPowerBar(id, parent)
+  local window = UIParent:CreateWidget("emptywidget", id, parent)
+  window:Show(true)
+  window:SetExtent(400, 5)
+  local bg = window:CreateImageDrawable(TEXTURE_PATH.HUD, "background")
+  bg:SetCoords(0, 215, 506, 4)
+  bg:AddAnchor("TOPLEFT", window, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+  bg:SetColor(ConvertColor(81), ConvertColor(63), ConvertColor(19), 1)
+  local statusBar = UIParent:CreateWidget("statusbar", id .. ".widget", window)
+  statusBar:AddAnchor("TOPLEFT", window, 0, 0)
+  statusBar:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+  statusBar:SetBarTexture(TEXTURE_PATH.HUD, "artwork")
+  statusBar:SetBarTextureCoords(0, 215, 506, 4)
+  statusBar:SetOrientation("HORIZONTAL")
+  statusBar:SetBarColor(ConvertColor(220), ConvertColor(184), ConvertColor(100), 1)
+  statusBar:SetMinMaxValues(0, 1000)
+  statusBar:SetValue(1000)
+  statusBar:Show(true)
+  window.statusBar = statusBar
+  return window
+end
+function SetViewOfHpBar(id, parent)
+  local window = CreateEmptyWindow(id, parent)
+  window:Show(true)
+  local bg = window:CreateColorDrawable(ConvertColor(76), ConvertColor(45), ConvertColor(8), 1, "background")
+  bg:AddAnchor("TOPLEFT", window, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+  local hp = UIParent:CreateWidget("statusbar", id .. ".hp", window)
+  hp:AddAnchor("TOPLEFT", window, 3, 1)
+  hp:AddAnchor("BOTTOMRIGHT", window, -3, -3)
+  hp:SetBarTexture(TEXTURE_PATH.SIEGE_ICON, "artwork")
+  hp:SetBarTextureCoords(0, 224, 166, 14)
+  hp:SetOrientation("HORIZONTAL")
+  hp:SetBarColor(1, 1, 1, 1)
+  window.hp = hp
+  local hpBarLine = hp:CreateImageDrawable(TEXTURE_PATH.SIEGE_ICON, "overlay")
+  hpBarLine:SetCoords(0, 238, 180, 16)
+  hpBarLine:SetExtent(180, 16)
+  hpBarLine:AddAnchor("TOPLEFT", hp, -3, -2)
+  return window
+end
+function SetViewOfSkillBar(id, parent)
+  local window = CreateEmptyWindow(id, parent)
+  window:SetExtent(0, 11)
+  window:Show(true)
+  local bg = window:CreateNinePartDrawable(TEXTURE_PATH.SKILL, "background")
+  bg:SetCoords(0, 152, 143, 11)
+  bg:SetInset(70, 5, 71, 5)
+  bg:AddAnchor("TOPLEFT", window, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+  local statusBar = UIParent:CreateWidget("statusbar", id .. ".status", window)
+  statusBar:Show(true)
+  statusBar:AddAnchor("TOPLEFT", window, 2, 1)
+  statusBar:AddAnchor("BOTTOMRIGHT", window, -2, -2)
+  statusBar:SetBarTexture(TEXTURE_PATH.SKILL, "background")
+  statusBar:SetBarTextureCoords(0, 163, 143, 8)
+  statusBar:SetBarColor(ConvertColor(212), ConvertColor(181), ConvertColor(106), 1)
+  statusBar:SetOrientation("HORIZONTAL")
+  window.statusBar = statusBar
+  function window:ChangeStatusBarTextureOfActabilityGrade(colorString)
+    if colorString ~= nil then
+      local colors = Hex2Dec(colorString)
+      self.statusBar:SetBarColor(colors[1], colors[2], colors[3], colors[4])
+    end
+  end
+  return window
+end
+function SetViewOfStatusBarOfUnitFrame(id, parent, barType)
+  local window = CreateEmptyWindow(id, parent)
+  window:Show(true)
+  if barType == "hp" then
+    window.statusBarAfterImage = UIParent:CreateWidget("statusbar", id .. ".statusBarAfterImage", window)
+    window.statusBarAfterImage:AddAnchor("TOPLEFT", window, 0, 0)
+    window.statusBarAfterImage:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+    window.statusBarAfterImage:SetBarTexture(TEXTURE_PATH.HUD, "background")
+    window.statusBarAfterImage:SetBarTextureCoords(0, 120, 300, 19)
+    window.statusBarAfterImage:SetOrientation("HORIZONTAL")
+    window.statusBarAfterImage:Show(true)
+  end
+  window.statusBar = UIParent:CreateWidget("statusbar", id .. ".statusBar", window)
+  window.statusBar:AddAnchor("TOPLEFT", window, 0, 0)
+  window.statusBar:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+  window.statusBar:SetBarTexture(TEXTURE_PATH.HUD, "background")
+  window.statusBar:SetOrientation("HORIZONTAL")
+  window.statusBar:Show(true)
+  function window:ApplyBarTexture(textureInfo)
+    if self.statusBar == nil then
+      return
+    end
+    local coords = textureInfo.coords
+    self.statusBar:SetBarTextureCoords(coords[1], coords[2], coords[3], coords[4])
+    self.textureInfo = textureInfo
+    if self.statusBarAfterImage ~= nil then
+      local color = textureInfo.afterImage_color_down
+      self.statusBarAfterImage:SetBarColor(color[1], color[2], color[3], color[4])
+    end
+  end
+  function window:ChangeAfterImageColor(isDown)
+    if self.statusBar == nil then
+      return
+    end
+    if self.statusBarAfterImage == nil then
+      return
+    end
+    if self.textureInfo == nil then
+      return
+    end
+    if isDown then
+      local color = self.textureInfo.afterImage_color_down
+      self.statusBarAfterImage:SetBarColor(color[1], color[2], color[3], color[4])
+    else
+      local color = self.textureInfo.afterImage_color_up
+      self.statusBarAfterImage:SetBarColor(color[1], color[2], color[3], color[4])
+    end
+  end
+  return window
+end
+function SetViewOfStatusBarOfRaidFrame(id, parent)
+  local window = CreateEmptyWindow(id, parent)
+  window:Show(true)
+  local statusBar = UIParent:CreateWidget("statusbar", id .. ".statusBar", window)
+  statusBar:AddAnchor("TOPLEFT", window, 0, 0)
+  statusBar:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+  statusBar:SetBarTexture(TEXTURE_PATH.RAID, "background")
+  statusBar:SetOrientation("HORIZONTAL")
+  statusBar:Show(true)
+  window.statusBar = statusBar
+  function window:ApplyBarTexture(textureInfo)
+    if self.statusBar == nil then
+      return
+    end
+    local coords = textureInfo.coords
+    self.statusBar:SetBarTextureCoords(coords[1], coords[2], coords[3], coords[4])
+  end
+  return window
+end
+function SetViewOfStatusBar(id, parent, style)
+  local window = parent:CreateChildWidget("emptywidget", id, 0, false)
+  window:Show(true)
+  local statusBar = window:CreateChildWidget("statusbar", "statusBar", 0, true)
+  statusBar:AddAnchor("TOPLEFT", window, 0, 0)
+  statusBar:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+  statusBar:SetOrientation("HORIZONTAL")
+  function window:SetStyle(style)
+    if style == nil or style == "" then
+      return
+    end
+    if style == "achievement_main" then
+      if self.bg == nil then
+        local bg = window:CreateThreePartDrawable(TEXTURE_PATH.ACHIEVEMENT, "background")
+        bg:SetCoords(265, 160, 13, 9)
+        bg:SetInset(6, 4, 6, 4)
+        bg:AddAnchor("TOPLEFT", window, -1, -1)
+        bg:AddAnchor("BOTTOMRIGHT", window, 1, 1)
+        self.bg = bg
+      end
+      self.statusBar:SetBarTexture(TEXTURE_PATH.ACHIEVEMENT_MAIN_PAGE, "artwork")
+      local coords = {
+        GetTextureInfo(TEXTURE_PATH.ACHIEVEMENT_MAIN_PAGE, "gauge_orange"):GetCoords()
+      }
+      self.statusBar:SetBarTextureCoords(coords[1], coords[2], coords[3], coords[4])
+      self.statusBar:SetHeight(9)
+    elseif style == "achievement_main_common" then
+      if self.bg == nil then
+        local bg = window:CreateThreePartDrawable(TEXTURE_PATH.ACHIEVEMENT, "background")
+        bg:SetCoords(265, 160, 13, 9)
+        bg:SetInset(6, 4, 6, 4)
+        bg:AddAnchor("TOPLEFT", window, -1, -1)
+        bg:AddAnchor("BOTTOMRIGHT", window, 1, 1)
+        self.bg = bg
+      end
+      self.statusBar:SetBarTexture(TEXTURE_PATH.ACHIEVEMENT_MAIN_PAGE, "artwork")
+      local coords = {
+        GetTextureInfo(TEXTURE_PATH.ACHIEVEMENT_MAIN_PAGE, "gauge_blue"):GetCoords()
+      }
+      self.statusBar:SetBarTextureCoords(coords[1], coords[2], coords[3], coords[4])
+      self.statusBar:SetHeight(7)
+    elseif style == "achievement_category" then
+      if self.bg == nil then
+        local bg = window:CreateThreePartDrawable(TEXTURE_PATH.ACHIEVEMENT, "background")
+        bg:SetCoords(265, 160, 13, 9)
+        bg:SetInset(6, 4, 6, 4)
+        bg:AddAnchor("TOPLEFT", window, -1, -1)
+        bg:AddAnchor("BOTTOMRIGHT", window, 1, 1)
+        self.bg = bg
+      end
+      self.statusBar:SetBarTexture(TEXTURE_PATH.ACHIEVEMENT, "artwork")
+      self.statusBar:SetBarTextureCoords(0, 160, 265, 9)
+      self.statusBar:SetHeight(9)
+    elseif style == "achievement_list" then
+      if self.bg == nil then
+        local bg = window:CreateThreePartDrawable(TEXTURE_PATH.ACHIEVEMENT, "background")
+        bg:SetCoords(265, 160, 13, 9)
+        bg:SetInset(6, 4, 6, 4)
+        bg:AddAnchor("TOPLEFT", window, -1, -1)
+        bg:AddAnchor("BOTTOMRIGHT", window, 1, 1)
+        self.bg = bg
+      end
+      self.statusBar:SetBarTexture(TEXTURE_PATH.ACHIEVEMENT, "artwork")
+      self.statusBar:SetBarTextureCoords(0, 153, 312, 7)
+      self.statusBar:SetHeight(7)
+    elseif style == "achievement_detail" then
+      if self.bg == nil then
+        local bg = window:CreateThreePartDrawable(TEXTURE_PATH.ACHIEVEMENT, "background")
+        bg:SetCoords(265, 160, 13, 9)
+        bg:SetInset(6, 4, 6, 4)
+        bg:AddAnchor("TOPLEFT", window, -1, -1)
+        bg:AddAnchor("BOTTOMRIGHT", window, 1, 1)
+        self.bg = bg
+      end
+      self.statusBar:SetBarTexture(TEXTURE_PATH.ACHIEVEMENT, "artwork")
+      self.statusBar:SetBarTextureCoords(0, 146, 332, 7)
+      self.statusBar:SetHeight(7)
+    elseif style == "item_evolving_target" then
+      self.statusBar:SetBarTexture(TEXTURE_PATH.COSPLAY_ENCHANT, "artwork")
+      local coords = {
+        GetTextureInfo(TEXTURE_PATH.COSPLAY_ENCHANT, "gage"):GetCoords()
+      }
+      self.statusBar:SetBarTextureCoords(coords[1], coords[2], coords[3], coords[4])
+      self.statusBar:SetHeight(coords[4])
+      self:SetHeight(coords[4] + 2)
+    elseif style == "item_evolving_material" then
+      if self.bg == nil then
+        local bg = window:CreateThreePartDrawable(TEXTURE_PATH.COSPLAY_ENCHANT, "background")
+        bg:SetTextureInfo("gage_bg")
+        bg:AddAnchor("TOPLEFT", window, -1, -1)
+        bg:AddAnchor("BOTTOMRIGHT", window, 1, 1)
+        self.bg = bg
+      end
+      self.statusBar:SetBarTexture(TEXTURE_PATH.COSPLAY_ENCHANT, "artwork")
+      local coords = {
+        GetTextureInfo(TEXTURE_PATH.COSPLAY_ENCHANT, "grade_01"):GetCoords()
+      }
+      self.statusBar:SetBarTextureCoords(coords[1], coords[2], coords[3], coords[4])
+      self.statusBar:SetHeight(coords[4])
+      self:SetHeight(coords[4] + 2)
+    end
+  end
+  window:SetStyle(style)
+  return window
+end

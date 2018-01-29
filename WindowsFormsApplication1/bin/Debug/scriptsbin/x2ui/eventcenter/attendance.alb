@@ -1,0 +1,247 @@
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+local CreateAttendanceDescWnd = function(id, parent)
+  local wnd = parent:CreateChildWidget("emptywidget", id, 0, true)
+  local bg = wnd:CreateImageDrawable(TEXTURE_PATH.EVENT_CENTER_COMMON, "background")
+  bg:SetTextureInfo("image")
+  bg:AddAnchor("TOP", wnd, 0, 0)
+  local title = wnd:CreateChildWidget("label", "title", 0, true)
+  title:SetAutoResize(true)
+  title:SetHeight(FONT_SIZE.XLARGE)
+  title.style:SetAlign(ALIGN_CENTER)
+  title.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.XLARGE)
+  ApplyTextColor(title, FONT_COLOR.TITLE)
+  title:SetText(GetCommonText("attendance"))
+  title:AddAnchor("TOP", wnd, 0, 30)
+  local desc = wnd:CreateChildWidget("textbox", "desc", 0, true)
+  desc:SetLineSpace(5)
+  desc:SetAutoResize(true)
+  desc:SetWidth(286)
+  desc.style:SetAlign(ALIGN_CENTER)
+  desc.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE)
+  ApplyTextColor(desc, FONT_COLOR.BROWN)
+  desc:SetText(GetCommonText("attendance_desc1"))
+  desc:AddAnchor("TOP", title, "BOTTOM", 0, 20)
+  local desc2 = wnd:CreateChildWidget("textbox", "desc2", 0, true)
+  desc2:SetLineSpace(5)
+  desc2:SetAutoResize(true)
+  desc2:SetWidth(286)
+  desc2.style:SetAlign(ALIGN_CENTER)
+  desc2.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE)
+  ApplyTextColor(desc2, FONT_COLOR.BROWN)
+  desc2:SetText(GetCommonText("attendance_desc2"))
+  desc2:AddAnchor("TOP", desc, "BOTTOM", 0, 23)
+  local additionalRewardWnd = CreateEventCenterAdditionalRewardWnd("additionalRewardWnd", wnd, 4)
+  additionalRewardWnd:AddAnchor("BOTTOM", wnd, 0, -11)
+  local additionalRewardTitle = wnd:CreateChildWidget("label", "title", 0, true)
+  additionalRewardTitle:SetAutoResize(true)
+  additionalRewardTitle:SetHeight(FONT_SIZE.MIDDLE)
+  additionalRewardTitle.style:SetAlign(ALIGN_LEFT)
+  additionalRewardTitle.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE)
+  ApplyTextColor(additionalRewardTitle, FONT_COLOR.BROWN)
+  additionalRewardTitle:SetText(GetCommonText("attendance_additional_reward"))
+  additionalRewardTitle:AddAnchor("BOTTOMLEFT", additionalRewardWnd, "TOPLEFT", 5, -8)
+  local count = wnd:CreateChildWidget("label", "count", 0, true)
+  count:SetAutoResize(true)
+  count:SetHeight(FONT_SIZE.MIDDLE)
+  count.style:SetAlign(ALIGN_RIGHT)
+  count.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE)
+  ApplyTextColor(count, FONT_COLOR.BRIGHT_BULE)
+  count:AddAnchor("BOTTOMRIGHT", additionalRewardWnd, "TOPRIGHT", -5, -8)
+  function wnd:CheckRewardState(attendedDayCount)
+    count:SetText(GetCommonText("attendance_count") .. attendedDayCount)
+    additionalRewardWnd:CheckRewardState(attendedDayCount)
+  end
+  return wnd
+end
+local CreateSingleAttendanceWnd = function(id, idx, parent)
+  local wnd = parent:CreateChildWidget("emptywidget", id, idx, true)
+  local bg = wnd:CreateNinePartDrawable(TEXTURE_PATH.EVENT_CENTER_ATTENDANCE, "background")
+  bg:SetTextureInfo("default_bg")
+  bg:AddAnchor("TOPLEFT", wnd, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", wnd, 0, 0)
+  local stamp = wnd:CreateImageDrawable(TEXTURE_PATH.EVENT_CENTER_ATTENDANCE, "background")
+  stamp:SetTextureInfo("default_stamp")
+  stamp:AddAnchor("LEFT", wnd, 0, 0)
+  local countLabel = wnd:CreateChildWidget("label", "countLabel", 0, true)
+  countLabel:SetAutoResize(true)
+  countLabel:SetHeight(FONT_SIZE.LARGE)
+  countLabel.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.LARGE)
+  ApplyTextColor(countLabel, FONT_COLOR.TITLE)
+  countLabel:AddAnchor("TOPLEFT", wnd, 6, 5)
+  local rewardBtn = CreateItemIconButton("rewardBtn", wnd)
+  rewardBtn:SetExtent(34, 34)
+  rewardBtn:AddAnchor("TOPLEFT", wnd, 57, 21)
+  function wnd:SetBgTexture(key)
+    if key == "complete" then
+      rewardBtn:SetAlpha(1)
+      countLabel:SetAlpha(0.55)
+      ApplyTextColor(countLabel, FONT_COLOR.WHITE)
+    elseif key == "today" then
+      rewardBtn:SetAlpha(0.7)
+      countLabel:SetAlpha(1)
+      ApplyTextColor(countLabel, FONT_COLOR.BLUE)
+    elseif key == "bonus" then
+      rewardBtn:SetAlpha(0.7)
+      countLabel:SetAlpha(0.55)
+      ApplyTextColor(countLabel, FONT_COLOR.MIDDLE_TITLE)
+    elseif key == "default" then
+      rewardBtn:SetAlpha(0.7)
+      countLabel:SetAlpha(1)
+      ApplyTextColor(countLabel, FONT_COLOR.MIDDLE_TITLE)
+    end
+    bg:SetTextureInfo(key .. "_bg")
+    stamp:SetTextureInfo(key .. "_stamp")
+  end
+  function wnd:SetRewardInfo(info)
+    countLabel:SetText(tostring(info.dayCount))
+    rewardBtn:SetItemInfo(info)
+    rewardBtn:SetStack(info.itemCount)
+    local itemInfo = X2Item:GetItemInfoByType(info.itemType)
+    itemInfo.itemGrade = info.itemGrade
+    rewardBtn:SetTooltip(itemInfo)
+  end
+  return wnd
+end
+local listWidth = 547
+local listHeight = 377
+local singleWidth = 107
+local singleHeight = 73
+local vertGap = (listWidth - singleWidth * ATTENDANCE_VER_COUNT) / (ATTENDANCE_VER_COUNT - 1)
+local horiGap = (listHeight - singleHeight * ATTENDANCE_HORI_COUNT) / (ATTENDANCE_HORI_COUNT - 1)
+local attendMax = ATTENDANCE_VER_COUNT * ATTENDANCE_HORI_COUNT
+local function CreateAttendanceListWnd(id, parent)
+  local wnd = parent:CreateChildWidget("emptywidget", id, 0, true)
+  local listWnd = parent:CreateChildWidget("emptywidget", "listWnd", 0, true)
+  listWnd:SetExtent(listWidth, listHeight)
+  listWnd:AddAnchor("BOTTOM", wnd, 0, -51)
+  local monthLabel = wnd:CreateChildWidget("label", "monthLabel", 0, true)
+  monthLabel:SetAutoResize(true)
+  monthLabel:SetHeight(FONT_SIZE.XLARGE)
+  monthLabel.style:SetAlign(ALIGN_LEFT)
+  monthLabel.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.XLARGE)
+  ApplyTextColor(monthLabel, FONT_COLOR.MIDDLE_TITLE)
+  monthLabel:AddAnchor("BOTTOMLEFT", listWnd, "TOPLEFT", 0, -10)
+  local noticeLabel = wnd:CreateChildWidget("label", "noticeLabel", 0, true)
+  noticeLabel:SetAutoResize(true)
+  noticeLabel:SetHeight(FONT_SIZE.MIDDLE)
+  noticeLabel.style:SetAlign(ALIGN_RIGHT)
+  noticeLabel.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE)
+  ApplyTextColor(noticeLabel, FONT_COLOR.DEFAULT)
+  noticeLabel:SetText(GetCommonText("attendance_notice"))
+  noticeLabel:AddAnchor("BOTTOMRIGHT", listWnd, "TOPRIGHT", 0, -10)
+  local attendBtn = wnd:CreateChildWidget("button", "attendBtn", 0, true)
+  attendBtn:AddAnchor("BOTTOMRIGHT", wnd, 0, 0)
+  attendBtn:SetText(GetCommonText("attendance_button"))
+  ApplyButtonSkin(attendBtn, BUTTON_BASIC.DEFAULT)
+  for i = 1, attendMax do
+    local row = math.floor(i / ATTENDANCE_VER_COUNT)
+    local column = math.fmod(i, ATTENDANCE_HORI_COUNT)
+    local singleAttendanceWnd = CreateSingleAttendanceWnd("singleAttendanceWnd", i, listWnd)
+    singleAttendanceWnd:SetExtent(singleWidth, singleHeight)
+    if i == 1 then
+      singleAttendanceWnd:AddAnchor("TOPLEFT", listWnd, 0, 0)
+    elseif column == 1 then
+      singleAttendanceWnd:AddAnchor("TOPLEFT", listWnd, 0, row * singleHeight + (row - 1) * horiGap)
+    else
+      singleAttendanceWnd:AddAnchor("LEFT", listWnd.singleAttendanceWnd[i - 1], "RIGHT", vertGap, 0)
+    end
+  end
+  local months = {
+    GetUIText(COMMON_TEXT, "january"),
+    GetUIText(COMMON_TEXT, "february"),
+    GetUIText(COMMON_TEXT, "march"),
+    GetUIText(COMMON_TEXT, "april"),
+    GetUIText(COMMON_TEXT, "may"),
+    GetUIText(COMMON_TEXT, "june"),
+    GetUIText(COMMON_TEXT, "july"),
+    GetUIText(COMMON_TEXT, "august"),
+    GetUIText(COMMON_TEXT, "september"),
+    GetUIText(COMMON_TEXT, "october"),
+    GetUIText(COMMON_TEXT, "november"),
+    GetUIText(COMMON_TEXT, "december")
+  }
+  function wnd:SetRewardInfos(rewardInfos)
+    local serverTime = X2Time:GetServerTime()
+    monthLabel:SetText(months[serverTime.month])
+    for i = 1, #rewardInfos do
+      if i <= attendMax then
+        listWnd.singleAttendanceWnd[rewardInfos[i].dayCount]:SetRewardInfo(rewardInfos[i])
+        listWnd.singleAttendanceWnd[rewardInfos[i].dayCount]:Show(true)
+      end
+    end
+    if #rewardInfos < #listWnd.singleAttendanceWnd then
+      for i = #rewardInfos + 1, #listWnd.singleAttendanceWnd do
+        listWnd.singleAttendanceWnd[i]:Show(false)
+      end
+    end
+  end
+  function attendBtn:OnClick()
+    X2EventCenter:AddAttendance()
+    attendBtn:Enable(false)
+  end
+  attendBtn:SetHandler("OnClick", attendBtn.OnClick)
+  function wnd:CheckRewardState(attendedDayCount)
+    if attendedDayCount > attendMax then
+      attendedDayCount = attendMax
+    end
+    listWnd.singleAttendanceWnd[attendedDayCount]:SetBgTexture("complete")
+  end
+  function wnd:CheckAttendable(rewardInfos)
+    local attendable = X2EventCenter:CheckAttendable()
+    attendBtn:Enable(attendable)
+    if rewardInfos.attendedDayCount > attendMax then
+      rewardInfos.attendedDayCount = attendMax
+    end
+    for i = 1, #listWnd.singleAttendanceWnd do
+      if i <= rewardInfos.attendedDayCount then
+        listWnd.singleAttendanceWnd[i]:SetBgTexture("complete")
+      elseif i == rewardInfos.attendedDayCount + 1 and attendable then
+        listWnd.singleAttendanceWnd[i]:SetBgTexture("today")
+      elseif rewardInfos[i] == nil then
+        listWnd.singleAttendanceWnd[i]:Show(false)
+      elseif rewardInfos[i].additionalReward ~= nil then
+        listWnd.singleAttendanceWnd[i]:SetBgTexture("bonus")
+      else
+        listWnd.singleAttendanceWnd[i]:SetBgTexture("default")
+      end
+    end
+  end
+  return wnd
+end
+function CreateAttendanceWnd(parent)
+  parent.isAttendanceWnd = true
+  local descWnd = CreateAttendanceDescWnd("attendanceDesc", parent)
+  descWnd:SetWidth(286)
+  descWnd:AddAnchor("TOPLEFT", parent, 0, 16)
+  descWnd:AddAnchor("BOTTOMLEFT", parent, 0, 0)
+  local listWnd = CreateAttendanceListWnd("attendanceListWnd", parent)
+  listWnd:AddAnchor("TOPLEFT", descWnd, "TOPRIGHT", 20, 0)
+  listWnd:AddAnchor("BOTTOMRIGHT", parent, 0, 0)
+  function parent:Init()
+    local rewardInfos = X2EventCenter:GetAttendanceRewardInfos()
+    table.sort(rewardInfos, function(lhs, rhs)
+      return lhs.dayCount < rhs.dayCount and true or false
+    end)
+    local additionalRewardInfos = {}
+    for i = 1, #rewardInfos do
+      if rewardInfos[i].additionalReward ~= nil then
+        table.insert(additionalRewardInfos, rewardInfos[i].additionalReward)
+      end
+    end
+    table.sort(additionalRewardInfos, function(lhs, rhs)
+      return lhs.dayCount < rhs.dayCount and true or false
+    end)
+    descWnd.additionalRewardWnd:SetRewardInfos(additionalRewardInfos)
+    descWnd:CheckRewardState(rewardInfos.attendedDayCount)
+    listWnd:SetRewardInfos(rewardInfos)
+    listWnd:CheckAttendable(rewardInfos)
+  end
+  UIParent:SetEventHandler("ACCOUNT_ATTENDANCE_LOADED", parent.Init)
+  function parent:CheckRewardState()
+    local attendedDayCount = X2EventCenter:GetAttendedDayCount()
+    descWnd:CheckRewardState(attendedDayCount)
+    listWnd:CheckRewardState(attendedDayCount)
+  end
+  UIParent:SetEventHandler("ACCOUNT_ATTENDANCE_ADDED", parent.CheckRewardState)
+  parent:Init()
+end

@@ -1,0 +1,64 @@
+if X2Util:GetGameProvider() == GAMEON then
+  BATTLE_FIELD_ROUND_COUNT = {
+    {
+      300,
+      344,
+      26,
+      60
+    },
+    {
+      360,
+      344,
+      43,
+      60
+    },
+    {
+      420,
+      344,
+      41,
+      60
+    },
+    {
+      0,
+      404,
+      40,
+      60
+    },
+    {
+      60,
+      404,
+      40,
+      60
+    },
+    {
+      120,
+      404,
+      40,
+      60
+    },
+    {
+      180,
+      404,
+      39,
+      60
+    },
+    {
+      240,
+      404,
+      41,
+      60
+    },
+    {
+      300,
+      404,
+      40,
+      60
+    }
+  }
+  ROUND_RESULT_STRING_ORDER = {
+    COUNT = 2,
+    ROUND = 1,
+    RESULT = 3
+  }
+  ENTER_BUTTON_ENABLE_ALWAYS = false
+end

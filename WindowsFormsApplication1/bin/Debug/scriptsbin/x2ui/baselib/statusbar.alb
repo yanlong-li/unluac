@@ -1,0 +1,136 @@
+function CreateExpBar(id, parent)
+  parent = parent or "UIParent"
+  local window = SetViewOfExpBar(id, parent)
+  function window:SetOrientation(arg)
+    self.statusBar:SetOrientation(arg)
+  end
+  function window:SetMinMaxValues(_min, _max)
+    self.statusBar:SetMinMaxValues(_min, _max)
+  end
+  function window:SetValue(value)
+    self.statusBar:SetValue(value)
+  end
+  return window
+end
+function CreateLaborPowerBar(id, parent)
+  local window = SetViewOfLaborPowerBar(id, parent)
+  function window:SetMinMaxValues(_min, _max)
+    self.statusBar:SetMinMaxValues(_min, _max)
+  end
+  function window:SetValue(value)
+    self.statusBar:SetValue(value)
+  end
+  return window
+end
+function CreateHpBar(id, parent)
+  parent = parent or "UIParent"
+  local window = SetViewOfHpBar(id, parent)
+  function window:SetMinMaxValues(_min, _max)
+    self.hp:SetMinMaxValues(_min, _max)
+  end
+  function window:SetValue(arg)
+    self.hp:SetValue(arg)
+  end
+  function window:GetValue()
+    return self.hp:GetValue()
+  end
+  local function OnEnter(self)
+    local hpValue = string.format("%d / %d", X2Unit:UnitHealth(parent.target), X2Unit:UnitMaxHealth(parent.target))
+    SetTooltip(hpValue, self)
+  end
+  window:SetHandler("OnEnter", OnEnter)
+  return window
+end
+function CreateSkillBar(id, parent)
+  parent = parent or "UIParent"
+  local window = SetViewOfSkillBar(id, parent)
+  function window:SetMinMaxValues(_min, _max)
+    self.statusBar:SetMinMaxValues(_min, _max)
+  end
+  function window:SetValue(arg)
+    self.statusBar:SetValue(arg)
+  end
+  return window
+end
+function CreateStatusBarOfUnitFrame(id, parent, barType)
+  parent = parent or "UIParent"
+  local w = SetViewOfStatusBarOfUnitFrame(id, parent, barType)
+  function w:OnLeave()
+    if barType ~= "level" then
+      HideTooltip()
+    end
+  end
+  w:SetHandler("OnLeave", w.OnLeave)
+  function w:OnEnter()
+    if parent.target == nil then
+      parent.target = "player"
+    end
+    local value
+    if barType == "hp" then
+      value = string.format("%d / %d", X2Unit:UnitHealth(parent.target), X2Unit:UnitMaxHealth(parent.target))
+    elseif barType == "mp" then
+      value = string.format("%d / %d", X2Unit:UnitMana(parent.target), X2Unit:UnitMaxMana(parent.target))
+    elseif barType == "laborPower" and self.tip ~= nil then
+      SetTooltip(self.tip.levelPercent .. " %", self)
+    end
+    SetTooltip(value, self)
+  end
+  w:SetHandler("OnEnter", w.OnEnter)
+  return w
+end
+function CreateStatusBarOfRaidFrame(id, parent, barType)
+  parent = parent or "UIParent"
+  local w = SetViewOfStatusBarOfRaidFrame(id, parent, barType)
+  function w:OnLeave()
+    if barType ~= "level" then
+      HideTooltip()
+    end
+  end
+  w:SetHandler("OnLeave", w.OnLeave)
+  function w:OnEnter()
+    if parent.target == nil then
+      parent.target = "player"
+    end
+    local value
+    if barType == "hp" then
+      value = string.format("%d / %d", X2Unit:UnitHealth(parent.target), X2Unit:UnitMaxHealth(parent.target))
+    elseif barType == "mp" then
+      value = string.format("%d / %d", X2Unit:UnitMana(parent.target), X2Unit:UnitMaxMana(parent.target))
+    elseif barType == "laborPower" and self.tip ~= nil then
+      SetTooltip(self.tip.levelPercent .. " %", self)
+    end
+    SetTooltip(value, self, false)
+  end
+  w:SetHandler("OnEnter", w.OnEnter)
+  return w
+end
+function CreateStatusBar(id, parent, style)
+  local frame = SetViewOfStatusBar(id, parent, style)
+  function frame:SetMinMaxValues(_min, _max)
+    self.statusBar:SetMinMaxValues(_min, _max)
+  end
+  function frame:SetBarColor(color)
+    self.statusBar:SetBarColor(color[1], color[2], color[3], color[4])
+  end
+  function frame:SetBarTextureCoords(texturePath, coordsKey, bgCoordsKey)
+    if self.bg == nil then
+      local bg = self:CreateThreePartDrawable(texturePath, "background")
+      local bgTexInfo = GetTextureInfo(texturePath, bgCoordsKey)
+      bg:SetCoords(bgTexInfo:GetCoords())
+      local bgTexInset = bgTexInfo:GetInset()
+      bg:SetInset(bgTexInset[1], bgTexInset[2], bgTexInset[3], bgTexInset[4])
+      bg:AddAnchor("TOPLEFT", self, -1, -1)
+      bg:AddAnchor("BOTTOMRIGHT", self, 1, 1)
+      self.bg = bg
+    end
+    self.statusBar:SetBarTexture(texturePath, "artwork")
+    local coords = {
+      GetTextureInfo(texturePath, coordsKey):GetCoords()
+    }
+    self.statusBar:SetBarTextureCoords(coords[1], coords[2], coords[3], coords[4])
+  end
+  function frame:SetValue(value)
+    self.statusBar:SetValue(value)
+  end
+  return frame
+end

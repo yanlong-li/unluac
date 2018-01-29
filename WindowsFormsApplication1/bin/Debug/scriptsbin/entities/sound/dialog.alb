@@ -1,0 +1,170 @@
+Dialog = {
+  type = "Dialog",
+  Properties = {
+    dialogLine = "",
+    bPlay = 0,
+    bOnce = 0,
+    bEnabled = 1,
+    bAllowRadioOverDistance = 0,
+    bIgnoreCulling = 0,
+    bIgnoreObstruction = 0
+  },
+  bBlockNow = 0,
+  Editor = {
+    Model = "Editor/Objects/Sound.cgf",
+    Icon = "Dialog.bmp"
+  },
+  bEnabled = 1
+}
+function Dialog:OnSpawn()
+  if System.IsEditor() then
+    Sound.Precache(self.Properties.dialogLine, SOUND_PRECACHE_LOAD_UNLOAD_AFTER_PLAY)
+  end
+end
+function Dialog:OnSave(save)
+  save.bBlockNow = self.bBlockNow
+  save.bEnabled = self.bEnabled
+  save.bIgnoreCulling = self.Properties.bIgnoreCulling
+  save.bIgnoreObstruction = self.Properties.bIgnoreObstruction
+end
+function Dialog:OnLoad(load)
+  self.bBlockNow = load.bBlockNow
+  self.bEnabled = load.bEnabled
+  self.Properties.bIgnoreCulling = load.bIgnoreCulling
+  self.Properties.bIgnoreObstruction = load.bIgnoreObstruction
+  if self.bPlay then
+    self:Play()
+  end
+end
+function Dialog:OnPropertyChange()
+  self:OnReset()
+end
+function Dialog:OnReset()
+  self.bBlockNow = 0
+  self.bEnabled = self.Properties.bEnabled
+  self:Stop()
+  if self.Properties.bPlay ~= 0 then
+    self:Play()
+  end
+end
+Dialog.Server = {
+  OnInit = function(self)
+    self.bBlockNow = 0
+    self:NetPresent(0)
+  end,
+  OnShutDown = function(self)
+  end
+}
+Dialog.Client = {
+  OnInit = function(self)
+    self.bBlockNow = 0
+    self.dialogLine = ""
+    self.soundid = nil
+    self:NetPresent(0)
+    if self.Properties.bPlay == 1 then
+      self:Play()
+    end
+  end,
+  OnShutDown = function(self)
+    self:Stop()
+  end,
+  OnSoundDone = function(self)
+    self:ActivateOutput("Done", true)
+  end
+}
+function Dialog:Play()
+  if self.bEnabled == 0 then
+    return
+  end
+  if self.soundid ~= nil then
+    self:Stop()
+  end
+  if self.bBlockNow == 1 then
+    return
+  end
+  local sndFlags = bor(SOUND_EVENT, SOUND_VOICE)
+  sndFlags = bor(sndFlags, SOUND_START_PAUSED)
+  if self.Properties.bIgnoreCulling == 0 then
+    sndFlags = bor(sndFlags, SOUND_CULLING)
+  end
+  if self.Properties.bIgnoreObstruction == 0 then
+    sndFlags = bor(sndFlags, SOUND_OBSTRUCTION)
+  end
+  self.soundid = self:PlaySoundEvent(self.Properties.dialogLine, g_Vectors.v000, g_Vectors.v010, sndFlags, SOUND_SEMANTIC_DIALOG)
+  self.dialogLine = self.Properties.dialogLine
+  if self.soundid ~= nil then
+    local bIsVoice = Sound.IsVoice(self.soundid)
+    if not bIsVoice then
+      System.LogToConsole("<Sound> Dialog: (" .. self:GetName() .. ") trys to play " .. self.dialogLine .. ". Cannot play non Voices on Dialog Entity!")
+      self:Stop()
+    else
+      Sound.SetSoundPaused(self.soundid, 0)
+    end
+  end
+  if self.Properties.bOnce == 1 then
+    self.bBlockNow = 1
+  end
+end
+function Dialog:Stop()
+  if self.soundid ~= nil then
+    self:StopSound(self.soundid)
+    self.soundid = nil
+  end
+end
+function Dialog:Event_Play(sender)
+  if self.soundid ~= nil then
+    self:Stop()
+  end
+  self:Play()
+end
+function Dialog:Event_DialogLine(sender, sDialogLine)
+  self.Properties.dialogLine = sDialogLine
+  self:OnPropertyChange()
+end
+function Dialog:Event_Enable(sender)
+  self.Properties.bEnabled = true
+  self:OnPropertyChange()
+end
+function Dialog:Event_Disable(sender)
+  self.Properties.bEnabled = false
+  self:OnPropertyChange()
+end
+function Dialog:Event_Stop(sender)
+  self:Stop()
+end
+function Dialog:Event_Once(sender, bOnce)
+  if bOnce == true then
+    self.Properties.bOnce = 1
+  else
+    self.Properties.bOnce = 0
+  end
+end
+Dialog.FlowEvents = {
+  Inputs = {
+    dialog_DialogLine = {
+      Dialog.Event_DialogLine,
+      "string"
+    },
+    Enable = {
+      Dialog.Event_Enable,
+      "bool"
+    },
+    Disable = {
+      Dialog.Event_Disable,
+      "bool"
+    },
+    Play = {
+      Dialog.Event_Play,
+      "bool"
+    },
+    Stop = {
+      Dialog.Event_Stop,
+      "bool"
+    },
+    Once = {
+      Dialog.Event_Once,
+      "bool"
+    }
+  },
+  Outputs = {Done = "bool"}
+}

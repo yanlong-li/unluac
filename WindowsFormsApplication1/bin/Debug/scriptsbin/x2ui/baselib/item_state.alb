@@ -1,0 +1,332 @@
+local IsBigTargetIconSize = function(iconSize, targetSize)
+  iconSize = iconSize + 0.5
+  return targetSize > iconSize
+end
+function CreateDestroyIcon(widget, layer)
+  if layer == nil then
+    layer = "overlay"
+  end
+  local destroyIcon = widget:CreateIconImageDrawable("ui/icon/item_slot/broken_slave.dds", layer)
+  destroyIcon:SetVisible(false)
+  destroyIcon:SetColor(1, 1, 1, 0.8)
+  destroyIcon:SetCoords(0, 0, 48, 48)
+  destroyIcon:SetExtent(48, 48)
+  destroyIcon:AddAnchor("TOPLEFT", widget, 1, 1)
+  destroyIcon:AddAnchor("BOTTOMRIGHT", widget, -1, -1)
+  widget.destroyIcon = destroyIcon
+  function widget:SetDestroyInfo(info)
+    self.destroyIcon:SetVisible(false)
+    if IsBigTargetIconSize(self:GetWidth(), ICON_SIZE.APPELLAITON) then
+      return
+    end
+    if info == nil then
+      return
+    end
+    if info.item_impl == nil or info.dead == nil then
+      return
+    end
+    if info.item_impl ~= "summon_slave" and info.item_impl ~= "slave_equipment" then
+      return
+    end
+    self.destroyIcon:SetVisible(info.dead)
+  end
+end
+function CreatePackIcon(widget, layer)
+  if layer == nil then
+    layer = "overlay"
+  end
+  local packIcon = widget:CreateIconImageDrawable("ui/icon/item_slot/packing.dds", layer)
+  packIcon:SetVisible(false)
+  packIcon:SetCoords(0, 0, 48, 48)
+  packIcon:SetExtent(48, 48)
+  packIcon:AddAnchor("TOPLEFT", widget, 1, 1)
+  packIcon:AddAnchor("BOTTOMRIGHT", widget, -1, -1)
+  widget.packIcon = packIcon
+  function widget:SetPackInfo(info)
+    self.packIcon:SetVisible(false)
+    if info == nil then
+      return
+    end
+    if info.needsUnpack == nil then
+      return
+    end
+    self.packIcon:SetVisible(info.needsUnpack)
+  end
+end
+function CreateLifeTimeIcon(widget, layer)
+  if layer == nil then
+    layer = "overlay"
+  end
+  local lifeTimeIcon = widget:CreateImageDrawable(TEXTURE_PATH.HUD, layer)
+  lifeTimeIcon:SetVisible(false)
+  lifeTimeIcon:SetTextureInfo("icon_clock")
+  lifeTimeIcon:AddAnchor("TOPLEFT", widget, 1, 2)
+  widget.lifeTimeIcon = lifeTimeIcon
+  function widget:SetLifeTimeIcon(info)
+    self.lifeTimeIcon:SetVisible(false)
+    if IsBigTargetIconSize(self:GetWidth(), ICON_SIZE.AUCTION) then
+      return
+    end
+    if info == nil then
+      return
+    end
+    if info.lifeSpan == nil then
+      return
+    end
+    self.lifeTimeIcon:SetVisible(true)
+  end
+end
+function CreateLookIcon(widget, layer)
+  if layer == nil then
+    layer = "overlay"
+  end
+  local lookIcon = widget:CreateImageDrawable(TEXTURE_PATH.HUD, layer)
+  lookIcon:SetVisible(false)
+  lookIcon:SetTextureInfo("material")
+  lookIcon:AddAnchor("BOTTOMLEFT", widget, 1, -2)
+  widget.lookIcon = lookIcon
+  function widget:SetLookIcon(info)
+    self.lookIcon:SetVisible(false)
+    if IsBigTargetIconSize(self:GetWidth(), ICON_SIZE.AUCTION) then
+      return
+    end
+    if info == nil then
+      return
+    end
+    if info.lookChanged then
+      self.lookIcon:SetVisible(true)
+      self.lookIcon:SetTextureInfo("complete")
+    end
+    if info.useAsSkin then
+      self.lookIcon:SetVisible(true)
+      self.lookIcon:SetTextureInfo("material")
+    end
+  end
+end
+function CreateLockIcon(widget, layer)
+  if layer == nil then
+    layer = "overlay"
+  end
+  local lockIcon = widget:CreateImageDrawable(TEXTURE_PATH.HUD, layer)
+  lockIcon:SetVisible(false)
+  lockIcon:SetTextureInfo("unlock_pink")
+  lockIcon:AddAnchor("CENTER", widget, 0, 0)
+  widget.lockIcon = lockIcon
+  function widget:SetLockInfo(info)
+    self.lockIcon:SetVisible(false)
+    if IsBigTargetIconSize(self:GetWidth(), ICON_SIZE.AUCTION) then
+      return
+    end
+    if info == nil then
+      return ICON_BUTTON_OVERLAY_COLOR.NONE
+    end
+    if info.securityState == nil then
+      return ICON_BUTTON_OVERLAY_COLOR.NONE
+    end
+    if info.securityState == ITEM_SECURITY_UNLOCKED then
+      return ICON_BUTTON_OVERLAY_COLOR.NONE
+    end
+    self.lockIcon:SetVisible(true)
+    if info.securityState == ITEM_SECURITY_LOCKED then
+      self.lockIcon:SetTextureInfo("lock_blue")
+    elseif info.securityState == ITEM_SECURITY_UNLOCKING then
+      self.lockIcon:SetTextureInfo("unlock_pink")
+    end
+    return ICON_BUTTON_OVERLAY_COLOR.BLACK
+  end
+end
+function CreateDyeingIcon(widget, layer)
+  if layer == nil then
+    layer = "overlay"
+  end
+  local dyeingIcon = widget:CreateImageDrawable(TEXTURE_PATH.HUD, layer)
+  dyeingIcon:SetVisible(false)
+  dyeingIcon:SetCoords(540, 432, 10, 10)
+  dyeingIcon:SetExtent(10, 10)
+  dyeingIcon:AddAnchor("TOPRIGHT", widget, -2, 2)
+  widget.dyeingIcon = dyeingIcon
+  function widget:SetDyeingInfo(info)
+    self.dyeingIcon:SetVisible(false)
+    if IsBigTargetIconSize(self:GetWidth(), ICON_SIZE.AUCTION) then
+      return
+    end
+    if info == nil then
+      return
+    end
+    if info.dyeingType == nil then
+      return
+    end
+    local dInfo = X2Item:GetItemInfoByType(info.dyeingType, 0, IIK_NAME + IIK_DYEING_COLOR)
+    if dInfo == nil then
+      return
+    end
+    self.dyeingIcon:SetVisible(true)
+    self.dyeingIcon:SetColor(dInfo.dyeingRed, dInfo.dyeingGreen, dInfo.dyeingBlue, 1)
+  end
+end
+function CreateStack(widget)
+  local stack = widget:CreateChildWidget("label", "stack", 0, true)
+  stack:AddAnchor("BOTTOMRIGHT", widget, -4, -9)
+  stack.style:SetShadow(true)
+  stack:SetAutoResize(true)
+  stack:SetNumberOnly(true)
+  stack.style:SetAlign(ALIGN_RIGHT)
+  stack.style:SetFontSize(FONT_SIZE.SMALL)
+  stack:Raise()
+  function widget:SetStack(stackCount, requireCount)
+    stackCount = tonumber(stackCount) or 0
+    requireCount = tonumber(requireCount) or 0
+    if requireCount ~= 0 then
+      self.stack:SetNumberOnly(false)
+      self.stack:SetText(string.format("%d/%d", stackCount, requireCount))
+      if stackCount < requireCount then
+        ApplyTextColor(self.stack, FONT_COLOR.RED)
+      else
+        ApplyTextColor(self.stack, FONT_COLOR.WHITE)
+      end
+      self.stack:RemoveAllAnchors()
+      self.stack:AddAnchor("BOTTOM", self, 0, -9)
+    else
+      if tonumber(stackCount) <= 1 then
+        self.stack:SetText("")
+        return
+      end
+      self.stack:SetNumberOnly(true)
+      self.stack:SetText(tostring(stackCount))
+      self.stack:RemoveAllAnchors()
+      self.stack:AddAnchor("BOTTOMRIGHT", self, -4, -9)
+    end
+    self.stack.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.SMALL)
+  end
+  function widget:ResetStack()
+    if self.stack ~= nil then
+      self.stack:SetText("")
+    end
+  end
+  return stack
+end
+function CreateLimitLevel(widget)
+  local limitLevel = widget:CreateTextDrawable(FONT_PATH.DEFAULT, FONT_SIZE.XLARGE, "overlay")
+  limitLevel:SetExtent(FONT_SIZE.XLARGE, FONT_SIZE.XLARGE)
+  limitLevel:SetVisible(false)
+  limitLevel.style:SetAlign(ALIGN_CENTER)
+  limitLevel.style:SetShadow(true)
+  limitLevel:AddAnchor("CENTER", widget, 0, 0)
+  ApplyTextColor(limitLevel, FONT_COLOR.SOFT_RED)
+  widget.limitLevel = limitLevel
+  function widget:ProcessRequireLevelCheck(itemType)
+    self.limitLevel:SetVisible(false)
+    if IsBigTargetIconSize(self:GetWidth(), ICON_SIZE.APPELLAITON) then
+      return
+    end
+    if itemType == nil or itemType == 0 then
+      return ICON_BUTTON_OVERLAY_COLOR.NONE
+    end
+    local requireLevel = X2Item:GetLevelRequirement(itemType) or 0
+    if requireLevel == 0 then
+      return ICON_BUTTON_OVERLAY_COLOR.NONE
+    end
+    local playerLevel = X2Unit:UnitLevel("player")
+    if playerLevel == nil then
+      playerLevel = 1
+    end
+    self.limitLevel:SetVisible(requireLevel > playerLevel)
+    if requireLevel > playerLevel then
+      self.limitLevel:SetText(tostring(requireLevel))
+      return ICON_BUTTON_OVERLAY_COLOR.BLACK
+    else
+      return ICON_BUTTON_OVERLAY_COLOR.NONE
+    end
+  end
+end
+function CreateOverlayStateImg(widget, layer)
+  if layer == nil then
+    layer = "artwork"
+  end
+  local overlay = widget:CreateColorDrawable(0, 0, 0, 0, layer)
+  overlay:AddAnchor("TOPLEFT", widget, 1, 1)
+  overlay:AddAnchor("BOTTOMRIGHT", widget, -1, -1)
+  widget.overlay = overlay
+  function widget:SetOverlayColor(color)
+    if color == ICON_BUTTON_OVERLAY_COLOR.RED then
+      self.overlay:SetColor(ConvertColor(137), ConvertColor(0), ConvertColor(0), 0.6)
+    elseif color == ICON_BUTTON_OVERLAY_COLOR.YELLOW then
+      self.overlay:SetColor(ConvertColor(198), ConvertColor(165), ConvertColor(34), 0.35)
+    elseif color == ICON_BUTTON_OVERLAY_COLOR.BLACK then
+      self.overlay:SetColor(0, 0, 0, 0.5)
+    elseif color == ICON_BUTTON_OVERLAY_COLOR.NONE then
+      self.overlay:SetColor(0, 0, 0, 0)
+    end
+  end
+  function widget:OverlayInvisible()
+    local colorTable = self.overlay:GetColor()
+    if colorTable[4] ~= 0 then
+      self.overlay:SetColor(0, 0, 0, 0)
+    end
+  end
+  function widget:ProcessDurabilityColor(info)
+    if info == nil then
+      return ICON_BUTTON_OVERLAY_COLOR.NONE
+    end
+    local durability = info.durability
+    local maxDurability = info.maxDurability
+    if maxDurability == nil or maxDurability == 0 then
+      return ICON_BUTTON_OVERLAY_COLOR.NONE
+    end
+    local percent = durability / maxDurability
+    if percent > 0.25 then
+      return ICON_BUTTON_OVERLAY_COLOR.NONE
+    end
+    if percent > 0 then
+      return ICON_BUTTON_OVERLAY_COLOR.YELLOW
+    end
+    return ICON_BUTTON_OVERLAY_COLOR.RED
+  end
+  function widget:SetOverlay(info)
+    self:OverlayInvisible()
+    if info == nil then
+      return
+    end
+    local color = ICON_BUTTON_OVERLAY_COLOR.NONE
+    local function SetColor(newColor)
+      if newColor == ICON_BUTTON_OVERLAY_COLOR.NONE then
+        return
+      end
+      color = newColor
+    end
+    if self.SetLockInfo ~= nil then
+      SetColor(self:SetLockInfo(info))
+    end
+    if self.ProcessRequireLevelCheck ~= nil then
+      SetColor(self:ProcessRequireLevelCheck(info.itemType))
+    end
+    if self.ProcessExpeditionLevelCheck ~= nil then
+      SetColor(self:ProcessExpeditionLevelCheck(info.itemType))
+    end
+    SetColor(self:ProcessDurabilityColor(info))
+    self:SetOverlayColor(color)
+  end
+end
+function CreateOpenPaperItemIcon(widget, layer)
+  if layer == nil then
+    layer = "overlay"
+  end
+  local paperIcon = widget:CreateImageDrawable(TEXTURE_PATH.HUD, layer)
+  paperIcon:SetVisible(false)
+  paperIcon:SetTextureInfo("readable")
+  paperIcon:AddAnchor("BOTTOMLEFT", widget, 2, -2)
+  widget.paperIcon = paperIcon
+  function widget:SetPaperInfo(info)
+    self.paperIcon:SetVisible(false)
+    if IsBigTargetIconSize(self:GetWidth(), ICON_SIZE.AUCTION) then
+      return
+    end
+    if info == nil then
+      return
+    end
+    if info.item_impl ~= "open_paper" then
+      return
+    end
+    self.paperIcon:SetVisible(true)
+  end
+end

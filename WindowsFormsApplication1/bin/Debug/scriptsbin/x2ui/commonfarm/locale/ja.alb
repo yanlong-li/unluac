@@ -1,0 +1,14 @@
+if X2Util:GetGameProvider() == GAMEON then
+  commonFarmLocale.contentFontSize = FONT_SIZE.SMALL
+  commonFarmLocale.infoWindowWidth = 600
+  commonFarmLocale.myFarm = {
+    windowWidth = 680,
+    colWidth = {
+      185,
+      260,
+      140,
+      55
+    }
+  }
+  commonFarmLocale.itemLineSpace = 0
+end

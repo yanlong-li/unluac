@@ -1,0 +1,14 @@
+if inventoryLocale == nil then
+  inventoryLocale = {}
+end
+inventoryLocale.guideLineSpace = 19
+inventoryLocale.guideInset = {
+  0,
+  0,
+  0,
+  0
+}
+inventoryLocale.gradeEnchant = {defaultWarningTextAnchor = 17}
+inventoryLocale.evolving = {
+  resultWndWidthPercent = {name = 0.25, value = 0.75}
+}

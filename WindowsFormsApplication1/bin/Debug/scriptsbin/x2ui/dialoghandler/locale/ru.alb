@@ -1,0 +1,10 @@
+if X2Util:GetGameProvider() == MAILRU then
+  function dialogLocale:LayoutChangeImprisionOrTrial(wnd, btnOk, btnCancel)
+    btnOk:SetWidth(BUTTON_SIZE.DEFAULT_LARGE.WIDTH)
+    btnOk:RemoveAllAnchors()
+    btnOk:AddAnchor("BOTTOM", wnd, -65, BUTTON_COMMON_INSET.MESSAGEBOX_BOTTOM)
+    btnCancel:SetWidth(BUTTON_SIZE.DEFAULT_LARGE.WIDTH)
+    btnCancel:RemoveAllAnchors()
+    btnCancel:AddAnchor("BOTTOM", wnd, 65, BUTTON_COMMON_INSET.MESSAGEBOX_BOTTOM)
+  end
+end

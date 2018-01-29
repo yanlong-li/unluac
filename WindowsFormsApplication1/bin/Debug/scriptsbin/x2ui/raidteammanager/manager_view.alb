@@ -1,0 +1,55 @@
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+local MAX_RAID_PARTIES = X2Team:GetMaxParties()
+function SetViewOfRaidTeamManagerFrame(id, parent)
+  local w = CreateWindow(id, parent)
+  w:Show(false)
+  w:SetExtent(600, 395)
+  w:AddAnchor("CENTER", "UIParent", 0, 0)
+  w:SetTitle(locale.raid.title)
+  w:SetCloseOnEscape(true)
+  w:SetSounds("raid_team")
+  local dismissRaidBtn = w:CreateChildWidget("button", "dismissRaidBtn", 0, true)
+  dismissRaidBtn:AddAnchor("BOTTOMRIGHT", w, -sideMargin, -sideMargin)
+  dismissRaidBtn:SetText(locale.raid.dismissRaid)
+  ApplyButtonSkin(dismissRaidBtn, BUTTON_BASIC.DEFAULT)
+  dismissRaidBtn:Show(false)
+  local changeToRaidBtn = w:CreateChildWidget("button", "changeToRaidBtn", 0, true)
+  changeToRaidBtn:AddAnchor("BOTTOMRIGHT", w, -sideMargin, -sideMargin)
+  changeToRaidBtn:SetText(GetUIText(TEAM_TEXT, "change_to_raid"))
+  ApplyButtonSkin(changeToRaidBtn, BUTTON_BASIC.DEFAULT)
+  local rangeInviteBtn = w:CreateChildWidget("button", "rangeInviteBtn", 0, true)
+  rangeInviteBtn:AddAnchor("RIGHT", changeToRaidBtn, "LEFT", 0, 0)
+  rangeInviteBtn:SetText(GetUIText(TEAM_TEXT, "range_invite"))
+  ApplyButtonSkin(rangeInviteBtn, BUTTON_BASIC.DEFAULT)
+  local buttonTable = {
+    dismissRaidBtn,
+    changeToRaidBtn,
+    rangeInviteBtn
+  }
+  AdjustBtnLongestTextWidth(buttonTable)
+  local raidOptionBtn = w:CreateChildWidget("button", "raidOptionBtn", 0, true)
+  raidOptionBtn:AddAnchor("BOTTOMLEFT", w, sideMargin, -sideMargin)
+  raidOptionBtn:SetText(locale.raid.option)
+  ApplyButtonSkin(raidOptionBtn, BUTTON_BASIC.DEFAULT)
+  local raidRoleBtn = w:CreateChildWidget("button", "raidRoleBtn", 0, true)
+  raidRoleBtn:AddAnchor("LEFT", raidOptionBtn, "RIGHT", 0, 0)
+  raidRoleBtn:SetText(locale.raid.setMyRole)
+  ApplyButtonSkin(raidRoleBtn, BUTTON_BASIC.DEFAULT)
+  local buttonTable = {raidOptionBtn, raidRoleBtn}
+  AdjustBtnLongestTextWidth(buttonTable)
+  local raidOptionFrame = CreateRaidOptionFrame(id .. ".raidOptionFrame", raidOptionBtn)
+  w.raidOptionFrame = raidOptionFrame
+  local raidRoleFrame = CreateRaidRoleFrame(id .. ".raidRoleFrame", raidRoleBtn)
+  w.raidRoleFrame = raidRoleFrame
+  local party = {}
+  for i = 1, MAX_RAID_PARTIES do
+    party[i] = CreateRaidTeamManagerParty(id .. ".party[" .. i .. "]", w, i)
+    if i < 6 then
+      party[i]:AddAnchor("TOPLEFT", w, sideMargin + (i - 1) * (RAID_TEAM_MANAGER_PARTY_WIDTH + sideMargin / 1.3), titleMargin * 1.5)
+    else
+      party[i]:AddAnchor("TOPLEFT", party[i - 5], "BOTTOMLEFT", 0, sideMargin * 1.5)
+    end
+  end
+  w.party = party
+  return w
+end

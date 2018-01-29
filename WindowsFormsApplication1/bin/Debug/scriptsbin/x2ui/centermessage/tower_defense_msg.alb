@@ -1,0 +1,53 @@
+local towerDefenseMsg
+local function CreateTowerDefenseMsg(id, parent)
+  local frame = CreateCenterMessageFrame(id, parent, "TYPE1")
+  frame:EnableHidingIsRemove(true)
+  frame.iconBg:RemoveAllAnchors()
+  frame.iconBg:AddAnchor("BOTTOM", frame.bg, "TOP", 0, MARGIN.WINDOW_SIDE)
+  local title = frame:CreateChildWidget("textbox", "title", 0, true)
+  title:SetAutoResize(true)
+  title:AddAnchor("TOP", frame.bg, 0, MARGIN.WINDOW_SIDE)
+  title:SetExtent(frame:GetWidth(), FONT_SIZE.XLARGE)
+  title.style:SetFontSize(FONT_SIZE.XLARGE)
+  title.style:SetShadow(true)
+  frame.body:SetWidth(1000)
+  frame.body:SetLineSpace(3)
+  frame.body:AddAnchor("TOP", title, "BOTTOM", 0, MARGIN.WINDOW_SIDE / 3)
+  frame.body.style:SetFontSize(FONT_SIZE.LARGE)
+  local function OnEndFadeOut()
+    towerDefenseMsg = nil
+    StartNextImgEvent()
+  end
+  frame:SetHandler("OnEndFadeOut", OnEndFadeOut)
+  function frame:FillMsg(text, title)
+    self.title:SetText(title)
+    self.body:SetText(text)
+    self.body:SetExtent(self.body:GetLongestLineWidth() + 5, self.body:GetTextHeight())
+  end
+  return frame
+end
+function ShowTowerDefenseMessage(text, title, path, iconKey)
+  if towerDefenseMsg == nil then
+    towerDefenseMsg = CreateTowerDefenseMsg("towerDefenseMsg", systemLayerParent)
+  end
+  local color = FONT_COLOR.NOTICE_ORANGE
+  towerDefenseMsg.icon:RemoveAllAnchors()
+  towerDefenseMsg.icon:AddAnchor("BOTTOM", towerDefenseMsg.bg, "TOP", 0, 31)
+  towerDefenseMsg.icon:SetVisible(false)
+  towerDefenseMsg.iconBg:SetVisible(false)
+  local iconPath = string.format(path, iconKey)
+  if X2:IsExistFileInAFS(iconPath) then
+    towerDefenseMsg.icon:SetTexture(iconPath)
+    towerDefenseMsg.icon:SetTextureInfo(iconKey)
+    towerDefenseMsg.icon:SetVisible(true)
+    towerDefenseMsg.iconBg:SetVisible(true)
+  else
+    UIParent:Warning(string.format("[Lua Error] can't find icon image.. [%s]", tostring(iconPath)))
+  end
+  towerDefenseMsg:FillMsg(text, title)
+  towerDefenseMsg:Show(true)
+  towerDefenseMsg:ReleaseHandler("OnUpdate")
+  SetHandlerOnUpdate(towerDefenseMsg)
+  towerDefenseMsg:SetHandler("OnUpdate", towerDefenseMsg.OnUpdate)
+  return true
+end

@@ -1,0 +1,935 @@
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+local function CreateMaintainHousingFrame(id, parent)
+  local frame = SetViewOfMaintainHousingFrame(id, parent)
+  local changeNameButton = frame.changeNameButton
+  local demolishImgButton = frame.demolishImgButton
+  local packageDemolishImgButton = frame.packageDemolishImgButton
+  local registerSellImgButton = frame.registerSellImgButton
+  local rebuildButton = frame.rebuildButton
+  local furnitureCheckbox = frame.furnitureCheckbox
+  local warningText = frame.warningText
+  local okButton = frame.okButton
+  local furnitureCountGuide = frame.furnitureCount.guide
+  local decoActabilityButton = frame.furnitureCount.decoActabilityButton
+  local prepayButton = frame.contentTaxInfo.prepayButton
+  local rebuildBtnEnable = false
+  frame.decoActabilitywindow = nil
+  frame.sellRegisterWindow = nil
+  frame.prepayWindow = nil
+  for i = 1, 4 do
+    local checkBox = frame.checkBoxes[i]
+    function checkBox:RadioBtnCheckChangedProc()
+      frame.checkIndex = self.index
+    end
+  end
+  local OnEnter = function(self)
+    SetTooltip(X2Locale:LocalizeUiText(HOUSING_TEXT, "furniture_lock_tip"), self)
+  end
+  furnitureCheckbox.textButton:SetHandler("OnEnter", OnEnter)
+  local OnEnterRegisterSellImgButton = function(self)
+    if self:IsEnabled() then
+      SetTooltip(GetUIText(HOUSING_TEXT, "sell_set"), self)
+      return
+    end
+    local sellInfos = X2House:GetHouseSaleInfo()
+    if not sellInfos.canSell then
+      SetTooltip(GetUIText(HOUSING_TEXT, "unsaleable_house"), self)
+    else
+      SetTooltip(GetUIText(HOUSING_TEXT, "unsaleable_house_overdue"), self)
+    end
+  end
+  registerSellImgButton:SetHandler("OnEnter", OnEnterRegisterSellImgButton)
+  local OnEnterDemolishImgButton = function(self)
+    if self:IsEnabled() then
+      SetTooltip(GetUIText(HOUSING_TEXT, "destroy"), self)
+      return
+    end
+    if X2House:IsCastle() then
+      SetTooltip(GetUIText(ERROR_MSG, "NO_PERM"), self)
+    else
+      SetTooltip(GetUIText(HOUSING_TEXT, "undemolishable_house_overdue"), self)
+    end
+  end
+  demolishImgButton:SetHandler("OnEnter", OnEnterDemolishImgButton)
+  if packageDemolishImgButton ~= nil then
+    local OnEnterPackageDemolishImgButton = function(self)
+      if self:IsEnabled() then
+        SetTooltip(GetUIText(HOUSING_TEXT, "package_demolish"), self)
+        return
+      end
+      if X2House:CanPackageDemolish() then
+        SetTooltip(GetUIText(HOUSING_TEXT, "undemolishable_house_overdue"), self)
+      else
+        SetTooltip(GetUIText(HOUSING_TEXT, "not_support_package_demolish"), self)
+      end
+    end
+    packageDemolishImgButton:SetHandler("OnEnter", OnEnterPackageDemolishImgButton)
+  end
+  local OnEnterPrepayButton = function(self)
+    if self:IsEnabled() then
+      return
+    end
+    if self.tip == nil or self.tip == "" then
+      return
+    end
+    SetTooltip(self.tip, self)
+  end
+  prepayButton:SetHandler("OnEnter", OnEnterPrepayButton)
+  local function LeftClickFuncChangeNameButton()
+    ShowChangeHousingName(frame)
+  end
+  ButtonOnClickHandler(changeNameButton, LeftClickFuncChangeNameButton)
+  local function LeftClickFuncBuyButton()
+    local DialogHandler = function(wnd, infoTable)
+      ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_VALUE_TEXT)
+      local content = X2Locale:LocalizeUiText(HOUSING_TEXT, "buy_house_content", FONT_COLOR_HEX.BLUE, X2House:GetHouseOwnerName(), FONT_COLOR_HEX.BLUE, X2House:GetHouseName(), FONT_COLOR_HEX.RED)
+      local sellInfos = X2House:GetHouseSaleInfo()
+      local valueText = string.format(F_MONEY.currency.pipeString[F_MONEY.currency.houseSale], tostring(sellInfos.price))
+      wnd:SetTitle(X2Locale:LocalizeUiText(HOUSING_TEXT, "buy_house"))
+      wnd:SetContentEx(content, valueText)
+      function wnd:OkProc()
+        X2House:BuyHouse()
+      end
+    end
+    X2DialogManager:RequestDefaultDialog(DialogHandler, frame:GetId())
+  end
+  ButtonOnClickHandler(frame.buyButton, LeftClickFuncBuyButton)
+  local LeftClickFuncDemolishImgButton = function(self)
+    local parent = self:GetParent()
+    local function DialogHandler(wnd)
+      wnd:SetExtent(353, 272)
+      wnd:SetTitle(locale.housing.demolish.title)
+      wnd:SetContent(X2Locale:LocalizeUiText(HOUSING_TEXT, "demolish_description"))
+      local cautionLabel = wnd:CreateChildWidget("label", "cautionLabel", 0, false)
+      cautionLabel:SetExtent(297, FONT_SIZE.LARGE)
+      cautionLabel:SetText(X2Locale:LocalizeUiText(HOUSING_TEXT, "demolish_caution"))
+      cautionLabel.style:SetFontSize(FONT_SIZE.LARGE)
+      cautionLabel:AddAnchor("TOPLEFT", wnd.textbox, "BOTTOMLEFT", 8, 29)
+      ApplyTextColor(cautionLabel, FONT_COLOR.DEFAULT)
+      cautionLabel.style:SetAlign(ALIGN_LEFT)
+      local cautionContent = wnd:CreateChildWidget("textbox", "cautionContent", 0, false)
+      cautionContent:SetExtent(297, FONT_SIZE.MIDDLE)
+      cautionContent.style:SetAlign(ALIGN_LEFT)
+      cautionContent:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+      cautionContent.style:SetFontSize(FONT_SIZE.MIDDLE)
+      ApplyTextColor(cautionContent, FONT_COLOR.RED)
+      cautionContent:SetText(X2Locale:LocalizeUiText(HOUSING_TEXT, "demolish_caution_description"))
+      cautionContent:SetHeight(cautionContent:GetTextHeight())
+      cautionContent:AddAnchor("TOPLEFT", cautionLabel, "BOTTOMLEFT", 0, 8)
+      local bg = CreateContentBackground(wnd, "TYPE2", nil, "artwork")
+      bg:AddAnchor("TOPLEFT", cautionLabel, -13, -14)
+      bg:AddAnchor("BOTTOMRIGHT", cautionContent, 13, 14)
+      local function Resize()
+        local _, height = F_LAYOUT:GetExtentWidgets(wnd.titleBar, cautionContent)
+        height = height + 37 + wnd.btnOk:GetHeight() + -BUTTON_COMMON_INSET.MESSAGEBOX_BOTTOM
+        wnd:SetHeight(height)
+      end
+      Resize()
+      function wnd:OkProc()
+        parent:Show(false)
+        X2House:Demolish(false)
+      end
+    end
+    X2DialogManager:RequestDefaultDialog(DialogHandler, parent:GetId())
+  end
+  ButtonOnClickHandler(demolishImgButton, LeftClickFuncDemolishImgButton)
+  if packageDemolishImgButton ~= nil then
+    local LeftClickFuncPackageDemolishImgButton = function(self)
+      local info, count, total = X2House:GetDemolishSealCount()
+      if info == nil then
+        return
+      end
+      local parent = self:GetParent()
+      local function DialogHandler(wnd)
+        wnd:SetExtent(353, 272)
+        wnd:SetTitle(locale.housing.demolish.title)
+        wnd:SetContent(X2Locale:LocalizeUiText(HOUSING_TEXT, "package_demolish_description"))
+        local cautionLabel = wnd:CreateChildWidget("label", "cautionLabel", 0, false)
+        cautionLabel:SetExtent(297, FONT_SIZE.LARGE)
+        cautionLabel:SetText(X2Locale:LocalizeUiText(HOUSING_TEXT, "demolish_caution"))
+        cautionLabel.style:SetFontSize(FONT_SIZE.LARGE)
+        cautionLabel:AddAnchor("TOPLEFT", wnd.textbox, "BOTTOMLEFT", 8, 29)
+        ApplyTextColor(cautionLabel, FONT_COLOR.DEFAULT)
+        cautionLabel.style:SetAlign(ALIGN_LEFT)
+        local cautionContent = wnd:CreateChildWidget("textbox", "cautionContent", 0, false)
+        cautionContent:SetExtent(297, FONT_SIZE.MIDDLE)
+        cautionContent.style:SetAlign(ALIGN_LEFT)
+        cautionContent:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+        cautionContent.style:SetFontSize(FONT_SIZE.MIDDLE)
+        ApplyTextColor(cautionContent, FONT_COLOR.RED)
+        cautionContent:SetText(X2Locale:LocalizeUiText(HOUSING_TEXT, "demolish_caution_description"))
+        cautionContent:SetHeight(cautionContent:GetTextHeight())
+        cautionContent:AddAnchor("TOPLEFT", cautionLabel, "BOTTOMLEFT", 0, 8)
+        local bg = CreateContentBackground(wnd, "TYPE2", nil, "artwork")
+        bg:AddAnchor("TOPLEFT", cautionLabel, -13, -14)
+        bg:AddAnchor("BOTTOMRIGHT", cautionContent, 13, 14)
+        local sealIcon = CreateItemIconButton("sealIcon", wnd)
+        sealIcon:AddAnchor("TOP", cautionContent, "BOTTOM", 0, 31)
+        sealIcon:SetItemInfo(info)
+        sealIcon:SetStack(count, total)
+        local sealLabel = wnd:CreateChildWidget("textbox", "sealLabel", 0, false)
+        sealLabel:SetExtent(297, FONT_SIZE.LARGE)
+        sealLabel:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+        sealLabel.style:SetFontSize(FONT_SIZE.LARGE)
+        sealLabel:AddAnchor("TOP", sealIcon, "BOTTOM", 0, MARGIN.WINDOW_SIDE / 1.2)
+        ApplyTextColor(sealLabel, FONT_COLOR.DEFAULT)
+        sealLabel.style:SetAlign(ALIGN_CENTER)
+        sealLabel:SetText(info.name)
+        local lineWidth = sealLabel:GetLongestLineWidth()
+        local lineHeight = sealLabel:GetTextHeight()
+        sealLabel:SetExtent(lineWidth + 5, lineHeight)
+        local bg = CreateContentBackground(sealLabel, "TYPE7", "BROWN")
+        bg:SetExtent(lineWidth + MARGIN.WINDOW_SIDE * 1.5, lineHeight + MARGIN.WINDOW_SIDE * 1.5)
+        bg:AddAnchor("CENTER", sealLabel, 2, 2)
+        if count < total then
+          wnd.btnOk:Enable(false)
+        end
+        local function Resize()
+          local _, height = F_LAYOUT:GetExtentWidgets(wnd.titleBar, sealLabel)
+          height = height + 30 + wnd.btnOk:GetHeight() + -BUTTON_COMMON_INSET.MESSAGEBOX_BOTTOM
+          wnd:SetHeight(height)
+        end
+        Resize()
+        function wnd:OkProc()
+          parent:Show(false)
+          X2House:Demolish(true)
+        end
+      end
+      X2DialogManager:RequestDefaultDialog(DialogHandler, parent:GetId())
+    end
+    ButtonOnClickHandler(packageDemolishImgButton, LeftClickFuncPackageDemolishImgButton)
+  end
+  local function LeftClickFuncOkButton(self)
+    if frame:IsVisible() then
+      frame:Show(false)
+    end
+  end
+  ButtonOnClickHandler(okButton, LeftClickFuncOkButton)
+  local function ShowDecoActabilityWindow()
+    if frame.decoActabilitywindow == nil then
+      frame.decoActabilitywindow = CreateDecoActabilitywindow(frame:GetId() .. ".decoActabilitywindow", frame)
+      frame.decoActabilitywindow:Show(true)
+    else
+      frame.decoActabilitywindow:Show(false)
+      return
+    end
+    frame.decoActabilitywindow:FillList()
+    local function OnHide()
+      frame.decoActabilitywindow = nil
+    end
+    frame.decoActabilitywindow:SetHandler("OnHide", OnHide)
+  end
+  ButtonOnClickHandler(decoActabilityButton, ShowDecoActabilityWindow)
+  local function ShowSellRegisterWindow()
+    if frame.sellRegisterWindow == nil then
+      frame.sellRegisterWindow = CreateSellRegisterWindow(frame:GetId() .. ".sellRegisterWindow", frame)
+      frame.sellRegisterWindow:Show(true)
+      local function OnHide()
+        frame.sellRegisterWindow = nil
+      end
+      frame.sellRegisterWindow:SetHandler("OnHide", OnHide)
+    else
+      frame.sellRegisterWindow:Show(false)
+    end
+  end
+  ButtonOnClickHandler(registerSellImgButton, ShowSellRegisterWindow)
+  if rebuildButton ~= nil then
+    local function ShowRebuildHousingWindow()
+      if housing.rebuilingWnd == nil then
+        housing.rebuilingWnd = CreateRebuildHousingWnd("housing.rebuilingWnd", "UIParent")
+        housing.rebuilingWnd:Show(true)
+        frame:Show(false)
+        X2House:RequestHousingRebuildingTaxInfo()
+        local OnHide = function(self)
+          if self.HideProc ~= nil then
+            self:HideProc()
+          end
+          housing.rebuilingWnd = nil
+        end
+        housing.rebuilingWnd:SetHandler("OnHide", OnHide)
+      else
+        housing.rebuilingWnd:Show(false)
+      end
+    end
+    ButtonOnClickHandler(rebuildButton, ShowRebuildHousingWindow)
+  end
+  local function ShowPrepayWindow()
+    local featureSet = X2Player:GetFeatureSet()
+    if not featureSet.houseTaxPrepay then
+      return
+    end
+    local sellInfos = X2House:GetHouseSaleInfo()
+    if sellInfos.onSale then
+      return false
+    end
+    if frame.taxString == nil then
+      return
+    end
+    local function DialogHandler(wnd, infoTable)
+      local prepayTimeStr = locale.time.GetDateToDateFormat(frame.prepayTime)
+      local content = X2Locale:LocalizeUiText(COMMON_TEXT, "prepay_dialog_content", FONT_COLOR_HEX.BLUE, prepayTimeStr, FONT_COLOR_HEX.RED)
+      local requireItemInfo, requireCnt = X2House:GetPrepayRequireItemInfo()
+      local requireHaveCnt = X2Bag:GetCountInBag(requireItemInfo.itemType)
+      if requireItemInfo ~= nil and requireItemInfo.itemType ~= 0 then
+        local upperFrame = wnd:CreateChildWidget("emptywidget", "upperFrame", 0, true)
+        upperFrame:SetExtent(wnd:GetWidth() - sideMargin, 90)
+        upperFrame:AddAnchor("TOP", wnd, 0, titleMargin)
+        local bg = CreateContentBackground(upperFrame, "TYPE2")
+        bg:AddAnchor("TOPLEFT", upperFrame, 0, 0)
+        bg:AddAnchor("BOTTOMRIGHT", upperFrame, 0, 0)
+        ApplyTextureColor(bg, TEXTURE_COLOR.BOX_BROWN)
+        local title = upperFrame:CreateChildWidget("label", "title", 0, false)
+        title:SetAutoResize(true)
+        title.style:SetFontSize(FONT_SIZE.LARGE)
+        title:SetHeight(FONT_SIZE.LARGE)
+        title:AddAnchor("TOPLEFT", upperFrame, sideMargin / 2, sideMargin / 2)
+        title:SetText(GetUIText(COMMON_TEXT, "prepay_require_item"))
+        ApplyTextColor(title, FONT_COLOR.TITLE)
+        local requireItem = CreateItemIconButton("requireItem", upperFrame)
+        requireItem:AddAnchor("TOPLEFT", title, "BOTTOMLEFT", 0, 10)
+        requireItem:SetItemInfo(requireItemInfo)
+        requireItem:SetStack(requireHaveCnt, requireCnt)
+        local itemName = upperFrame:CreateChildWidget("label", "itemName", 0, false)
+        itemName:SetExtent(upperFrame:GetWidth() - requireItem:GetWidth() - sideMargin / 2, FONT_SIZE.MIDDLE)
+        itemName:AddAnchor("LEFT", requireItem, "RIGHT", 5, 0)
+        itemName:SetText(requireItemInfo.name)
+        itemName.style:SetAlign(ALIGN_LEFT)
+        ApplyTextColor(itemName, FONT_COLOR.DEFAULT)
+        wnd.textbox:RemoveAllAnchors()
+        wnd.textbox:AddAnchor("TOP", upperFrame, "BOTTOM", 0, sideMargin / 2)
+        if requireCnt > requireHaveCnt then
+          wnd.btnOk:Enable(false)
+        end
+      end
+      if featureSet.taxItem then
+        ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_ITEM_ICON)
+        local taxItemInfo = X2House:GetTaxItem()
+        function wnd:Resize()
+          local height = self:GetFrameHeight() + self.itemIcon:GetHeight() + self.itemTextbox.bg:GetHeight() + sideMargin / 2
+          if wnd.upperFrame ~= nil then
+            height = height + self.upperFrame:GetHeight()
+          end
+          self:SetExtent(POPUP_WINDOW_WIDTH, height)
+        end
+        local cntTable = {
+          X2House:CountTaxItemInBag(),
+          X2House:CountTaxItemForTax(frame.taxString)
+        }
+        wnd:SetContentEx(content, taxItemInfo, cntTable, taxItemInfo.name)
+        if cntTable[1] < cntTable[2] then
+          wnd.btnOk:Enable(false)
+        end
+      else
+        ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_VALUE_TEXT)
+        function wnd:Resize()
+          local height = self:GetFrameHeight() + self.valueTextBox.bg:GetHeight() + sideMargin / 2
+          if wnd.upperFrame ~= nil then
+            height = height + self.upperFrame:GetHeight()
+          end
+          self:SetExtent(POPUP_WINDOW_WIDTH, height)
+        end
+        wnd:SetContentEx(content, F_MONEY:GetTaxString(frame.taxString))
+      end
+      wnd:SetTitle(X2Locale:LocalizeUiText(COMMON_TEXT, "prepay"))
+      function wnd:OkProc()
+        X2House:PrepayHouseTax()
+      end
+    end
+    X2DialogManager:RequestDefaultDialog(DialogHandler, frame:GetId())
+  end
+  ButtonOnClickHandler(prepayButton, ShowPrepayWindow)
+  function frame:UpdateExtent_myHouse()
+    local frameHeight = titleMargin + self.permissionsWindow:GetHeight() + self.contentUpper.bg:GetHeight() + okButton:GetHeight() + sideMargin
+    if not X2House:IsCastle() then
+      frameHeight = frameHeight + sideMargin
+    else
+      frameHeight = frameHeight + sideMargin / 2
+    end
+    if furnitureCheckbox:IsVisible() then
+      frameHeight = frameHeight + furnitureCheckbox:GetHeight()
+    end
+    if self.warningText:IsVisible() then
+      frameHeight = frameHeight + self.warningText:GetHeight() + sideMargin
+    end
+    self:SetExtent(housingLocale.maintainWndWidth, frameHeight)
+    self:Show(true)
+  end
+  function frame:UpdateExtent_notMyHouse()
+    local frameHeight = titleMargin + self.contentUpper.bg:GetHeight() + okButton:GetHeight() + sideMargin
+    if self.warningText:IsVisible() then
+      frameHeight = frameHeight + self.warningText:GetHeight() + sideMargin / 2
+    end
+    self:SetExtent(housingLocale.maintainWndWidth, frameHeight)
+    self:Show(true)
+  end
+  function frame:UpdateWarningTextMyHouse(warningStr)
+    if self.warningText:IsVisible() and warningStr ~= "" then
+      self.warningText:SetText(warningStr)
+      self.warningText:SetHeight(self.warningText:GetTextHeight())
+      self.warningText:RemoveAllAnchors()
+      if self.furnitureCheckbox:IsVisible() then
+        self.warningText:AddAnchor("TOPLEFT", self.furnitureCheckbox, "BOTTOMLEFT", -6, sideMargin / 1.3)
+      else
+        self.warningText:AddAnchor("TOPLEFT", self.permissionsWindow, "BOTTOMLEFT", 0, sideMargin / 1.3)
+      end
+    end
+  end
+  function frame:UpdateWarningTextNotMyHouse(warningStr)
+    if self.warningText:IsVisible() and warningStr ~= "" then
+      self.warningText:SetText(warningStr)
+      self.warningText:SetHeight(self.warningText:GetTextHeight())
+    end
+    local target = self.furnitureCount
+    if self.contentTaxInfo:IsVisible() then
+      target = self.contentTaxInfo
+    end
+    self.warningText:RemoveAllAnchors()
+    self.warningText:AddAnchor("TOPLEFT", target, "BOTTOMLEFT", 0, sideMargin)
+  end
+  function frame:UpdateSetSellSuccess(sellInfos)
+    local warningStr = ""
+    self.warningText:Show(true)
+    local str = self:GetSellInfoText(sellInfos.targetName, sellInfos.price)
+    warningStr = str
+    self:UpdateWarningTextMyHouse(warningStr)
+    self.contentTaxInfo.prepayButton:Enable(false)
+    self.contentTaxInfo.prepayButton.tip = GetUIText(ERROR_MSG, "HOUSE_CANNOT_PREPAY_FOR_SALE")
+  end
+  function frame:UpdateCancelSellSuccess()
+    self.warningText:Show(false)
+    self.contentTaxInfo.prepayButton:Enable(self.isAlreadyPaid)
+    if self.weeksPrepay == 0 and not self.isAlreadyPaid then
+      self.contentTaxInfo.prepayButton.tip = GetUIText(COMMON_TEXT, "unable_prepay_for_housing_unpaid_or_overdue")
+    end
+  end
+  function frame:GetSellInfoText(sellTargetName, price)
+    if sellTargetName == nil then
+      local str = string.format([[
+%s
+%s%s: %s]] .. F_MONEY.currency.pipeString[F_MONEY.currency.houseSale] .. "|r", locale.housing.sell.everyoneSell, FONT_COLOR_HEX.DEFAULT, locale.housing.sell.price, FONT_COLOR_HEX.BLUE, price)
+      return str
+    else
+      local str = string.format([[
+%s
+%s%s: %s]] .. F_MONEY.currency.pipeString[F_MONEY.currency.houseSale] .. "|r", locale.housing.sell.targetSell(sellTargetName), FONT_COLOR_HEX.DEFAULT, locale.housing.sell.price, FONT_COLOR_HEX.BLUE, price)
+      return str
+    end
+  end
+  local GetTypeForFurnitureText = function(info)
+    if info.arrangeCount == info.maxCount then
+      return string.format("%s %s%d/%d|r", info.name, FONT_COLOR_HEX.RED, info.arrangeCount, info.maxCount)
+    else
+      return string.format("%s %s%d|r/%d", info.name, FONT_COLOR_HEX.SKYBLUE, info.arrangeCount, info.maxCount)
+    end
+  end
+  local function OnEnterFurnitureCountGuide()
+    local info = X2House:GetDecoActabilityLimitGroup()
+    if info == nil then
+      ShowTextTooltip(furnitureCountGuide, nil, locale.housing.noneFurniture)
+      return
+    end
+    local str = ""
+    for i = 1, #info do
+      if i == #info then
+        str = string.format("%s %s", str, GetTypeForFurnitureText(info[i]))
+      else
+        str = string.format("%s %s\n", str, GetTypeForFurnitureText(info[i]))
+      end
+    end
+    if str ~= "" then
+      str = string.format([[
+%s
+
+%s]], str, X2Locale:LocalizeUiText(HOUSING_TEXT, "furniture_warning"))
+    end
+    ShowTextTooltip(furnitureCountGuide, locale.housing.typeFurnitureCount, str)
+  end
+  furnitureCountGuide:SetHandler("OnEnter", OnEnterFurnitureCountGuide)
+  local OnLeaveFurnitureCountGuide = function()
+    HideTextTooltip()
+  end
+  furnitureCountGuide:SetHandler("OnLeave", OnLeaveFurnitureCountGuide)
+  return frame
+end
+function ShowHousingMainTainWindow(wantShow, isMyHouse)
+  if wantShow and housing.maintainWindow == nil then
+    housing.maintainWindow = CreateMaintainHousingFrame("housing.maintainWindow", "UIParent")
+    housing.maintainWindow:Show(false)
+    housing.maintainWindow:SetCloseOnEscape(true)
+  else
+    if housing.maintainWindow ~= nil then
+      housing.maintainWindow:Show(false)
+    end
+    return
+  end
+  local OnHide = function(self)
+    local housePermission, alwaysPublic = X2House:GetHousePermission()
+    if X2House:IsMyHouse() and not alwaysPublic then
+      to_permission = {
+        1,
+        4,
+        2,
+        3
+      }
+      X2House:SetHousePermission(to_permission[self.checkIndex])
+    end
+    X2House:SetHouseAllowRecover(not self.furnitureCheckbox:GetChecked())
+    HideEditDialog(housing.maintainWindow)
+    housing.maintainWindow = nil
+  end
+  housing.maintainWindow:SetHandler("OnHide", OnHide)
+end
+function UpdateDecoImage(viewType)
+  local window = housing.maintainWindow
+  if window == nil then
+    return
+  end
+  if viewType ~= "house" and viewType ~= "seafarm" and viewType ~= "farm" and viewType ~= "castle" then
+    window.deco_img:RemoveAllAnchors()
+    window.deco_img:SetVisible(false)
+    return
+  end
+  local paths = {
+    house = "ui/housing/house.dds",
+    seafarm = "ui/housing/garden.dds",
+    farm = "ui/housing/garden.dds",
+    castle = "ui/housing/castle.dds"
+  }
+  local keys = {
+    house = "house",
+    seafarm = "garden",
+    farm = "garden",
+    castle = "castle"
+  }
+  window.deco_img:SetVisible(true)
+  window.deco_img:SetTexture(paths[viewType])
+  window.deco_img:SetTextureInfo(keys[viewType])
+  window.deco_img:RemoveAllAnchors()
+  if window.contentUpper:GetHeight() / 2 <= window.deco_img:GetHeight() / 2 then
+    window.deco_img:AddAnchor("TOPRIGHT", window.contentUpper, 0, -40)
+  else
+    window.deco_img:AddAnchor("RIGHT", window.contentUpper, 0, 0)
+  end
+end
+function UpdateFurnitureCount()
+  local furnitureCount = housing.maintainWindow.furnitureCount
+  local decoActabilityButton = furnitureCount.decoActabilityButton
+  local curCnt, maxCnt, extCnt = X2House:GetHouseDecoCount()
+  if curCnt == nil or maxCnt == nil or X2House:IsCastle() then
+    furnitureCount:Show(false)
+    return
+  end
+  local count = X2House:GetActabilityDecoCount()
+  if count ~= nil and count > 0 then
+    decoActabilityButton:Enable(true)
+  else
+    if housing.maintainWindow.decoActabilitywindow ~= nil then
+      housing.maintainWindow.decoActabilitywindow:Show(false)
+    end
+    decoActabilityButton:Enable(false)
+  end
+  local furnitureStr = ""
+  local maxStr = tostring(maxCnt)
+  if extCnt > 0 then
+    maxStr = string.format("%d (%d+%d)", maxCnt, maxCnt - extCnt, extCnt)
+  end
+  furnitureStr = string.format("%s: %s%d|r / %s", locale.housing.furnitureCount, maxCnt <= curCnt and FONT_COLOR_HEX.RED or FONT_COLOR_HEX.BLUE, curCnt, maxStr)
+  furnitureCount:Show(true)
+  furnitureCount:SetText(furnitureStr)
+  furnitureCount.guide:AddAnchor("LEFT", furnitureCount, furnitureCount:GetLongestLineWidth() + 15, 0)
+end
+function UpdateMyHouseDefaultInfo()
+  local window = housing.maintainWindow
+  if window == nil then
+    return
+  end
+  local contentUpper = window.contentUpper
+  local permissionsWindow = window.permissionsWindow
+  local houseName = X2House:GetHouseName() or ""
+  window:UpdateTitle(houseName)
+  window.checkIndex = 1
+  window.changeNameButton:Show(true)
+  window.demolishImgButton:Show(true)
+  window.registerSellImgButton:Enable(false)
+  window.buyButton:Show(false)
+  window.okButton:Show(false)
+  window.contentTaxInfo:Show(false)
+  window.line:SetVisible(false)
+  window.registerSellImgButton:Show(true)
+  if window.rebuildButton ~= nil then
+    window.rebuildButton:Show(true)
+    window.rebuildButton:Enable(false)
+  end
+  if window.packageDemolishImgButton ~= nil then
+    window.registerSellImgButton:RemoveAllAnchors()
+    if not X2House:IsCastle() then
+      window.packageDemolishImgButton:Show(true)
+      window.registerSellImgButton:AddAnchor("RIGHT", window.packageDemolishImgButton, "LEFT", 1, 0)
+    else
+      window.packageDemolishImgButton:Show(false)
+      window.registerSellImgButton:AddAnchor("RIGHT", window.demolishImgButton, "LEFT", 1, 0)
+    end
+  end
+  local upperStr = ""
+  local ownerName = X2House:GetHouseOwnerName() or ""
+  if ownerName ~= "" then
+    upperStr = string.format("%s: %s", locale.tooltip.owner, ownerName)
+  end
+  local factionName = X2House:GetHouseZoneName() or ""
+  if factionName ~= "" then
+    upperStr = string.format([[
+%s
+%s: %s]], upperStr, locale.housing.faction, factionName)
+  end
+  UpdateFurnitureCount()
+  contentUpper:SetText(upperStr)
+  contentUpper:SetHeight(contentUpper:GetTextHeight())
+  local checked = X2House:GetHouseAllowRecover()
+  window.furnitureCheckbox:Show(not X2House:IsCastle())
+  window.furnitureCheckbox:SetChecked(not checked)
+  local warningStr = ""
+  window.warningText:Show(false)
+  permissionsWindow:Show(true)
+  permissionsWindow:RemoveAllAnchors()
+  permissionsWindow:AddAnchor("TOPLEFT", window.contentUpper, "BOTTOMLEFT", 0, sideMargin)
+  local housePermission, alwaysPublic = X2House:GetHousePermission()
+  if housePermission == nil then
+    housePermission = 1
+  end
+  to_index = {
+    1,
+    3,
+    4,
+    2
+  }
+  index = to_index[housePermission]
+  housing.maintainWindow.checkBoxes[index]:SetChecked(true)
+  housing.maintainWindow.checkIndex = index
+  if alwaysPublic then
+    for i = 1, #housing.maintainWindow.checkBoxes do
+      if i ~= 4 then
+        housing.maintainWindow.checkBoxes[i]:Enable(false)
+        housing.maintainWindow.checkBoxes[i].textButton:Enable(false)
+      end
+    end
+  elseif X2House:IsCastle() then
+    housing.maintainWindow.checkBoxes[2]:Enable(false)
+    housing.maintainWindow.checkBoxes[2].textButton:Enable(false)
+  else
+    housing.maintainWindow.checkBoxes[2]:Enable(true)
+    housing.maintainWindow.checkBoxes[2].textButton:Enable(true)
+  end
+  if window.rebuildButton ~= nil then
+    local OnEnter = function(self)
+      local packInfo = X2House:GetHousingRebuildingPackInfo()
+      local str = GetUIText(COMMON_TEXT, "rebuilding_tip")
+      if not self:IsEnabled() then
+        if packInfo == nil then
+          str = GetUIText(COMMON_TEXT, "impossible_to_rebuild_housing")
+        else
+          str = GetUIText(COMMON_TEXT, "disable_rebuilding_tip")
+        end
+      end
+      SetTooltip(str, self)
+    end
+    window.rebuildButton:SetHandler("OnEnter", OnEnter)
+    UpdateRebuildInfo()
+  end
+  if X2House:IsCastle() then
+    if X2House:IsSiegePeriod() or X2House:IsWarmUpPeriod() then
+      window.demolishImgButton:Enable(false)
+    else
+      window.demolishImgButton:Enable(true)
+    end
+  end
+end
+function UpdateMyHouseTaxInfo(taxRate, hostileTaxRate, taxString, dueTime, prepayTime, weeksWithoutPay, weeksPrepay, isAlreadyPaid, isHeavyTaxHouse, depositString, taxItemType)
+  local window = housing.maintainWindow
+  if window == nil then
+    return
+  end
+  local permissionsWindow = window.permissionsWindow
+  local featureSet = X2Player:GetFeatureSet()
+  window.contentTaxInfo.prepayButton:Show(featureSet.houseTaxPrepay)
+  window.contentTaxInfo.prepayButton:Enable(false)
+  window.contentTaxInfo.guideIcon:Show(featureSet.taxItem)
+  local str = ""
+  local warningStr = ""
+  if taxRate ~= nil then
+    str = string.format("%s: %s%%", locale.housing.taxRate, tostring(taxRate))
+  end
+  if hostileTaxRate ~= nil then
+    str = string.format([[
+%s
+%s: %d%%]], str, GetCommonText("housing_hostile_faction_tax"), hostileTaxRate)
+  end
+  if taxString ~= nil then
+    str = string.format([[
+%s
+%s: %s%s]], str, locale.housing.paymentTax, FONT_COLOR_HEX.BLUE, F_MONEY:GetTaxString(taxString))
+    if not isHeavyTaxHouse then
+      str = string.format("%s %s(%s)|r", str, FONT_COLOR_HEX.BLUE, locale.housing.maintainWindow.heavyTaxExemption)
+    end
+    window.taxString = taxString
+  end
+  window.prepayTime = prepayTime
+  if isAlreadyPaid ~= nil then
+    if isAlreadyPaid then
+      if weeksPrepay == nil or weeksPrepay < 1 then
+        str = string.format([[
+%s
+%s: %s[%s]|r]], str, locale.housing.checkPayment, FONT_COLOR_HEX.BLUE, locale.housing.payState.full)
+      else
+        str = string.format([[
+%s
+%s: %s[%s %d/%d]|r]], str, locale.housing.checkPayment, FONT_COLOR_HEX.BLUE, GetUIText(COMMON_TEXT, "prepay_2"), weeksPrepay, PREPAY_ABLE_COUNT)
+      end
+      window.contentTaxInfo.prepayButton:Enable(weeksPrepay < PREPAY_ABLE_COUNT)
+      window.contentTaxInfo.prepayButton.tip = X2Locale:LocalizeUiText(COMMON_TEXT, "prepay_btn_tooltip", FONT_COLOR_HEX.SOFT_YELLOW, FONT_COLOR_HEX.SOFT_YELLOW, tostring(weeksPrepay))
+    else
+      if weeksWithoutPay ~= nil and weeksWithoutPay == 1 then
+        str = string.format([[
+%s
+%s: %s[%s]|r]], str, locale.housing.checkPayment, FONT_COLOR_HEX.RED, locale.housing.payState.overdue)
+      else
+        str = string.format([[
+%s
+%s: %s[%s]|r]], str, locale.housing.checkPayment, FONT_COLOR_HEX.RED, locale.housing.payState.unpaid)
+      end
+      window.contentTaxInfo.prepayButton.tip = GetUIText(COMMON_TEXT, "unable_prepay_for_housing_unpaid_or_overdue")
+    end
+    window.weeksPrepay = weeksPrepay
+    window.isAlreadyPaid = isAlreadyPaid
+  end
+  if dueTime ~= nil then
+    local dueStr = locale.time.GetDateToDateFormat(dueTime)
+    local dueDateForPaymentStr = ""
+    if weeksWithoutPay ~= nil and weeksWithoutPay == 1 then
+      dueDateForPaymentStr = string.format("%s: %s%s%s|r", locale.housing.demolishDate, FONT_COLOR_HEX.RED, dueStr, locale.housing.untilTerm)
+    else
+      dueDateForPaymentStr = string.format("%s: %s%s", locale.housing.dueDateForPayment, dueStr, locale.housing.untilTerm)
+    end
+    str = string.format([[
+%s
+%s]], str, dueDateForPaymentStr)
+  end
+  local sellInfos = X2House:GetHouseSaleInfo()
+  window.registerSellImgButton:Enable(weeksPrepay ~= nil and weeksPrepay == 0 and sellInfos.canSell and weeksWithoutPay < 1)
+  local _, alwaysPublic = X2House:GetHousePermission()
+  if alwaysPublic then
+    window.warningText:Show(true)
+    warningStr = SetEnterString(warningStr, locale.housing.alwaysPublicTip, 2)
+  end
+  if sellInfos.onSale then
+    window.warningText:Show(true)
+    local str = window:GetSellInfoText(sellInfos.targetName, sellInfos.price)
+    warningStr = SetEnterString(warningStr, str, 2)
+    window.contentTaxInfo.prepayButton:Enable(false)
+    window.contentTaxInfo.prepayButton.tip = GetUIText(ERROR_MSG, "HOUSE_CANNOT_PREPAY_FOR_SALE")
+  end
+  local isSiegePeriod = X2House:IsSiegePeriod()
+  if isSiegePeriod then
+    window.warningText:Show(true)
+    warningStr = SetEnterString(warningStr, locale.housing.inSiegeWarning, 2)
+  end
+  window.demolishImgButton:Enable(true)
+  if window.packageDemolishImgButton ~= nil then
+    window.packageDemolishImgButton:Enable(X2House:CanPackageDemolish())
+  end
+  if not X2House:IsCastle() and weeksWithoutPay ~= nil and weeksWithoutPay > 0 then
+    window.warningText:Show(true)
+    window.demolishImgButton:Enable(false)
+    if window.packageDemolishImgButton ~= nil then
+      window.packageDemolishImgButton:Enable(false)
+    end
+    warningStr = SetEnterString(warningStr, GetUIText(HOUSING_TEXT, "warning_default"), 2)
+  end
+  window:UpdateWarningTextMyHouse(warningStr)
+  if depositString ~= nil and taxItemType ~= nil then
+    window.contentTaxInfo.guideIcon:FillInfo(taxItemType, X2House:CountTaxItemForTax(depositString))
+  end
+  window.contentTaxInfo:Show(true)
+  window.contentTaxInfo:SetText(str)
+  window.contentTaxInfo:SetHeight(window.contentTaxInfo:GetTextHeight())
+  window.contentUpper.bg:RemoveAllAnchors()
+  window.contentUpper.bg:AddAnchor("TOPLEFT", window.contentUpper, -5, -sideMargin / 1.5)
+  window.contentUpper.bg:AddAnchor("BOTTOMRIGHT", window.contentTaxInfo, 5, sideMargin / 1.5)
+  permissionsWindow:RemoveAllAnchors()
+  permissionsWindow:AddAnchor("TOPLEFT", window.contentTaxInfo, "BOTTOMLEFT", 0, sideMargin)
+  if not X2House:IsCastle() then
+    window.line:SetVisible(true)
+    window.line:RemoveAllAnchors()
+    window.line:AddAnchor("TOP", window.furnitureCount, "BOTTOM", 0, 8)
+  end
+  local packInfo = X2House:GetHousingRebuildingPackInfo()
+  rebuildBtnEnable = not sellInfos.onSale and not X2House:IsSiegePeriod() and not X2House:IsWarmUpPeriod() and weeksWithoutPay ~= nil and weeksWithoutPay < 1 and packInfo ~= nil
+  if window.rebuildButton ~= nil then
+    window.rebuildButton:Enable(rebuildBtnEnable)
+  end
+end
+function UpdateHouseDefaultInfo()
+  local window = housing.maintainWindow
+  if window == nil then
+    return
+  end
+  local contentUpper = window.contentUpper
+  local permissionsWindow = window.permissionsWindow
+  window.permissionsWindow:Show(false)
+  window.changeNameButton:Show(false)
+  window.buyButton:Show(true)
+  window.demolishImgButton:Show(false)
+  if window.packageDemolishImgButton ~= nil then
+    window.packageDemolishImgButton:Show(false)
+  end
+  window.registerSellImgButton:Show(false)
+  window.warningText:Show(false)
+  window.contentTaxInfo:Show(false)
+  window.furnitureCheckbox:Show(false)
+  window.okButton:Show(true)
+  if window.rebuildButton ~= nil then
+    window.rebuildButton:Show(false)
+  end
+  local houseName = X2House:GetHouseName() or ""
+  window:UpdateTitle(houseName)
+  local str = ""
+  local houseOwner = X2House:GetHouseOwnerName() or ""
+  if houseOwner ~= "" then
+    str = string.format("%s: %s", locale.tooltip.owner, houseOwner)
+  end
+  local houseZoneName = X2House:GetHouseZoneName() or ""
+  if houseZoneName ~= "" then
+    str = string.format([[
+%s
+%s: %s]], str, locale.housing.faction, houseZoneName)
+  end
+  local housePermission, _ = X2House:GetHousePermission()
+  if housePermission == nil then
+    housePermission = 1
+  end
+  local permissionsStr = string.format("%s: %s", locale.housing.usePermission, locale.housing.housePermissions[housePermission])
+  str = string.format([[
+%s
+%s]], str, permissionsStr)
+  local sellInfos = X2House:GetHouseSaleInfo()
+  window.buyButton:Enable(sellInfos.canBuy)
+  local warningStr = ""
+  if sellInfos.onSale then
+    window.warningText:Show(true)
+    local str = window:GetSellInfoText(sellInfos.targetName, sellInfos.price)
+    warningStr = str
+  end
+  UpdateFurnitureCount()
+  window:UpdateWarningTextNotMyHouse(warningStr)
+  contentUpper:SetText(str)
+  contentUpper:SetHeight(contentUpper:GetTextHeight())
+  local target = window.furnitureCount
+  if not window.furnitureCount:IsVisible() then
+    target = window.contentUpper
+  end
+  window.contentUpper.bg:RemoveAllAnchors()
+  window.contentUpper.bg:AddAnchor("TOPLEFT", window.contentUpper, -5, -sideMargin / 1.5)
+  window.contentUpper.bg:AddAnchor("BOTTOMRIGHT", target, 5, sideMargin / 1.5)
+end
+function UpdateHouseTaxInfo(taxRate, hostileTaxRate, dueTime, weeksWithoutPay)
+  local window = housing.maintainWindow
+  if window == nil then
+    return
+  end
+  local str = ""
+  local warningStr = ""
+  window.contentTaxInfo.guideIcon:Show(false)
+  window.contentTaxInfo.prepayButton:Show(false)
+  if taxRate ~= nil then
+    str = string.format("%s: %s%%", locale.housing.taxRate, tostring(taxRate))
+  end
+  if hostileTaxRate ~= nil then
+    str = string.format([[
+%s
+%s: %d%%]], str, GetCommonText("housing_hostile_faction_tax"), hostileTaxRate)
+  end
+  local isSiegePeriod = X2House:IsSiegePeriod()
+  if isSiegePeriod then
+    window.warningText:Show(true)
+    warningStr = locale.housing.inSiegeWarning
+  end
+  if not X2House:IsCastle() then
+    window.line:SetVisible(true)
+    window.line:RemoveAllAnchors()
+    window.line:AddAnchor("TOP", window.furnitureCount, "BOTTOM", 0, 8)
+  end
+  if weeksWithoutPay ~= nil then
+    local dueStr = locale.time.GetDateToDateFormat(dueTime)
+    local dueDateForPaymentStr = ""
+    if weeksWithoutPay == 1 then
+      window.warningText:Show(true)
+      warningStr = SetEnterString(warningStr, GetUIText(HOUSING_TEXT, "warning_default"), 2)
+      dueDateForPaymentStr = string.format("%s: %s%s%s|r", locale.housing.demolishDate, FONT_COLOR_HEX.RED, dueStr, locale.housing.untilTerm)
+      str = string.format([[
+%s
+%s]], str, dueDateForPaymentStr)
+    else
+      dueDateForPaymentStr = string.format("%s: %s%s", locale.housing.dueDateForPayment, dueStr, locale.housing.untilTerm)
+      str = string.format([[
+%s
+%s]], str, dueDateForPaymentStr)
+    end
+  end
+  window.contentTaxInfo:Show(true)
+  window.contentTaxInfo:SetText(str)
+  window.contentTaxInfo:SetHeight(window.contentTaxInfo:GetTextHeight())
+  window:UpdateWarningTextNotMyHouse(warningStr)
+  window.contentUpper.bg:RemoveAllAnchors()
+  window.contentUpper.bg:AddAnchor("TOPLEFT", window.contentUpper, -5, -sideMargin / 1.5)
+  window.contentUpper.bg:AddAnchor("BOTTOMRIGHT", window.contentTaxInfo, 5, sideMargin / 1.5)
+end
+function UpdateMaintainWindowHeight()
+  local window = housing.maintainWindow
+  if window == nil then
+    return
+  end
+  if X2House:IsMyHouse() then
+    window:UpdateExtent_myHouse()
+  else
+    window:UpdateExtent_notMyHouse()
+  end
+  if window:IsVisible() then
+    SettingWindowSkin(window)
+  end
+end
+function UpdateSellInfo()
+  local window = housing.maintainWindow
+  if window == nil then
+    return
+  end
+  if X2House:IsMyHouse() then
+    local sellInfos = X2House:GetHouseSaleInfo()
+    if sellInfos == nil then
+      return
+    end
+    if not sellInfos.onSale then
+      window:UpdateCancelSellSuccess()
+    else
+      window:UpdateSetSellSuccess(sellInfos)
+    end
+  else
+    UpdateHouseDefaultInfo()
+  end
+  UpdateMaintainWindowHeight()
+end
+function UpdateRebuildInfo()
+  local window = housing.maintainWindow
+  if window == nil then
+    return
+  end
+  if not X2House:IsMyHouse() then
+    return
+  end
+  if window.rebuildButton == nil then
+    return
+  end
+  if X2House:IsCastle() then
+    local packInfo = X2House:GetHousingRebuildingPackInfo()
+    local rebuildBtnEnable = not X2House:IsSiegePeriod() and not X2House:IsWarmUpPeriod() and packInfo ~= nil
+    window.rebuildButton:Enable(rebuildBtnEnable)
+  end
+end

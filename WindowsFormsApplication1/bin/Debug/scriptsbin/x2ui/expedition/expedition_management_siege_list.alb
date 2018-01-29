@@ -1,0 +1,156 @@
+local GROUP_IN_MEMBER_MAX_COUNT = 5
+local GROUP_EXPEDITION_MAX_COUNT = 9
+local GROUP_SUPPORT_MAX_COUNT = 4
+local EXPEDITION_MEMBER_MAX_COUNT = GROUP_IN_MEMBER_MAX_COUNT * GROUP_EXPEDITION_MAX_COUNT
+local SUPPORT_MEMBER_MAX_COUNT = GROUP_IN_MEMBER_MAX_COUNT * GROUP_SUPPORT_MAX_COUNT
+function CreateExpeditionSiegeList(id, parent)
+  local window = SetViewOfExpeditionSiegeList(id, parent)
+  local expeditionListWindow = window.expeditionListWindow
+  local expeditionListPageCtrl = expeditionListWindow.pageControl
+  local GetMembersAllChecked = function(memberList)
+    local memberWindow = memberList.memberWindow
+    for i = 1, #memberWindow do
+      local checkBox = memberWindow[i].checkBox
+      if checkBox:IsEnabled() and checkBox:IsVisible() and not checkBox:GetChecked() then
+        return false
+      end
+    end
+    return true
+  end
+  local function GetMembersAnyoneChecked()
+    local value = false
+    local memberWindow = expeditionListWindow.memberWindow
+    for i = 1, #memberWindow do
+      local checkBox = memberWindow[i].checkBox
+      if checkBox:IsVisible() and checkBox:GetChecked() then
+        value = true
+        break
+      end
+    end
+    return value
+  end
+  local function SetExpeditionMemberCheckbox(memberList)
+    local memberWindow = memberList.memberWindow
+    for i = 1, #memberWindow do
+      local checkBox = memberWindow[i].checkBox
+      if checkBox:IsVisible() then
+        function checkBox:CheckBtnCheckChagnedProc(checked)
+          if not checked then
+            memberList.allSelectCheck:SetChecked(false, false)
+          else
+            memberList.allSelectCheck:SetChecked(GetMembersAllChecked(memberList), false)
+          end
+          window.inviteButton:Enable(GetMembersAnyoneChecked())
+        end
+      end
+    end
+  end
+  SetExpeditionMemberCheckbox(expeditionListWindow)
+  function expeditionListWindow.allSelectCheck:SetCheckedAll(check)
+    local memberWindow = expeditionListWindow.memberWindow
+    for i = 1, #memberWindow do
+      local selectCheck = memberWindow[i].checkBox
+      if selectCheck:IsVisible() and selectCheck:IsEnabled() then
+        selectCheck:SetChecked(check)
+      end
+    end
+  end
+  function expeditionListWindow.allSelectCheck:CheckBtnCheckChagnedProc(checked)
+    self:SetCheckedAll(checked)
+    window.inviteButton:Enable(GetMembersAnyoneChecked())
+  end
+  function window:FillExpeditionList(pageIndex)
+    local myName = X2Unit:UnitName("player")
+    if pageIndex == nil then
+      pageIndex = 1
+    end
+    local memberWindow = expeditionListWindow.memberWindow
+    for i = 1, #memberWindow do
+      memberWindow[i]:Show(false)
+      memberWindow[i].checkBox:SetChecked(false)
+    end
+    expeditionListWindow.allSelectCheck:SetChecked(false)
+    if self.memberCount == 0 then
+      return
+    end
+    local pageCount = math.floor(self.memberCount / EXPEDITION_MEMBER_MAX_COUNT)
+    local startIndex = (pageIndex - 1) * EXPEDITION_MEMBER_MAX_COUNT
+    local count = 0
+    if pageIndex <= pageCount then
+      count = EXPEDITION_MEMBER_MAX_COUNT
+    else
+      count = self.memberCount - pageCount * EXPEDITION_MEMBER_MAX_COUNT
+    end
+    for k = 1, count do
+      local name = X2Dominion:GetSiegeMember(self.zoneGroupType, startIndex + k)
+      memberWindow[k]:Show(true)
+      memberWindow[k]:SetText(name)
+      local isInSiegeTeam = X2Dominion:IsInSiegeTeam()
+      memberWindow[k].checkBox:Show(isInSiegeTeam)
+      local enable = myName ~= name and true or false
+      memberWindow[k].checkBox:Enable(enable)
+    end
+    expeditionListPageCtrl:SetPageByItemCount(self.memberCount, EXPEDITION_MEMBER_MAX_COUNT)
+  end
+  function expeditionListPageCtrl:OnPageChanged(pageIndex, countPerPage)
+    window:FillExpeditionList(pageIndex)
+    window.inviteButton:Enable(GetMembersAnyoneChecked())
+  end
+  function window.inviteButton:OnClick(arg)
+    if arg == "LeftButton" then
+      local memberWindow = expeditionListWindow.memberWindow
+      for i = 1, #memberWindow do
+        local selectCheck = memberWindow[i].checkBox
+        if memberWindow[i]:IsVisible() == true and selectCheck:GetChecked() == true then
+          local name = memberWindow[i]:GetText()
+          X2Team:InviteToTeam(name, false)
+        end
+      end
+    end
+  end
+  window.inviteButton:SetHandler("OnClick", window.inviteButton.OnClick)
+  function window:UpdateAll(zoneGroupType)
+    self.zoneGroupType = zoneGroupType
+    local GetTeamString = function(zoneGroupType)
+      local result, team = X2Dominion:IsSiegeExpedition(zoneGroupType)
+      if result == true then
+        return team
+      end
+      LuaAssert(string.format("error!! CreateExpeditionSiegeList - GetTeamString() failed!! - zoneGroupType : %d", zoneGroupType))
+      return "invalid_team"
+    end
+    local zoneGroupName = X2Dominion:GetZoneGroupName(zoneGroupType)
+    local str = string.format("%s : %s", X2Locale:LocalizeUiText(DOMINION, "region_siege_zone"), zoneGroupName)
+    window.zoneNameLabel:SetText(str)
+    local team = GetTeamString(zoneGroupType)
+    local memberCount = 0
+    local memberLimit = 0
+    local reinforcedLimit = 0
+    if team == "defense_team" then
+      memberCount, memberLimit, reinforcedLimit = X2Dominion:GetCurDefenseSiegeParticipantCount(self.zoneGroupType)
+    elseif team == "offense_team" then
+      memberCount, memberLimit, reinforcedLimit = X2Dominion:GetCurOffenseSiegeParticipantCount(self.zoneGroupType)
+    else
+      return
+    end
+    self.memberCount = memberCount
+    local str = string.format("%s (%d/%d)", locale.community.expedition, memberCount, memberLimit)
+    expeditionListWindow:SetTitleText(str)
+    local isInSiegeTeam = X2Dominion:IsInSiegeTeam()
+    window.inviteButton:Show(isInSiegeTeam)
+    self.inviteButton:Enable(false)
+    expeditionListWindow.allSelectCheck:Show(isInSiegeTeam)
+    self:FillExpeditionList()
+    expeditionListWindow.pageControl:SetCurrentPage(1)
+  end
+  function window:ClearAll()
+    self.zoneGroupType = 0
+  end
+  window.zoneGroupType = 0
+  function window:OnHide()
+    self:ClearAll()
+  end
+  window:SetHandler("OnShow", window.OnShow)
+  window:SetCloseOnEscape(true)
+  return window
+end

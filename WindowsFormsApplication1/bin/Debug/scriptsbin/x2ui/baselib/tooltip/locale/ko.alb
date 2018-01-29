@@ -1,0 +1,14 @@
+if tooltipLocale == nil then
+  tooltipLocale = {}
+end
+tooltipLocale = {
+  forclyUseLeftSection = false,
+  uccFrontIcon = {
+    anchor = "BOTTOM",
+    offset = {0, 1}
+  },
+  skillSynergySection = {startOffsetY = 20},
+  GradeString = function(evolveStr, grade)
+    return string.format("%s(~%s)", evolveStr, grade)
+  end
+}

@@ -1,0 +1,44 @@
+local archeMallOutBtn
+local function ShowArcheMallOutButton()
+  if not X2World:CanExitArchemall() then
+    if archeMallOutBtn ~= nil then
+      archeMallOutBtn:Show(false)
+    end
+    return
+  end
+  if clockBar.locationNameLabel == nil then
+    return
+  end
+  if archeMallOutBtn == nil then
+    archeMallOutBtn = UIParent:CreateWidget("button", "archeMallOutBtn", "UIParent")
+    ApplyButtonSkin(archeMallOutBtn, BUTTON_HUD.ARCHE_MALL_OUT)
+    archeMallOutBtn:EnableHidingIsRemove(true)
+    local function OnHide()
+      archeMallOutBtn = nil
+    end
+    archeMallOutBtn:SetHandler("OnHide", OnHide)
+    local LeftClickFunc = function()
+      local DialogHandler = function(wnd)
+        wnd:SetTitle(GetCommonText("dialog_arche_mall_out_title"))
+        wnd:SetContent(GetCommonText("dialog_arche_mall_out_content"))
+        function wnd:OkProc()
+          X2World:ExitArchemall()
+        end
+      end
+      X2DialogManager:RequestDefaultDialog(DialogHandler, "UIParent")
+    end
+    ButtonOnClickHandler(archeMallOutBtn, LeftClickFunc)
+    local OnEnter = function(self)
+      SetTargetAnchorTooltip(GetCommonText("arche_mall_out_btn_tooltip"), "TOPRIGHT", self, "TOPLEFT", 0, 0)
+    end
+    archeMallOutBtn:SetHandler("OnEnter", OnEnter)
+    local OnLeave = function()
+      HideTooltip()
+    end
+    archeMallOutBtn:SetHandler("OnLeave", OnLeave)
+  end
+  archeMallOutBtn:AddAnchor("TOPRIGHT", clockBar.locationNameLabel, "TOPLEFT", -3, 0)
+  archeMallOutBtn:Show(true)
+end
+UIParent:SetEventHandler("LEFT_LOADING", ShowArcheMallOutButton)
+UIParent:SetEventHandler("ENTERED_WORLD", ShowArcheMallOutButton)

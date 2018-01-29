@@ -1,0 +1,484 @@
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+local function CreateDominionList(id, parent)
+  local window = parent:CreateChildWidget("emptywidget", id, 0, true)
+  local sliderList = CreateScrollListBox(window, "sliderList")
+  sliderList:AddAnchor("TOPLEFT", window, 0, 0)
+  sliderList:AddAnchor("BOTTOMRIGHT", window, 0, -sideMargin)
+  sliderList.content.itemStyle:SetFontSize(FONT_SIZE.LARGE)
+  sliderList.content:SetTextLimit(10)
+  local dominionCnt = window:CreateChildWidget("textbox", "dominionCnt", 0, true)
+  dominionCnt:AddAnchor("BOTTOMLEFT", window, 0, 0)
+  dominionCnt:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+  dominionCnt:SetHeight(FONT_SIZE.MIDDLE)
+  dominionCnt.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(dominionCnt, FONT_COLOR.DEFAULT)
+  function window:Init(list)
+    self.list = list
+    self.sliderList.content:ClearItem()
+    for i = 1, #list do
+      local zoneGroupType = list[i]
+      local zoneName = X2Dominion:GetZoneGroupName(zoneGroupType)
+      sliderList:AppendItem(zoneName, i)
+    end
+    local color = FONT_COLOR_HEX.DEFAULT
+    if #list == 0 then
+      color = FONT_COLOR_HEX.RED
+      parent:FillInfo(nil)
+      self.sliderList:SetMinMaxValues("vert", 0, 0)
+    else
+      sliderList.content:Select(0)
+    end
+    dominionCnt:SetText(string.format("%s : %s%d", locale.nationMgr.dominionCnt, color, #list))
+  end
+  return window
+end
+local CreateTakenControl = function(id, parent)
+  local window = parent:CreateChildWidget("emptywidget", id, 0, true)
+  local sliderbar = CreateSlider(id .. ".sliderbar", window)
+  sliderbar:AddAnchor("TOPLEFT", window, 0, FONT_SIZE.MIDDLE + 5)
+  sliderbar:AddAnchor("TOPRIGHT", window, 0, FONT_SIZE.MIDDLE + 5)
+  sliderbar:SetMinMaxValues(0, 100)
+  sliderbar:SetStep(1)
+  sliderbar:UseWheel()
+  sliderbar:SetInitialValue(50)
+  window.sliderbar = sliderbar
+  local startPercent = window:CreateChildWidget("label", "startPercent", 0, false)
+  startPercent:AddAnchor("TOPLEFT", sliderbar, "BOTTOMLEFT", 0, 5)
+  startPercent:SetText("0%")
+  startPercent:SetAutoResize(true)
+  startPercent:SetHeight(FONT_SIZE.SMALL)
+  startPercent.style:SetFontSize(FONT_SIZE.SMALL)
+  ApplyTextColor(startPercent, FONT_COLOR.DEFAULT)
+  local endPercent = window:CreateChildWidget("label", "endPercent", 0, false)
+  endPercent:AddAnchor("TOPRIGHT", sliderbar, "BOTTOMRIGHT", 0, 5)
+  endPercent:SetText("100%")
+  endPercent:SetAutoResize(true)
+  endPercent:SetHeight(FONT_SIZE.SMALL)
+  endPercent.style:SetFontSize(FONT_SIZE.SMALL)
+  ApplyTextColor(endPercent, FONT_COLOR.DEFAULT)
+  local ratio = window:CreateChildWidget("label", "ratio", 0, true)
+  ratio:AddAnchor("LEFT", sliderbar, "RIGHT", 10, -1)
+  ratio:SetAutoResize(true)
+  ratio:SetHeight(FONT_SIZE.LARGE)
+  ratio.style:SetFontSize(FONT_SIZE.LARGE)
+  ApplyTextColor(ratio, FONT_COLOR.BLUE)
+  function window:SetValue(value)
+    sliderbar:SetValue(value, false)
+    ratio:SetText(string.format("%d%%", value))
+  end
+  return window
+end
+local function CreateTaxControlWindow(id, parent)
+  local window = parent:CreateChildWidget("emptywidget", id, 0, true)
+  local bg = CreateContentBackground(window, "TYPE2")
+  bg:AddAnchor("TOPLEFT", window, -10, 0)
+  bg:AddAnchor("BOTTOMRIGHT", window, 10, 0)
+  ApplyTextureColor(bg, TEXTURE_COLOR.BOX_BLUE)
+  local title = window:CreateChildWidget("label", "title", 0, true)
+  title:AddAnchor("TOPLEFT", window, sideMargin - 5, sideMargin - 7)
+  title:SetAutoResize(true)
+  title:SetHeight(FONT_SIZE.LARGE)
+  title.style:SetFontSize(FONT_SIZE.LARGE)
+  ApplyTextColor(title, FONT_COLOR.DEFAULT)
+  title:SetText(locale.nationMgr.nationTax)
+  local OnEnter = function(self)
+    SetTooltip(locale.nationMgr.dominionToolTip, self)
+  end
+  title:SetHandler("OnEnter", OnEnter)
+  local OnLeave = function()
+    HideTooltip()
+  end
+  title:SetHandler("OnLeave", OnLeave)
+  local kingTakenCtrl = CreateTakenControl("kingTakenCtrl", window)
+  kingTakenCtrl:AddAnchor("TOPLEFT", title, "BOTTOMLEFT", 0, sideMargin - 30)
+  kingTakenCtrl:SetExtent(485, 60)
+  kingTakenCtrl.sliderbar:SetEnable(false)
+  ApplyTextColor(kingTakenCtrl.ratio, FONT_COLOR.GRAY)
+  local taxRateDesc = window:CreateChildWidget("textbox", "taxRateDesc", 0, true)
+  taxRateDesc:SetExtent(200, 20)
+  taxRateDesc:AddAnchor("TOPLEFT", kingTakenCtrl, "BOTTOMLEFT", 0, 15)
+  taxRateDesc:SetHeight(FONT_SIZE.MIDDLE)
+  taxRateDesc.style:SetFontSize(FONT_SIZE.MIDDLE)
+  taxRateDesc.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(taxRateDesc, FONT_COLOR.BLUE)
+  local adjustTaxBtn = window:CreateChildWidget("button", "adjustTaxBtn", 0, true)
+  adjustTaxBtn:SetText(GetUIText(NATION_TEXT, "all_change_tax"))
+  ApplyButtonSkin(adjustTaxBtn, BUTTON_BASIC.DEFAULT)
+  adjustTaxBtn:AddAnchor("BOTTOMRIGHT", parent, 0, 0)
+  function window:EditTaxMode(isMode, isdominionowner)
+    local color = isMode and FONT_COLOR.BLUE or FONT_COLOR.GRAY
+    ApplyTextColor(kingTakenCtrl.ratio, color)
+    kingTakenCtrl.sliderbar:SetEnable(isMode)
+    if isMode == false and isdominionowner == false then
+      adjustTaxBtn:Enable(false)
+    else
+      adjustTaxBtn:Enable(true)
+    end
+  end
+  window.selectZoneGroup = nil
+  function window:SetSelectZoneGroup(zoneGroupType)
+    self.selectZoneGroup = zoneGroupType
+  end
+  local function OnClickadjustTaxBtn(self)
+    if window.selectZoneGroup == nil then
+      return
+    end
+    local dominionRate = parent.taxRateSlider:GetValue()
+    if parent.taxRateWindow.taxRate ~= dominionRate then
+      X2Dominion:ChangeDominionTaxRate(window.selectZoneGroup, dominionRate)
+    end
+    local nationRate = kingTakenCtrl.sliderbar:GetValue()
+    if window.taxRate ~= nationRate then
+      X2Nation:SetNationalTaxRate(window.selectZoneGroup, kingTakenCtrl.sliderbar:GetValue())
+    end
+  end
+  ButtonOnClickHandler(adjustTaxBtn, OnClickadjustTaxBtn)
+  local OnEnteradjustTaxBtn = function(self)
+    if self:IsEnabled() then
+      return
+    end
+    SetTooltip(self.tip, self)
+  end
+  adjustTaxBtn:SetHandler("OnEnter", OnEnteradjustTaxBtn)
+  local OnLeaveadjustTaxBtn = function(self)
+    if self:IsEnabled() then
+      return
+    end
+    HideTooltip()
+  end
+  adjustTaxBtn:SetHandler("OnLeave", OnLeaveadjustTaxBtn)
+  function window:FillInfo(taxRate, toplevelfactionid, isdominionowner)
+    self.taxRate = math.floor(taxRate)
+    kingTakenCtrl:SetValue(taxRate)
+    local myName = X2Unit:UnitName("player")
+    local isKing = X2Nation:IsNationOwner(toplevelfactionid, myName)
+    window:EditTaxMode(isKing, isdominionowner)
+    strKingGain = string.format("%s %d%%, %s %d%%", locale.nationMgr.kingGain, taxRate, locale.nationMgr.lordGain, 100 - taxRate)
+    taxRateDesc:SetText(strKingGain)
+  end
+  local function OnSliderChanged(self)
+    local value = self:GetValue()
+    kingTakenCtrl:SetValue(value)
+    if adjustTaxBtn.enable then
+      adjustTaxBtn:Enable(window.taxRate ~= value)
+    end
+    if window.taxRate == value then
+      adjustTaxBtn.tip = locale.nationMgr.equal_tax_rate_warning
+    end
+  end
+  kingTakenCtrl.sliderbar:SetHandler("OnSliderChanged", OnSliderChanged)
+  return window
+end
+local ShowTaxations = function(listCtrlFrame, taxRate)
+  listCtrlFrame:DeleteAllDatas()
+  local taxations = X2House:GetTaxations(taxRate)
+  local index = 1
+  for i = 1, #taxations do
+    listCtrlFrame:InsertData(index, 1, taxations[i])
+    index = index + 1
+  end
+end
+local function CreateDomonionInfo(id, parent)
+  local window = parent:CreateChildWidget("emptywidget", id, 0, true)
+  local zoneName = window:CreateChildWidget("label", "zoneName", 0, true)
+  zoneName:AddAnchor("TOPLEFT", window, "TOPLEFT", 0, 0)
+  zoneName:SetAutoResize(true)
+  zoneName:SetHeight(FONT_SIZE.XLARGE)
+  zoneName.style:SetFontSize(FONT_SIZE.XLARGE)
+  ApplyTextColor(zoneName, FONT_COLOR.MIDDLE_TITLE)
+  local infos = window:CreateChildWidget("textbox", "infos", 0, true)
+  infos:SetExtent(540, 508)
+  infos:AddAnchor("TOPLEFT", zoneName, "BOTTOMLEFT", 0, sideMargin - 7)
+  infos:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE + 2)
+  infos.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(infos, FONT_COLOR.DEFAULT)
+  local peaceMoneyTitle = window:CreateChildWidget("label", "peaceMoneyTitle", 0, false)
+  peaceMoneyTitle:SetAutoResize(true)
+  peaceMoneyTitle:SetHeight(territoryLocale.peaceTitleFontSize)
+  peaceMoneyTitle:AddAnchor("TOPRIGHT", window, -17, 49)
+  peaceMoneyTitle.style:SetFont(FONT_PATH.SNAIL, territoryLocale.peaceTitleFontSize)
+  peaceMoneyTitle.style:SetAlign(ALIGN_RIGHT)
+  ApplyTextColor(peaceMoneyTitle, FONT_COLOR.DEFAULT)
+  peaceMoneyTitle:SetText(locale.territory.peaceMoney)
+  local peaceMoney = window:CreateChildWidget("textbox", "peaceMoney", 0, true)
+  peaceMoney:SetExtent(150, FONT_SIZE.MIDDLE)
+  peaceMoney:AddAnchor("BOTTOMRIGHT", peaceMoneyTitle, 0, peaceMoneyTitle:GetHeight() + 6)
+  peaceMoney.style:SetAlign(ALIGN_RIGHT)
+  ApplyTextColor(peaceMoney, FONT_COLOR.BLUE)
+  local deco = peaceMoney:CreateImageDrawable(TEXTURE_PATH.TERRITORY, "background")
+  deco:SetCoords(8, 186, 57, 57)
+  deco:SetExtent(57, 57)
+  deco:AddAnchor("BOTTOMRIGHT", peaceMoneyTitle, 10, 18)
+  local peaceAAPoint = window:CreateChildWidget("textbox", "peaceAAPoint", 0, true)
+  peaceAAPoint:SetExtent(150, FONT_SIZE.MIDDLE)
+  local isConvertTaxItemToAAPoint = X2House:IsConvertTaxItemToAAPoint()
+  if F_MONEY.currency.houseTax == CURRENCY_GOLD and isConvertTaxItemToAAPoint == false then
+    peaceAAPoint:AddAnchor("BOTTOMRIGHT", infos, -5, 0)
+  else
+    peaceAAPoint:AddAnchor("BOTTOMRIGHT", peaceMoney, "TOPRIGHT", 0, -5)
+  end
+  peaceAAPoint.style:SetAlign(ALIGN_RIGHT)
+  ApplyTextColor(peaceAAPoint, FONT_COLOR.BLUE)
+  local taxRateWindow = window:CreateChildWidget("window", "taxRateWindow", 0, true)
+  taxRateWindow:Show(true)
+  taxRateWindow:SetExtent(540, 60)
+  taxRateWindow:AddAnchor("TOPLEFT", infos, "BOTTOMLEFT", 0, 28)
+  taxRateWindow.titleStyle:SetSnap(true)
+  taxRateWindow.titleStyle:SetFontSize(FONT_SIZE.LARGE)
+  taxRateWindow.titleStyle:SetAlign(ALIGN_TOP_LEFT)
+  ApplyTitleFontColor(taxRateWindow, FONT_COLOR.TITLE)
+  local bg = CreateContentBackground(taxRateWindow, "TYPE2")
+  bg:AddAnchor("TOPLEFT", taxRateWindow, -10, -15)
+  bg:AddAnchor("BOTTOMRIGHT", taxRateWindow, 10, 0)
+  ApplyTextureColor(bg, TEXTURE_COLOR.BOX_BLUE)
+  local taxRateSlider = CreateSlider(window:GetId() .. ".taxRateSlider", window)
+  taxRateSlider:AddAnchor("TOPLEFT", taxRateWindow, 0, sideMargin + 5)
+  taxRateSlider:SetMinMaxValues(0, 50)
+  taxRateSlider:SetStep(1)
+  taxRateSlider:UseWheel()
+  window.taxRateSlider = taxRateSlider
+  local currentTaxRate = window:CreateChildWidget("label", "currentTaxRate", 0, true)
+  currentTaxRate:SetExtent(50, FONT_SIZE.XLARGE)
+  currentTaxRate:AddAnchor("LEFT", taxRateSlider, "RIGHT", 8, 0)
+  ApplyTextColor(currentTaxRate, FONT_COLOR.BLUE)
+  currentTaxRate.style:SetSnap(true)
+  currentTaxRate.style:SetFontSize(FONT_SIZE.XLARGE)
+  taxRateSlider:SetWidth(545 - currentTaxRate:GetWidth() - sideMargin / 2)
+  local minPercent = window:CreateChildWidget("label", "minPercent", 0, true)
+  minPercent:SetHeight(FONT_SIZE.MIDDLE)
+  minPercent:SetAutoResize(true)
+  minPercent:SetText("0%")
+  minPercent:AddAnchor("TOPLEFT", taxRateSlider, "BOTTOMLEFT", 3, 5)
+  ApplyTextColor(minPercent, FONT_COLOR.DEFAULT)
+  minPercent.style:SetSnap(true)
+  minPercent.style:SetAlign(ALIGN_LEFT)
+  local maxPercent = window:CreateChildWidget("label", "maxPercent", 0, true)
+  maxPercent:SetAutoResize(true)
+  maxPercent:SetText("50%")
+  maxPercent:SetHeight(FONT_SIZE.MIDDLE)
+  maxPercent:AddAnchor("TOPRIGHT", taxRateSlider, "BOTTOMRIGHT", -3, 5)
+  ApplyTextColor(maxPercent, FONT_COLOR.DEFAULT)
+  maxPercent.style:SetSnap(true)
+  maxPercent.style:SetAlign(ALIGN_LEFT)
+  local taxationsFrame = CreateScrollListCtrl(window, "taxationsFrame", 0)
+  taxationsFrame:Show(true)
+  taxationsFrame:SetExtent(540, 130)
+  taxationsFrame:AddAnchor("TOPLEFT", taxRateWindow, "BOTTOMLEFT", 0, sideMargin - 8)
+  taxationsFrame.scroll:RemoveAllAnchors()
+  taxationsFrame.scroll:AddAnchor("TOPRIGHT", taxationsFrame, 0, 0)
+  taxationsFrame.scroll:AddAnchor("BOTTOMRIGHT", taxationsFrame, 0, 0)
+  local DataSetFunc = function(subItem, data, setValue)
+    if setValue then
+      local str = string.format("%s", data.desc)
+      subItem.textbox:SetText(str)
+      str = string.format("%s", F_MONEY:GetTaxString(data.taxString))
+      subItem.textbox2:SetText(str)
+    end
+  end
+  local function LayoutSetFunc(frame, rowIndex, colIndex, subItem)
+    DrawRoundDingbat(subItem)
+    subItem.dingbat:RemoveAllAnchors()
+    subItem.dingbat:AddAnchor("TOPLEFT", subItem, 0, 0)
+    local textbox = subItem:CreateChildWidget("textbox", "textbox", 0, true)
+    textbox:AddAnchor("TOPLEFT", subItem, 13, 0)
+    textbox:AddAnchor("BOTTOMRIGHT", subItem, 0, 0)
+    textbox:SetLineSpace(TEXTBOX_LINE_SPACE.SMALL)
+    textbox.style:SetAlign(territoryLocale.territoryTab.listCtrlFontAlign)
+    textbox.style:SetFontSize(territoryLocale.territoryTab.listCtrlFontSize - 1)
+    ApplyTextColor(textbox, FONT_COLOR.DEFAULT)
+    subItem.textbox = textbox
+    local textbox2 = subItem:CreateChildWidget("textbox", "textbox2", 0, true)
+    textbox2:AddAnchor("TOPLEFT", subItem, 13, 0)
+    textbox2:AddAnchor("BOTTOMRIGHT", subItem, -sideMargin, 0)
+    textbox2:SetLineSpace(TEXTBOX_LINE_SPACE.SMALL)
+    textbox2.style:SetAlign(ALIGN_RIGHT)
+    textbox2.style:SetFontSize(territoryLocale.territoryTab.listCtrlFontSize - 1)
+    ApplyTextColor(textbox2, FONT_COLOR.DEFAULT)
+    subItem.textbox2 = textbox2
+  end
+  local itemWidth = taxationsFrame.listCtrl:GetWidth()
+  taxationsFrame:InsertColumn("", itemWidth, LCCIT_WINDOW, DataSetFunc, nil, nil, LayoutSetFunc)
+  taxationsFrame:InsertColumn("", itemWidth, LCCIT_STRING, DataSetFunc, nil, nil, LayoutSetFunc)
+  taxationsFrame.listCtrl:SetColumnHeight(0)
+  taxationsFrame.AscendingSortMark:SetVisible(false)
+  taxationsFrame.DescendingSortMark:SetVisible(false)
+  taxationsFrame:InsertRows(6, false)
+  local bg = CreateContentBackground(taxationsFrame, "TYPE2")
+  bg:AddAnchor("TOPLEFT", taxationsFrame, -10, -20)
+  bg:AddAnchor("BOTTOMRIGHT", taxationsFrame, 10, 10)
+  ApplyTextureColor(bg, TEXTURE_COLOR.BOX_BLUE)
+  local taxControl = CreateTaxControlWindow("taxControl", window)
+  taxControl:SetExtent(545, 116)
+  taxControl:AddAnchor("TOPLEFT", taxationsFrame, "BOTTOMLEFT", 0, 15)
+  function window:FillInfo(zoneGroupType)
+    if zoneGroupType == nil then
+      self:Show(false)
+    else
+      self:Show(true)
+      local info = X2Nation:GetNationalDominionInfo(zoneGroupType)
+      if info == nil then
+        return
+      end
+      zoneName:SetText(X2Dominion:GetZoneGroupName(zoneGroupType))
+      local str = ""
+      local factionId = info.factionId
+      factionId = X2Faction:GetTopLevelFaction(factionId)
+      local nationBaseinfo = X2Nation:GetNationBaseInfo(factionId)
+      if nationBaseinfo.name ~= nil then
+        str = string.format("%s: %s", locale.chatChannel.faction, nationBaseinfo.name)
+      end
+      if info.expedition ~= nil then
+        if str == "" then
+          str = string.format("%s: %s", locale.nationMgr.own, info.expedition)
+        else
+          str = string.format([[
+%s
+%s: %s]], str, locale.nationMgr.own, info.expedition)
+        end
+      end
+      if info.owner ~= nil then
+        if info.isKing then
+          str = string.format([[
+%s
+%s: [%s] %s]], str, locale.nationMgr.lord, locale.nationMgr.king, info.owner)
+        else
+          str = string.format([[
+%s
+%s: %s]], str, locale.nationMgr.lord, info.owner)
+        end
+      end
+      if info.period ~= nil then
+        if str == "" then
+          str = string.format("%s: %s~ %s", locale.nationMgr.reignPeriod, locale.time.GetDateToDateFormat(info.period, 112), locale.nationMgr.now)
+        else
+          str = string.format([[
+%s
+%s: %s~ %s]], str, locale.nationMgr.reignPeriod, locale.time.GetDateToDateFormat(info.period, 112), locale.nationMgr.now)
+        end
+      end
+      infos:SetLineSpace(7)
+      infos:SetText(str)
+      infos:SetHeight(infos:GetTextHeight())
+      local moneyString = X2Dominion:GetPeaceTaxMoney(zoneGroupType)
+      local aaPointString = X2Dominion:GetPeaceTaxAAPoint(zoneGroupType)
+      local isConvertTaxItemToAAPoint = X2House:IsConvertTaxItemToAAPoint()
+      if F_MONEY.currency.houseTax == CURRENCY_GOLD and isConvertTaxItemToAAPoint == false then
+        peaceMoney:SetText(string.format(F_MONEY.currency.pipeString[F_MONEY.currency.houseTax], moneyString))
+      else
+        peaceAAPoint:SetText(string.format(F_MONEY.currency.pipeString[CURRENCY_AA_POINT], aaPointString))
+        peaceMoney:SetText(string.format(F_MONEY.currency.pipeString[CURRENCY_GOLD], moneyString))
+      end
+      taxRateWindow:SetTitleText(locale.territory.setTaxRate)
+      local taxRate = X2Dominion:GetTaxRate(zoneGroupType)
+      local taxRateStr = string.format("%s%%", taxRate)
+      currentTaxRate:SetText(taxRateStr)
+      taxRateSlider:SetValue(taxRate, false)
+      taxRateWindow.taxRate = taxRate
+      local isDominionOwner = X2Dominion:IsDominionOwner(zoneGroupType)
+      taxRateSlider:SetEnable(isDominionOwner)
+      currentTaxRate:Enable(isDominionOwner)
+      ShowTaxations(taxationsFrame, taxRate)
+      taxControl:FillInfo(info.nationalTax, factionId, isDominionOwner)
+      taxControl:Show(true)
+      taxControl:SetSelectZoneGroup(zoneGroupType)
+    end
+  end
+  local function OnSliderChanged(self)
+    local rate = math.floor(self:GetValue("horz"))
+    self:SetValue(rate, false)
+    if taxControl.adjustTaxBtn.enable then
+      taxControl.adjustTaxBtn:Enable(taxRateWindow.taxRate ~= rate)
+    end
+    local taxRateStr = string.format("%s%%", rate)
+    window.currentTaxRate:SetText(taxRateStr)
+    ShowTaxations(taxationsFrame, rate)
+  end
+  taxRateSlider:SetHandler("OnSliderChanged", OnSliderChanged)
+  return window
+end
+local function CreateNoneDominionView(parent)
+  local window = parent:CreateChildWidget("emptywidget", "noneDominionView", 0, true)
+  window:Show(false)
+  window:AddAnchor("TOPLEFT", parent, 0, 0)
+  window:AddAnchor("BOTTOMRIGHT", parent, 0, 0)
+  local icon = window:CreateImageDrawable(TEXTURE_PATH.NATION_DEFAULT, "overlay")
+  icon:SetCoords(0, 0, 94, 89)
+  icon:SetExtent(94, 89)
+  icon:AddAnchor("CENTER", window, 0, -sideMargin)
+  local warningLabel = window:CreateChildWidget("label", "warningLabel", 0, true)
+  warningLabel:AddAnchor("TOP", icon, "BOTTOM", 0, -sideMargin / 2)
+  warningLabel:SetAutoResize(true)
+  warningLabel:SetHeight(FONT_SIZE.XLARGE)
+  warningLabel.style:SetFontSize(FONT_SIZE.XLARGE)
+  ApplyTextColor(warningLabel, FONT_COLOR.LIGHT_GRAY)
+  warningLabel:SetText(locale.nationMgr.noDominion)
+end
+function CreateDominionTabOfNationMgr(window)
+  local dominionList = CreateDominionList("dominionList", window)
+  dominionList:AddAnchor("TOPLEFT", window, 0, sideMargin)
+  dominionList:AddAnchor("BOTTOMLEFT", window, 0, 0)
+  dominionList:SetWidth(200)
+  local dominionView = CreateDomonionInfo("dominionView", window)
+  dominionView:AddAnchor("TOPLEFT", dominionList, "TOPRIGHT", sideMargin / 1.5, 0)
+  dominionView:AddAnchor("BOTTOMRIGHT", window, "BOTTOMRIGHT", 0, 0)
+  local function SetAdjustButton(zoneGroupType)
+    local myfactionId = X2Faction:GetMyTopLevelFaction()
+    local targetfactionId = X2Faction:GetTopLevelFaction(info.factionId)
+    local myName = X2Unit:UnitName("player")
+    local isKing = X2Nation:IsNationOwner(targetfactionId, myName)
+    if myfactionId == targetfactionId and isKing == true then
+      isKing = true
+    else
+      isKing = false
+    end
+    local adjustBtnEnable = false
+    local isDominionOwner = X2Dominion:IsDominionOwner(zoneGroupType)
+    if isKing == true or isDominionOwner == true then
+      adjustBtnEnable = true
+    end
+    dominionView.taxControl.adjustTaxBtn:Enable(adjustBtnEnable)
+    dominionView.taxControl.adjustTaxBtn.enable = adjustBtnEnable
+    dominionView.taxControl.kingTakenCtrl.sliderbar:SetEnable(isKing)
+    dominionView.taxControl.kingTakenCtrl.ratio:Enable(isKing)
+    if isKing then
+      ApplyTextColor(dominionView.taxControl.kingTakenCtrl.ratio, FONT_COLOR.BLUE)
+    else
+      ApplyTextColor(dominionView.taxControl.kingTakenCtrl.ratio, FONT_COLOR.GRAY)
+    end
+  end
+  function dominionList.sliderList:OnSelChanged()
+    local index = self.content:GetSelectedIndex()
+    local zoneGroupType = dominionList.list[index + 1]
+    window:FillInfo(zoneGroupType)
+    SetAdjustButton(zoneGroupType)
+    if dominionView.taxControl.adjustTaxBtn.enable then
+      dominionView.taxControl.adjustTaxBtn:Enable(false)
+      dominionView.taxControl.adjustTaxBtn.tip = locale.nationMgr.equal_tax_rate_warning
+    end
+  end
+  CreateNoneDominionView(window)
+  local function NoneDominion(isNone)
+    dominionList:Show(not isNone)
+    dominionView:Show(not isNone)
+    window.noneDominionView:Show(isNone)
+  end
+  function window:Init()
+    local factionId = X2Faction:GetMyTopLevelFaction()
+    local list = X2Nation:GetDominionListAll(factionId)
+    NoneDominion(false)
+    dominionList:Show(true)
+    dominionList:Init(list)
+  end
+  function window:FillInfo(zoneGroupType)
+    dominionView:FillInfo(zoneGroupType)
+  end
+  local events = {
+    NATION_TAXRATE = function(zoneGroupType, prevTax, tax)
+      SetAdjustButton(dominionView.taxControl.selectZoneGroup)
+    end
+  }
+  window:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(window, events)
+end

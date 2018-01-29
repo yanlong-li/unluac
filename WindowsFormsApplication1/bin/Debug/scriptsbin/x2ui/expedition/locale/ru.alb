@@ -1,0 +1,85 @@
+if X2Util:GetGameProvider() == MAILRU then
+  expeditionLocale.titleFontSize = FONT_SIZE.MIDDLE
+  function expeditionLocale.jobLayoutFunc(frame, rowIndex, colIndex, subItem)
+    local jobName = subItem:CreateChildWidget("label", "jobName", 0, true)
+    jobName:AddAnchor("TOPLEFT", subItem, 0, 0)
+    jobName:AddAnchor("BOTTOMRIGHT", subItem, 0, 0)
+    jobName:SetInset(10, 0, 0, 0)
+    jobName.style:SetEllipsis(true)
+    ApplyTextColor(jobName, FONT_COLOR.DEFAULT)
+    jobName.style:SetAlign(ALIGN_LEFT)
+  end
+  function expeditionLocale.jobDataFunc(subItem, data, setValue)
+    if setValue then
+      local str = GetCombinedAbilityName(data[EXPEDITION_MEMBER_COL.CLASS][1], data[EXPEDITION_MEMBER_COL.CLASS][2], data[EXPEDITION_MEMBER_COL.CLASS][3])
+      subItem.jobName:SetText(str)
+      ChangeSubItemTextColorForOnline(subItem.jobName, data[EXPEDITION_MEMBER_COL.ONLINE])
+    end
+  end
+  function expeditionLocale.jobTooltipSettingFunc(frame, colIndex)
+    local itemCount = frame:GetRowCount()
+    for i = 1, itemCount do
+      do
+        local subItem = frame.listCtrl.items[i].subItems[colIndex]
+        local function OnEnter(self)
+          local data = frame:GetDataByViewIndex(i, colIndex)
+          if data == nil then
+            return
+          end
+          local jobStr = GetCombinedAbilityName(data[EXPEDITION_MEMBER_COL.CLASS][1], data[EXPEDITION_MEMBER_COL.CLASS][2], data[EXPEDITION_MEMBER_COL.CLASS][3])
+          if jobStr == "" then
+            return
+          end
+          SetTargetAnchorTooltip(jobStr, "TOPLEFT", self, "BOTTOMRIGHT", -5, -5)
+          frame.OnEnterItemRowIndex = i
+          frame.OnEnterItemColIndex = colIndex
+          frame.OnEnterWidget = subItem
+        end
+        subItem:SetHandler("OnEnter", OnEnter)
+        local function OnLeave()
+          HideTooltip()
+          frame.OnEnterWidget = nil
+          frame.OnEnterItemIndex = nil
+          frame.OnEnterItemColIndex = nil
+        end
+        subItem:SetHandler("OnLeave", OnLeave)
+      end
+    end
+  end
+  expeditionLocale.intputNameLabel = {anchorHeight = -34, guideWidth = 370}
+  expeditionLocale.width = {
+    memberListColumn = {
+      240,
+      80,
+      90,
+      80,
+      80,
+      240
+    }
+  }
+  expeditionLocale.useBarracks = false
+  expeditionLocale.texts = {
+    accept = GetUIText(NATION_TEXT, "join_approval"),
+    reject = GetUIText(NATION_TEXT, "join_rejected"),
+    recruitComboBox = {
+      GetCommonText("register_day"),
+      GetCommonText("number_of_people"),
+      GetUIText(AUCTION_TEXT, "level"),
+      GetUIText(AUCTION_TEXT, "name")
+    }
+  }
+  expeditionLocale.inset = {
+    infoMultiline = {
+      8,
+      8,
+      16,
+      8
+    },
+    recruitRecruitment = {
+      10,
+      10,
+      40,
+      10
+    }
+  }
+end

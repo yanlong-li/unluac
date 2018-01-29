@@ -1,0 +1,30 @@
+CameraShake = {
+  Properties = {
+    vector_Position = {
+      x = 0,
+      y = 0,
+      z = 0
+    },
+    fRadius = 10,
+    fStrength = 1,
+    fDuration = 2,
+    fFrequency = 0.5
+  },
+  Editor = {
+    Model = "Editor/Objects/Particles.cgf"
+  }
+}
+function CameraShake:OnPropertyChange()
+end
+function CameraShake:Event_Shake(sender)
+  g_gameRules:ClientViewShake(self.Properties.vector_Position, self.Properties.fRadius, self.Properties.fStrength, self.Properties.fDuration, self.Properties.fFrequency)
+end
+CameraShake.FlowEvents = {
+  Inputs = {
+    Shake = {
+      CameraShake.Event_Shake,
+      "bool"
+    }
+  },
+  Outputs = {}
+}

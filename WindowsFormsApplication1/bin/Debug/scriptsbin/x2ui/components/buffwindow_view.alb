@@ -1,0 +1,72 @@
+function SetViewOfBuffWindow(id, parent, maxCount, isBuff)
+  local w = CreateEmptyWindow(id, parent)
+  w.buffCountOnSingleLine = 12
+  w.iconSize = 28
+  w.iconXGap = 2
+  w.iconYGap = 2
+  w.iconSortVertical = false
+  w.button = {}
+  for i = 1, maxCount do
+    local button = CreateItemIconButton(id .. ".button[" .. i .. "]", w)
+    button:Show(false)
+    button.anim = false
+    ApplySlotSkin(button, button.back, SLOT_STYLE.BUFF)
+    button.leftTimeText = CreateLabel(id .. ".button[" .. i .. "].leftTimeText", button)
+    button.leftTimeText:Clickable(false)
+    button.leftTimeText:SetAutoResize(true)
+    button.leftTimeText:SetHeight(FONT_SIZE.SMALL)
+    button.leftTimeText:AddAnchor("CENTER", button, -2, 0)
+    button.leftTimeText.style:SetAlign(ALIGN_CENTER)
+    button.leftTimeText.style:SetColor(1, 1, 1, 1)
+    button.leftTimeText.style:SetOutline(true)
+    local stack = button:CreateChildWidget("label", "stack", 0, true)
+    stack:SetAutoResize(true)
+    stack:SetHeight(FONT_SIZE.SMALL)
+    stack.style:SetAlign(ALIGN_CENTER)
+    stack.style:SetShadow(true)
+    stack.style:SetFontSize(FONT_SIZE.SMALL)
+    local buff_deco = button:CreateImageDrawable(TEXTURE_PATH.HUD, "overlay")
+    buff_deco:SetExtent(15, 8)
+    if isBuff then
+      button.back:SetColor(TEXTURE_COLOR.SINERGY_BUFF[1], TEXTURE_COLOR.SINERGY_BUFF[2], TEXTURE_COLOR.SINERGY_BUFF[3], 1)
+      buff_deco:SetColor(TEXTURE_COLOR.SINERGY_BUFF[1], TEXTURE_COLOR.SINERGY_BUFF[2], TEXTURE_COLOR.SINERGY_BUFF[3], 1)
+      buff_deco:SetCoords(733, 168, 15, -8)
+      buff_deco:AddAnchor("BOTTOM", button, 0, 0)
+      ApplyTextColor(stack, FONT_COLOR.DETAIL_DEMAGE)
+      stack:AddAnchor("TOPLEFT", button, 2, 1)
+    else
+      button.back:SetColor(TEXTURE_COLOR.SINERGY_DEBUFF[1], TEXTURE_COLOR.SINERGY_DEBUFF[2], TEXTURE_COLOR.SINERGY_DEBUFF[3], 1)
+      buff_deco:SetColor(TEXTURE_COLOR.SINERGY_DEBUFF[1], TEXTURE_COLOR.SINERGY_DEBUFF[2], TEXTURE_COLOR.SINERGY_DEBUFF[3], 1)
+      buff_deco:SetCoords(733, 160, 15, 8)
+      buff_deco:AddAnchor("TOP", button, 0, 0)
+      ApplyTextColor(stack, FONT_COLOR.SOFT_RED)
+      stack:AddAnchor("BOTTOMLEFT", button, 2, -2)
+    end
+    w.button[i] = button
+  end
+  function w:SetLayout(buffCountOnSingleLine, size, xGap, yGap, sortVertical)
+    self.iconSortVertical = sortVertical
+    if self.buffCountOnSingleLine == buffCountOnSingleLine and self.iconSize == size and self.iconXGap == xGap and self.iconYGap == yGap then
+      return
+    end
+    self.buffCountOnSingleLine = buffCountOnSingleLine
+    self.iconSize = size
+    self.iconXGap = xGap
+    self.iconYGap = yGap
+    for i = 1, #w.button do
+      self.button[i]:SetExtent(size, size)
+      self.button[i].leftTimeText.style:SetFontSize(FONT_SIZE.SMALL)
+      self.button[i]:RemoveAllAnchors()
+      local row, column
+      if sortVertical == true then
+        row = math.mod(i - 1, self.buffCountOnSingleLine)
+        column = math.floor((i - 1) / self.buffCountOnSingleLine)
+      else
+        row = math.floor((i - 1) / self.buffCountOnSingleLine)
+        column = math.mod(i - 1, self.buffCountOnSingleLine)
+      end
+      self.button[i]:AddAnchor("TOPLEFT", self, column * (size + xGap), row * (size + yGap))
+    end
+  end
+  return w
+end

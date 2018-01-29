@@ -1,0 +1,35 @@
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+local nationTab = {}
+nationTab[NATION_TAB.NATION] = locale.nationMgr.nation
+nationTab[NATION_TAB.DOMINION] = locale.nationMgr.dominion
+nationTab[NATION_TAB.PEOPLE] = locale.nationMgr.peopleManage
+nationTab[NATION_TAB.RELATION] = locale.nationMgr.nationRelation
+function SetViewOfnationMgrView(id, parent)
+  local window = CreateWindow(id)
+  window:SetExtent(800, 626)
+  window:AddAnchor("CENTER", "UIParent", 0, 0)
+  window:SetTitle(locale.nationMgr.nation)
+  window:SetSounds("nation_mrg")
+  local tab = window:CreateChildWidget("tab", "tab", 0, true)
+  tab:AddAnchor("TOPLEFT", window, sideMargin, titleMargin)
+  tab:AddAnchor("BOTTOMRIGHT", window, -sideMargin, -sideMargin)
+  tab:SetCorner("TOPLEFT")
+  for i = 1, #nationTab do
+    tab:AddSimpleTab(nationTab[i])
+  end
+  local buttonTable = {}
+  for i = 1, #tab.window do
+    ApplyButtonSkin(tab.selectedButton[i], BUTTON_BASIC.TAB_SELECT)
+    ApplyButtonSkin(tab.unselectedButton[i], BUTTON_BASIC.TAB_UNSELECT)
+    table.insert(buttonTable, tab.selectedButton[i])
+    table.insert(buttonTable, tab.unselectedButton[i])
+  end
+  AdjustBtnLongestTextWidth(buttonTable)
+  tab:SetGap(-2)
+  DrawTabSkin(tab, tab.window[1], tab.selectedButton[1])
+  CreateNationTabOfNationMgr(tab.window[NATION_TAB.NATION])
+  CreateDominionTabOfNationMgr(tab.window[NATION_TAB.DOMINION])
+  CreatePeopleTabOfNationMgr(tab.window[NATION_TAB.PEOPLE])
+  CreateRelationTabOfNationMgr(tab.window[NATION_TAB.RELATION])
+  return window
+end

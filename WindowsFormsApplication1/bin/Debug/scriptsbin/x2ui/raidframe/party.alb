@@ -1,0 +1,23 @@
+local MAX_RAID_PARTY_MEMBERS = X2Team:GetMaxPartyMembers()
+function CreateRaidParty(parent, ownId, party)
+  local w = SetViewOfRaidParty(parent, ownId, party)
+  w.party = party
+  function w:Refresh()
+    if X2Team:GetPartyVisible(self.party) then
+      local count = 0
+      for i = 1, MAX_RAID_PARTY_MEMBERS do
+        if w.members[i]:Refresh() then
+          count = count + 1
+        end
+      end
+      if count == 0 then
+        self:Show(false)
+      else
+        self:Show(true)
+      end
+    else
+      self:Show(false)
+    end
+  end
+  return w
+end

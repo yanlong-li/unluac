@@ -1,0 +1,192 @@
+local siegeAuctionWindow
+local ShowRightContents = function(window, show)
+  if window == nil then
+    return
+  end
+  window.moneyEdit.goldEdit:SetText("0")
+  window.moneyEdit.silverEdit:SetText("0")
+  window.moneyEdit.copperEdit:SetText("0")
+  if show == true then
+    window.rightText:Show(true)
+    window.bidButton:Enable(true)
+    window.moneyEdit.goldEdit:Show(true)
+    window.moneyEdit.silverEdit:Show(true)
+    window.moneyEdit.copperEdit:Show(true)
+  else
+    window.rightText:Show(false)
+    window.bidButton:Enable(false)
+    window.moneyEdit.goldEdit:Show(true)
+    window.moneyEdit.silverEdit:Show(true)
+    window.moneyEdit.copperEdit:Show(true)
+  end
+end
+local function CreateSiegeAuctionWindow(id, parent)
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local window = CreateWindow(id, parent)
+  window:ApplyUIScale(false)
+  window:SetExtent(680, 424)
+  window:AddAnchor("CENTER", "UIParent", 0, 0)
+  window:Clickable(true)
+  window:SetTitle(GetUIText(COMMON_TEXT, "siege_auction_title"))
+  window:Show(true)
+  window.isAdd = false
+  local categoryListHeight = FONT_SIZE.MIDDLE
+  local categoryList = CreateScrollListBox(window, "categoryList")
+  categoryList:SetExtent(200, 354)
+  categoryList:AddAnchor("TOPLEFT", window, 20, 50)
+  categoryList.content:EnableSelectParent(true)
+  categoryList.content:SetInset(5, 10, 8, 5)
+  categoryList.content.itemStyle:SetFontSize(FONT_SIZE.LARGE)
+  categoryList.content.itemStyle:SetAlign(ALIGN_LEFT)
+  categoryList.content:SetHeight(categoryListHeight)
+  categoryList.content:ShowTooltip(true)
+  window.categoryList = categoryList
+  local siegeAuctionTable = X2Faction:GetSiegeAuctionTable()
+  categoryList:SetItemTrees(siegeAuctionTable)
+  local color = FONT_COLOR.TITLE
+  categoryList.content:SetDefaultItemTextColor(color[1], color[2], color[3], color[4])
+  local opened = categoryList.content:CreateOpenedImageDrawable("ui/button/grid.dds")
+  opened:SetCoords(0, 0, 21, 14)
+  opened:SetExtent(21, 14)
+  local closed = categoryList.content:CreateClosedImageDrawable("ui/button/grid.dds")
+  closed:SetCoords(44, 0, 13, 21)
+  closed:SetExtent(13, 21)
+  local rightUpper = window:CreateChildWidget("emptywidget", "rightUpper", 0, true)
+  rightUpper:SetExtent(430, 116)
+  rightUpper:AddAnchor("TOPLEFT", categoryList, "TOPRIGHT", 15, 0)
+  local ruBg = CreateContentBackground(rightUpper, "TYPE12", "BROWN")
+  ruBg:AddAnchor("TOPLEFT", rightUpper, 0, -5)
+  ruBg:AddAnchor("BOTTOMRIGHT", rightUpper, 0, 0)
+  local itemIcon = CreateItemIconButton("itemIcon", window)
+  itemIcon:SetExtent(ICON_SIZE.AUCTION, ICON_SIZE.AUCTION)
+  itemIcon:AddAnchor("TOPLEFT", rightUpper, "TOPLEFT", 16, 10)
+  itemIcon:Raise()
+  window.itemIcon = itemIcon
+  local iconText = window:CreateChildWidget("label", "iconText", 0, true)
+  iconText:SetAutoResize(true)
+  iconText:SetHeight(FONT_SIZE.LARGE)
+  iconText.style:SetFontSize(FONT_SIZE.LARGE)
+  iconText:AddAnchor("LEFT", itemIcon, "RIGHT", 8, 0)
+  ApplyTextColor(iconText, FONT_COLOR.HIGH_TITLE)
+  window.iconText = iconText
+  local leftText = window:CreateChildWidget("textbox", "leftText", 0, true)
+  leftText:AddAnchor("TOPLEFT", itemIcon, "BOTTOMLEFT", 0, 11)
+  leftText:SetExtent(360, 40)
+  leftText.style:SetFontSize(FONT_SIZE.LARGE)
+  leftText:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  leftText.style:SetAlign(ALIGN_TOP_LEFT)
+  leftText.style:SetEllipsis(true)
+  leftText:SetText(GetUIText(COMMON_TEXT, "not_auction_time"))
+  ApplyTextColor(leftText, FONT_COLOR.RED)
+  local rightText = window:CreateChildWidget("label", "rightText", 0, true)
+  rightText:SetAutoResize(true)
+  rightText:SetHeight(FONT_SIZE.LARGE)
+  rightText.style:SetFontSize(FONT_SIZE.LARGE)
+  rightText.style:SetAlign(ALIGN_RIGHT)
+  rightText:AddAnchor("BOTTOMRIGHT", leftText, "BOTTOMRIGHT", 0, -6)
+  rightText:SetText("")
+  ApplyTextColor(rightText, FONT_COLOR.RED)
+  local rmBg = CreateContentBackground(window, "TYPE2", "BROWN")
+  rmBg:SetExtent(430, 193)
+  rmBg:AddAnchor("TOPLEFT", rightUpper, "BOTTOMLEFT", 0, 0)
+  local rightMiddle = CreateScrollWindow(window, "rightMiddle", 0)
+  rightMiddle:AddAnchor("TOPLEFT", rmBg, 16, 20)
+  rightMiddle:AddAnchor("BOTTOMRIGHT", rmBg, -5, -20)
+  local middleText = rightMiddle.content:CreateChildWidget("textbox", "middleText", 0, true)
+  middleText:SetExtent(rightMiddle.content:GetWidth(), 30)
+  middleText:AddAnchor("TOPLEFT", rightMiddle.content, 0, 0)
+  middleText:SetLineSpace(TEXTBOX_LINE_SPACE.LARGE)
+  middleText:SetAutoResize(true)
+  middleText.style:SetAlign(ALIGN_LEFT)
+  middleText.style:SetFontSize(FONT_SIZE.MIDDLE)
+  middleText:SetText(GetUIText(COMMON_TEXT, "siege_auction_description"))
+  ApplyTextColor(middleText, FONT_COLOR.DEFAULT)
+  ResetScroll(rightMiddle, middleText:GetHeight() + 5)
+  local bidButton = window:CreateChildWidget("button", "bidButton", 0, true)
+  bidButton:AddAnchor("TOPRIGHT", rmBg, "BOTTOMRIGHT", 0, 10)
+  bidButton:SetExtent(120, 45)
+  bidButton:SetText(GetUIText(COMMON_TEXT, "tender"))
+  ApplyButtonSkin(bidButton, BUTTON_BASIC.DEFAULT)
+  local moneyEdit
+  if F_MONEY.currency.siegeAuctionBid == CURRENCY_AA_POINT then
+    moneyEdit = CreateAAPointEditsWindow("moneyEdit", window)
+  else
+    moneyEdit = CreateMoneyEditsWindow("moneyEdit", window)
+  end
+  moneyEdit:AddAnchor("BOTTOMRIGHT", bidButton, "BOTTOMLEFT", 0, -7)
+  moneyEdit:SetStyle("brown")
+  window.moneyEdit = moneyEdit
+  local function BidButtonLeftClickFunc()
+    if siegeAuctionWindow ~= nil and moneyEdit:GetAmountStr() ~= "0" then
+      X2Faction:OpenSiegeBidWindow(categoryList.content:GetSelectedValue(), siegeAuctionWindow.isAdd, moneyEdit:GetAmountStr())
+      siegeAuctionWindow:Show(false)
+    end
+  end
+  ButtonOnClickHandler(bidButton, BidButtonLeftClickFunc)
+  function categoryList:OnSelChanged()
+    local value = self.content:GetSelectedValue()
+    local data = X2Faction:GetSiegeAuctionData(value)
+    if data == nil then
+      return
+    end
+    bidButton:Enable(true)
+    local itemInfo = X2Item:GetSiegeItemByZoneGroup(value)
+    itemIcon:SetItemInfo(itemInfo)
+    iconText:SetText(itemInfo.name)
+    if data.canAuction then
+      local moneyString = ""
+      if F_MONEY.currency.siegeAuctionBid == CURRENCY_AA_POINT then
+        moneyString = string.format([[
+%s |p%s;
+%s]], GetUIText(COMMON_TEXT, "my_bid"), data.auctionMoney, GetUIText(COMMON_TEXT, "auction_time"))
+      else
+        moneyString = string.format([[
+%s |m%s;
+%s]], GetUIText(COMMON_TEXT, "my_bid"), data.auctionMoney, GetUIText(COMMON_TEXT, "auction_time"))
+      end
+      ApplyTextColor(leftText, FONT_COLOR.BROWN)
+      leftText:SetText(moneyString)
+      rightText:SetText(locale.time.GetRemainDateToDateFormat(data.time) .. " " .. GetUIText(HOUSING_TEXT, "left"))
+      ShowRightContents(window, true)
+      if data.baseMoney > 0 then
+        window.isAdd = true
+        bidButton:SetText(GetUIText(COMMON_TEXT, "more_bid"))
+      else
+        window.isAdd = false
+        bidButton:SetText(GetUIText(COMMON_TEXT, "tender"))
+      end
+    else
+      ApplyTextColor(leftText, FONT_COLOR.RED)
+      leftText:SetText(GetUIText(COMMON_TEXT, "not_auction_time"))
+      ShowRightContents(window, false)
+    end
+  end
+  local function CategoryOnListboxToggled(self)
+    categoryList:SetMinMaxValues("vert", 0, categoryList.content:GetMaxTop())
+  end
+  categoryList.content:SetHandler("OnListboxToggled", CategoryOnListboxToggled)
+  local events = {
+    INTERACTION_END = function()
+      window:Show(false)
+    end
+  }
+  window:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(window, events)
+  return window
+end
+function OnToggleSiegeAuction()
+  if siegeAuctionWindow == nil then
+    siegeAuctionWindow = CreateSiegeAuctionWindow("siegeAuction", "UIParent")
+    siegeAuctionWindow:Show(true)
+    ShowRightContents(siegeAuctionWindow, false)
+  else
+    ShowRightContents(siegeAuctionWindow, false)
+    siegeAuctionWindow:Show(not siegeAuctionWindow:IsVisible())
+  end
+  siegeAuctionWindow.categoryList.content:ClearAllSelected()
+  siegeAuctionWindow.itemIcon:Init()
+  siegeAuctionWindow.iconText:SetText("")
+end
+UIParent:SetEventHandler("SIEGE_AUCTION", OnToggleSiegeAuction)

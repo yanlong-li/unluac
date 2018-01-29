@@ -1,0 +1,124 @@
+function AssignInfomationSubHandler(parent)
+  function parent:SetViewOffInfomationInterestHandler()
+    local wnd = self.interestWindow
+    function wnd:OnExit()
+      wnd:Show(false)
+      local value = {}
+      for i = 1, #expedMgmt.IR do
+        if wnd.interestChks[i]:GetChecked() then
+          value[i] = 1
+        else
+          value[i] = 0
+        end
+      end
+      if parent.SetInterest ~= nil then
+        parent:SetInterest(value)
+      end
+    end
+    wnd:SetHandler("OnHide", wnd.OnExit)
+    function wnd:SetInterest(value)
+      for i = 1, #expedMgmt.IR do
+        if value[i] == 1 then
+          self.interestChks[i]:SetChecked(true, false)
+        else
+          self.interestChks[i]:SetChecked(false, false)
+        end
+      end
+    end
+  end
+  function parent:SetViewOffInfomationBuffHandler()
+    local wnd = self.buffWindow
+    function wnd.okButton:OnClick()
+      wnd:Show(false)
+    end
+    wnd.okButton:SetHandler("OnClick", wnd.okButton.OnClick)
+  end
+  function parent:SetViewOffInfomationGuideHandler()
+    local wnd = self.guideWindow
+    function wnd.okButton:OnClick()
+      wnd:Show(false)
+    end
+    wnd.okButton:SetHandler("OnClick", wnd.okButton.OnClick)
+  end
+  function parent:SetViewOffInfomationLevelUpHandler()
+    local wnd = self.levelUpWindow
+    function wnd.cancelButton:OnClick()
+      wnd:Show(false)
+    end
+    wnd.cancelButton:SetHandler("OnClick", wnd.cancelButton.OnClick)
+    function wnd.okButton:OnClick()
+      X2Faction:SetExpeditionLevelUp()
+      parent.frame.upgradeButton.waiting = false
+      wnd:Show(false)
+    end
+    wnd.okButton:SetHandler("OnClick", wnd.okButton.OnClick)
+    function wnd:LevelApply()
+      local level = X2Faction:GetMyExpeditionLevel()
+      local levelInfo = X2Faction:GetExpeditionLevelInfo(level + 1)
+      local curLevelInfo = X2Faction:GetExpeditionLevelInfo(level)
+      local money = levelInfo[4]
+      local items = levelInfo[5]
+      local nextBuff = levelInfo[6]
+      local prevBuff = curLevelInfo[6]
+      local height = wnd.windowHeight
+      wnd.buffArrow:Show(false)
+      wnd.midWin:SetHeight(wnd.midWin.midHeight)
+      wnd:SetHeight(height)
+      if items ~= nil and #items > 0 then
+        wnd.levelUpItem:SetItemInfo(items[1], 0)
+        wnd.levelUpItem:Show(true)
+        height = height + wnd.levelUpItem:GetHeight() + 15
+        local curCnt = X2Bag:GetCountInBag(items[1].itemType)
+        local needCnt = items[1].needCount
+        local str = string.format("%s/%s", tostring(curCnt), tostring(needCnt))
+        wnd.levelUpItem.stack:SetText(str)
+        if tonumber(curCnt) >= tonumber(needCnt) then
+          ApplyTextColor(wnd.levelUpItem.stack, FONT_COLOR.WHITE)
+          wnd.levelUpItem:SetNormalColor(1, 1, 1, 1)
+          wnd.levelUpItem:SetPushedColor(1, 1, 1, 1)
+          wnd.levelUpItem:SetHighlightColor(1, 1, 1, 1)
+          wnd.levelUpItem:SetDisabledColor(1, 1, 1, 1)
+          self.okButton:Enable(true)
+        else
+          ApplyTextColor(wnd.levelUpItem.stack, FONT_COLOR.RED)
+          wnd.levelUpItem:SetNormalColor(0.5, 0.5, 0.5, 1)
+          wnd.levelUpItem:SetPushedColor(0.5, 0.5, 0.5, 1)
+          wnd.levelUpItem:SetHighlightColor(0.5, 0.5, 0.5, 1)
+          wnd.levelUpItem:SetDisabledColor(0.5, 0.5, 0.5, 1)
+          self.okButton:Enable(false)
+        end
+        wnd.levelUpItem.stack.style:SetAlign(ALIGN_CENTER)
+      else
+        levelUpItem:Show(false)
+        self.okButton:Enable(true)
+      end
+      if prevBuff ~= nil and #prevBuff > 0 then
+        local buffInfo = X2Ability:GetBuffTooltip(prevBuff[1], 1)
+        wnd.prevBuff:Show(true)
+        wnd.prevBuff:SetTooltip(buffInfo)
+        SetIconBackGround(wnd.prevBuff, buffInfo.path)
+        wnd.buffArrow:Show(true)
+      else
+        wnd.prevBuff:Show(false)
+      end
+      if nextBuff ~= nil and #nextBuff > 0 then
+        local buffInfo = X2Ability:GetBuffTooltip(nextBuff[1], 1)
+        wnd.nextBuff:Show(true)
+        wnd.nextBuff:SetTooltip(buffInfo)
+        SetIconBackGround(wnd.nextBuff, buffInfo.path)
+        wnd.buffArrow:Show(true)
+      else
+        wnd.nextBuff:Show(false)
+      end
+      if wnd.buffArrow:IsVisible() then
+        wnd.midWin:SetHeight(wnd.midWin.midHeight + wnd.midWin.buffHeight)
+        height = height + wnd.midWin.buffHeight
+      end
+      wnd:SetHeight(height)
+    end
+  end
+  parent:SetViewOffInfomationInterestHandler()
+  parent:SetViewOffInfomationBuffHandler()
+  parent:SetViewOffInfomationGuideHandler()
+  parent:SetViewOffInfomationLevelUpHandler()
+end

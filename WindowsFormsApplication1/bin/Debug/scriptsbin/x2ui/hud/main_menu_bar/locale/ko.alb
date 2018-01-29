@@ -1,0 +1,9 @@
+if mainMenuBarLocale == nil then
+  mainMenuBarLocale = {}
+end
+function mainMenuBarLocale:SetTimerLabelIconAnchor(icon, target)
+  icon:AddAnchor("BOTTOMRIGHT", target, -5, -5)
+end
+function mainMenuBarLocale:GetArcheLifeBtnTip()
+  return GetUIText(PREMIUM_TEXT, "premium")
+end

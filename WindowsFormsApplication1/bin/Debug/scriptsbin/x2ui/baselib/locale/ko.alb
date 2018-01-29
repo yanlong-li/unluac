@@ -1,0 +1,140 @@
+if baselibLocale == nil then
+  baselibLocale = {}
+end
+baselibLocale.button = {
+  skillAbilityButton = {
+    extent = {w = 170, h = 38}
+  }
+}
+baselibLocale.chatOption = {
+  menuList = {menuButtonWidth = 90}
+}
+baselibLocale.viewArcheLifeIcon = true
+function baselibLocale.GetDate(year, month, day, hour, minute, second, filter)
+  filter = filter or DEFAULT_FORMAT_FILTER
+  local function Get(value, msg, key)
+    if value <= 0 then
+      filter = math.floor(filter % key)
+      return ""
+    end
+    local x = math.floor(filter / key)
+    if x ~= 1 then
+      return ""
+    end
+    filter = filter - key
+    return X2Locale:LocalizeUiText(DATE_TIME_TEXT, msg, tostring(value))
+  end
+  local function GetHour(value, msg, key)
+    if value < 0 then
+      filter = math.floor(filter % key)
+      return ""
+    end
+    local x = math.floor(filter / key)
+    if x ~= 1 then
+      return ""
+    end
+    filter = filter - key
+    local prefix = ""
+    if value < 12 then
+      prefix = string.format("%s", X2Locale:LocalizeUiText(DATE_TIME_TEXT, "am"))
+    elseif value == 12 then
+      prefix = string.format("%s", X2Locale:LocalizeUiText(DATE_TIME_TEXT, "pm"))
+    else
+      value = value - 12
+      prefix = string.format("%s", X2Locale:LocalizeUiText(DATE_TIME_TEXT, "pm"))
+    end
+    local text = string.format("%s %s", prefix, X2Locale:LocalizeUiText(DATE_TIME_TEXT, msg, tostring(value)))
+    return text
+  end
+  return string.format("%s %s %s %s %s%s", Get(year, "year", FORMAT_FILTER.YEAR), Get(month, "month", FORMAT_FILTER.MONTH), Get(day, "day", FORMAT_FILTER.DAY), GetHour(hour, "hour", FORMAT_FILTER.HOUR), Get(minute, "minute", FORMAT_FILTER.MINUTE), Get(second, "second", FORMAT_FILTER.SECOND))
+end
+function baselibLocale.GetSimpleDate(year, month, day, hour, minute, second)
+  local output = string.format("%d. %d. %d. %02d:%02d", year, month, day, hour, minute)
+  if second > 0 then
+    output = output .. string.format(":%02d", second)
+  end
+  return output
+end
+baselibLocale.inGameShop = {
+  aa_cash_color = FONT_COLOR.CASH_BROWN,
+  aa_cash_color_hex = FONT_COLOR_HEX.CASH_BROWN
+}
+baselibLocale.useMileage = true
+baselibLocale.premiumService = {
+  usePremiumGrade = true,
+  endTimeTooltipLine = false,
+  showTooltip = true,
+  showEndTime = false
+}
+baselibLocale.bindingKeyModifierName = {
+  ["CTRL--"] = "Ctrl ",
+  ["ALT--"] = "Alt ",
+  ["SHIFT--"] = "Shift "
+}
+baselibLocale.bindingKeyName = {
+  ["MINUS"] = "-",
+  ["EQUALS"] = "=",
+  ["INSERT"] = "Insert",
+  ["DELETE"] = "Delete",
+  ["END"] = "End",
+  ["PAGEUP"] = "PgUp",
+  ["PAGEDOWN"] = "PgDn",
+  ["HOME"] = "Home",
+  ["\\"] = "b",
+  ["NUMBER1"] = "Num 1",
+  ["NUMBER2"] = "Num 2",
+  ["NUMBER3"] = "Num 3",
+  ["NUMBER4"] = "Num 4",
+  ["NUMBER5"] = "Num 5",
+  ["NUMBER6"] = "Num 6",
+  ["NUMBER7"] = "Num 7",
+  ["NUMBER8"] = "Num 8",
+  ["NUMBER9"] = "Num 9",
+  ["NUMBER0"] = "Num 0",
+  ["WHEELUP"] = "(W)Up",
+  ["WHEELDOWN"] = "(W)Dn",
+  ["APOSTROPHE"] = "`"
+}
+baselibLocale.useWebMessenger = true
+baselibLocale.useWebInquire = true
+baselibLocale.useWebDiary = true
+baselibLocale.useWebQuickDiary = true
+baselibLocale.useWebWiki = true
+baselibLocale.tooltipUpperMark = "\226\150\178"
+baselibLocale.tooltipLowerMark = "\226\150\188"
+baselibLocale.showMoneyTooltip = false
+baselibLocale.visibleRefundInfo = true
+baselibLocale.visibleAddedRefundInfo = true
+baselibLocale.openedSextant = false
+baselibLocale.useForceAttackKey = true
+baselibLocale.itemSideEffect = false
+baselibLocale.webWidgetName = "webbrowser"
+baselibLocale.useForceAttackKey = true
+function baselibLocale:SetEditCursor(edit)
+  edit:SetCursorHeight(2)
+  edit:SetCursorOffset(-2)
+end
+function baselibLocale:GetDefaultDateString(year, month, day)
+  if year == nil and month == nil and day == nil then
+    return
+  end
+  if year ~= nil then
+    return string.format("%d. %02d. %02d", year, month, day)
+  else
+    return string.format("%02d. %02d", month, day)
+  end
+end
+baselibLocale.useQQTalk = false
+baselibLocale.tencentUcc = false
+function baselibLocale:ChangeSequenceOfWord(format, word1, word2)
+  if format == nil then
+    format = "%s%s"
+  end
+  if type(word1) ~= "string" then
+    word1 = tostring(word1)
+  end
+  if type(word2) ~= "string" then
+    word2 = tostring(word2)
+  end
+  return string.format(format, word1, word2)
+end

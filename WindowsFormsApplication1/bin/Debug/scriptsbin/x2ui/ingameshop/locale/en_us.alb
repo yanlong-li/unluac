@@ -1,0 +1,11 @@
+if X2Util:GetGameProvider() == TRION and X2Locale:GetLocale() == "en_us" then
+  ingameshopLocale.maxItemName = {
+    list = 22,
+    cart = 22,
+    result = 33,
+    confirmTitle = 41,
+    confirmDetail = 20,
+    confirmPackage = 20
+  }
+  ingameshopLocale.eventIconFixedExtent = true
+end

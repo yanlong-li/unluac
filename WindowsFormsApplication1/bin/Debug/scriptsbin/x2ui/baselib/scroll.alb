@@ -1,0 +1,36 @@
+function CreateScroll(id, parent)
+  local frame = UIParent:CreateWidget("emptywidget", id, parent)
+  frame:SetWidth(19)
+  local bg = frame:CreateNinePartDrawable(TEXTURE_PATH.SCROLL, "background")
+  bg:SetCoords(71, 10, 13, 34)
+  bg:SetInset(6, 18, 6, 15)
+  frame.bg = bg
+  local upButton = frame:CreateChildWidget("button", "upButton", 0, true)
+  upButton:AddAnchor("TOPRIGHT", frame, 0, 0)
+  ApplyButtonSkin(upButton, BUTTON_BASIC.SLIDER_UP)
+  local downButton = frame:CreateChildWidget("button", "downButton", 0, true)
+  downButton:AddAnchor("BOTTOMRIGHT", frame, 0, 0)
+  ApplyButtonSkin(downButton, BUTTON_BASIC.SLIDER_DOWN)
+  local vs = frame:CreateChildWidget("slider", "vs", 0, true)
+  vs:AddAnchor("TOPLEFT", upButton, "BOTTOMLEFT", 1, 0)
+  vs:AddAnchor("BOTTOMRIGHT", downButton, "TOPRIGHT", 0, 0)
+  bg:AddAnchor("TOPLEFT", vs, 2, -9)
+  bg:AddAnchor("BOTTOMRIGHT", vs, -3, 9)
+  local thumb = vs:CreateChildWidget("button", "thumb", 0, true)
+  thumb:RegisterForDrag("LeftButton")
+  thumb:RegisterForClicks("LeftButton", false)
+  ApplyButtonSkin(thumb, BUTTON_BASIC.SLIDER_VERTICAL_THUMB)
+  vs:SetThumbButtonWidget(thumb)
+  vs:SetMinThumbLength(50)
+  function frame:SetEnable(enable)
+    self.upButton:Enable(enable)
+    self.downButton:Enable(enable)
+    self.vs.thumb:Enable(enable)
+    if enable then
+      self.bg:SetCoords(71, 10, 13, 34)
+    else
+      self.bg:SetCoords(84, 10, 13, 34)
+    end
+  end
+  return frame
+end

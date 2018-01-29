@@ -1,0 +1,515 @@
+local alert = {
+  heroElection = nil,
+  expeditionWar = nil,
+  battleField = nil,
+  zonePermission = nil
+}
+local function CheckAlertAnchor()
+  local offsetX = -5
+  local offsetY = 75
+  if alert.heroElection ~= nil then
+    alert.heroElection:RemoveAllAnchors()
+    alert.heroElection:AddAnchor("TOPRIGHT", "UIParent", offsetX, offsetY)
+    offsetX = -(alert.heroElection:GetWidth() + 5)
+    offsetY = offsetY + 10
+  end
+  if alert.expeditionWar ~= nil then
+    alert.expeditionWar:RemoveAllAnchors()
+    alert.expeditionWar:AddAnchor("TOPRIGHT", "UIParent", offsetX, offsetY)
+    offsetX = offsetX - (alert.expeditionWar:GetWidth() + 5)
+  end
+  if alert.battleField ~= nil then
+    alert.battleField:RemoveAllAnchors()
+    alert.battleField:AddAnchor("TOPRIGHT", "UIParent", offsetX, offsetY)
+    offsetX = offsetX - (alert.battleField:GetWidth() + 5)
+  end
+  if alert.zonePermission ~= nil then
+    alert.zonePermission:RemoveAllAnchors()
+    alert.zonePermission:AddAnchor("TOPRIGHT", "UIParent", offsetX, offsetY)
+  end
+end
+local function CreateBattleFieldEntranceAlarm(id, parent)
+  local widget = UIParent:CreateWidget("button", id, parent)
+  widget:EnableHidingIsRemove(true)
+  ApplyButtonSkin(widget, BUTTON_CONTENTS.BATTLEFIELD_ALARM)
+  local peopleCount = widget:CreateChildWidget("label", "peopleCount", 0, true)
+  peopleCount:Show(false)
+  peopleCount:SetAutoResize(true)
+  peopleCount:SetHeight(FONT_SIZE.MIDDLE)
+  peopleCount:SetText(GetUIText(COMMON_TEXT, "waiting"))
+  peopleCount:AddAnchor("BOTTOM", widget, 0, 12)
+  peopleCount.style:SetShadow(true)
+  ApplyTextColor(peopleCount, FONT_COLOR.SOFT_YELLOW)
+  local WidgetLeftClickFunc = function()
+    X2BattleField:ToggleBattleField()
+  end
+  ButtonOnClickHandler(widget, WidgetLeftClickFunc)
+  local function OnHideWidget()
+    alert.battleField = nil
+  end
+  widget:SetHandler("OnHide", OnHideWidget)
+  function widget:FillParticipationInfo()
+    peopleCount:Show(true)
+  end
+  local function OnEnterWidget()
+    local myCorps = X2BattleField:GetJoinedInfos()
+    if myCorps == -1 then
+      return
+    end
+    local myCorpsName = ""
+    local requestForm = ""
+    local battleFieldType = X2BattleField:GetApplyBattleFieldType()
+    local basicInfo = X2BattleField:GetEntranceBasicInfo(battleFieldType)
+    local battlefieldTitle = ""
+    if basicInfo ~= nil then
+      battlefieldTitle = basicInfo.name
+    end
+    if battleFieldType ~= nil then
+      myCorpsName = X2BattleField:GetEntranceFactionInfo(battleFieldType, myCorps)
+      if myCorpsName == "ANY_CORPS" then
+        myCorpsName = X2Locale:LocalizeUiText(COMMON_TEXT, "random")
+      end
+    end
+    if myCorpsName ~= nil and myCorpsName ~= "" then
+      requestForm = string.format("%s : %s", locale.battlefield.myRequest, myCorpsName)
+    else
+      requestForm = string.format("%s: %s", locale.battlefield.myRequest, X2Locale:LocalizeUiText(MONEY_TEXT, "unknown"))
+    end
+    str = string.format([[
+%s%s|r %s
+%s]], FONT_COLOR_HEX.SKYBLUE, battlefieldTitle, locale.battlefield.waiting, requestForm)
+    SetTargetAnchorTooltip(str, "TOPRIGHT", widget, "BOTTOMLEFT", 5, -15)
+  end
+  widget:SetHandler("OnEnter", OnEnterWidget)
+  local OnLeaveWidget = function()
+    HideTooltip()
+  end
+  widget:SetHandler("OnLeave", OnLeaveWidget)
+  local events = {
+    UPDATE_INSTANT_GAME_STATE = function()
+      widget:FillParticipationInfo()
+    end,
+    ENTERED_INSTANT_GAME_ZONE = function()
+      widget:Show(false)
+    end
+  }
+  widget:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(widget, events)
+  return widget
+end
+function ShowBattleFieldEntranceAlarm(isShow)
+  if isShow and alert.battleField == nil then
+    alert.battleField = CreateBattleFieldEntranceAlarm("alert.battleField", "UIParent")
+    alert.battleField:FillParticipationInfo()
+  end
+  if alert.battleField ~= nil then
+    if isShow then
+      CheckAlertAnchor()
+    end
+    alert.battleField:Show(isShow)
+  end
+end
+local function CreateZonePermissionAlert(id, parent)
+  local widget = UIParent:CreateWidget("button", id, parent)
+  widget:EnableHidingIsRemove(true)
+  ApplyButtonSkin(widget, BUTTON_CONTENTS.ZONE_PERMISSION_WAIT)
+  widget.peopleCount = widget:CreateChildWidget("label", "peopleCount", 0, true)
+  local peopleCount = widget.peopleCount
+  peopleCount:SetAutoResize(true)
+  peopleCount:SetHeight(FONT_SIZE.MIDDLE)
+  peopleCount:SetText(GetUIText(SERVER_TEXT, "paramCountOfPersons", "0"))
+  peopleCount:AddAnchor("BOTTOM", widget, 0, 12)
+  peopleCount.style:SetShadow(true)
+  ApplyTextColor(peopleCount, FONT_COLOR.SOFT_YELLOW)
+  local WidgetLeftClickFunc = function()
+    X2Player:OpenZonePermissionWaitWindow()
+  end
+  ButtonOnClickHandler(widget, WidgetLeftClickFunc)
+  local function OnHideWidget()
+    alert.zonePermission = nil
+  end
+  widget:SetHandler("OnHide", OnHideWidget)
+  local function OnEnterWidget()
+    local condition = X2Player:GetZonePermissionCondition()
+    str = string.format("%s%s|r %s", FONT_COLOR_HEX.SKYBLUE, condition.waitName, GetUIText(COMMON_TEXT, "zp_waiting"))
+    SetTargetAnchorTooltip(str, "TOPRIGHT", widget, "BOTTOMRIGHT", 0, 12)
+  end
+  widget:SetHandler("OnEnter", OnEnterWidget)
+  local OnLeaveWidget = function()
+    HideTooltip()
+  end
+  widget:SetHandler("OnLeave", OnLeaveWidget)
+  return widget
+end
+local function ShowZonePermissionAlert()
+  if alert.zonePermission == nil then
+    alert.zonePermission = CreateZonePermissionAlert("alert.zonePermission", "UIParent")
+  end
+  if alert.zonePermission ~= nil then
+    alert.zonePermission:Show(true)
+    CheckAlertAnchor()
+  end
+end
+local function UpdateZonePermission()
+  local condition = X2Player:GetZonePermissionCondition()
+  if condition.permission == 1 and condition.inZone == false then
+    ShowZonePermissionAlert()
+    alert.zonePermission.peopleCount:SetText(GetUIText(SERVER_TEXT, "paramCountOfPersons", tostring(condition.waitNum)))
+  elseif alert.zonePermission ~= nil then
+    alert.zonePermission:Show(false)
+  end
+end
+UIParent:SetEventHandler("UPDATE_ZONE_PERMISSION", UpdateZonePermission)
+UIParent:SetEventHandler("LEFT_LOADING", UpdateZonePermission)
+local function CreateHeroElectionAlert(id, parent)
+  local frame = UIParent:CreateWidget("emptywidget", id, parent)
+  frame:Show(false)
+  frame:EnableHidingIsRemove(true)
+  local texture = frame:CreateImageDrawable(TEXTURE_PATH.HERO_ELECTION_ALERT, "background")
+  texture:SetTextureInfo("icon_vote02")
+  texture:AddAnchor("CENTER", frame, 0, 0)
+  local label = frame:CreateChildWidget("label", "label", 0, false)
+  label:SetAutoResize(true)
+  label:SetHeight(FONT_SIZE.MIDDLE)
+  label:AddAnchor("BOTTOM", frame, 0, 11)
+  label:SetText(GetUIText(COMMON_TEXT, "in_progress_election"))
+  label.style:SetFontSize(FONT_SIZE.MIDDLE)
+  label.style:SetShadow(true)
+  ApplyTextColor(label, FONT_COLOR.SOFT_YELLOW)
+  frame:SetExtent(texture:GetExtent())
+  function frame:FillTooltip()
+    local condition = X2Hero:GetVoterCondition()
+    if condition == nil then
+      if frame.tooltip ~= nil then
+        frame.tooltip:Show(false)
+        frame:ReleaseHandler("OnEnter")
+      end
+      return
+    end
+    local factionId = X2Hero:GetClientFactionID()
+    local isMoribundNation = X2Nation:IsMoribundNation(factionId)
+    if not isMoribundNation and X2Hero:IsVoter() then
+      do
+        local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+        local tooltip = UIParent:CreateWidget("gametooltip", "tooltip", "UIParent")
+        tooltip:SetExtent(100, 50)
+        tooltip.style:SetAlign(ALIGN_LEFT)
+        DefaultTooltipSetting(tooltip)
+        CreateTooltipDrawable(tooltip)
+        frame.tooltip = tooltip
+        local texture = tooltip:CreateImageDrawable(TEXTURE_PATH.HERO_ELECTION_ALERT, "artwork")
+        texture:SetTextureInfo("icon_vote01")
+        texture:AddAnchor("TOPLEFT", tooltip, 8, 8)
+        local function OnEnter(self)
+          tooltip:ClearLines()
+          tooltip:AddLine(GetUIText(COMMON_TEXT, "choiced_hero_election"), FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE, "left", ALIGN_LEFT, texture:GetWidth() + 2)
+          tooltip:AddLine(GetUIText(COMMON_TEXT, "hero_election_alert_common_tooltip", tostring(condition.level), tostring(condition.leadership_point)), FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE, "left", ALIGN_LEFT, 0)
+          SetDefaultTooltipAnchor(frame, tooltip)
+          tooltip:Show(true)
+        end
+        self:SetHandler("OnEnter", OnEnter)
+        local function OnLeave()
+          tooltip:Show(false)
+        end
+        self:SetHandler("OnLeave", OnLeave)
+      end
+    else
+      local function OnEnter(self)
+        local info = X2Player:GetGamePoints()
+        local point = info.periodLeadershipPointStr
+        if point == nil then
+          return
+        end
+        local str = ""
+        if isMoribundNation then
+          str = string.format([[
+%s%s|r
+%s]], FONT_COLOR_HEX.SOFT_YELLOW, GetUIText(COMMON_TEXT, "hero_not_enable_vote_by_in_moribund_nation"), GetUIText(COMMON_TEXT, "hero_election_alert_common_tooltip", tostring(condition.level), tostring(condition.leadership_point)))
+        elseif X2Hero:IsAlreadyVoted() then
+          str = string.format([[
+%s%s|r
+%s]], FONT_COLOR_HEX.SOFT_YELLOW, GetUIText(COMMON_TEXT, "hero_already_vote_noti"), GetUIText(COMMON_TEXT, "hero_election_alert_common_tooltip", tostring(condition.level), tostring(condition.leadership_point)))
+        else
+          str = string.format([[
+%s
+%s]], GetUIText(COMMON_TEXT, "not_choiced_hero_election", tostring(X2Unit:UnitLevel("player")), tostring(point)), GetUIText(COMMON_TEXT, "hero_election_alert_common_tooltip", tostring(condition.level), tostring(condition.leadership_point)))
+        end
+        SetTooltip(str, self)
+      end
+      self:SetHandler("OnEnter", OnEnter)
+    end
+  end
+  local function OnEndFadeOut()
+    if alert.heroElection.tooltip ~= nil then
+      alert.heroElection.tooltip = nil
+    end
+    alert.heroElection = nil
+    CheckAlertAnchor()
+  end
+  frame:SetHandler("OnEndFadeOut", OnEndFadeOut)
+  local events = {
+    HERO_ELECTION_VOTED = function()
+      frame:FillTooltip()
+    end,
+    UPDATE_HERO_ELECTION_CONDITION = function()
+      frame:FillTooltip()
+    end,
+    END_HERO_ELECTION_PERIOD = function()
+      frame:Show(false)
+    end,
+    NATION_INVITE = function()
+      frame:FillTooltip()
+    end,
+    NATION_KICK = function()
+      frame:FillTooltip()
+    end
+  }
+  frame:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(frame, events)
+  return frame
+end
+local function ShowHeroElectionAlert()
+  if alert.heroElection == nil then
+    alert.heroElection = CreateHeroElectionAlert("alert.heroElection", "UIParent")
+    alert.heroElection:FillTooltip()
+  end
+  if alert.heroElection ~= nil then
+    alert.heroElection:Show(true)
+    CheckAlertAnchor()
+  end
+end
+UIParent:SetEventHandler("START_HERO_ELECTION_PERIOD", ShowHeroElectionAlert)
+local FormatRemainTime = function(msec)
+  local timeStr = ""
+  local key = ""
+  if not (msec >= 0) or not msec then
+    msec = 0
+  end
+  if msec >= 3600000 then
+    timeStr = tostring(math.ceil(msec / 3600000))
+    key = "hour"
+  elseif msec >= 60000 then
+    timeStr = tostring(math.ceil(msec / 60000))
+    key = "minute"
+  elseif msec >= 0 then
+    timeStr = tostring(math.ceil(msec / 1000))
+    key = "second"
+  end
+  return X2Locale:LocalizeUiText(TIME, key, timeStr)
+end
+local function CreateExpeditionWarAlarm(id, parent)
+  local widget = UIParent:CreateWidget("button", id, parent)
+  local light2 = widget:CreateEffectDrawable(TEXTURE_PATH.EXPEDITION_WAR_ALARM, "background")
+  light2:SetCoords(0, 0, 175, 156)
+  light2:SetExtent(175, 156)
+  light2:AddAnchor("CENTER", widget, 0, 0)
+  light2:SetEffectPriority(1, "alpha", 0.5, 0.5)
+  light2:SetEffectInitialColor(1, 1, 1, 1, 0.4)
+  light2:SetEffectFinalColor(1, 1, 1, 1, 0.53)
+  light2:SetEffectRotate(1, 15, 0)
+  light2:SetEffectScale(1, 1.1, 0.97, 1.1, 1.1)
+  light2:SetEffectPriority(2, "alpha", 0.5, 0.5)
+  light2:SetEffectInitialColor(2, 1, 1, 1, 0.53)
+  light2:SetEffectFinalColor(2, 1, 1, 1, 0.4)
+  light2:SetEffectRotate(2, 0, -15)
+  light2:SetEffectScale(2, 1.1, 1.1, 1.1, 1.1)
+  light2:SetEffectPriority(3, "alpha", 0.4, 0.4)
+  light2:SetEffectInitialColor(3, 1, 1, 1, 0.4)
+  light2:SetEffectFinalColor(3, 1, 1, 1, 0.4)
+  light2:SetEffectRotate(3, -15, 15)
+  light2:SetEffectScale(3, 1.1, 1.1, 1.1, 1.1)
+  light2:SetEffectPriority(4, "alpha", 0.4, 0.4)
+  light2:SetEffectInitialColor(4, 1, 1, 1, 0.4)
+  light2:SetEffectFinalColor(4, 1, 1, 1, 0.53)
+  light2:SetEffectRotate(4, 15, 0)
+  light2:SetEffectScale(4, 1.1, 0.97, 1.1, 1.1)
+  light2:SetEffectPriority(5, "alpha", 0.3, 0.3)
+  light2:SetEffectInitialColor(5, 1, 1, 1, 0.53)
+  light2:SetEffectFinalColor(5, 1, 1, 1, 0)
+  light2:SetEffectRotate(5, 0, 0)
+  light2:SetEffectScale(5, 0.97, 0.97, 1.1, 1.1)
+  light2:SetRepeatCount(1)
+  local light1 = widget:CreateEffectDrawable(TEXTURE_PATH.EXPEDITION_WAR_ALARM, "background")
+  light1:SetCoords(0, 0, 175, 156)
+  light1:SetExtent(175, 156)
+  light1:AddAnchor("CENTER", widget, 0, 0)
+  light1:SetEffectPriority(1, "alpha", 0.5, 0.5)
+  light1:SetEffectInitialColor(1, 1, 1, 1, 0.3)
+  light1:SetEffectFinalColor(1, 1, 1, 1, 0.13)
+  light1:SetEffectRotate(1, 15, 0)
+  light1:SetEffectScale(1, 1, 1, 1, 0.84)
+  light1:SetEffectPriority(2, "alpha", 0.5, 0.5)
+  light1:SetEffectInitialColor(2, 1, 1, 1, 0.13)
+  light1:SetEffectFinalColor(2, 1, 1, 1, 0.3)
+  light1:SetEffectRotate(2, 0, 15)
+  light1:SetEffectScale(2, 1, 0.84, 1, 1)
+  light1:SetEffectPriority(3, "alpha", 0.4, 0.4)
+  light1:SetEffectInitialColor(3, 1, 1, 1, 0.3)
+  light1:SetEffectFinalColor(3, 1, 1, 1, 0.3)
+  light1:SetEffectRotate(3, 15, -15)
+  light1:SetEffectScale(3, 1, 1, 1, 1)
+  light1:SetEffectPriority(4, "alpha", 0.4, 0.4)
+  light1:SetEffectInitialColor(4, 1, 1, 1, 0.3)
+  light1:SetEffectFinalColor(4, 1, 1, 1, 0.13)
+  light1:SetEffectRotate(4, -15, 0)
+  light1:SetEffectScale(4, 1, 1, 0.84, 1)
+  light1:SetEffectPriority(5, "alpha", 0.3, 0.3)
+  light1:SetEffectInitialColor(5, 1, 1, 1, 0.13)
+  light1:SetEffectFinalColor(5, 1, 1, 1, 0)
+  light1:SetEffectRotate(5, 0, 0)
+  light1:SetEffectScale(5, 0.84, 1, 0.84, 1)
+  light1:SetRepeatCount(1)
+  local whiteDrawable = widget:CreateEffectDrawable(TEXTURE_PATH.EXPEDITION_WAR_ALARM, "overlay")
+  whiteDrawable:SetCoords(0, 156, 45, 45)
+  whiteDrawable:SetExtent(45, 45)
+  whiteDrawable:AddAnchor("CENTER", widget, 0, 0)
+  whiteDrawable:SetEffectPriority(1, "alpha", 0.3, 0.3)
+  whiteDrawable:SetEffectInitialColor(1, 1, 1, 1, 0)
+  whiteDrawable:SetEffectFinalColor(1, 1, 1, 1, 1)
+  whiteDrawable:SetEffectPriority(2, "alpha", 0.4, 0.4)
+  whiteDrawable:SetEffectInitialColor(2, 1, 1, 1, 1)
+  whiteDrawable:SetEffectFinalColor(2, 1, 1, 1, 0)
+  whiteDrawable:SetRepeatCount(1)
+  light2:SetVisible(false)
+  light1:SetVisible(false)
+  whiteDrawable:SetVisible(false)
+  widget:EnableHidingIsRemove(true)
+  ApplyButtonSkin(widget, BUTTON_CONTENTS.EXPEDITION_WAR_ALARM)
+  local remainTime = widget:CreateChildWidget("label", "remainTime", 0, false)
+  remainTime:SetAutoResize(true)
+  remainTime:SetHeight(FONT_SIZE.MIDDLE)
+  remainTime:AddAnchor("BOTTOM", widget, 0, 12)
+  remainTime:SetText("")
+  remainTime.style:SetShadow(true)
+  ApplyTextColor(remainTime, FONT_COLOR.SOFT_YELLOW)
+  widget:SetAlphaAnimation(0, 1, 0.3, 0.3)
+  widget.remainTime = 0
+  local WidgetLeftClickFunc = function()
+    X2Faction:RequestExpeditionWarKillScore()
+  end
+  ButtonOnClickHandler(widget, WidgetLeftClickFunc)
+  local function OnHideWidget()
+    alert.expeditionWar = nil
+    CheckAlertAnchor()
+  end
+  widget:SetHandler("OnHide", OnHideWidget)
+  local function OnEnterWidget()
+    str = GetCommonText("in_expedition_war")
+    SetTargetAnchorTooltip(str, "TOPRIGHT", widget, "BOTTOMLEFT", 5, -15)
+  end
+  widget:SetHandler("OnEnter", OnEnterWidget)
+  local OnLeaveWidget = function()
+    HideTooltip()
+  end
+  widget:SetHandler("OnLeave", OnLeaveWidget)
+  function widget:StartEffect(isShow)
+    if isShow then
+      light2:SetVisible(true)
+      light1:SetVisible(true)
+      whiteDrawable:SetVisible(true)
+      light2:SetStartEffect(true)
+      light1:SetStartEffect(true)
+      whiteDrawable:SetStartEffect(true)
+      widget:SetStartAnimation(true, false)
+    end
+  end
+  function widget:OnUpdateTime(dt)
+    widget.remainTime = widget.remainTime - dt
+    if widget.remainTime <= 0 then
+      widget:SetRemainTime(0)
+    end
+    remainTime:SetText(FormatRemainTime(widget.remainTime))
+  end
+  function widget:SetRemainTime(rt)
+    widget.remainTime = rt
+    if widget.remainTime == 0 then
+      if widget:HasHandler("OnUpdate") == true then
+        widget:ReleaseHandler("OnUpdate")
+      end
+      remainTime:SetText(hudLocale.alterTexts.battleClose)
+      widget:SetWaitTime(180000)
+      return
+    else
+      if widget:HasHandler("OnUpdate") == true then
+        widget:ReleaseHandler("OnUpdate")
+      end
+      widget:SetHandler("OnUpdate", widget.OnUpdateTime)
+    end
+    remainTime:SetText(FormatRemainTime(widget.remainTime))
+  end
+  function widget:OnUpdateWaitTime(dt)
+    widget.waitTime = widget.waitTime - dt
+    if widget.waitTime <= 0 then
+      widget:SetWaitTime(0)
+    end
+  end
+  function widget:SetWaitTime(rt)
+    widget.waitTime = rt
+    if widget.waitTime == 0 then
+      if widget:HasHandler("OnUpdate") == true then
+        widget:ReleaseHandler("OnUpdate")
+      end
+      CheckAlertAnchor()
+      widget:Show(false)
+    else
+      if widget:HasHandler("OnUpdate") == true then
+        widget:ReleaseHandler("OnUpdate")
+      end
+      widget:SetHandler("OnUpdate", widget.OnUpdateWaitTime)
+    end
+  end
+  return widget
+end
+local function ShowExpeditionWarAlarm(isShow)
+  if isShow and alert.expeditionWar == nil then
+    alert.expeditionWar = CreateExpeditionWarAlarm("alert.expeditionWar", "UIParent")
+  end
+  if alert.expeditionWar ~= nil then
+    if isShow then
+      CheckAlertAnchor()
+    end
+    alert.expeditionWar:Show(isShow)
+  end
+  if alert.expeditionWar ~= nil and isShow then
+    alert.expeditionWar:StartEffect(isShow)
+  end
+end
+local function SetRemainTimeExpeditionWarAlarm(remainTime)
+  if alert.expeditionWar == nil then
+    return
+  end
+  if remainTime <= 0 then
+    return
+  end
+  alert.expeditionWar:SetRemainTime(remainTime)
+end
+local function ExpeditionWarStateEvents(related, state)
+  if related == false then
+    return
+  end
+  if state == "start" or state == "ongoing" then
+    ShowExpeditionWarAlarm(true)
+    SetRemainTimeExpeditionWarAlarm(X2Faction:GetRemainTimeExpeditionWar() * 1000)
+  else
+    alert.expeditionWar:SetRemainTime(0)
+  end
+end
+local function ExpeditionWarKillScoreEvent()
+  SetRemainTimeExpeditionWarAlarm(X2Faction:GetRemainTimeExpeditionWar() * 1000)
+end
+UIParent:SetEventHandler("EXPEDITION_WAR_STATE", ExpeditionWarStateEvents)
+UIParent:SetEventHandler("EXPEDITION_WAR_KILL_SCORE", ExpeditionWarKillScoreEvent)
+local function EnteredWorld()
+  if not X2BattleField:IsInInstantGame() and X2BattleField:GetJoinedInfos() ~= -1 then
+    ShowBattleFieldEntranceAlarm(true)
+  end
+  if X2Hero:IsElectionPeriod() then
+    ShowHeroElectionAlert()
+  end
+  UpdateZonePermission()
+end
+UIParent:SetEventHandler("ENTERED_WORLD", EnteredWorld)

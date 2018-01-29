@@ -1,0 +1,51 @@
+relationshipLocale = {
+  extent = {510, 485},
+  tabWidth = 95,
+  friendTab = {
+    columnWidth = {
+      name = 185,
+      level = 70,
+      race = 80,
+      job = 110
+    },
+    inputName = {
+      extent = {
+        220,
+        DEFAULT_SIZE.EDIT_HEIGHT
+      }
+    }
+  },
+  blockTab = {
+    columnWidth = {name = 235, memo = 235},
+    inputName = {
+      extent = {
+        220,
+        DEFAULT_SIZE.EDIT_HEIGHT
+      }
+    }
+  },
+  familyTab = {
+    columnWidth = {
+      name = 200,
+      title = 200,
+      role = 70
+    },
+    inputName = {
+      extent = {
+        190,
+        DEFAULT_SIZE.EDIT_HEIGHT
+      }
+    },
+    inputTitle = {
+      extent = {
+        190,
+        DEFAULT_SIZE.EDIT_HEIGHT
+      },
+      checkAvailableName = false
+    },
+    guideAnchor = {x = 0, y = 3}
+  }
+}
+function relationshipLocale:GetLevelText()
+  return GetUIText(COMMON_TEXT, "level")
+end

@@ -1,0 +1,132 @@
+function CreateAttrListWindow(id, parent)
+  local window = CreateWindow(id, parent)
+  window:SetExtent(430, 500)
+  window:SetTitle(GetUIText(COMMON_TEXT, "enabled_item_evolving_attrs"))
+  local commonWidth = window:GetWidth() - MARGIN.WINDOW_SIDE * 2.5
+  local title = window:CreateChildWidget("label", "title", 0, true)
+  title:SetExtent(commonWidth, FONT_SIZE.LARGE)
+  title:SetText(GetUIText(COMMON_TEXT, "item_evolving_result_attrs"))
+  title:AddAnchor("TOP", window, 0, MARGIN.WINDOW_TITLE)
+  title.style:SetFontSize(FONT_SIZE.LARGE)
+  title.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(title, FONT_COLOR.MIDDLE_TITLE)
+  local grade = window:CreateChildWidget("textbox", "grade", 0, true)
+  grade:SetExtent(commonWidth, FONT_SIZE.LARGE)
+  grade:AddAnchor("TOPLEFT", title, "BOTTOMLEFT", 0, MARGIN.WINDOW_SIDE)
+  grade.style:SetFontSize(FONT_SIZE.LARGE)
+  local line = CreateLine(grade, "TYPE1")
+  line:AddAnchor("TOPLEFT", grade, "BOTTOMLEFT", 0, 8)
+  line:AddAnchor("TOPRIGHT", grade, "BOTTOMRIGHT", 0, 8)
+  local scrollListCtrl = CreateScrollListCtrl(window, "scrollListCtrl", 0)
+  scrollListCtrl:SetExtent(commonWidth, 250)
+  scrollListCtrl:AddAnchor("TOPLEFT", grade, "BOTTOMLEFT", 0, MARGIN.WINDOW_SIDE / 1.8)
+  scrollListCtrl:DisableColumButton(5)
+  window.scrollListCtrl = scrollListCtrl
+  local DataFuncNameCol = function(subItem, data, setValue)
+    if setValue then
+      subItem.name:Show(true)
+      subItem.name:SetText(locale.attribute(data.name))
+      local color = FONT_COLOR.DEFAULT
+      if data.has then
+        color = FONT_COLOR.EVOLVING_GRAY
+      end
+      ApplyTextColor(subItem.name, color)
+    else
+      subItem.name:Show(false)
+    end
+  end
+  local LayoutFuncNameCol = function(widget, rowIndex, colIndex, subItem)
+    local name = subItem:CreateChildWidget("label", "name", 0, true)
+    name:SetExtent(subItem:GetWidth() - MARGIN.WINDOW_SIDE, subItem:GetHeight())
+    name:AddAnchor("LEFT", subItem, MARGIN.WINDOW_SIDE, 0)
+    name.style:SetAlign(ALIGN_LEFT)
+    name.style:SetEllipsis(true)
+    ApplyTextColor(name, FONT_COLOR.DEFAULT)
+    local dingbat = DrawRoundDingbat(name)
+    dingbat:RemoveAllAnchors()
+    dingbat:AddAnchor("RIGHT", name, "LEFT", -5, 0)
+  end
+  local DataFuncAttrCol = function(subItem, data, setValue)
+    if setValue then
+      local str = string.format("%s~%s", GetModifierCalcValue(data.name, data.min), GetModifierCalcValue(data.name, data.max))
+      subItem:SetText(str)
+      local color = FONT_COLOR.GREEN
+      if data.has then
+        color = FONT_COLOR.EVOLVING_GRAY
+      end
+      ApplyTextColor(subItem, color)
+    else
+      subItem:Show(false)
+    end
+  end
+  local LayoutFuncAttrCol = function(widget, rowIndex, colIndex, subItem)
+    subItem.style:SetAlign(ALIGN_RIGHT)
+  end
+  scrollListCtrl:InsertColumn("", scrollListCtrl.listCtrl:GetWidth() * 0.7, LCCIT_WINDOW, DataFuncNameCol, nil, nil, LayoutFuncNameCol)
+  scrollListCtrl:InsertColumn("", scrollListCtrl.listCtrl:GetWidth() * 0.3, LCCIT_STRING, DataFuncAttrCol, nil, nil, LayoutFuncAttrCol)
+  scrollListCtrl:InsertRows(10, false)
+  for i = 1, scrollListCtrl:GetRowCount() do
+    ListCtrlItemGuideLine(scrollListCtrl.listCtrl.items, scrollListCtrl:GetRowCount())
+  end
+  local bg = CreateContentBackground(window, "TYPE2", "BROWN", "artwork")
+  bg:AddAnchor("TOPLEFT", grade, -MARGIN.WINDOW_SIDE / 2, -MARGIN.WINDOW_SIDE / 1.5)
+  bg:AddAnchor("BOTTOMRIGHT", scrollListCtrl, MARGIN.WINDOW_SIDE / 2, MARGIN.WINDOW_SIDE / 1.5)
+  local tip = window:CreateChildWidget("textbox", "tip", 0, false)
+  tip:SetExtent(commonWidth, FONT_SIZE.MIDDLE)
+  tip:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  tip:SetText(GetUIText(COMMON_TEXT, "attr_change_tip"))
+  tip:AddAnchor("TOPLEFT", scrollListCtrl, "BOTTOMLEFT", 0, MARGIN.WINDOW_SIDE * 1.3)
+  ApplyTextColor(tip, FONT_COLOR.GRAY)
+  tip:SetHeight(tip:GetTextHeight())
+  local function GetContentHeight()
+    local _, height = F_LAYOUT:GetExtentWidgets(window.titleBar, tip)
+    return height + MARGIN.WINDOW_SIDE
+  end
+  function window:UpdateAttrList(isEvolvingMode, selAttrIndex)
+    local scrollListCtrl = self.scrollListCtrl
+    scrollListCtrl:DeleteAllDatas()
+    local gradeStr = GetTargetItemGradeStr(isEvolvingMode)
+    if gradeStr == nil then
+      return
+    end
+    self.grade:SetText(gradeStr)
+    self.grade:SetHeight(self.grade:GetTextHeight())
+    local info = X2ItemEnchant:GetEvolvingRndAttrsInfo(selAttrIndex)
+    if info == nil then
+      return
+    end
+    local rowCount = scrollListCtrl:GetRowCount()
+    for i = 1, rowCount do
+      if scrollListCtrl.listCtrl.items[i].line ~= nil then
+        scrollListCtrl.listCtrl.items[i].line:SetVisible(false)
+        scrollListCtrl.listCtrl.items[i].line:SetColor(1, 1, 1, 0.5)
+      end
+    end
+    local count = 0
+    for k, v in pairs(info) do
+      for idx, v2 in pairs(v) do
+        local firstCol = {
+          name = v2.name,
+          has = k == "hasMod"
+        }
+        local secondCol = {
+          min = math.abs(v2.min),
+          max = math.abs(v2.max),
+          name = v2.name,
+          has = k == "hasMod"
+        }
+        count = count + 1
+        self.scrollListCtrl:InsertData(count, 1, firstCol)
+        self.scrollListCtrl:InsertData(count, 2, secondCol)
+      end
+    end
+    local visibleCount = rowCount <= count and rowCount or count
+    for i = 1, visibleCount - 1 do
+      if scrollListCtrl.listCtrl.items[i].line ~= nil then
+        scrollListCtrl.listCtrl.items[i].line:SetVisible(true)
+      end
+    end
+  end
+  window:SetHeight(GetContentHeight())
+  return window
+end

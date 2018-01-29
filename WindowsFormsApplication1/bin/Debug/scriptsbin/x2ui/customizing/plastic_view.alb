@@ -1,0 +1,222 @@
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+MAX_PART_DETAIL_COUNT = 25
+MAX_VIEW_PRESET_COUNT = 9
+function CreatePlasticButtonMenu(id, parent)
+  local window = parent:CreateChildWidget("emptywidget", id, 0, true)
+  window:SetExtent(100, 350)
+  window.buttons = {}
+  local offsetY = 0
+  for i = 1, MAX_PRESET_TYPE do
+    local button = CreateEmptyButton(string.format("button[%d]", i), window)
+    button:SetText(locale.characterCreate.customPartList[i])
+    button:AddAnchor("TOPLEFT", window, 0, offsetY)
+    ApplyButtonSkin(button, BUTTON_LOGINSTAGE.TAB_UNSELECT)
+    if i == 1 then
+      button:SetHeight(73)
+      button.style:SetFontSize(FONT_SIZE.XXLARGE)
+    end
+    offsetY = offsetY + button:GetHeight() + MARGIN.WINDOW_SIDE
+    window.buttons[i] = button
+  end
+  local btnMaxWidth = AdjustBtnLongestTextWidth(window.buttons)
+  window:SetExtent(btnMaxWidth, offsetY)
+  function window:SetButtonMenuBeautyShopStyle()
+    for i = 1, MAX_PRESET_TYPE do
+      self.buttons[i].style:SetShadow(false)
+      ChangeButtonSkin(self.buttons[i], BUTTON_BEAUTYSHOP.TAB_UNSELECT)
+      if i == 1 then
+        self.buttons[i]:SetHeight(73)
+        self.buttons[i].style:SetFontSize(FONT_SIZE.XXLARGE)
+      end
+    end
+  end
+  return window
+end
+local CreatePresetButton = function(id, parent, index)
+  if index == nil then
+    index = 0
+  end
+  local button = parent:CreateChildWidget("button", id, index, true)
+  button:SetExtent(PRESET_ITEM_WIDTH, PRESET_ITEM_HEIGHT)
+  local icon = button:CreateImageDrawable("ui/login_stage/no_image.dds", "overlay")
+  icon:SetExtent(PRESET_ITEM_WIDTH, PRESET_ITEM_HEIGHT)
+  icon:AddAnchor("BOTTOM", button, 0, 0)
+  button.icon = icon
+  function button:SetPresetItem(race, gender, type, index)
+    local path = "ui/login_stage/no_image.dds"
+    local x = 0
+    local y = 0
+    if type ~= nil then
+      path, x, y = GetPresetItemInfo(race, gender, type, index)
+    end
+    icon:SetTexture(path)
+    if x ~= nil and y ~= nil then
+      icon:SetCoords(x, y, PRESET_ITEM_WIDTH, PRESET_ITEM_HEIGHT)
+    end
+    self.index = index
+  end
+  return button
+end
+function CreatePortraitWindow(id, parent)
+  local window = parent:CreateChildWidget("emptywidget", id, 0, true)
+  window:SetExtent(380, 165)
+  local presetWnd = CreatePresetButton("presetWnd", window)
+  presetWnd:AddAnchor("TOPRIGHT", window, -10, 10)
+  presetWnd:Enable(false)
+  local presetLabel = window:CreateChildWidget("textbox", "presetLabel", 0, true)
+  presetLabel:SetExtent(120, 20)
+  presetLabel:AddAnchor("CENTER", presetWnd, 0, 30)
+  presetLabel.style:SetAlign(ALIGN_CENTER)
+  ApplyTextColor(presetLabel, FONT_COLOR.WHITE)
+  local bg = presetLabel:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.REMNANTS, "background")
+  bg:SetCoords(559, 139, 141, 103)
+  bg:SetExtent(141, 103)
+  bg:AddAnchor("CENTER", presetLabel, 0, -10)
+  bg:SetColor(0.3, 0.3, 0.3, 1)
+  local readyMixButton = window:CreateChildWidget("button", "readyMixButton", 0, true)
+  readyMixButton:SetExtent(200, 80)
+  readyMixButton:AddAnchor("CENTER", window, 0, 0)
+  readyMixButton:SetText(locale.characterCreate.appearanceMix)
+  ApplyButtonSkin(readyMixButton, BUTTON_LOGINSTAGE.MIX)
+  local mixButton = window:CreateChildWidget("button", "mixButton", 0, true)
+  mixButton:SetExtent(190, 80)
+  mixButton:AddAnchor("LEFT", window, 0, -20)
+  mixButton:SetText(locale.characterCreate.mix)
+  ApplyButtonSkin(mixButton, BUTTON_LOGINSTAGE.MIX)
+  local okButton = window:CreateChildWidget("button", "okButton", 0, true)
+  okButton:SetText(locale.characterCreate.ok)
+  ApplyButtonSkin(okButton, BUTTON_CONTENTS.ALL_ABILITY)
+  local cancelButton = window:CreateChildWidget("button", "cancelButton", 0, true)
+  cancelButton:SetText(locale.questContext.cancel)
+  ApplyButtonSkin(cancelButton, BUTTON_CONTENTS.ALL_ABILITY)
+  local buttonTable = {okButton, cancelButton}
+  AdjustBtnLongestTextWidth(buttonTable)
+  okButton:AddAnchor("TOP", mixButton, "BOTTOM", -okButton:GetWidth() / 2, 0)
+  cancelButton:AddAnchor("TOP", mixButton, "BOTTOM", okButton:GetWidth() / 2, 0)
+  local slider = CreateSlider(id .. ".slider", window)
+  slider:SetBgColor({
+    1,
+    1,
+    1,
+    1
+  })
+  slider:SetMinMaxValues(0, 100)
+  slider:SetInitialValue(50, false)
+  slider:AddAnchor("BOTTOMLEFT", window, 10, 0)
+  slider:AddAnchor("BOTTOMRIGHT", window, -10, 0)
+  slider:SetEnable(false)
+  window.slider = slider
+  return window
+end
+function CreatePresetWindow(id, parent)
+  local window = parent:CreateChildWidget("emptywidget", id, 0, true)
+  window:SetExtent(390, 450)
+  local pageLabel = window:CreateChildWidget("textbox", "pageLabel", 0, true)
+  pageLabel:SetExtent(0, 20)
+  pageLabel:AddAnchor("TOPLEFT", window, 5, 0)
+  pageLabel:AddAnchor("TOPRIGHT", window, -5, 0)
+  pageLabel.style:SetFontSize(FONT_SIZE.XLARGE)
+  pageLabel.style:SetAlign(ALIGN_TOP_LEFT)
+  ApplyTextColor(pageLabel, FONT_COLOR.TITLE)
+  pageLabel.style:SetShadow(false)
+  local pageControl = CreatePageControl(id .. ".pageControl", window, "loginStage")
+  pageControl:AddAnchor("BOTTOM", window, 0, 0)
+  window.pageControl = pageControl
+  local xOffset = 0
+  local yOffset = 35
+  window.item = {}
+  local backupIndex = {}
+  for i = 1, MAX_VIEW_PRESET_COUNT do
+    local item = CreatePresetButton("item", window, i)
+    item:AddAnchor("TOPLEFT", window, xOffset, yOffset)
+    ApplyButtonSkin(item, BUTTON_LOGINSTAGE.PRESET[1])
+    if i % 3 == 0 then
+      xOffset = 0
+      yOffset = yOffset + 130
+    else
+      xOffset = xOffset + 135
+    end
+  end
+  return window
+end
+local CreateDetailController = function(id, parent)
+  local window = CreateEmptyWindow(id, parent)
+  window:SetExtent(parent:GetWidth(), 25)
+  local sliderMin = 0
+  local sliderMax = 100
+  local label = window:CreateChildWidget("textbox", "label", 0, true)
+  local nameLabelValue = localeView.customizing.detailController.nameLabel
+  label:SetExtent(nameLabelValue.extent[1], nameLabelValue.extent[2])
+  label:AddAnchor("LEFT", window, 0, 0)
+  label:SetAutoWordwrap(nameLabelValue.autoWordWrap)
+  label:SetLineSpace(nameLabelValue.lineSpace)
+  label.style:SetAlign(ALIGN_LEFT)
+  label.style:SetShadow(false)
+  ApplyTextColor(label, FONT_COLOR.MIDDLE_TITLE)
+  local slider = CreateSlider(window:GetId() .. ".slider", window)
+  slider:SetWidth(localeView.customizing.detailController.slider.width)
+  slider:SetMinMaxValues(sliderMin, sliderMax)
+  slider:SetValue((sliderMin + sliderMax) / 2, false)
+  local sliderAnchor = localeView.customizing.detailController.slider.anchor
+  slider:AddAnchor("LEFT", label, "RIGHT", sliderAnchor[1], sliderAnchor[2])
+  window.slider = slider
+  slider.targetIndex = -1
+  local valueAnchor = localeView.customizing.detailController.slider.anchor
+  local valueLabel = window:CreateChildWidget("label", "valueLabel", 0, true)
+  valueLabel:SetExtent(35, 20)
+  valueLabel:AddAnchor("LEFT", slider, "RIGHT", valueAnchor[1], valueAnchor[2])
+  valueLabel.style:SetAlign(ALIGN_LEFT)
+  valueLabel.style:SetShadow(false)
+  valueLabel.style:SetFontSize(localeView.customizing.detailController.valueLabel.fontSize)
+  ApplyTextColor(valueLabel, FONT_COLOR.BLUE)
+  return window
+end
+function CreateDetailWindow(id, parent)
+  local window = CreateWindow(id, parent)
+  window:Show(false)
+  window:SetExtent(430, 690)
+  local guideWnd = window:CreateChildWidget("emptywidget", "guideWnd", 0, true)
+  guideWnd:SetExtent(410, 200)
+  guideWnd:AddAnchor("TOP", window, 0, titleMargin - sideMargin / 2)
+  local bg = guideWnd:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.REMNANTS, "background")
+  bg:SetCoords(0, 298, 290, 169)
+  bg:SetColor(ConvertColor(198), ConvertColor(174), ConvertColor(141), 0.7)
+  bg:AddAnchor("TOPLEFT", guideWnd, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", guideWnd, sideMargin, 0)
+  local bg_deco = guideWnd:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.REMNANTS, "background")
+  bg_deco:SetCoords(0, 298, 288, 169)
+  bg_deco:SetExtent(200, 200)
+  bg_deco:SetColor(ConvertColor(198), ConvertColor(174), ConvertColor(141), 0.7)
+  bg_deco:AddAnchor("TOPLEFT", bg, 0, 0)
+  local face = guideWnd:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.REMNANTS, "background")
+  face:SetCoords(559, 0, 129, 138)
+  face:SetExtent(129, 138)
+  face:AddAnchor("TOPLEFT", bg, sideMargin, sideMargin * 1.5)
+  guideWnd.face = face
+  local selectBodyPartsLabel = guideWnd:CreateChildWidget("textbox", "selectBodyPartsLabel", 0, true)
+  selectBodyPartsLabel:SetExtent(200, 20)
+  selectBodyPartsLabel:SetAutoWordwrap(true)
+  selectBodyPartsLabel:AddAnchor("LEFT", face, "RIGHT", sideMargin / 2, 0)
+  selectBodyPartsLabel.style:SetFontSize(FONT_SIZE.XLARGE)
+  ApplyTextColor(selectBodyPartsLabel, FONT_COLOR.LOGIN_STAGE_BLUE)
+  local scrollWindow = CreateScrollWindow(window, "scrollWnd", 0)
+  scrollWindow:SetExtent(window:GetWidth() - sideMargin * 2, 380)
+  scrollWindow:AddAnchor("TOP", guideWnd, "BOTTOM", 0)
+  window.scrollWindow = scrollWindow
+  local infos = {
+    leftButtonStr = GetCommonText("ok"),
+    rightButtonStr = GetCommonText("cancel")
+  }
+  CreateWindowDefaultTextButtonSet(window, infos)
+  local buttonTable = {okButton, cancelButton}
+  AdjustBtnLongestTextWidth(buttonTable)
+  local smileBtn = CreateCheckButton("smileBtn", window, locale.characterCreate.smileCustom)
+  smileBtn:AddAnchor("BOTTOMLEFT", window, sideMargin, -sideMargin)
+  window.smileBtn = smileBtn
+  window.controller = {}
+  for i = 1, MAX_PART_DETAIL_COUNT do
+    local control = CreateDetailController(id .. ".scrollWnd.controller" .. i, scrollWindow.content)
+    window.controller[i] = control
+  end
+  return window
+end

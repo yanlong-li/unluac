@@ -1,0 +1,37 @@
+if housingLocale == nil then
+  housingLocale = {}
+end
+housingLocale.maintainWndWidth = 430
+function housingLocale:DecoWndInsertColumn(listCtrl, NameDataFunc, NameLayoutFunc, ValueDataFunc, ValueLayoutFunc)
+  listCtrl:InsertColumn("", 65, LCCIT_STRING, NameDataFunc, nil, nil, NameLayoutFunc)
+  listCtrl:InsertColumn("", 75, LCCIT_STRING, ValueDataFunc, nil, nil, ValueLayoutFunc)
+  listCtrl:InsertColumn("", 65, LCCIT_STRING, NameDataFunc, nil, nil, NameLayoutFunc)
+  listCtrl:InsertColumn("", 75, LCCIT_STRING, ValueDataFunc, nil, nil, ValueLayoutFunc)
+end
+function housingLocale:DecoWndFillList(scrollListCtrl, count)
+  local index = 1
+  for i = 1, count, 2 do
+    local k = i
+    local info = X2House:GetDecoActabilityPoint(k)
+    local nameInfo = {
+      idx = k,
+      name = info.name
+    }
+    scrollListCtrl:InsertData(index, 1, nameInfo)
+    local str = string.format("+|,%d;", info.decoPoint)
+    scrollListCtrl:InsertData(index, 2, str)
+    k = i + 1
+    if count < k then
+      return
+    end
+    local info = X2House:GetDecoActabilityPoint(k)
+    local nameInfo = {
+      idx = k,
+      name = info.name
+    }
+    scrollListCtrl:InsertData(index, 3, nameInfo)
+    local str = string.format("+|,%d;", info.decoPoint)
+    scrollListCtrl:InsertData(index, 4, str)
+    index = index + 1
+  end
+end

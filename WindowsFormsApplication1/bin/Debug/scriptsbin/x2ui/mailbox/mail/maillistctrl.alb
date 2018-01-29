@@ -1,0 +1,156 @@
+function CreateMailListCtrl(id, parent, columnText, sideMargin)
+  local listCtrl = parent:CreateChildWidget("listctrl", "listCtrl", 0, true)
+  listCtrl:Show(true)
+  listCtrl:AddAnchor("TOPLEFT", parent, 0, 5)
+  listCtrl:AddAnchor("BOTTOMRIGHT", parent, 0, -75)
+  listCtrl:SetUseDoubleClick(true)
+  listCtrl:InsertColumn(240, LCCIT_WINDOW)
+  listCtrl.column[1]:SetText(locale.mail.title)
+  listCtrl:InsertColumn(listCtrl:GetWidth() - listCtrl.column[1]:GetWidth(), LCCIT_WINDOW)
+  listCtrl.column[2]:SetText(columnText)
+  listCtrl:InsertRows(PAGE_PER_MAIL_MAX_COUNT, false)
+  DrawListCtrlUnderLine(listCtrl)
+  ListCtrlOverClickTextureSetting(listCtrl)
+  listCtrl.mailIDs = {}
+  listCtrl.hasItem = {}
+  listCtrl.canTakeItemsAtOnce = {}
+  listCtrl.checkValue = {}
+  local allSelectCheck = CreateCheckButton(listCtrl:GetId() .. ".allSelectCheck", listCtrl)
+  allSelectCheck:AddAnchor("LEFT", listCtrl.column[1], 0, 1)
+  listCtrl.allSelectCheck = allSelectCheck
+  function allSelectCheck:SetCheckedAll(check)
+    for i = 1, #listCtrl.checkValue do
+      local selectCheck = listCtrl.items[i].subItems[1].checkbox
+      if selectCheck:IsEnabled() then
+        listCtrl.checkValue[i] = check
+      else
+        listCtrl.checkValue[i] = false
+      end
+    end
+    for i = 1, PAGE_PER_MAIL_MAX_COUNT do
+      local selectCheck = listCtrl.items[i].subItems[1].checkbox
+      if selectCheck:IsVisible() and selectCheck:IsEnabled() then
+        selectCheck:SetChecked(check, false)
+      end
+    end
+  end
+  function allSelectCheck:CheckBtnCheckChagnedProc()
+    self:SetCheckedAll(self:GetChecked())
+    listCtrl:CheckProc_takeAllAttachmentsButton()
+    listCtrl:CheckProc_deleteButton()
+  end
+  local rowCount = #listCtrl.items
+  for i = 1, rowCount do
+    DefaultMailTitleLayoutFunc(listCtrl, i, 1, listCtrl.items[i].subItems[1])
+    DefaultMailNameLayoutFunc(listCtrl, i, 2, listCtrl.items[i].subItems[2])
+  end
+  local columCount = #listCtrl.column
+  for i = 1, columCount do
+    listCtrl.column[i]:Enable(false)
+  end
+  for i = 1, columCount do
+    SettingListColumn(listCtrl, listCtrl.column[i])
+    DrawListCtrlColumnSperatorLine(listCtrl.column[i], #listCtrl.column, i)
+  end
+  function listCtrl:GetSelctedCheckValue()
+  end
+  function listCtrl:CheckTakeAllButtonEnable()
+    local mailIds = GetVisibleTab():GetSelectedMailIds()
+    for i = 1, #mailIds do
+      if self.hasItem[mailIds[i]] then
+        return true
+      end
+    end
+    return false
+  end
+  function listCtrl:CheckDeleteButtonEnable()
+    local mailIds = GetVisibleTab():GetSelectedMailIds()
+    for i = 1, #mailIds do
+      if not self.hasItem[mailIds[i]] then
+        return true
+      end
+    end
+    return false
+  end
+  function listCtrl:CheckProc_takeAllAttachmentsButton()
+    mailFrame.takeAllAttachmentsButton:Enable(self:CheckTakeAllButtonEnable())
+  end
+  function listCtrl:CheckProc_deleteButton()
+    GetMailDeleteButton():Enable(self:CheckDeleteButtonEnable())
+  end
+  function listCtrl:IsAllChecked()
+    local isAllDisable = true
+    for i = 1, #self.checkValue do
+      local selectCheck = listCtrl.items[i].subItems[1].checkbox
+      if selectCheck:IsEnabled() then
+        isAllDisable = false
+        if not self.checkValue[i] then
+          return false
+        end
+      end
+    end
+    self.allSelectCheck:Enable(not isAllDisable)
+    return not isAllDisable
+  end
+  function listCtrl:TitleDataFunc(subItem, data, key)
+    if data[MAIL_COL.CHK] == nil then
+      data[MAIL_COL.CHK] = false
+    end
+    subItem.checkbox:SetChecked(data[MAIL_COL.CHK], false)
+    if data[MAIL_COL.HASITEM] and data[MAIL_COL.MAIL_TYPE] ~= MAIL_TYPE.BILLING and data[MAIL_COL.MAIL_TYPE] ~= MAIL_TYPE.BALANCE_RECEIPT and data[MAIL_COL.MAIL_TYPE] ~= MAIL_TYPE.NATION_TAX_RECEIPT and data[MAIL_COL.MAIL_TYPE] ~= MAIL_TYPE.NATION_REQUEST_FRIEND then
+      subItem.icon:Show(true)
+    else
+      subItem.icon:Show(false)
+    end
+    if data[MAIL_COL.MAIL_TYPE] == MAIL_TYPE.BILLING or data[MAIL_COL.MAIL_TYPE] == MAIL_TYPE.BALANCE_RECEIPT or data[MAIL_COL.MAIL_TYPE] == MAIL_TYPE.NATION_TAX_RECEIPT or data[MAIL_COL.MAIL_TYPE] == MAIL_TYPE.NATION_REQUEST_FRIEND then
+      subItem.checkbox:Enable(false)
+    else
+      subItem.checkbox:Enable(true)
+    end
+    subItem.mailTypeIcon:SetType(GetMailTypeIcon(data[MAIL_COL.MAIL_TYPE]))
+    local inset = 0
+    local offset = 2
+    local visibleCount = 0
+    if subItem.icon:IsVisible() then
+      inset = inset + subItem.icon:GetWidth()
+      visibleCount = visibleCount + 1
+      subItem.mailTypeIcon:RemoveAllAnchors()
+      subItem.mailTypeIcon:AddAnchor("LEFT", subItem.icon, "RIGHT", offset, 0)
+    else
+      subItem.mailTypeIcon:RemoveAllAnchors()
+      subItem.mailTypeIcon:AddAnchor("LEFT", subItem.icon, "LEFT", 0)
+    end
+    if subItem.mailTypeIcon:IsVisible() then
+      inset = inset + subItem.mailTypeIcon:GetWidth()
+      visibleCount = visibleCount + 1
+    end
+    if visibleCount > 0 then
+      inset = inset + visibleCount * offset
+    end
+    SetMailHeaderColor(data[MAIL_COL.MAIL_TYPE], data[MAIL_COL.ISREAD], subItem.titleLabel, subItem.mailTypeIcon)
+    subItem.titleLabel:SetInset(inset, 0, 0, 0)
+    subItem.titleLabel:SetText(data[MAIL_COL.TITLE] or "")
+    self.mailIDs[key] = data[MAIL_COL.MAILID]
+    self.hasItem[data[MAIL_COL.MAILID]] = data[MAIL_COL.HASITEM]
+    self.checkValue[key] = subItem.checkbox:GetChecked()
+    function subItem.checkbox:CheckBtnCheckChagnedProc(checked)
+      listCtrl.checkValue[key] = checked
+      if not checked then
+        listCtrl.allSelectCheck:SetChecked(false, false)
+      else
+        listCtrl.allSelectCheck:SetChecked(listCtrl:IsAllChecked(), false)
+      end
+      if listCtrl.CheckProc_takeAllAttachmentsButton ~= nil then
+        listCtrl:CheckProc_takeAllAttachmentsButton()
+      end
+      if listCtrl.CheckProc_deleteButton ~= nil then
+        listCtrl:CheckProc_deleteButton()
+      end
+    end
+  end
+  function listCtrl:NameDataFunc(subItem, data)
+    subItem.nameLabel:SetText(data[MAIL_COL.NAME])
+    SetMailHeaderColor(data[MAIL_COL.MAIL_TYPE], data[MAIL_COL.ISREAD], subItem.nameLabel)
+  end
+  return listCtrl
+end

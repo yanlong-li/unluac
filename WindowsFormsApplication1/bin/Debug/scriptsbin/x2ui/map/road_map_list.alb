@@ -1,0 +1,642 @@
+local RMS_ZONE = 1
+local RMS_CITY = 2
+local mapLevels = {RMS_ZONE, RMS_CITY}
+local mapList = {}
+local postFix = {
+  "50",
+  "70",
+  "100"
+}
+for level in pairs(mapLevels) do
+  mapList[level] = {}
+  function mapList:Add(level, id, name)
+    local map = mapList[level]
+    for i = 1, 3 do
+      local index = (#map or 0) + 1
+      map[index] = {}
+      map[index].id = string.format("%s_%s", id, postFix[i])
+      map[index].name = string.format("%s_%s", name, postFix[i])
+    end
+  end
+  function mapList:Get(level, index)
+    local map = mapList[level]
+    return map[index]
+  end
+  function mapList:Find(level, key)
+    if level == nil or level > #mapLevels then
+      return nil
+    end
+    for i = 1, #mapList[level] do
+      if mapList[level][i].id == key then
+        return mapList[level][i]
+      end
+    end
+    return nil
+  end
+end
+roadMapInfos = {
+  {
+    level = RMS_ZONE,
+    id = 31,
+    name = "i_training_camp"
+  },
+  {
+    level = RMS_ZONE,
+    id = 45,
+    name = "i_burntcastle_armory_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 46,
+    name = "i_hadir_farm_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 47,
+    name = "i_sal_temple_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 50,
+    name = "i_cuttingwind_deadmine_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 49,
+    name = "i_arche_mall_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 51,
+    name = "i_howling_abyss"
+  },
+  {
+    level = RMS_ZONE,
+    id = 58,
+    name = "i_howling_abyss"
+  },
+  {
+    level = RMS_ZONE,
+    id = 52,
+    name = "i_cradle_of_destruction"
+  },
+  {
+    level = RMS_ZONE,
+    id = 83,
+    name = "i_hadir_farm_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 84,
+    name = "i_burntcastle_armory_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 86,
+    name = "i_sal_temple_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 87,
+    name = "i_cuttingwind_deadmine_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 88,
+    name = "i_cradle_of_destruction"
+  },
+  {
+    level = RMS_CITY,
+    id = 1063,
+    name = "i_nachashgar_room_01"
+  },
+  {
+    level = RMS_CITY,
+    id = 1064,
+    name = "i_nachashgar_room_02"
+  },
+  {
+    level = RMS_CITY,
+    id = 1065,
+    name = "i_nachashgar_room_03"
+  },
+  {
+    level = RMS_CITY,
+    id = 1066,
+    name = "i_nachashgar_room_04"
+  },
+  {
+    level = RMS_CITY,
+    id = 1067,
+    name = "i_nachashgar_room_05"
+  },
+  {
+    level = RMS_CITY,
+    id = 1068,
+    name = "i_nachashgar_room_06"
+  },
+  {
+    level = RMS_CITY,
+    id = 1069,
+    name = "i_nachashgar_room_07"
+  },
+  {
+    level = RMS_CITY,
+    id = 1070,
+    name = "i_nachashgar_room_08"
+  },
+  {
+    level = RMS_CITY,
+    id = 1071,
+    name = "i_nachashgar_room_09_larman"
+  },
+  {
+    level = RMS_CITY,
+    id = 1084,
+    name = "i_nachashgar_room_09_carmilla"
+  },
+  {
+    level = RMS_CITY,
+    id = 1085,
+    name = "i_nachashgar_room_09_anerin"
+  },
+  {
+    level = RMS_CITY,
+    id = 1081,
+    name = "i_nachashgar_room_10"
+  },
+  {
+    level = RMS_ZONE,
+    id = 62,
+    name = "i_immortal_isle_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 64,
+    name = "i_immortal_isle_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 70,
+    name = "instance_library_1"
+  },
+  {
+    level = RMS_ZONE,
+    id = 71,
+    name = "instance_library_2"
+  },
+  {
+    level = RMS_ZONE,
+    id = 72,
+    name = "instance_library_3"
+  },
+  {
+    level = RMS_CITY,
+    id = 1101,
+    name = "instance_library_boss_1_bossroom"
+  },
+  {
+    level = RMS_CITY,
+    id = 1105,
+    name = "instance_library_boss_1_waitingroom"
+  },
+  {
+    level = RMS_CITY,
+    id = 1102,
+    name = "instance_library_boss_2_bossroom"
+  },
+  {
+    level = RMS_CITY,
+    id = 1106,
+    name = "instance_library_boss_2_waitingroom"
+  },
+  {
+    level = RMS_CITY,
+    id = 1103,
+    name = "instance_library_boss_3_bossroom"
+  },
+  {
+    level = RMS_CITY,
+    id = 1107,
+    name = "instance_library_boss_3_waitingroom"
+  },
+  {
+    level = RMS_CITY,
+    id = 1104,
+    name = "instance_library_towerdefense_bossroom"
+  },
+  {
+    level = RMS_CITY,
+    id = 1108,
+    name = "instance_library_towerdefense_waitingroom"
+  },
+  {
+    level = RMS_CITY,
+    id = 1142,
+    name = "instance_library_heart_inside"
+  },
+  {
+    level = RMS_CITY,
+    id = 1143,
+    name = "instance_library_heart_waiting"
+  },
+  {
+    level = RMS_ZONE,
+    id = 89,
+    name = "instance_feast_garden"
+  },
+  {
+    level = RMS_CITY,
+    id = 1144,
+    name = "instance_feast_garden_room_01"
+  },
+  {
+    level = RMS_CITY,
+    id = 1145,
+    name = "instance_feast_garden_room_02"
+  },
+  {
+    level = RMS_CITY,
+    id = 1146,
+    name = "instance_feast_garden_room_03"
+  },
+  {
+    level = RMS_CITY,
+    id = 1149,
+    name = "instance_feast_garden_room_04"
+  },
+  {
+    level = RMS_ZONE,
+    id = 1,
+    name = "w_gweonid_forest_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 5,
+    name = "w_solzreed_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 6,
+    name = "w_lilyut_meadow_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 3,
+    name = "w_garangdol_plains_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 18,
+    name = "w_white_forest_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 2,
+    name = "w_marianople_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 8,
+    name = "w_two_crowns_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 20,
+    name = "w_cross_plains_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 22,
+    name = "w_golden_plains_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 26,
+    name = "w_hell_swamp_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 27,
+    name = "w_long_sand"
+  },
+  {
+    level = RMS_ZONE,
+    id = 19,
+    name = "w_the_carcass_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 79,
+    name = "w_mirror_kingdom_road"
+  },
+  {
+    level = RMS_CITY,
+    id = 14,
+    name = "w_gweonid_forest_city_road"
+  },
+  {
+    level = RMS_CITY,
+    id = 335,
+    name = "w_solzreed_city_road"
+  },
+  {
+    level = RMS_CITY,
+    id = 37,
+    name = "w_marianople_city_road"
+  },
+  {
+    level = RMS_CITY,
+    id = 144,
+    name = "w_two_crowns_city_road"
+  },
+  {
+    level = RMS_CITY,
+    id = 155,
+    name = "w_white_forest_red_moss_cave_road"
+  },
+  {
+    level = RMS_CITY,
+    id = 253,
+    name = "w_lilyut_meadow_east_ronbann_mine_road"
+  },
+  {
+    level = RMS_CITY,
+    id = 252,
+    name = "w_lilyut_meadow_west_ronbann_mine_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 25,
+    name = "e_ancient_forest_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 11,
+    name = "e_falcony_plateau_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 9,
+    name = "e_mahadevi_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 7,
+    name = "e_rainbow_field_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 12,
+    name = "e_singing_land_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 14,
+    name = "e_steppe_belt_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 4,
+    name = "e_sunrise_peninsula_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 24,
+    name = "e_tiger_spine_mountains_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 17,
+    name = "e_ynystere_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 15,
+    name = "e_ruins_of_hariharalaya_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 16,
+    name = "e_lokas_checker_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 23,
+    name = "e_hasla_road"
+  },
+  {
+    level = RMS_CITY,
+    id = 278,
+    name = "e_mahadevi_city_road"
+  },
+  {
+    level = RMS_CITY,
+    id = 542,
+    name = "e_singing_land_city_road"
+  },
+  {
+    level = RMS_CITY,
+    id = 578,
+    name = "e_sunrise_peninsula_city_road"
+  },
+  {
+    level = RMS_CITY,
+    id = 468,
+    name = "e_ynystere_road_city"
+  },
+  {
+    level = RMS_CITY,
+    id = 735,
+    name = "e_falcony_plateau_bat_cave_road"
+  },
+  {
+    level = RMS_CITY,
+    id = 749,
+    name = "e_falcony_plateau_misty_cave_road"
+  },
+  {
+    level = RMS_CITY,
+    id = 996,
+    name = "e_mahadevi_astra_cave_road"
+  },
+  {
+    level = RMS_CITY,
+    id = 95,
+    name = "e_steppe_belt_snowlion_rock_road"
+  },
+  {
+    level = RMS_CITY,
+    id = 688,
+    name = "e_tiger_spine_mountains_kobold_cave_road"
+  },
+  {
+    level = RMS_CITY,
+    id = 1057,
+    name = "e_hasla_cemetery_underground_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 33,
+    name = "o_salpimari_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 34,
+    name = "o_nuimari_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 43,
+    name = "o_seonyeokmari_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 44,
+    name = "o_rest_land_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 54,
+    name = "o_abyss_gate"
+  },
+  {
+    level = RMS_ZONE,
+    id = 56,
+    name = "o_land_of_sunlights"
+  },
+  {
+    level = RMS_ZONE,
+    id = 61,
+    name = "o_shining_shore"
+  },
+  {
+    level = RMS_ZONE,
+    id = 67,
+    name = "o_library_1"
+  },
+  {
+    level = RMS_ZONE,
+    id = 65,
+    name = "o_library_2"
+  },
+  {
+    level = RMS_ZONE,
+    id = 69,
+    name = "o_library_2"
+  },
+  {
+    level = RMS_ZONE,
+    id = 78,
+    name = "o_dew_plains"
+  },
+  {
+    level = RMS_ZONE,
+    id = 57,
+    name = "o_ruins_of_gold"
+  },
+  {
+    level = RMS_CITY,
+    id = 1126,
+    name = "o_dew_plains_in"
+  },
+  {
+    level = RMS_CITY,
+    id = 1075,
+    name = "o_abyss_gate_ruin_of_vanishing_snake_1f"
+  },
+  {
+    level = RMS_CITY,
+    id = 1076,
+    name = "o_abyss_gate_ruin_of_vanishing_snake_2f"
+  },
+  {
+    level = RMS_ZONE,
+    id = 36,
+    name = "s_silent_sea_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 39,
+    name = "s_gold_sea_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 30,
+    name = "s_lost_road_sea_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 40,
+    name = "s_crescent_moon_sea_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 59,
+    name = "s_freedom_island_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 60,
+    name = "s_pirate_island_road"
+  },
+  {
+    level = RMS_CITY,
+    id = 866,
+    name = "s_freedom_island_detail_road"
+  },
+  {
+    level = RMS_CITY,
+    id = 1135,
+    name = "s_tomb_of_ships_road"
+  },
+  {
+    level = RMS_ZONE,
+    id = 80,
+    name = "s_broken_mirrors_sea_road"
+  }
+}
+for i = 1, #roadMapInfos do
+  local mapData = roadMapInfos[i]
+  mapList:Add(mapData.level, mapData.id, mapData.name)
+end
+for level in pairs(mapLevels) do
+  local data = mapList[level]
+  for i = 1, #data do
+    local mapInfo = mapList:Get(level, i)
+    local path = string.format("Game/ui/map/road/%s.dds", mapInfo.name)
+    local drawable = roadmapWindow:CreateImageDrawable(path, "background")
+    drawable:SetColor(1, 1, 1, 1)
+    drawable:SetVisible(false)
+    local imgData = GetTextureInfo(path, mapInfo.name)
+    if imgData then
+      local offset = imgData:GetOffset()
+      mapInfo.offsetX = offset[1]
+      mapInfo.offsetY = offset[2]
+      local coords = {
+        imgData:GetCoords()
+      }
+      mapInfo.coordX = coords[1]
+      mapInfo.coordY = coords[2]
+      mapInfo.coordW = coords[3]
+      mapInfo.coordH = coords[4]
+      drawable:SetCoords(mapInfo.coordX, mapInfo.coordY, mapInfo.coordW, mapInfo.coordH)
+      drawable:SetExtent(mapInfo.coordW, mapInfo.coordH)
+      drawable:AddAnchor("TOPLEFT", roadmap, "TOPLEFT", mapInfo.offsetX, mapInfo.offsetY)
+      roadmap:SaveMapData(level + 1, mapInfo.id, drawable)
+    else
+      UIParent:Warning(string.format("[Lua Error] can't find road map info -> %s", mapInfo.name))
+    end
+  end
+end
+function UpdateRoadmapAnchor(level, key)
+  local data = mapList:Find(level, key)
+  if data == nil then
+    return
+  end
+  local extentX, extentY = roadmapWindow:GetExtent()
+  local anchorX = extentX - (data.offsetX + (data.coordW - data.coordX))
+  local anchorY = data.offsetY
+  roadmapWindow:RemoveAllAnchors()
+  roadmapWindow:AddAnchor("TOPRIGHT", "UIParent", "TOPRIGHT", ROADMAP_OFFSET_X + anchorX, ROADMAP_OFFSET_Y - anchorY)
+end

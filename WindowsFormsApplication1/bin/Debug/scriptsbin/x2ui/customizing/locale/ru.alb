@@ -1,0 +1,4 @@
+if X2Util:GetGameProvider() == MAILRU then
+  customizingLocale.buttonWidth = BUTTON_SIZE.DEFAULT_LARGE.WIDTH
+  customizingLocale.customLoadWnd = {overWriteBtnWidth = 100}
+end

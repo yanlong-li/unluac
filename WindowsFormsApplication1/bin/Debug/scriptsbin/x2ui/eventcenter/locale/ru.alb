@@ -1,0 +1,6 @@
+if X2Util:GetGameProvider() == MAILRU then
+  eventcenterLocale.attendancePopup = false
+  eventcenterLocale.width = {
+    eventInfo = {list = 340, desc = 510}
+  }
+end

@@ -1,0 +1,17 @@
+function SetViewOfColorPickButtons(id, parent)
+  local button = CreateEmptyButton(id, parent)
+  local colorBG = button:CreateColorDrawable(1, 1, 1, 1, "background")
+  colorBG:AddAnchor("TOPLEFT", button, 1, 1)
+  colorBG:AddAnchor("BOTTOMRIGHT", button, -1, -1)
+  button.colorBG = colorBG
+  local decoLine = button:CreateNinePartDrawable("ui/chat_option.dds", "overlay")
+  decoLine:SetCoords(0, 0, 27, 16)
+  decoLine:SetInset(0, 8, 0, 7)
+  decoLine:AddAnchor("TOPLEFT", button, -1, -1)
+  decoLine:AddAnchor("BOTTOMRIGHT", button, 1, 1)
+  return button
+end
+function CreateColorPickButtons(id, parent)
+  local button = SetViewOfColorPickButtons(id, parent)
+  return button
+end

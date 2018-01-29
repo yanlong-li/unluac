@@ -1,0 +1,29 @@
+local wikiWindow
+local OFFSET = 84
+local TYPE = "NONE"
+function ClearWebWiki()
+  wikiWindow = nil
+  TYPE = "NONE"
+end
+local function CreateWikiWindow(id, parent)
+  local window = SetViewOfWebbrowserWindow(id, parent, webbrowserLocale.wiki.width, webbrowserLocale.wiki.height, OFFSET)
+  window:SetSounds("web_wiki")
+  window.clearProc = ClearWebWiki
+  return window
+end
+function OnToggleWebWiki(target)
+  if X2:IsWebEnable() and baselibLocale.useWebWiki then
+    if wikiWindow == nil then
+      wikiWindow = CreateWikiWindow("wikiWindow", "UIParent")
+      TYPE = "NONE"
+    end
+    if target ~= nil or TYPE ~= "WIKI" then
+      TYPE = "WIKI"
+      wikiWindow.webBrowser:RequestWiki()
+      wikiWindow:Show(true)
+    else
+      wikiWindow:Show(false)
+    end
+  end
+end
+ADDON:RegisterContentTriggerFunc(UIC_WEB_WIKI, OnToggleWebWiki)

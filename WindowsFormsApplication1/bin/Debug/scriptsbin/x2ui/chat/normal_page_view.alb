@@ -1,0 +1,46 @@
+local normal_extraValue1 = {
+  CMF_SAY,
+  CMF_ZONE,
+  CMF_WHISPER,
+  CMF_TRADE,
+  CMF_PARTY,
+  CMF_FIND_PARTY,
+  CMF_RAID,
+  CMF_NOTICE,
+  CMF_EXPEDITION,
+  CMF_SYSTEM,
+  CMF_RACE,
+  CMF_FAMILY,
+  CMF_TRIAL,
+  CMF_FACTION
+}
+local normal_extraValue2 = {CMF_MSG_QUEST}
+function CreateNormalPageWindow(id, parent, checkBoxs)
+  local window = CreateEmptyWindow(id, parent)
+  window:Show(true)
+  window:AddAnchor("TOPLEFT", parent, 0, 0)
+  window:AddAnchor("BOTTOMRIGHT", parent, 0, 0)
+  window:SetTitleText(locale.chatFiltering.menuName[1])
+  window.titleStyle:SetAlign(ALIGN_TOP_LEFT)
+  window.titleStyle:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.LARGE)
+  ApplyTitleFontColor(window, FONT_COLOR.TITLE)
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local info = {}
+  info.menuTexts = locale.chatFiltering.normal_group1
+  info.extraValue = normal_extraValue1
+  info.enterCount = 7
+  info.menuChkboxOffset = chatLocale.chatOption.normalPage.menuChkOffset
+  info.enterCountOffsetX = chatLocale.chatOption.normalPage.enterCountOffset
+  window.groupWindow = {}
+  window.groupWindow[1] = CreateColorPickCheckGroup(id .. "groupWindow[1]", window, info, checkBoxs)
+  window.groupWindow[1]:AddAnchor("TOPLEFT", window, 0, sideMargin)
+  window.groupWindow[1]:AddAnchor("TOPRIGHT", window, 0, sideMargin)
+  DrawTargetLine(window.groupWindow[1])
+  info.menuTexts = locale.chatFiltering.normal_group2
+  info.extraValue = normal_extraValue2
+  info.enterCount = 1
+  window.groupWindow[2] = CreateColorPickCheckGroup(id .. "groupWindow[2]", window, info, checkBoxs)
+  window.groupWindow[2]:AddAnchor("TOPLEFT", window.groupWindow[1], "BOTTOMLEFT", 0, 10)
+  window.groupWindow[2]:AddAnchor("TOPRIGHT", window.groupWindow[1], "BOTTOMRIGHT", 0, 10)
+  return window
+end

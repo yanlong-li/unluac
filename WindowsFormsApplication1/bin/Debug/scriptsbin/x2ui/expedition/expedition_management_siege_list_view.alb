@@ -1,0 +1,91 @@
+local GROUP_IN_MEMBER_MAX_COUNT = 5
+local GROUP_EXPEDITION_MAX_COUNT = 9
+local GROUP_SUPPORT_MAX_COUNT = 4
+local member_inset = 19
+local member_width = 138
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+local function CreateMemberFrame(id, parent, style, index)
+  local nameLabel = parent:CreateChildWidget("label", id, index, true)
+  nameLabel:Show(false)
+  nameLabel:SetExtent(member_width, member_inset)
+  nameLabel:SetInset(20, 0, 0, 0)
+  nameLabel:SetExtent(155, FONT_SIZE.MIDDLE)
+  nameLabel.style:SetAlign(ALIGN_LEFT)
+  local checkBox = CreateCheckButton(nameLabel:GetId() .. ".checkBox", nameLabel)
+  checkBox:AddAnchor("LEFT", nameLabel, 0, 0)
+  nameLabel.checkBox = checkBox
+  if style == "expedition" then
+    ApplyTextColor(nameLabel, FONT_COLOR.DEFAULT)
+  elseif style == "support" then
+    ApplyTextColor(nameLabel, FONT_COLOR.BLUE)
+  end
+end
+local function CreateExpeditionListWindow(id, parent)
+  local window = CreateEmptyWindow(id, parent)
+  window:Show(true)
+  window:SetExtent(475, 385)
+  window.titleStyle:SetShadow(false)
+  window.titleStyle:SetAlign(ALIGN_TOP_LEFT)
+  window:SetTitleInset(20, 1, 0, 0)
+  window.titleStyle:SetFontSize(FONT_SIZE.LARGE)
+  window.titleStyle:SetColor(FONT_COLOR.TITLE[1], FONT_COLOR.TITLE[2], FONT_COLOR.TITLE[3], 1)
+  local allSelectCheck = CreateCheckButton(window:GetId() .. ".allSelectCheck", window)
+  allSelectCheck:AddAnchor("TOPLEFT", window, 0, 0)
+  window.allSelectCheck = allSelectCheck
+  local bg = CreateContentBackground(window, "TYPE3")
+  bg:AddAnchor("TOPLEFT", window, -(sideMargin * 1.8), -(sideMargin * 2))
+  bg:AddAnchor("BOTTOMRIGHT", window, sideMargin * 1.8, sideMargin * 3)
+  ApplyTextureColor(bg, TEXTURE_COLOR.TYPE3_BROWN)
+  local underLine_1 = window:CreateImageDrawable("ui/common/tab_list.dds", "artwork")
+  underLine_1:SetCoords(0, 6, 256, 3)
+  underLine_1:SetExtent(237.5, 3)
+  underLine_1:AddAnchor("TOPLEFT", window, 0, sideMargin + 6)
+  underLine_1:SetColor(TEXTURE_COLOR.TAB_LINE[1], TEXTURE_COLOR.TAB_LINE[2], TEXTURE_COLOR.TAB_LINE[3], TEXTURE_COLOR.TAB_LINE[4])
+  local underLine_2 = window:CreateImageDrawable("ui/common/tab_list.dds", "artwork")
+  underLine_2:SetCoords(256, 6, -256, 3)
+  underLine_2:SetExtent(237.5, 3)
+  underLine_2:AddAnchor("TOPRIGHT", window, 0, sideMargin + 6)
+  underLine_2:SetColor(TEXTURE_COLOR.TAB_LINE[1], TEXTURE_COLOR.TAB_LINE[2], TEXTURE_COLOR.TAB_LINE[3], TEXTURE_COLOR.TAB_LINE[4])
+  local pageControl = CreatePageControl(window:GetId() .. "pageControl", window)
+  pageControl:Show(true)
+  pageControl:AddAnchor("BOTTOM", window, 0, -2)
+  window.pageControl = pageControl
+  window.memberWindow = {}
+  local x = 0
+  local y = sideMargin * 2
+  for k = 1, GROUP_IN_MEMBER_MAX_COUNT * GROUP_EXPEDITION_MAX_COUNT do
+    CreateMemberFrame("memberWindow", window, "expedition", k)
+    window.memberWindow[k]:AddAnchor("TOPLEFT", window, x, y)
+    x = x + 160
+    if k % 3 == 0 then
+      x = 0
+      if k % 5 == 0 then
+        y = y + member_inset * 1.5
+      else
+        y = y + member_inset
+      end
+    end
+  end
+  return window
+end
+function SetViewOfExpeditionSiegeList(id, parent)
+  local window = CreateWindow(id, parent)
+  window:SetExtent(510, 455)
+  window:AddAnchor("CENTER", "UIParent", 0, 0)
+  window:SetTitle(locale.expedition.siege.title)
+  local expeditionListWindow = CreateExpeditionListWindow(window:GetId() .. ".expeditionListWindow", window)
+  expeditionListWindow:AddAnchor("TOPLEFT", window, sideMargin, titleMargin)
+  window.expeditionListWindow = expeditionListWindow
+  local zoneNameLabel = window:CreateChildWidget("label", "zoneNameLabel", 0, true)
+  zoneNameLabel:SetAutoResize(true)
+  zoneNameLabel:SetHeight(FONT_SIZE.MIDDLE)
+  zoneNameLabel:AddAnchor("TOPRIGHT", expeditionListWindow, 0, 5)
+  zoneNameLabel.style:SetFontSize(FONT_SIZE.MIDDLE)
+  zoneNameLabel.style:SetAlign(ALIGN_RIGHT)
+  ApplyTextColor(zoneNameLabel, FONT_COLOR.BLUE)
+  local inviteButton = window:CreateChildWidget("button", "inviteButton", 0, true)
+  inviteButton:AddAnchor("BOTTOMRIGHT", expeditionListWindow, 0, 0)
+  inviteButton:SetText(locale.expedition.inviteRaid)
+  ApplyButtonSkin(inviteButton, BUTTON_BASIC.DEFAULT)
+  return window
+end

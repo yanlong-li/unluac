@@ -1,0 +1,71 @@
+mailBoxLocale = {}
+mailBoxLocale.maxTextLength = 300
+mailBoxLocale.wnd = {width = 430, useImageBtn = false}
+function mailBoxLocale:SetLayoutBottomBtns(window, deleteBtn, readDeleteBtn, takeBtn, writeBtn)
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  deleteBtn:SetText(GetUIText(COMMON_TEXT, "delete_selected_mail"))
+  ApplyButtonSkin(deleteBtn, BUTTON_BASIC.DEFAULT)
+  deleteBtn:AddAnchor("BOTTOMLEFT", window, sideMargin, -sideMargin)
+  readDeleteBtn:SetText(GetUIText(MAIL_TEXT, "read_mail_delete"))
+  ApplyButtonSkin(readDeleteBtn, BUTTON_BASIC.DEFAULT)
+  readDeleteBtn:AddAnchor("LEFT", deleteBtn, "RIGHT", 0, 0)
+  takeBtn:SetText(GetUIText(COMMON_TEXT, "mail_take_all_attachments"))
+  ApplyButtonSkin(takeBtn, BUTTON_BASIC.DEFAULT)
+  takeBtn:AddAnchor("LEFT", readDeleteBtn, "RIGHT", 0, 0)
+  local buttonTable = {
+    deleteBtn,
+    readDeleteBtn,
+    takeBtn
+  }
+  local maxWidth = AdjustBtnLongestTextWidth(buttonTable, 60)
+  writeBtn:SetText(GetUIText(MAIL_TEXT, "write_mail"))
+  ApplyButtonSkin(writeBtn, BUTTON_BASIC.DEFAULT)
+  writeBtn:AddAnchor("BOTTOMRIGHT", window, -sideMargin, -sideMargin)
+end
+function mailBoxLocale:TabChangedFunc(allDeleteBtn, tabIdx)
+  if tabIdx == 1 then
+    allDeleteBtn:SetText(locale.mail.readMailDelete)
+  elseif tabIdx == 2 then
+    allDeleteBtn:SetText(locale.mail.allMailDelete)
+  end
+end
+mailBoxLocale.comercialMail = {}
+function mailBoxLocale.comercialMail:DateDataFunc(subItem, data, setValue, sortMode)
+  if setValue == false then
+    subItem:SetText("")
+    return
+  end
+  subItem:SetText(RecvDateStrFromBody(data[COMERCIAL_MAIL_COL.RECV_DATE]))
+  if data[COMERCIAL_MAIL_COL.ISREAD] then
+    ApplyTextColor(subItem, FONT_COLOR.GRAY)
+  else
+    ApplyTextColor(subItem, FONT_COLOR.BLUE)
+  end
+end
+function mailBoxLocale.comercialMail:DateAscendingSortFunc(a, b)
+  local off = ROWDATA_COLUMN_OFFSET + 3
+  local aData = a[off][COMERCIAL_MAIL_COL.RECV_DATE]
+  local bData = b[off][COMERCIAL_MAIL_COL.RECV_DATE]
+  local aStr = string.format("%s. %s. %s %s:%s:%s", aData.year, aData.month, aData.day, aData.hour, aData.minute, aData.second)
+  local bStr = string.format("%s. %s. %s %s:%s:%s", bData.year, bData.month, bData.day, bData.hour, bData.minute, bData.second)
+  return aStr < bStr and true or false
+end
+function mailBoxLocale.comercialMail:DateDescendingSortFunc(a, b)
+  local off = ROWDATA_COLUMN_OFFSET + 3
+  local aData = a[off][COMERCIAL_MAIL_COL.RECV_DATE]
+  local bData = b[off][COMERCIAL_MAIL_COL.RECV_DATE]
+  local aStr = string.format("%s. %s. %s %s:%s:%s", aData.year, aData.month, aData.day, aData.hour, aData.minute, aData.second)
+  local bStr = string.format("%s. %s. %s %s:%s:%s", bData.year, bData.month, bData.day, bData.hour, bData.minute, bData.second)
+  return aStr > bStr and true or false
+end
+mailBoxLocale.mail = {
+  bodyMaxWidth = 350,
+  sendCommission = {offsetX = 52}
+}
+function mailBoxLocale.MakeEndFilter(startDate, endDate, filter1, filter2)
+  return startDate.year == endDate.year and filter2 or filter1
+end
+mailBoxLocale.housingTaxFilter = FORMAT_FILTER.MONTH + FORMAT_FILTER.DAY + FORMAT_FILTER.HOUR + FORMAT_FILTER.MINUTE
+mailBoxLocale.balanceReceiptTotalMoneyFontSize = FONT_SIZE.LARGE
+mailBoxLocale.balanceReceiptDetailMoneyFontSize = FONT_SIZE.MIDDLE
+mailBoxLocale.useSpamMailFilter = false

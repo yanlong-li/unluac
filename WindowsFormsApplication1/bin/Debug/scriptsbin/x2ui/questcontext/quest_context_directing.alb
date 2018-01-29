@@ -1,0 +1,853 @@
+local fastQuestChatBubble = X2Player:GetFeatureSet().fastQuestChatBubble
+local BUBBLE_INVAILD_TYPE_FOR_BACKWARD = 0
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+local windowWidth = UIParent:GetScreenWidth()
+local windowHeight = UIParent:GetScreenHeight()
+local FADE_TIME = 370
+local DIRECTING_TYPE = {
+  NONE = 1,
+  START = 2,
+  PROGRESS_TALK = 3,
+  COMPLETE = 4
+}
+local NEXT_TALK_TYPE = {
+  NONE = 0,
+  HAS_NEXT = 1,
+  COMPLETE = 2
+}
+local REWARD_TYPE = {DEFAULT = 1, SELECTIVE = 2}
+local directingFadeTime = 0
+local GetActionsKeyBinding = function(widget, action, message)
+  local strAction = "quest_directing_interaction"
+  local keyIndex = {
+    d = 1,
+    f = 2,
+    g = 3
+  }
+  local function GetKeyIndex(strKey)
+    local index = keyIndex[strKey]
+    if index == nil then
+      index = 0
+    end
+    return index
+  end
+  local str = ""
+  if action == "next" then
+    local bindingText = X2Hotkey:GetOptionBinding(strAction, 1, false, GetKeyIndex("f")) or ""
+    str = string.format("%s(%s)", locale.questContext.next, string.upper(bindingText))
+  elseif action == "prev" then
+    local bindingText = X2Hotkey:GetOptionBinding(strAction, 1, false, GetKeyIndex("d")) or ""
+    str = string.format("%s(%s)", locale.questContext.prev, string.upper(bindingText))
+  elseif action == "confirm" then
+    local bindingText = X2Hotkey:GetOptionBinding(strAction, 1, false, GetKeyIndex("f")) or ""
+    str = string.format("%s(%s)", locale.questContext.ok, string.upper(bindingText))
+  elseif action == "talk" then
+    local bindingText = X2Hotkey:GetOptionBinding(strAction, 1, false, GetKeyIndex("f")) or ""
+    str = string.format("%s(%s)", locale.questContext.talk, string.upper(bindingText))
+  elseif action == "confirm_rewardWindow" then
+    local bindingText = X2Hotkey:GetOptionBinding(strAction, 1, false, GetKeyIndex("g")) or ""
+    str = string.format("%s(%s)", locale.questContext.ok, string.upper(bindingText))
+  elseif action == "etc" then
+    local bindingText = X2Hotkey:GetOptionBinding(strAction, 1, false, GetKeyIndex("f")) or ""
+    str = string.format("%s(%s)", message, string.upper(bindingText))
+  elseif action == "etc_rewardWindow" then
+    local bindingText = X2Hotkey:GetOptionBinding(strAction, 1, false, GetKeyIndex("g")) or ""
+    str = string.format("%s(%s)", message, string.upper(bindingText))
+  end
+  widget:SetText(str)
+end
+local CreateScrollBar = function(id, parent)
+  local scroll = CreateScroll(id, parent)
+  function scroll:SetScroll(totalLines, currentLine, pagePerMaxLines)
+    local visible = pagePerMaxLines < totalLines and true or false
+    self:Show(visible)
+    if visible then
+      local maxValue = totalLines - pagePerMaxLines
+      self.vs:SetMinMaxValues(0, maxValue)
+      self.vs:SetValueStep(1)
+      self.vs:SetPageStep(pagePerMaxLines)
+      self.vs:SetValue(currentLine, false)
+    else
+      self.vs:SetMinMaxValues(0, 0)
+      self.vs:SetValueStep(0)
+      self.vs:SetPageStep(0)
+    end
+  end
+  return scroll
+end
+local function CreateQuestCinemaWnd()
+  local w = CreateEmptyWindow("questDirecting", "UIParent")
+  w:Show(false)
+  w:SetExtent(windowWidth, windowHeight)
+  local backgroundColor = FORM_QUEST_DIRECTING.PANEL_COLOR.ACCEPT
+  local upperPanel = w:CreateColorDrawable(backgroundColor[1], backgroundColor[2], backgroundColor[3], backgroundColor[4], "background")
+  upperPanel:AddAnchor("TOPLEFT", w, 0, 0)
+  upperPanel:AddAnchor("TOPRIGHT", w, 0, 0)
+  w.upperPanel = upperPanel
+  local title = w:CreateChildWidget("label", "title", 0, true)
+  title:Show(true)
+  title:SetAutoResize(true)
+  title.style:SetSnap(true)
+  title.style:SetShadow(true)
+  title.style:SetAlign(ALIGN_BOTTOM_LEFT)
+  w.title = title
+  local closeButton = w:CreateChildWidget("button", "closeButton", 0, true)
+  closeButton:Show(true)
+  closeButton:AddAnchor("TOPRIGHT", upperPanel, -5, 5)
+  ApplyButtonSkin(closeButton, BUTTON_CONTENTS.CINEMA_CLOSE)
+  w.closeButton = closeButton
+  local underPanel = w:CreateColorDrawable(backgroundColor[1], backgroundColor[2], backgroundColor[3], backgroundColor[4], "background")
+  underPanel:AddAnchor("BOTTOMLEFT", w, 0, 0)
+  underPanel:AddAnchor("BOTTOMRIGHT", w, 0, 0)
+  w.underPanel = underPanel
+  local messageFrame = w:CreateChildWidget("emptywidget", "messageFrame", 0, true)
+  messageFrame:AddAnchor("TOPLEFT", underPanel, 0, 0)
+  local messageWidget = w:CreateChildWidget("message", "messageWidget", 0, true)
+  messageWidget:Show(true)
+  messageWidget:SetLineSpace(questLocale.directing.message.lineSpace)
+  messageWidget.style:SetSnap(true)
+  messageWidget.style:SetAlign(ALIGN_TOP_LEFT)
+  messageWidget:ChangeTextStyle()
+  local scrollBar = CreateScrollBar(w:GetId() .. ".scrollBar", messageWidget)
+  w.scrollBar = scrollBar
+  local buttonFrame = w:CreateChildWidget("emptywidget", "buttonFrame", 0, true)
+  buttonFrame:AddAnchor("TOPRIGHT", underPanel, 0, 0)
+  local nextButton = w:CreateChildWidget("button", "nextButton", 0, true)
+  nextButton:Show(true)
+  nextButton:SetSounds("quest_directing_mode")
+  GetActionsKeyBinding(nextButton, "next")
+  nextButton.style:SetAlign(ALIGN_BOTTOM)
+  ApplyButtonSkin(nextButton, BUTTON_CONTENTS.CINEMA_NEXT)
+  nextButton:SetAutoResize(true)
+  local prevButton = w:CreateChildWidget("button", "prevButton", 0, true)
+  prevButton:Show(true)
+  prevButton:SetSounds("quest_directing_mode")
+  GetActionsKeyBinding(prevButton, "prev")
+  prevButton.style:SetAlign(ALIGN_BOTTOM)
+  ApplyButtonSkin(prevButton, BUTTON_CONTENTS.CINEMA_PREV)
+  prevButton:SetAutoResize(true)
+  local confirmButton = w:CreateChildWidget("button", "confirmButton", 0, true)
+  confirmButton:Show(true)
+  confirmButton:SetSounds("quest_directing_mode")
+  GetActionsKeyBinding(confirmButton, "confirm")
+  confirmButton.style:SetAlign(ALIGN_BOTTOM)
+  ApplyButtonSkin(confirmButton, BUTTON_CONTENTS.CINEMA_ACCEPT)
+  confirmButton:SetAutoResize(true)
+  function w:SetLayOut()
+    local upperHeight = F_LAYOUT:CalcDontApplyUIScale(windowHeight * 0.1)
+    local underHeight = F_LAYOUT:CalcDontApplyUIScale(windowHeight * 0.2)
+    self.upperPanel:SetHeight(upperHeight)
+    self.underPanel:SetHeight(underHeight)
+    self.messageFrame:SetExtent(F_LAYOUT:CalcDontApplyUIScale(windowWidth * 0.85), underHeight)
+    self.buttonFrame:SetExtent(F_LAYOUT:CalcDontApplyUIScale(windowWidth * 0.15), underHeight)
+    local dialogueFontSize = math.floor(underHeight / 9)
+    local messageWidgetWidth = windowHeight * 1.25 * 0.75 * 1.4
+    self.messageWidget:SetExtent(F_LAYOUT:CalcDontApplyUIScale(questLocale.directing.message.width(windowWidth)), underHeight * 0.75)
+    self.messageWidget:AddAnchor("CENTER", self.messageFrame, 0, 0)
+    self.messageWidget.style:SetFont(FONT_PATH.DEFAULT, dialogueFontSize)
+    self.scrollBar:AddAnchor("TOPLEFT", messageWidget, F_LAYOUT:CalcDontApplyUIScale(-30), F_LAYOUT:CalcDontApplyUIScale(-3))
+    self.scrollBar:AddAnchor("BOTTOMLEFT", messageWidget, 0, F_LAYOUT:CalcDontApplyUIScale(3))
+    local titleFontSize = math.floor(upperHeight / 4)
+    self.title:SetHeight(titleFontSize)
+    self.title:SetInset(0, 0, 0, titleFontSize / 5)
+    self.title:AddAnchor("BOTTOM", upperPanel, 0, F_LAYOUT:CalcDontApplyUIScale(-titleFontSize / 2))
+    self.title.style:SetFont(FONT_PATH.SNAIL, titleFontSize)
+    local rightInset = windowWidth - scrollBar:GetWidth()
+    self.prevButton:AddAnchor("LEFT", self.buttonFrame, 0, 0)
+    self.nextButton:AddAnchor("LEFT", self.prevButton, "RIGHT", 15, 0)
+    self.confirmButton:AddAnchor("LEFT", self.prevButton, "RIGHT", 15, 0)
+  end
+  w:SetLayOut()
+  local journal = CreateSmallJournalFrame("journal", w, "cinemaView")
+  journal:AddAnchor("BOTTOMRIGHT", underPanel, "TOPRIGHT", -40, -40)
+  w.journal = journal
+  function journal:GetRelateButton()
+    return journal.button
+  end
+  function journal:GetAffectedButton()
+    return w.confirmButton
+  end
+  w.questType = 0
+  w.doodadId = ""
+  w.who = 0
+  w.directingType = DIRECTING_TYPE.NONE
+  w.currentBubbleTypes = {}
+  w.currentBubbleTypesForBackward = {}
+  return w
+end
+local function UpdateEnableRewardButton(wnd, questState, qtype)
+  if questState == DIRECTING_TYPE.START or questState == DIRECTING_TYPE.PROGRESS_TALK then
+    wnd:EnableSelectveItems(false)
+    wnd.button:Enable(true)
+  else
+    wnd:EnableSelectveItems(true)
+    if X2Quest:GetQuestContextRewardSelectiveItemAllCount(qtype) > 0 then
+      wnd.rewardType = REWARD_TYPE.SELECTIVE
+      wnd.button:Enable(false)
+    else
+      wnd.button:Enable(true)
+    end
+  end
+end
+local function FillRewards(wnd, questState, qtype)
+  wnd.rewardType = REWARD_TYPE.DEFAULT
+  if wnd.arrowAlarm ~= nil then
+    wnd.arrowAlarm:SetStartEffect(false)
+  end
+  wnd:FillJournal("cinemaView", qtype)
+  if X2Util:GetGameProvider() ~= TENCENT then
+    UpdateEnableRewardButton(wnd, questState, qtype)
+  end
+  local isShow = not X2:IsInClientDrivenZone()
+  if isShow == true then
+    isShow = questState ~= DIRECTING_TYPE.PROGRESS_TALK and wnd:ExistRewards()
+  end
+  wnd:Show(isShow)
+  if questState ~= DIRECTING_TYPE.COMPLETE or not wnd:ExistSlectiveReward() or X2Unit:UnitLevel("player") > 10 then
+    return
+  end
+  if wnd.arrowAlarm == nil then
+    do
+      local arrowAnim = wnd:CreateEffectDrawable(TEXTURE_PATH.QUEST_LIST, "overlay")
+      arrowAnim:SetCoords(375, 0, 58, 45)
+      arrowAnim:SetExtent(58, 45)
+      arrowAnim:AddAnchor("RIGHT", wnd:GetSelectionDescWidget(), "LEFT", -10, 0)
+      arrowAnim:SetRepeatCount(0)
+      arrowAnim:SetMoveRepeatCount(0)
+      local maxScope = 0.6
+      local alphaTime1 = 0.3
+      local alphaTime2 = 0.2
+      local toRightTime1 = 0.3
+      local toRightTime2 = 0.2
+      local interverTime = 3
+      arrowAnim:SetMoveInterval(interverTime)
+      arrowAnim:SetInterval(interverTime)
+      arrowAnim:SetEffectPriority(1, "alpha", alphaTime1, alphaTime2)
+      arrowAnim:SetEffectInitialColor(1, 1, 1, 1, 0)
+      arrowAnim:SetEffectFinalColor(1, 1, 1, 1, 1)
+      local moveStartIdx = 0
+      local function IncreaseIndex(index)
+        moveStartIdx = moveStartIdx + 1
+        return moveStartIdx
+      end
+      local moveAnimTotalTime = 0
+      local function SetCommonMoveAnim()
+        local stopTime1 = 0.35
+        local stopTime2 = 0.1
+        local toLeftTime1 = 0.25
+        local toLeftTime2 = 0.2
+        local idx = IncreaseIndex(moveStartIdx)
+        arrowAnim:SetMoveEffectType(idx, "top", 0, 0, toRightTime1, toRightTime2)
+        arrowAnim:SetMoveEffectEdge(idx, 0, maxScope)
+        arrowAnim:SetMoveEffectInterval(idx, stopTime1)
+        idx = IncreaseIndex(moveStartIdx)
+        arrowAnim:SetMoveEffectType(idx, "top", 0, 0, toLeftTime1, toLeftTime2)
+        arrowAnim:SetMoveEffectEdge(idx, maxScope, 0)
+        arrowAnim:SetMoveEffectInterval(idx, stopTime2)
+        moveAnimTotalTime = moveAnimTotalTime + toRightTime2 + toLeftTime2 + stopTime1 + stopTime2
+      end
+      local repeatCount = 5
+      for i = 1, repeatCount do
+        SetCommonMoveAnim()
+      end
+      local idx = IncreaseIndex(moveStartIdx)
+      arrowAnim:SetMoveEffectType(idx, "top", 0, 0, toRightTime1, toRightTime2)
+      arrowAnim:SetMoveEffectEdge(idx, 0, maxScope)
+      arrowAnim:SetMoveEffectInterval(idx, alphaTime2 + interverTime)
+      moveAnimTotalTime = moveAnimTotalTime + toRightTime2
+      arrowAnim:SetEffectInterval(1, moveAnimTotalTime - alphaTime2)
+      arrowAnim:SetEffectPriority(2, "alpha", alphaTime1, alphaTime2)
+      arrowAnim:SetEffectInitialColor(2, 1, 1, 1, 1)
+      arrowAnim:SetEffectFinalColor(2, 1, 1, 1, 0)
+      arrowAnim:SetEffectInterval(2, interverTime)
+      wnd.arrowAlarm = arrowAnim
+      local OnHide = function()
+        if arrowAlarm ~= nil then
+          arrowAlarm:SetStartEffect(false)
+        end
+      end
+      wnd:SetHandler("OnHide", OnHide)
+    end
+  end
+  if wnd.arrowAlarm ~= nil then
+    wnd.arrowAlarm:SetStartEffect(true)
+  end
+end
+local function CreateFadeWnd()
+  local w = CreateEmptyWindow("QuestDirectingFadeWindow", "UIParent")
+  w:Show(false)
+  w:SetExtent(windowWidth, windowHeight)
+  local panel = w:CreateColorDrawable(0, 0, 0, 1, "overlay")
+  panel:AddAnchor("TOPLEFT", w, 0, 0)
+  panel:AddAnchor("BOTTOMRIGHT", w, 0, 0)
+  w.panel = panel
+  return w
+end
+local fadeWnd = CreateFadeWnd()
+fadeWnd:SetUILayer("questdirecting")
+ADDON:RegisterContentWidget(UIC_QUEST_CINEMA_FADE_WND, fadeWnd)
+local function OnScale()
+  fadeWnd:AddAnchor("TOPLEFT", "UIParent", 0, 0)
+  fadeWnd:AddAnchor("BOTTOMRIGHT", "UIParent", 0, 0)
+end
+fadeWnd:SetHandler("OnScale", OnScale)
+function fadeWnd:SetFadeEndFunc(OnFadeInEndFunc, OnFadeOutEndFunc)
+  local fadeTime = 0
+  self:ReleaseHandler("OnUpdate")
+  self:ReleaseHandler("OnVisibleChanged")
+  self.fadingNow = true
+  function self:OnUpdateFadeIn(dt)
+    fadeTime = dt + fadeTime
+    if fadeTime > directingFadeTime then
+      self:Show(false, directingFadeTime)
+      self:ReleaseHandler("OnUpdate")
+      self:SetHandler("OnVisibleChanged", self.OnVisibleChanged)
+      OnFadeInEndFunc()
+    end
+  end
+  self:SetHandler("OnUpdate", self.OnUpdateFadeIn)
+  function self:OnVisibleChanged(visible)
+    if visible == false then
+      self:ReleaseHandler("OnVisibleChanged")
+      OnFadeOutEndFunc()
+      self.fadingNow = false
+    end
+  end
+end
+local questDirecting = CreateQuestCinemaWnd()
+questDirecting:SetUILayer("questdirecting")
+ADDON:RegisterContentWidget(UIC_QUEST_CINEMA_WND, questDirecting)
+local function CloseQuestDirectingWnd()
+  local function OnFadeInEnd()
+    X2Quest:LeaveQuestDirectingMode()
+    systemLayerParent:SetAlphaAnimation(0, 1, directingFadeTime / 1000 or 1, 0)
+    systemLayerParent:SetStartAnimation(true, false)
+  end
+  if directingFadeTime > 0 then
+    fadeWnd:SetFadeEndFunc(OnFadeInEnd, function()
+    end)
+    fadeWnd:SetAlpha(1)
+    fadeWnd:Show(true, directingFadeTime)
+  else
+    OnFadeInEnd()
+  end
+  questDirecting.confirmButton:Enable(false)
+  questDirecting:Show(false, directingFadeTime)
+  questDirecting.currentBubbleTypes = {}
+  questDirecting.currentBubbleTypesForBackward = {}
+end
+questDirecting:SetHandler("OnCloseByEsc", function()
+  X2Quest:DeclineDirectingQuest()
+  CloseQuestDirectingWnd()
+end)
+questDirecting:SetHandler("OnMouseDown", function()
+end)
+questDirecting:SetHandler("OnMouseUp", function()
+end)
+local function OnScale()
+  questDirecting:AddAnchor("TOPLEFT", "UIParent", 0, 0)
+  questDirecting:AddAnchor("BOTTOMRIGHT", "UIParent", 0, 0)
+  questDirecting:SetLayOut()
+end
+questDirecting:SetHandler("OnScale", OnScale)
+local closeButton = questDirecting.closeButton
+local function OnClick(_, arg)
+  if arg == "LeftButton" then
+    X2Quest:DeclineDirectingQuest()
+    CloseQuestDirectingWnd()
+  end
+end
+closeButton:SetHandler("OnClick", OnClick)
+local nextButton = questDirecting.nextButton
+function nextButton:OnClick(arg)
+  if arg == "LeftButton" and self:IsEnabled() == true then
+    if #questDirecting.currentBubbleTypes > 1 then
+      questDirecting.currentBubbleTypesForBackward[#questDirecting.currentBubbleTypesForBackward + 1] = questDirecting.currentBubbleTypes[2]
+    else
+      questDirecting.currentBubbleTypesForBackward[#questDirecting.currentBubbleTypesForBackward + 1] = BUBBLE_INVAILD_TYPE_FOR_BACKWARD
+    end
+    X2:FastForwardQuestChat(questDirecting.currentBubbleTypes[#questDirecting.currentBubbleTypes])
+  end
+end
+nextButton:SetHandler("OnClick", nextButton.OnClick)
+local prevButton = questDirecting.prevButton
+function prevButton:OnClick(arg)
+  if arg == "LeftButton" and self:IsEnabled() == true then
+    local bubbleType = questDirecting.currentBubbleTypesForBackward[#questDirecting.currentBubbleTypesForBackward]
+    questDirecting.currentBubbleTypesForBackward[#questDirecting.currentBubbleTypesForBackward] = nil
+    if bubbleType == BUBBLE_INVAILD_TYPE_FOR_BACKWARD then
+      bubbleType = questDirecting.currentBubbleTypes[1]
+    end
+    X2:FastBackwardQuestChat(bubbleType)
+  end
+end
+prevButton:SetHandler("OnClick", prevButton.OnClick)
+local confirmButton1 = questDirecting.confirmButton
+local confirmButton2 = questDirecting.journal.button
+function confirmButton2:OnClick(arg)
+  if arg == "LeftButton" then
+    local w = questDirecting
+    if w.directingType == DIRECTING_TYPE.START then
+      X2Quest:AcceptDirectingQuest()
+    elseif w.directingType == DIRECTING_TYPE.PROGRESS_TALK then
+      X2Quest:ProgressTalkDirectingQuest()
+    elseif w.directingType == DIRECTING_TYPE.COMPLETE then
+      X2Quest:CompleteDirectingQuest(w.journal:GetSelectiveItemIndex())
+    else
+      LuaAssert("error INVALID QUEST DIRECTING TYPE")
+    end
+    confirmButton1:Enable(false)
+    confirmButton2:Enable(false)
+  end
+end
+confirmButton1:SetHandler("OnClick", confirmButton2.OnClick)
+confirmButton2:SetHandler("OnClick", confirmButton2.OnClick)
+function questDirecting:OnClick(arg)
+  if arg == "LeftButton" then
+    prevButton:OnClick("LeftButton")
+  end
+  if arg == "RightButton" then
+    if nextButton:IsVisible() == true and nextButton:IsEnabled() == true then
+      nextButton:OnClick("LeftButton")
+    elseif confirmButton1:IsVisible() == true and confirmButton1:IsEnabled() == true then
+      confirmButton2:OnClick("LeftButton")
+    end
+  end
+end
+questDirecting:SetHandler("OnClick", questDirecting.OnClick)
+local scrollBar = questDirecting.scrollBar
+function scrollBar:UpdateData()
+  questDirecting.messageWidget:SetScrollPos(self.vs:GetValue())
+end
+local RegisterScrollBarHandler = function(scrollBar)
+  local function UpButtonLeftClickFunc()
+    scrollBar.vs:Up(scrollBar.vs:GetValueStep())
+    scrollBar:UpdateData()
+  end
+  ButtonOnClickHandler(scrollBar.upButton, UpButtonLeftClickFunc)
+  local function DownButtonLeftClickFunc()
+    scrollBar.vs:Down(scrollBar.vs:GetValueStep())
+    scrollBar:UpdateData()
+  end
+  ButtonOnClickHandler(scrollBar.downButton, DownButtonLeftClickFunc)
+  scrollBar.vs:SetHandler("OnMouseUp", function()
+    scrollBar:UpdateData()
+  end)
+  scrollBar.vs:SetHandler("OnMouseMove", function()
+    scrollBar:UpdateData()
+  end)
+  function scrollBar:OnWheelUp()
+    if not scrollBar.vs.thumb:IsEnabled() then
+      return
+    end
+    scrollBar.vs:Up(scrollBar.vs:GetValueStep() * 5)
+    scrollBar:UpdateData()
+  end
+  scrollBar:SetHandler("OnWheelUp", scrollBar.OnWheelUp)
+  function scrollBar:OnWheelDown()
+    if not scrollBar.vs.thumb:IsEnabled() then
+      return
+    end
+    scrollBar.vs:Down(scrollBar.vs:GetValueStep() * 5)
+    scrollBar:UpdateData()
+  end
+  scrollBar:SetHandler("OnWheelDown", scrollBar.OnWheelDown)
+end
+RegisterScrollBarHandler(scrollBar)
+local function GetQuestStatusMessage(qtype, rewardType)
+  local letItDone = X2Quest:IsLetItDoneQuestByType(qtype)
+  local overDone = X2Quest:IsOverDoneQuestByType(qtype)
+  local complete = IsCompleteQuest(qtype)
+  if not letItDone and not overDone and not complete then
+    return "unknown"
+  end
+  local message
+  if letItDone then
+    message = locale.questContext.letItDone
+  elseif overDone then
+    message = locale.questContext.overDone
+  elseif rewardType == REWARD_TYPE.DEFAULT then
+    message = locale.questContext.rewardTake
+  elseif rewardType == REWARD_TYPE.SELECTIVE then
+    message = locale.questContext.rewardSelect
+  end
+  return message
+end
+local function StartDirectingMode(who, qtype, doodadId, npcId)
+  systemLayerParent:SetAlpha(0)
+  questDirecting.messageWidget:Clear()
+  local function OnFadeInEnd()
+    local w = questDirecting
+    w:Show(true, directingFadeTime)
+    local title = X2Quest:GetQuestContextMainTitle(qtype)
+    title = X2Util:ApplyUIMacroString(title)
+    w.title:SetText(title)
+    local titleColor
+    if X2Quest:IsMainQuest(qtype) then
+      titleColor = FORM_QUEST_DIRECTING.TITLE_FONT_COLOR.MAIN_QUEST
+    else
+      titleColor = FORM_QUEST_DIRECTING.TITLE_FONT_COLOR.NOT_MAIN_QUEST
+    end
+    w.title.style:SetColor(titleColor[1], titleColor[2], titleColor[3], titleColor[4])
+    FillRewards(w.journal, w.directingType, qtype)
+    if w.directingType == DIRECTING_TYPE.START then
+      X2Quest:TryStartQuestContext(who, qtype, 0, doodadId, npcId)
+    elseif w.directingType == DIRECTING_TYPE.PROGRESS_TALK then
+      ProgressTalkQuest(qtype, npcId)
+    elseif w.directingType == DIRECTING_TYPE.COMPLETE then
+      X2Quest:TryCompleteQuestContext(who, qtype, doodadId, npcId, 0)
+    else
+      LuaAssert("error INVALID QUEST DIRECTING TYPE")
+    end
+    if w.directingType == DIRECTING_TYPE.COMPLETE then
+      local completeMessage = GetQuestStatusMessage(qtype, w.journal.rewardType)
+      GetActionsKeyBinding(w.confirmButton, "etc", completeMessage)
+      GetActionsKeyBinding(w.journal.button, "etc_rewardWindow", completeMessage)
+      ApplyButtonSkin(w.journal.button, BUTTON_BASIC.DEFAULT)
+    end
+  end
+  local function OnFadeOutEnd()
+    local w = questDirecting
+    if w.directingType == DIRECTING_TYPE.START or w.directingType == DIRECTING_TYPE.PROGRESS_TALK then
+      w:SetCloseOnEscape(true)
+      w.prevButton:Enable(not X2:IsFirstQuestChat(w.currentBubbleTypes[1]))
+      if X2:HasNextQuestChat(w.currentBubbleTypes[#w.currentBubbleTypes]) then
+        w.nextButton:Enable(true)
+      else
+        w.confirmButton:Enable(true)
+      end
+    elseif w.directingType == DIRECTING_TYPE.COMPLETE then
+      w:SetCloseOnEscape(true)
+      local selectCount = X2Quest:GetQuestContextRewardSelectiveItemAllCount(qtype)
+      local enable = selectCount == 0 and true or false
+      w.prevButton:Enable(not X2:IsFirstQuestChat(w.currentBubbleTypes[1]))
+      if X2:HasNextQuestChat(w.currentBubbleTypes[#w.currentBubbleTypes]) then
+        w.nextButton:Enable(true)
+      else
+        w.confirmButton:Enable(enable)
+      end
+    else
+      LuaAssert("error INVALID QUEST DIRECTING TYPE")
+    end
+  end
+  questDirecting.journal:Show(false)
+  X2Quest:EnterQuestDirectingMode()
+  questDirecting.nextButton:Show(false)
+  questDirecting.prevButton:Show(false)
+  questDirecting.confirmButton:Show(false)
+  if directingFadeTime == 0 then
+    fadeWnd.panel:SetColor(1, 1, 1, 0)
+  else
+    fadeWnd.panel:SetColor(0, 0, 0, 1)
+  end
+  fadeWnd:SetFadeEndFunc(OnFadeInEnd, OnFadeOutEnd)
+  fadeWnd:Show(true, directingFadeTime)
+end
+function EndDirectingMode()
+  local w = questDirecting
+  w.questType = 0
+  w.doodadId = ""
+  w.who = 0
+  w.directingType = DIRECTING_TYPE.NONE
+  CloseQuestDirectingWnd()
+end
+function StartNextQuest(qtype)
+  local w = questDirecting
+  local msg = X2Quest:GetActiveQuestContextConditionMessage()
+  w.messageWidget:AddMessage(string.format("|CFFF3E332%s", msg))
+  w.questType = qtype
+  w.directingType = DIRECTING_TYPE.START
+  w:SetCloseOnEscape(true)
+  w.nextButton:Show(false)
+  w.prevButton:Show(false)
+  w.nextButton:Enable(false)
+  w.prevButton:Enable(false)
+  w.confirmButton:Show(false)
+  w.confirmButton:Enable(false)
+  w.journal.button:Enable(false)
+  GetActionsKeyBinding(w.nextButton, "next")
+  GetActionsKeyBinding(w.prevButton, "prev")
+  GetActionsKeyBinding(w.confirmButton, "confirm")
+  GetActionsKeyBinding(w.journal.button, "confirm_rewardWindow")
+  ApplyButtonSkin(w.journal.button, BUTTON_BASIC.DEFAULT)
+  X2Quest:TryStartQuestContext(w.who, qtype, 0, w.doodadId, w.npcId)
+  local title = X2Quest:GetQuestContextMainTitle(qtype)
+  w.title:SetText(title)
+  if X2Quest:IsMainQuest(qtype) then
+    w.title.style:SetColor(ConvertColor(172), ConvertColor(222), ConvertColor(38), 1)
+  else
+    w.title.style:SetColor(ConvertColor(236), ConvertColor(235), ConvertColor(119), 1)
+  end
+  FillRewards(w.journal, w.directingType, qtype)
+  local enable = w.journal.button:IsEnabled()
+  w.confirmButton:Enable(enable)
+end
+local function GetDirectingFadeTime(qtype)
+  if X2Quest:IsMainQuest(qtype) == true and X2Quest:UseQuestCamera() == true then
+    return FADE_TIME
+  end
+  return 0
+end
+local function StartQuest(who, qtype, useDirectingMode, doodadId, npcId)
+  if useDirectingMode == false then
+    return
+  end
+  if fadeWnd.fadingNow == true then
+    return false
+  end
+  doodadId = doodadId or ""
+  local w = questDirecting
+  w.questType = qtype
+  w.doodadId = doodadId
+  w.npcId = npcId
+  w.who = who
+  w.directingType = DIRECTING_TYPE.START
+  w:SetCloseOnEscape(false)
+  w.nextButton:Enable(false)
+  w.prevButton:Enable(false)
+  w.confirmButton:Enable(false)
+  GetActionsKeyBinding(w.nextButton, "next")
+  GetActionsKeyBinding(w.prevButton, "prev")
+  GetActionsKeyBinding(w.confirmButton, "confirm")
+  GetActionsKeyBinding(w.journal.button, "confirm_rewardWindow")
+  ApplyButtonSkin(w.journal.button, BUTTON_BASIC.DEFAULT)
+  directingFadeTime = GetDirectingFadeTime(qtype)
+  StartDirectingMode(who, qtype, doodadId, npcId)
+end
+local function CompleteQuest(who, qtype, useDirectingMode, doodadId, npcId)
+  if useDirectingMode == false then
+    return
+  end
+  if fadeWnd.fadingNow == true then
+    return false
+  end
+  doodadId = doodadId or ""
+  local w = questDirecting
+  w.questType = qtype
+  w.doodadId = doodadId
+  w.npcId = npcId
+  w.who = who
+  w.directingType = DIRECTING_TYPE.COMPLETE
+  w:SetCloseOnEscape(false)
+  w.nextButton:Enable(false)
+  w.prevButton:Enable(false)
+  w.confirmButton:Enable(false)
+  directingFadeTime = GetDirectingFadeTime(qtype)
+  StartDirectingMode(who, qtype, doodadId, npcId)
+end
+local function ProgressTalkQuest(who, qtype, useDirectingMode, doodadId, npcId)
+  if useDirectingMode == false then
+    return
+  end
+  if fadeWnd.fadingNow == true then
+    return false
+  end
+  doodadId = doodadId or ""
+  local w = questDirecting
+  w.questType = qtype
+  w.doodadId = doodadId
+  w.npcId = npcId
+  w.who = who
+  w.directingType = DIRECTING_TYPE.PROGRESS_TALK
+  w:SetCloseOnEscape(false)
+  w.nextButton:Enable(false)
+  w.prevButton:Enable(false)
+  w.confirmButton:Enable(false)
+  w.journal.button:Enable(false)
+  GetActionsKeyBinding(w.confirmButton, "talk")
+  GetActionsKeyBinding(w.journal.button, "confirm_rewardWindow")
+  ApplyButtonSkin(w.journal.button, BUTTON_BASIC.DEFAULT)
+  directingFadeTime = GetDirectingFadeTime(qtype)
+  StartDirectingMode(who, qtype, doodadId, npcId)
+end
+local function InteractionEnd()
+  if questDirecting:IsVisible() == false then
+    return
+  end
+  CancelQuestDirectingMode()
+  X2Interaction:CancelNPCInteraction()
+end
+local events = {
+  START_QUEST_CONTEXT_NPC = function(qtype, useDirectingMode, npcId)
+    StartQuest(1, qtype, useDirectingMode, "", npcId)
+  end,
+  COMPLETE_QUEST_CONTEXT_NPC = function(qtype, useDirectingMode, npcId)
+    CompleteQuest(1, qtype, useDirectingMode, "", npcId)
+  end,
+  PROGRESS_TALK_QUEST_CONTEXT = function(qtype, useDirectingMode, npcId)
+    ProgressTalkQuest(1, qtype, useDirectingMode, "", npcId)
+  end,
+  START_QUEST_CONTEXT_DOODAD = function(qtype, useDirectingMode, doodadId)
+    StartQuest(2, qtype, useDirectingMode, doodadId, "")
+  end,
+  COMPLETE_QUEST_CONTEXT_DOODAD = function(qtype, useDirectingMode, doodadId)
+    CompleteQuest(2, qtype, useDirectingMode, doodadId, "")
+  end,
+  CHAT_MSG_QUEST = function(message, author, authorId, self, tailType, showTime, fadeTime, currentBubbleType, qtype, forceFinished)
+    local w = questDirecting
+    if w:IsVisible() == false then
+      return
+    end
+    UIParent:LogAlways(string.format("[LOG] [CHAT_MSG_QUEST] WQtype[%s] AQType[%s] currentBubbleId[%s] fadingNow[%s]", tostring(w.questType), tostring(qtype), tostring(currentBubbleType), tostring(fadeWnd.fadingNow)))
+    if w.questType ~= qtype then
+      return
+    end
+    for i = 1, #w.currentBubbleTypes do
+      if w.currentBubbleTypes[i] == currentBubbleType then
+        return
+      end
+    end
+    w.currentBubbleTypes = {}
+    w.prevButton:Show(true)
+    w.prevButton:Enable(not X2:IsFirstQuestChat(currentBubbleType))
+    if X2Util:GetGameProvider() == TENCENT then
+      w.journal.button:Enable(false)
+    end
+    local messageWidget = w.messageWidget
+    local playerName = X2Unit:UnitName("player")
+    local separator = " : |t170;"
+    local color = "|CFFFFFFFF"
+    if self then
+      author = locale.questContext.mySelf
+      color = "|CFF88D4F8"
+    end
+    if tailType == CBK_THINK then
+      message = string.format("(%s)", message)
+    elseif tailType == CBK_SYSTEM then
+      message = string.format("%s", message)
+      author = ""
+      separator = ""
+      color = "|CFFF08BF2"
+    end
+    messageWidget:Clear()
+    messageWidget:AddMessage(string.format("%s%s%s%s", color, author, separator, message))
+    local pagePerMaxLines = messageWidget:GetPagePerMaxLines()
+    local totalLines = messageWidget:GetMessageLines()
+    w.currentBubbleTypes[#w.currentBubbleTypes + 1] = currentBubbleType
+    while true do
+      if fastQuestChatBubble then
+        local nextMessage, nextBubbleType, isAutoFireEnd = X2:GetQuestChatBubbleNextSpeech(w.currentBubbleTypes[#w.currentBubbleTypes], true)
+        if nextMessage == nil then
+          break
+        end
+        messageWidget:AddMessage(string.format("%s%s%s%s", color, author, separator, nextMessage))
+        totalLines = messageWidget:GetMessageLines()
+        if pagePerMaxLines < totalLines then
+          X2:AdjustQuestChatBubbleAutoFireEnd(w.currentBubbleTypes[#w.currentBubbleTypes])
+          totalLines = messageWidget:RemoveLastMessage()
+          break
+        end
+        w.currentBubbleTypes[#w.currentBubbleTypes + 1] = nextBubbleType
+      elseif isAutoFireEnd then
+        break
+      end
+    end
+    if X2:HasNextQuestChat(w.currentBubbleTypes[#w.currentBubbleTypes]) then
+      w.nextButton:Show(true)
+      w.confirmButton:Show(false)
+      if fadeWnd.fadingNow == false then
+        w.nextButton:Enable(true)
+        w.confirmButton:Enable(false)
+      end
+    else
+      w.nextButton:Show(false)
+      w.confirmButton:Show(true)
+      if X2Util:GetGameProvider() == TENCENT then
+        UpdateEnableRewardButton(w.journal, w.directingType, qtype)
+      end
+      if fadeWnd.fadingNow == false then
+        w.nextButton:Enable(false)
+        enable = w.journal.button:IsEnabled()
+        w.confirmButton:Enable(enable)
+      end
+    end
+    local currentLine = messageWidget:GetCurrentScroll()
+    local scrollBar = w.scrollBar
+    scrollBar:SetScroll(totalLines, currentLine, pagePerMaxLines)
+  end,
+  QUEST_CONTEXT_UPDATED = function(qtype, condition)
+    local w = questDirecting
+    if w:IsVisible() == false then
+      return
+    end
+    UIParent:LogAlways(string.format("[LOG] QUEST_CONTEXT_UPDATED WQType[%s] AQtype[%s], condition[%s]", tostring(w.questType), tostring(qtype), condition))
+    if w.questType ~= qtype then
+      return
+    end
+    if condition == "started" and w.directingType == DIRECTING_TYPE.START then
+      EndDirectingMode()
+    elseif condition == "updated" and w.directingType == DIRECTING_TYPE.PROGRESS_TALK then
+      EndDirectingMode()
+    elseif condition == "completed" and w.directingType == DIRECTING_TYPE.COMPLETE then
+      local acceptable, nextQuestType = X2Quest:IsNextQuestAcceptableForDirecting(w.questType)
+      UIParent:LogAlways(string.format("[LOG] QUEST_CONTEXT_UPDATED acceptable[%s] NQType[%d]", tostring(acceptable), nextQuestType))
+      if acceptable == true then
+        StartNextQuest(nextQuestType)
+      else
+        EndDirectingMode()
+      end
+    else
+      return
+    end
+  end,
+  QUEST_QUICK_CLOSE_EVENT = function(qtype)
+    local w = questDirecting
+    if w:IsVisible() == false then
+      return
+    end
+    if w.questType ~= qtype then
+      return
+    end
+    directingFadeTime = 0
+    EndDirectingMode()
+  end,
+  QUEST_ERROR_INFO = function(errNum, qtype)
+    if questDirecting:IsVisible() == false then
+      return
+    end
+    if questDirecting.questType ~= qtype then
+      return
+    end
+    EndDirectingMode()
+  end,
+  NPC_INTERACTION_END = function()
+    InteractionEnd()
+  end,
+  INTERACTION_END = function()
+    InteractionEnd()
+  end,
+  QUEST_DIRECTING_MODE_END = function()
+    if questDirecting:IsVisible() == false then
+      return
+    end
+    CancelQuestDirectingMode()
+  end,
+  QUEST_DIRECTING_MODE_HOT_KEY = function(arg)
+    if fadeWnd.fadingNow == true then
+      return
+    end
+    local nextButton = questDirecting.nextButton
+    local prevButton = questDirecting.prevButton
+    local confirmButton = questDirecting.journal.button
+    if arg == 1 then
+      prevButton:OnClick("LeftButton")
+    elseif arg == 2 then
+      if nextButton:IsVisible() == true and nextButton:IsEnabled() == true then
+        nextButton:OnClick("LeftButton")
+      elseif confirmButton:IsVisible() == true and confirmButton:IsEnabled() == true then
+        confirmButton:OnClick("LeftButton")
+      end
+    elseif arg == 3 and confirmButton:IsVisible() == true and confirmButton:IsEnabled() == true and questDirecting.directingType ~= DIRECTING_TYPE.PROGRESS_TALK then
+      confirmButton:OnClick("LeftButton")
+    end
+    F_SOUND:PlayUISound("event_quest_directing_mode", true)
+  end
+}
+questDirecting:SetHandler("OnEvent", function(this, event, ...)
+  events[event](...)
+end)
+RegistUIEvent(questDirecting, events)
+function CancelQuestDirectingMode()
+  X2Quest:DeclineDirectingQuest()
+  CloseQuestDirectingWnd()
+end

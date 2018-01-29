@@ -1,0 +1,233 @@
+MAX_HERO = 10
+LEADERSHIP_RANK_SCHEDULE = 1
+HERO_ABSTAIN_SHCEDULE = 2
+HERO_VOTING_SCHEDULE = 3
+HERO_PERIOD_SCHEDULE = 4
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+function ChangeColorByAbstentionState(widget, isAbstention)
+  if isAbstention then
+    ApplyTextColor(widget, FONT_COLOR.GRAY)
+  else
+    ApplyTextColor(widget, FONT_COLOR.DEFAULT)
+  end
+end
+function HeroCommonDataSetFunc(subItem, data, setValue)
+  if setValue and data.value ~= nil then
+    subItem:SetText(tostring(data.value))
+    ChangeColorByAbstentionState(subItem, data.isAbstention)
+  else
+    subItem:SetText("")
+  end
+end
+function HeroNameDataSetFunc(subItem, data, setValue)
+  if setValue then
+    local name = ""
+    if data.isAbstention then
+      name = GetUIText(COMMON_TEXT, "abstention")
+    elseif data.value ~= nil then
+      name = data.value
+    end
+    subItem:SetText(name)
+    if X2Unit:UnitName("player") == name then
+      ApplyTextColor(subItem, FONT_COLOR.BLUE)
+    else
+      ChangeColorByAbstentionState(subItem, data.isAbstention)
+    end
+  else
+    subItem:SetText("")
+  end
+end
+function HeroLeadershipPointDataSetFunc(subItem, data, setValue)
+  if setValue then
+    if data.isAbstention then
+      subItem.textbox:SetText("")
+    else
+      subItem.textbox:SetText(string.format("%s%d|r/%d", FONT_COLOR_HEX.BLUE, data.score, data.leadership))
+      ChangeColorByAbstentionState(subItem.textbox, data.isAbstention)
+    end
+  else
+    subItem.textbox:SetText("")
+  end
+end
+function HeroLeadrshipPointLayoutSetFunc(widget, rowIndex, colIndex, subItem)
+  local textbox = subItem:CreateChildWidget("textbox", "textbox", 0, true)
+  textbox:SetExtent(subItem:GetWidth() - sideMargin, subItem:GetHeight())
+  textbox:AddAnchor("CENTER", subItem, 0, 0)
+  textbox.style:SetAlign(ALIGN_CENTER)
+  ApplyTextColor(textbox, FONT_COLOR.DEFAULT)
+end
+function HeroExpeditionDataSetFunc(subItem, data, setValue)
+  if setValue then
+    local expedition = ""
+    if data.isAbstention then
+      expedition = ""
+    elseif data.value ~= nil then
+      expedition = data.value
+    end
+    subItem.label:SetText(expedition)
+    ChangeColorByAbstentionState(subItem.label, data.isAbstention)
+    subItem.label.tip = expedition
+  else
+    subItem.label:SetText("")
+  end
+end
+function HeroExpeditionLayoutSetFunc(widget, rowIndex, colIndex, subItem)
+  local label = subItem:CreateChildWidget("label", "label", 0, true)
+  label:SetExtent(subItem:GetWidth() - sideMargin, subItem:GetHeight())
+  label:AddAnchor("CENTER", subItem, 0, 0)
+  label.style:SetAlign(ALIGN_LEFT)
+  label.style:SetEllipsis(true)
+  local OnEnter = function(self)
+    if self.tip == nil then
+      return
+    end
+    SetTooltip(self.tip, self)
+  end
+  label:SetHandler("OnEnter", OnEnter)
+end
+local RefreshHeroList = function(scrollListCtrl, heroInfos, isHeroRank)
+  scrollListCtrl:DeleteAllDatas()
+  for i = 1, scrollListCtrl:GetRowCount() do
+    if scrollListCtrl.listCtrl.items[i].line ~= nil then
+      scrollListCtrl.listCtrl.items[i].line:SetVisible(false)
+    end
+  end
+  if heroInfos == nil then
+    if isHeroRank then
+      for i = 1, scrollListCtrl:GetRowCount() do
+        local rankInfo = {
+          value = i,
+          isViewData = true,
+          isAbstention = false
+        }
+        scrollListCtrl:InsertData(i, 1, rankInfo)
+      end
+    end
+    return
+  end
+  local visibleCnt = #heroInfos >= scrollListCtrl:GetRowCount() and scrollListCtrl:GetRowCount() or #heroInfos
+  for i = 1, visibleCnt do
+    if scrollListCtrl.listCtrl.items[i].line ~= nil then
+      scrollListCtrl.listCtrl.items[i].line:SetVisible(true)
+    end
+  end
+  for idx = 1, #heroInfos do
+    local info = heroInfos[idx]
+    local isAbstention = info.name == "abstainer_player"
+    local rankInfo = {
+      value = info.rank,
+      isViewData = false,
+      isAbstention = isAbstention
+    }
+    scrollListCtrl:InsertData(info.rank, 1, rankInfo)
+    local nameInfo = {
+      value = info.name,
+      isAbstention = isAbstention
+    }
+    scrollListCtrl:InsertData(info.rank, 2, nameInfo)
+    local leadershipInfo = {
+      score = info.score,
+      leadership = info.leadership,
+      isAbstention = isAbstention
+    }
+    scrollListCtrl:InsertData(info.rank, 3, leadershipInfo)
+    if isHeroRank then
+      local expeditionInfo = {
+        value = info.expedition,
+        isAbstention = isAbstention
+      }
+      scrollListCtrl:InsertData(info.rank, 4, expeditionInfo)
+    else
+      local reputationInfo = {
+        value = info.reputation,
+        isAbstention = isAbstention
+      }
+      scrollListCtrl:InsertData(info.rank, 4, reputationInfo)
+      local expeditionInfo = {
+        value = info.expedition,
+        isAbstention = isAbstention
+      }
+      scrollListCtrl:InsertData(info.rank, 5, expeditionInfo)
+    end
+  end
+  if isHeroRank and #heroInfos <= scrollListCtrl:GetRowCount() then
+    for i = #heroInfos + 1, scrollListCtrl:GetRowCount() do
+      local rankInfo = {
+        value = i,
+        isViewData = true,
+        isAbstention = false
+      }
+      scrollListCtrl:InsertData(i, 1, rankInfo)
+    end
+  end
+end
+function CreateHeroList(window, listInfos)
+  if listInfos == nil then
+    return
+  end
+  local scrollListCtrl = CreateScrollListCtrl(window, "scrollListCtrl", 0)
+  scrollListCtrl:Show(true)
+  scrollListCtrl:SetExtent(listInfos.width, listInfos.height)
+  scrollListCtrl:SetUseDoubleClick(true)
+  window.scrollListCtrl = scrollListCtrl
+  for i = 1, #listInfos.columns do
+    do
+      local item = listInfos.columns[i]
+      scrollListCtrl:InsertColumn(item.name, item.width, item.itemType, item.dataSetFunc, nil, nil, item.layoutSetFunc)
+      if item.tooltip ~= nil and item.tooltip ~= "" then
+        local function OnEnter(self)
+          SetTooltip(item.tooltip, self)
+        end
+        scrollListCtrl.listCtrl.column[i]:SetHandler("OnEnter", OnEnter)
+      end
+    end
+  end
+  local columns = scrollListCtrl:GetColumns()
+  for i = 1, #columns do
+    SettingListColumn(scrollListCtrl.listCtrl, columns[i])
+    DrawListCtrlColumnSperatorLine(columns[i], #columns, i)
+    scrollListCtrl.listCtrl.column[i]:Enable(false)
+    SetButtonFontColor(scrollListCtrl.listCtrl.column[i], GetButtonDefaultFontColor_V2())
+  end
+  scrollListCtrl:InsertRows(20, false)
+  DrawListCtrlUnderLine(scrollListCtrl)
+  ListCtrlOverClickTextureSetting(scrollListCtrl.listCtrl)
+  function window:RefreshHerolistInfo(info)
+    RefreshHeroList(self.scrollListCtrl, info, listInfos.isHeroRank)
+  end
+  return scrollListCtrl
+end
+function CreateHeroFactionCombobox(parent, topFactionList)
+  local combobox = CreateComboBox(parent)
+  combobox:SetWidth(220)
+  combobox:AddAnchor("TOPLEFT", parent, 0, sideMargin / 2)
+  function combobox:RefreshFactionId(topFactionList)
+    local factionList = topFactionList
+    local selIdx = 0
+    local names = {}
+    local factionIds = {}
+    for i = 1, #factionList do
+      names[i] = factionList[i].name
+      factionIds[i] = factionList[i].id
+      if factionList[i].id == X2Hero:GetClientFactionID() then
+        selIdx = i
+      end
+    end
+    if selIdx == 0 and factionIds[1] ~= nil then
+      selIdx = 1
+    end
+    combobox.factionId = factionIds
+    combobox.dropdownItem = names
+    combobox.limitItemCount = 10
+    combobox:Select(selIdx)
+  end
+  combobox:RefreshFactionId(topFactionList)
+  function combobox:GetSelFactionId()
+    if self.factionId == nil then
+      return 0
+    end
+    local selIdx = self:GetSelectedIndex()
+    return self.factionId[selIdx]
+  end
+  return combobox
+end

@@ -1,0 +1,173 @@
+function CreateEnchantGradeWindow(tabWindow)
+  SetViewOfGradeEnchantWindow(tabWindow)
+  SetGuideTooltipIncludeItemGrade(tabWindow.guide, X2Locale:LocalizeUiText(COMMON_TEXT, "grade_enchant_guide_tooltip", FONT_COLOR_HEX.ORANGE, FONT_COLOR_HEX.SOFT_YELLOW, FONT_COLOR_HEX.SOFT_YELLOW))
+  local info = {
+    leftButtonStr = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.BOTTOM_BUTTON_STR.LEFT,
+    rightButtonStr = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.BOTTOM_BUTTON_STR.RIGHT,
+    leftButtonLeftClickFunc = function()
+      LockUnvisibleTab()
+      X2ItemEnchant:Execute()
+    end,
+    rightButtonLeftClickFunc = function()
+      if X2ItemEnchant:IsWorkingEnchant() then
+        X2ItemEnchant:StopEnchanting()
+      else
+        X2ItemEnchant:LeaveItemEnchantMode()
+      end
+    end
+  }
+  CreateWindowDefaultTextButtonSet(tabWindow, info)
+  tabWindow.leftButton:Enable(false)
+  function tabWindow.slotTargetItem:Update()
+    local itemInfo = X2ItemEnchant:GetTargetItemInfo()
+    UpdateSlot(self, itemInfo, true)
+    tabWindow.slotSupportItem:Enable(itemInfo ~= nil)
+    if itemInfo ~= nil then
+      tabWindow.money:Show(itemInfo.grade_enchant_cost ~= "0")
+      if itemInfo.grade_enchant_currency == CURRENCY_AA_POINT then
+        tabWindow.money:UpdateAAPoint(itemInfo.grade_enchant_cost)
+      else
+        tabWindow.money:Update(itemInfo.grade_enchant_cost)
+      end
+      if X2Item:IsLimitGrade(itemInfo.itemType, itemInfo.itemGrade) then
+        tabWindow.slotEnchantItem:ApplyAlpha(0.5)
+      else
+        tabWindow.slotEnchantItem:ApplyAlpha(1)
+      end
+      tabWindow.slotSupportItem:ApplyAlpha(1)
+      return X2Item:IsLimitGrade(itemInfo.itemType, itemInfo.itemGrade)
+    else
+      tabWindow.slotEnchantItem:ApplyAlpha(1)
+      tabWindow.slotSupportItem:ApplyAlpha(0.5)
+      return false
+    end
+  end
+  SetTargetItemClickFunc(tabWindow.slotTargetItem)
+  function tabWindow.slotEnchantItem:Update()
+    local itemInfo = X2ItemEnchant:GetEnchantItemInfo()
+    UpdateSlot(self, itemInfo)
+    if itemInfo ~= nil then
+      self:SetStack(itemInfo.total)
+      tabWindow.slotSupportItem:ApplyAlpha(1)
+    else
+      tabWindow.slotSupportItem:ApplyAlpha(0.5)
+    end
+  end
+  SetEnchantItemClickFunc(tabWindow.slotEnchantItem)
+  function tabWindow.slotSupportItem:Update()
+    local itemInfo = X2ItemEnchant:GetSupportItemInfo()
+    UpdateSlot(self, itemInfo)
+    if itemInfo ~= nil then
+      self:SetStack(itemInfo.total)
+      self.procOnEnter = nil
+    else
+      function self:procOnEnter()
+        if self.tooltip == nil then
+          return
+        end
+        SetTooltip(self.tooltip, self)
+      end
+    end
+  end
+  local SlotEnchantItemLeftClickFunc = function(self)
+    if X2Cursor:GetCursorPickedBagItemIndex() ~= 0 then
+      X2ItemEnchant:SetSupportItemSlotFromPick()
+    end
+  end
+  local SlotEnchantItemRightClickFunc = function(self)
+    X2ItemEnchant:ClearSupportItemSlot()
+  end
+  ButtonOnClickHandler(tabWindow.slotSupportItem, SlotEnchantItemLeftClickFunc, SlotEnchantItemRightClickFunc)
+  function tabWindow:SlotAllUpdate(isExcutable, isLock)
+    self.money:Show(false)
+    local targetIsMaxGrade = self.slotTargetItem:Update()
+    self.slotEnchantItem:Update()
+    self.slotSupportItem:Update()
+    local SetRatio = function(isPossible, idx, resultTexture, isPositiveEffect)
+      local ENUM = {
+        RESULT_O = 1,
+        RESULT_X = 2,
+        RESULT_UPGRADE = 3,
+        RESULT_UPGRADE_2 = 4,
+        RESULT_UPGRADE_3 = 5,
+        RESULT_DOWNGRADE = 6,
+        RESULT_DOWNGRADE_2 = 7,
+        RESULT_DOWNGRADE_3 = 8
+      }
+      local function GetIdx(isPossible, idx)
+        if idx ~= nil then
+          return idx
+        end
+        if isPossible then
+          return ENUM.RESULT_O
+        else
+          return ENUM.RESULT_X
+        end
+      end
+      local iconIdx = GetIdx(isPossible, idx)
+      local color
+      if iconIdx == ENUM.RESULT_O or iconIdx == ENUM.RESULT_UPGRADE or iconIdx == ENUM.RESULT_UPGRADE_2 or iconIdx == ENUM.RESULT_UPGRADE_3 then
+        color = isPositiveEffect and FONT_COLOR.BLUE or FONT_COLOR.RED
+      else
+        color = isPositiveEffect and FONT_COLOR.RED or FONT_COLOR.BLUE
+      end
+      local coordsTable = {
+        WINDOW_ENCHANT.GRADE_ENCHANT_TAB.RESULT_O,
+        WINDOW_ENCHANT.GRADE_ENCHANT_TAB.RESULT_X,
+        WINDOW_ENCHANT.GRADE_ENCHANT_TAB.RESULT_UPGRADE,
+        WINDOW_ENCHANT.GRADE_ENCHANT_TAB.RESULT_UPGRADE_2,
+        WINDOW_ENCHANT.GRADE_ENCHANT_TAB.RESULT_UPGRADE_3,
+        WINDOW_ENCHANT.GRADE_ENCHANT_TAB.RESULT_DOWNGRADE,
+        WINDOW_ENCHANT.GRADE_ENCHANT_TAB.RESULT_DOWNGRADE_2,
+        WINDOW_ENCHANT.GRADE_ENCHANT_TAB.RESULT_DOWNGRADE_3
+      }
+      local coords = coordsTable[iconIdx].COORDS
+      local extent = coordsTable[iconIdx].EXTENT
+      resultTexture:SetCoords(coords[1], coords[2], coords[3], coords[4])
+      resultTexture:SetExtent(extent[1], extent[2])
+      ApplyTextureColor(resultTexture, color)
+    end
+    local ratioInfo = X2ItemEnchant:GetRatioInfos()
+    if ratioInfo ~= nil then
+      self.successPossibility.result:SetVisible(true)
+      self.destroyPossibility.result:SetVisible(true)
+      self.downGradePossibility.result:SetVisible(true)
+      self.warningText:Show(true)
+      SetRatio(ratioInfo.success, ratioInfo.success_icon_idx, self.successPossibility.result, true)
+      SetRatio(ratioInfo["break"], ratioInfo.break_icon_idx, self.destroyPossibility.result, false)
+      SetRatio(ratioInfo.downgrade, ratioInfo.downgrade_icon_idx, self.downGradePossibility.result, false)
+    else
+      self.successPossibility.result:SetVisible(false)
+      self.destroyPossibility.result:SetVisible(false)
+      self.downGradePossibility.result:SetVisible(false)
+      self.warningText:Show(false)
+    end
+    local _, height = F_LAYOUT:GetExtentWidgets(self.money, self.rightButton)
+    if targetIsMaxGrade then
+      self.warningText:Show(true)
+      self:SetWarningText(WINDOW_ENCHANT.GRADE_ENCHANT_TAB.WARNING_TEXT.TEXT.MAX_GRADE)
+    else
+      self:SetWarningText(WINDOW_ENCHANT.GRADE_ENCHANT_TAB.WARNING_TEXT.TEXT.DEFAULT)
+    end
+    local warningTextHeight = self.warningText:GetHeight()
+    local offset = (height - warningTextHeight - self.money:GetHeight()) / 2
+    if warningTextHeight > offset then
+      tabWindow.warningText:AddAnchor("TOP", tabWindow.money, "BOTTOM", 0, 15)
+    else
+      tabWindow.warningText:AddAnchor("CENTER", tabWindow.money, "BOTTOM", 0, offset)
+    end
+    self.leftButton:Enable(isExcutable)
+    self.slotTargetItem:Enable(not isLock)
+    self.slotEnchantItem:Enable(not isLock)
+    self.slotSupportItem:Enable(not isLock)
+    if isLock then
+      self.slotTargetItem:SetOverlayColor(ICON_BUTTON_OVERLAY_COLOR.BLACK)
+      self.slotEnchantItem:SetOverlayColor(ICON_BUTTON_OVERLAY_COLOR.BLACK)
+      self.slotSupportItem:SetOverlayColor(ICON_BUTTON_OVERLAY_COLOR.BLACK)
+    else
+      self.slotTargetItem:SetOverlay(self.slotTargetItem:GetInfo())
+      self.slotEnchantItem:SetOverlay(self.slotEnchantItem:GetInfo())
+      self.slotSupportItem:SetOverlay(self.slotSupportItem:GetInfo())
+    end
+  end
+end

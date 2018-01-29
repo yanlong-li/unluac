@@ -1,0 +1,165 @@
+function InitList(list)
+  list:SetHeight(8)
+  list:SetInset(5, 5, 5, 5)
+  list.itemStyle:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE)
+  list.itemStyle:SetAlign(ALIGN_LEFT)
+  list.itemStyle:SetSnap(true)
+  list.itemStyle:SetColor(FONT_COLOR.TITLE[1], FONT_COLOR.TITLE[2], FONT_COLOR.TITLE[3], 1)
+  list:SetOveredItemColor(0, 0.5, 1, 0.2)
+  list:SetSelectedItemColor(0, 0.3, 0.5, 0.3)
+  list:SetDefaultItemTextColor(FONT_COLOR.TITLE[1], FONT_COLOR.TITLE[2], FONT_COLOR.TITLE[3], 1)
+  list:SetOveredItemTextColor(FONT_COLOR.DEFAULT[1], FONT_COLOR.DEFAULT[2], FONT_COLOR.DEFAULT[3], 1)
+  list:SetSelectedItemTextColor(FONT_COLOR.TITLE[1], FONT_COLOR.TITLE[2], FONT_COLOR.TITLE[3], 1)
+end
+function SetViewOfList(id, parent)
+  local list = UIParent:CreateWidget("listbox", id, parent)
+  InitList(list)
+  local bg = list:CreateNinePartDrawable(TEXTURE_PATH.MONEY_WINDOW, "background")
+  bg:SetInset(6, 6, 6, 6)
+  bg:SetCoords(191, 0, 13, 13)
+  bg:AddAnchor("TOPLEFT", list, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", list, 0, 0)
+  list.bg = bg
+  return list
+end
+function SetViewOfSliderList(id, parent)
+  local window = CreateEmptyWindow(id, parent)
+  window:Show(false)
+  local list = CreateList(id .. ".list", window)
+  InitList(list)
+  list:AddAnchor("TOPLEFT", window, 0, 0)
+  list:AddAnchor("BOTTOMRIGHT", window, -15, 0)
+  list:SetInset(5, 7, 5, 7)
+  window.list = list
+  list.bg:RemoveAllAnchors()
+  list.bg:AddAnchor("TOPLEFT", window, 0, 0)
+  list.bg:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+  local scroll = CreateScroll("scroll", window)
+  scroll:AddAnchor("TOPRIGHT", window, -4, 8)
+  scroll:AddAnchor("BOTTOMRIGHT", window, -4, -8)
+  window.scroll = scroll
+  return window
+end
+function DrawListCtrlColumnSperatorLine(widget, totalCount, count, colorWhite)
+  local inset = 3
+  if colorWhite == nil then
+    colorWhite = false
+  end
+  local divideLine
+  if count < totalCount then
+    divideLine = widget:CreateImageDrawable("ui/common/tab_list.dds", "overlay")
+    if count % 3 == 1 then
+      divideLine:SetExtent(24, 55)
+      divideLine:SetCoords(182, 9, 24, 55)
+      divideLine:AddAnchor("BOTTOMLEFT", widget, "BOTTOMRIGHT", 0, 33)
+    elseif count % 3 == 2 then
+      divideLine:SetExtent(25, 51)
+      divideLine:SetCoords(206, 9, 25, 51)
+      divideLine:AddAnchor("BOTTOMLEFT", widget, "BOTTOMRIGHT", 0, 22)
+    else
+      divideLine:SetExtent(25, 15)
+      divideLine:SetCoords(231, 9, 25, 15)
+      divideLine:AddAnchor("BOTTOMLEFT", widget, "BOTTOMRIGHT", 0, 0)
+    end
+    if not colorWhite then
+      divideLine:SetColor(ConvertColor(114), ConvertColor(94), ConvertColor(50), 1)
+    end
+  end
+  return divideLine
+end
+function SettingListColumn(listCtrl, column)
+  listCtrl:SetColumnHeight(LIST_COLUMN_HEIGHT)
+  ApplyButtonSkin(column, BUTTON_BASIC.LISTCTRL_COLUMN)
+  column.style:SetShadow(false)
+  column.style:SetFontSize(FONT_SIZE.LARGE)
+  SetButtonFontColor(column, GetButtonDefaultFontColor())
+end
+function DrawListCtrlUnderLine(listCtrl, offsetY, colorWhite, offsetX)
+  if colorWhite == nil then
+    colorWhite = false
+  end
+  local width = listCtrl:GetWidth()
+  if offsetX == nil then
+    offsetX = 0
+  end
+  local underLine_1 = listCtrl:CreateImageDrawable(TEXTURE_PATH.TAB_LIST, "artwork")
+  underLine_1:SetCoords(0, 6, 256, 3)
+  underLine_1:SetExtent(width / 2, 3)
+  local underLine_2 = listCtrl:CreateImageDrawable(TEXTURE_PATH.TAB_LIST, "artwork")
+  underLine_2:SetCoords(256, 6, -256, 3)
+  underLine_2:SetExtent(width / 2, 3)
+  if not colorWhite then
+    underLine_1:SetColor(TEXTURE_COLOR.TAB_LINE[1], TEXTURE_COLOR.TAB_LINE[2], TEXTURE_COLOR.TAB_LINE[3], TEXTURE_COLOR.TAB_LINE[4])
+    underLine_2:SetColor(TEXTURE_COLOR.TAB_LINE[1], TEXTURE_COLOR.TAB_LINE[2], TEXTURE_COLOR.TAB_LINE[3], TEXTURE_COLOR.TAB_LINE[4])
+  end
+  if offsetY == nil then
+    underLine_1:AddAnchor("TOPLEFT", listCtrl, offsetX, LIST_COLUMN_HEIGHT - 2)
+    underLine_2:AddAnchor("TOPRIGHT", listCtrl, -offsetX, LIST_COLUMN_HEIGHT - 2)
+  else
+    underLine_1:AddAnchor("TOPLEFT", listCtrl, offsetX, offsetY)
+    underLine_2:AddAnchor("TOPRIGHT", listCtrl, -offsetX, offsetY)
+  end
+end
+function DefaultListItemSetting(item)
+  if item.SetInset == nil or item.style == nil then
+    return
+  end
+  item.style:SetSnap(true)
+  item.style:SetAlign(ALIGN_CENTER)
+  ApplyTextColor(item, FONT_COLOR.DEFAULT)
+end
+function DrawItemUnderLine(item, layer)
+  local line = CreateLine(item, "TYPE1", layer)
+  line:AddAnchor("TOPLEFT", item, "BOTTOMLEFT", -30, -1)
+  line:AddAnchor("TOPRIGHT", item, "BOTTOMRIGHT", 30, -1)
+  return line
+end
+function ListCtrlOverClickTextureSetting(listCtrl, style)
+  if style == nil or style == "" then
+    listCtrl.overedImage = listCtrl:CreateOveredImage()
+    listCtrl.overedImage:SetTexture(TEXTURE_PATH.TAB_LIST)
+    listCtrl.overedImage:SetCoords(0, 65, 134, 11)
+    listCtrl.overedImage:SetInset(66, 5, 67, 5)
+    listCtrl.overedImage:SetColor(1, 1, 1, 0.4)
+    listCtrl.selectedImage = listCtrl:CreateSelectedImage()
+    listCtrl.selectedImage:SetTexture(TEXTURE_PATH.TAB_LIST)
+    listCtrl.selectedImage:SetCoords(0, 65, 134, 11)
+    listCtrl.selectedImage:SetInset(66, 5, 67, 5)
+    listCtrl.selectedImage:SetColor(1, 1, 1, 0.6)
+  elseif style == "achievement" then
+    listCtrl.overedImage = listCtrl:CreateOveredImage("overlay")
+    listCtrl.overedImage:SetTexture(TEXTURE_PATH.ACHIEVEMENT)
+    listCtrl.overedImage:SetCoords(300, 0, 29, 30)
+    listCtrl.overedImage:SetInset(15, 15, 13, 14)
+    listCtrl.selectedImage = listCtrl:CreateSelectedImage("overlay")
+    listCtrl.selectedImage:SetTexture(TEXTURE_PATH.ACHIEVEMENT)
+    listCtrl.selectedImage:SetCoords(334, 0, 30, 30)
+    listCtrl.selectedImage:SetInset(15, 15, 14, 14)
+  end
+end
+function ListCtrlItemGuideLine(items, maxCount, insetInfo)
+  local leftInset = 0
+  local rightInset = 0
+  local yInset = 2
+  if insetInfo ~= nil then
+    if insetInfo.leftInset ~= nil then
+      leftInset = insetInfo.leftInset
+    end
+    if insetInfo.rightInset ~= nil then
+      rightInset = insetInfo.rightInset
+    end
+    if insetInfo.yInset ~= nil then
+      yInset = insetInfo.yInset
+    end
+  end
+  for i = 1, maxCount do
+    if i ~= maxCount then
+      local line = CreateLine(items[i], "TYPE1")
+      line:SetVisible(false)
+      line:SetColor(1, 1, 1, 0.5)
+      line:AddAnchor("BOTTOMLEFT", items[i], leftInset, yInset)
+      line:AddAnchor("BOTTOMRIGHT", items[i], rightInset, yInset)
+      items[i].line = line
+    end
+  end
+end

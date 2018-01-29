@@ -1,0 +1,3 @@
+if X2Util:GetGameProvider() == TRION and X2Locale:GetLocale() == "en_us" then
+  customizingLocale.buttonWidth = BUTTON_SIZE.DEFAULT_LARGE.WIDTH
+end

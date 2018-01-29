@@ -1,0 +1,97 @@
+tabTexts = {
+  GetUIText(SKILL_TEXT, "tab_combat"),
+  GetUIText(SKILL_TEXT, "tab_general"),
+  GetUIText(SKILL_TEXT, "tab_emotion"),
+  GetUIText(SKILL_TEXT, "tab_actability"),
+  GetUIText(SKILL_TEXT, "tab_language")
+}
+SKILL_WND_TAB = {
+  COMBAT_SKILL = 1,
+  NORMAL_SKILL = 2,
+  EMOTION = 3,
+  ACTABILIBY = 4,
+  LANGUAGE = 5
+}
+local CreateSkillWnd = function(id, parent)
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local wnd = CreateWindow(id, parent)
+  wnd:SetTitle(locale.skill.titleText)
+  wnd:SetSounds("skill_book")
+  if X2Player:GetFeatureSet().useSavedAbilities then
+    wnd:SetExtent(680, 585)
+  else
+    wnd:SetExtent(680, 535)
+  end
+  local tab = wnd:CreateChildWidget("tab", "tab", 0, true)
+  tab:AddAnchor("TOPLEFT", wnd, sideMargin, titleMargin)
+  tab:AddAnchor("BOTTOMRIGHT", wnd, -sideMargin, -sideMargin)
+  tab:SetCorner("TOPLEFT")
+  for i = 1, #tabTexts do
+    tab:AddSimpleTab(tabTexts[i])
+  end
+  local combatSkillWnd = CreateCombatSkillWindow(id .. ".combatTab", tab.window[SKILL_WND_TAB.COMBAT_SKILL])
+  F_LAYOUT:AttachAnchor(combatSkillWnd, tab.window[SKILL_WND_TAB.COMBAT_SKILL])
+  combatSkillWnd:Show(true)
+  local content = CreateGeneralSkillWindow(id .. ".generalTab", tab.window[SKILL_WND_TAB.NORMAL_SKILL])
+  content:Show(true)
+  F_LAYOUT:AttachAnchor(content, tab.window[SKILL_WND_TAB.NORMAL_SKILL])
+  local content = CreateEmotionExpressSkillWindow(id .. ".generalTab", tab.window[SKILL_WND_TAB.EMOTION])
+  content:Show(true)
+  F_LAYOUT:AttachAnchor(content, tab.window[SKILL_WND_TAB.EMOTION], 0, sideMargin / 1.5, 0, 0)
+  local actabilityTab = CreateActabilityPage(tab.window[SKILL_WND_TAB.ACTABILIBY])
+  CreateLanguagePage(tab.window[SKILL_WND_TAB.LANGUAGE])
+  local buttonTable = {}
+  for i = 1, #tab.window do
+    ApplyButtonSkin(tab.selectedButton[i], BUTTON_BASIC.TAB_SELECT)
+    ApplyButtonSkin(tab.unselectedButton[i], BUTTON_BASIC.TAB_UNSELECT)
+    table.insert(buttonTable, tab.selectedButton[i])
+    table.insert(buttonTable, tab.unselectedButton[i])
+  end
+  AdjustBtnLongestTextWidth(buttonTable)
+  tab:SetGap(-2)
+  DrawTabSkin(tab, tab.window[SKILL_WND_TAB.COMBAT_SKILL], tab.selectedButton[1])
+  function tab:OnTabChanged(selected)
+    ReAnhorTabLine(self, selected)
+    if tab.window[SKILL_WND_TAB.ACTABILIBY].gradeInfoWnd ~= nil and tab.window[SKILL_WND_TAB.ACTABILIBY].gradeInfoWnd:IsVisible() then
+      tab.window[SKILL_WND_TAB.ACTABILIBY].gradeInfoWnd:Show(false)
+    end
+  end
+  tab:SetHandler("OnTabChanged", tab.OnTabChanged)
+  function wnd:ShowProc()
+    X2Ability:ResetAbilityView()
+    actabilityTab:UpdateActabilityPoint()
+    if X2Player:GetFeatureSet().useSavedAbilities then
+      combatSkillWnd:UpdateJobComboList()
+    end
+  end
+  function wnd:OnHide()
+    if tab.window[SKILL_WND_TAB.ACTABILIBY]:IsVisible() then
+      X2DialogManager:DeleteByOwnerWindow(tab.window[4]:GetId())
+    end
+    if tab.window[SKILL_WND_TAB.ACTABILIBY].gradeInfoWnd ~= nil and tab.window[SKILL_WND_TAB.ACTABILIBY].gradeInfoWnd:IsVisible() then
+      tab.window[SKILL_WND_TAB.ACTABILIBY].gradeInfoWnd:Show(false)
+    end
+    X2DialogManager:Delete(DLG_TASK_RESET_SKILLS)
+    X2DialogManager:Delete(DLG_TASK_LEARN_SKILL)
+    X2DialogManager:Delete(DLG_TASK_LEARN_BUFF)
+  end
+  wnd:SetHandler("OnHide", wnd.OnHide)
+  return wnd
+end
+local skillWnd = CreateSkillWnd("skillWnd", "UIParent")
+skillWnd:AddAnchor("CENTER", "UIParent", 0, 0)
+skillWnd:Show(false)
+skillWnd:SetCloseOnEscape(true)
+local function ToggleSkill(isShow, datas)
+  if isShow == nil then
+    isShow = not skillWnd:IsVisible()
+  end
+  if X2Demo:GetDemoOptionCount() < 1 then
+    skillWnd:Show(isShow)
+    ToggleSkillNotifyer(not isShow)
+    if datas ~= nil and datas.selectIdx ~= nil and #skillWnd.tab.window >= datas.selectIdx and 1 <= datas.selectIdx then
+      skillWnd.tab:SelectTab(datas.selectIdx)
+    end
+  end
+end
+ADDON:RegisterContentTriggerFunc(UIC_SKILL, ToggleSkill)

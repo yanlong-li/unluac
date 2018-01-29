@@ -1,0 +1,9 @@
+if X2Util:GetGameProvider() == TRION then
+  repairLocale.width = {partDesc = 150}
+  repairLocale.anchor = {
+    partRepairButtonX = 20,
+    partRepairWindowX = 10,
+    allRepairCostX = 20,
+    leftMoneyY = 0
+  }
+end

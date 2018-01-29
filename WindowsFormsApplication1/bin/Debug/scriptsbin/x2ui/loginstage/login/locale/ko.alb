@@ -1,0 +1,43 @@
+if loginLocale == nil then
+  loginLocale = {}
+end
+loginLocale.loginHide = false
+loginLocale.gradeShow = true
+loginLocale.archeageLogoCoords = {
+  485,
+  338,
+  539,
+  174
+}
+loginLocale.gradeMessageCoords = {
+  0,
+  0,
+  684,
+  322
+}
+loginLocale.gameRating = {
+  show = true,
+  showTime = 3000,
+  fadeOutTime = 300
+}
+loginLocale.gameHealthNotice = {
+  show = false,
+  showTime = 0,
+  fadeOutTime = 0
+}
+function loginLocale:CreateRightBottomBtns(parent)
+  parent.staffButton = CreateEmptyButton("staffButton", parent)
+  parent.staffButton:Show(false)
+  parent.staffButton:AddAnchor("BOTTOMRIGHT", "UIParent", -9, 1)
+  ApplyButtonSkinTable(parent.staffButton, BUTTON_LOGINSTAGE.STAFF)
+  parent.reviewMovieButton = CreateEmptyButton("reviewMovieButton", parent)
+  parent.reviewMovieButton:Show(false)
+  parent.reviewMovieButton:AddAnchor("BOTTOMRIGHT", parent.staffButton, "BOTTOMLEFT", -9, 0)
+  ApplyButtonSkinTable(parent.reviewMovieButton, BUTTON_LOGINSTAGE.REVIEW_MOVIE)
+end
+function loginLocale:StaffButtonEnable(staffButton, isReady)
+  staffButton:Enable(isReady)
+end
+function loginLocale:StaffButtonShow(staffButton, show, time)
+  staffButton:Show(show, time)
+end

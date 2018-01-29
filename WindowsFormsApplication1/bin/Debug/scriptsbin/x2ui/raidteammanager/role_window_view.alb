@@ -1,0 +1,107 @@
+roleData = {}
+roleData[1] = {}
+roleData[1].path = TEXTURE_PATH.RAID
+roleData[1].x = 56
+roleData[1].y = 123
+roleData[1].width = 16
+roleData[1].height = 18
+roleData[1].text = locale.role.tanker
+roleData[1].fontColor = {
+  normal = FONT_COLOR.ROLE_TANKER,
+  highlight = FONT_COLOR.ROLE_TANKER,
+  pushed = FONT_COLOR.ROLE_TANKER,
+  disabled = FONT_COLOR.ROLE_TANKER
+}
+roleData[1].role = 1
+roleData[2] = {}
+roleData[2].path = TEXTURE_PATH.RAID
+roleData[2].x = 104
+roleData[2].y = 123
+roleData[2].width = 19
+roleData[2].height = 14
+roleData[2].text = locale.role.healer
+roleData[2].fontColor = {
+  normal = FONT_COLOR.ROLE_HEALER,
+  highlight = FONT_COLOR.ROLE_HEALER,
+  pushed = FONT_COLOR.ROLE_HEALER,
+  disabled = FONT_COLOR.ROLE_HEALER
+}
+roleData[2].role = 2
+roleData[3] = {}
+roleData[3].path = TEXTURE_PATH.RAID
+roleData[3].x = 35
+roleData[3].y = 123
+roleData[3].width = 18
+roleData[3].height = 17
+roleData[3].text = locale.role.dealer
+roleData[3].fontColor = {
+  normal = FONT_COLOR.ROLE_DEALER,
+  highlight = FONT_COLOR.ROLE_DEALER,
+  pushed = FONT_COLOR.ROLE_DEALER,
+  disabled = FONT_COLOR.ROLE_DEALER
+}
+roleData[3].role = 3
+roleData[4] = {}
+roleData[4].fontColor = {
+  normal = FONT_COLOR.ROLE_NONE,
+  highlight = FONT_COLOR.ROLE_NONE,
+  pushed = FONT_COLOR.ROLE_NONE,
+  disabled = FONT_COLOR.ROLE_NONE
+}
+roleData[4].text = locale.role.norole
+roleData[4].role = 0
+function SetViewOfRaidRoleFrame(id, parent)
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local offset = sideMargin
+  local maxWidth = 0
+  local window = CreateSubOptionWindow(id, parent)
+  window:AddAnchor("TOPLEFT", parent, "TOPRIGHT", 0, 0)
+  local section = CreateEmptyWindow(id .. ".section", window)
+  section:Show(true)
+  section:AddAnchor("TOPLEFT", window, sideMargin / 1.5, sideMargin * 1.2)
+  section:AddAnchor("TOPRIGHT", window, -sideMargin, offset)
+  local sectionHeight = 0
+  section.buttons = {}
+  for index = 1, 4 do
+    local btn = section:CreateChildWidget("button", "button", index, true)
+    SetButtonFontColor(btn, roleData[index].fontColor)
+    btn:SetExtent(150, 20)
+    if index == 1 then
+      btn:AddAnchor("TOPLEFT", section, 0, 0)
+    else
+      btn:AddAnchor("TOPLEFT", section.buttons[index - 1], "BOTTOMLEFT", 0, 0)
+    end
+    local insetLeft = 3
+    local firstOffset = {}
+    firstOffset.x = 0
+    firstOffset.y = 0
+    local radioBtn = CreateRadioButton(btn:GetId() .. ".roleCheckBoxes", btn, 1, nil, firstOffset, nil, nil, "tooltip")
+    radioBtn[1]:SetChecked(true)
+    btn.radioBtn = radioBtn[1]
+    insetLeft = insetLeft + btn.radioBtn:GetWidth()
+    local width = btn.style:GetTextWidth(roleData[index].text)
+    if roleData[index].path ~= nil then
+      local image = btn:CreateImageDrawable(roleData[index].path, "background")
+      image:AddAnchor("LEFT", btn, insetLeft, 0)
+      image:SetExtent(roleData[index].width, roleData[index].height)
+      image:SetCoords(roleData[index].x, roleData[index].y, roleData[index].width, roleData[index].height)
+      insetLeft = insetLeft + 21
+      width = width + insetLeft
+    end
+    btn:SetInset(insetLeft, 0, 0, 0)
+    btn:SetAutoResize(true)
+    btn:SetText(roleData[index].text)
+    btn.style:SetShadow(false)
+    btn.style:SetAlign(ALIGN_LEFT)
+    btn.role = roleData[index].role
+    section.buttons[index] = btn
+    sectionHeight = sectionHeight + btn:GetHeight()
+    if maxWidth < width then
+      maxWidth = width
+    end
+  end
+  section:SetHeight(sectionHeight)
+  window.section = section
+  window:SetExtent(maxWidth + sideMargin * 1.5, sectionHeight + sideMargin * 1.8)
+  return window
+end

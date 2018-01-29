@@ -1,0 +1,205 @@
+local CreateSpecialtyInfoWindow = function(id, parent)
+  local COL = {NAME = 1, RATIO = 2}
+  local GetTableSort = function(targetTable)
+    local Sort = function(a, b)
+      return a.name < b.name and true or false
+    end
+    table.sort(targetTable, Sort)
+    return targetTable
+  end
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local window = CreateWindow(id, parent)
+  window:SetExtent(FORM_SPECIALTY_WINDOW.WINDOW_WIDTH, 495)
+  window:SetTitle(GetCommonText("specialty_info_title"))
+  local upperBg = CreateContentBackground(window, "TYPE10", "BROWN", "artwork")
+  upperBg:SetExtent(window:GetWidth() - sideMargin, 135)
+  upperBg:AddAnchor("TOPLEFT", window, sideMargin / 2, titleMargin - 7)
+  local productionArea = window:CreateChildWidget("label", "productionArea", 0, true)
+  productionArea:SetHeight(FONT_SIZE.MIDDLE)
+  productionArea:AddAnchor("TOPLEFT", upperBg, 15, sideMargin - 2)
+  productionArea.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(productionArea, FONT_COLOR.DEFAULT)
+  productionArea:SetText(GetCommonText("specialty_info_production_area"))
+  local destinationArea = window:CreateChildWidget("label", "productionArea", 0, true)
+  destinationArea:SetHeight(FONT_SIZE.MIDDLE)
+  destinationArea:AddAnchor("TOPLEFT", productionArea, "BOTTOMLEFT", 0, sideMargin)
+  destinationArea.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(destinationArea, FONT_COLOR.DEFAULT)
+  destinationArea:SetText(GetCommonText("specialty_info_destination_area"))
+  local textWidgets = {productionArea, destinationArea}
+  F_LAYOUT:AdjustTextWidth(textWidgets)
+  local comboBoxWidth = upperBg:GetWidth() - productionArea:GetWidth() - sideMargin * 1.8
+  local productionFilter = CreateComboBox(window)
+  productionFilter:SetWidth(comboBoxWidth)
+  productionFilter:SetEllipsis(true)
+  productionFilter:ShowDropdownTooltip(true)
+  productionFilter:AddAnchor("LEFT", productionArea, "RIGHT", 7, 1)
+  local destinationFilter = CreateComboBox(window)
+  destinationFilter:SetWidth(comboBoxWidth)
+  destinationFilter:SetEllipsis(true)
+  destinationFilter:ShowDropdownTooltip(true)
+  destinationFilter:AddAnchor("LEFT", destinationArea, "RIGHT", 7, 0)
+  destinationFilter.limitItemCount = 10
+  local searchButton = window:CreateChildWidget("button", "searchButton", 0, true)
+  searchButton:SetText(GetCommonText("search"))
+  searchButton:AddAnchor("BOTTOM", upperBg, 0, -sideMargin)
+  ApplyButtonSkin(searchButton, BUTTON_BASIC.DEFAULT)
+  function productionFilter:SelectedProc()
+    if self.selctedIndex == nil then
+      return
+    end
+    local selZoneGroup = window.productionZones[self.selctedIndex].id
+    local destinationZones = X2Store:GetSellableZoneGroups(selZoneGroup)
+    destinationZones = GetTableSort(destinationZones)
+    local destinationZoneNames = {}
+    for i = 1, #destinationZones do
+      destinationZoneNames[i] = destinationZones[i].name
+    end
+    window.comboBox:SetText("")
+    destinationFilter.dropdownItem = destinationZoneNames
+    window.destinationZones = destinationZones
+    destinationFilter:SetEnable(true)
+    searchButton:Enable(true)
+  end
+  local function SearchButtonOnUpdate(self, dt)
+    if self.cooldownTime <= 0 then
+      searchButton:Enable(true)
+      searchButton:ReleaseHandler("OnUpdate")
+      return
+    end
+    self.cooldownTime = self.cooldownTime - dt
+  end
+  local function SearchButtonLeftClickFunc(self)
+    local productionSelKey = window.productionZones[productionFilter.selctedIndex].id
+    local destinationSelKey = window.destinationZones[destinationFilter.selctedIndex].id
+    if productionSelKey == nil or destinationSelKey == nil or productionSelKey == 0 or destinationSelKey == 0 then
+      return
+    end
+    local cooldownTime = X2Store:GetSpecialtyRatioBetween(productionSelKey, destinationSelKey)
+    searchButton:Enable(false)
+    self.cooldownTime = cooldownTime
+    self.tip = GetCommonText("specialty_info_search_wait")
+    if not self:HasHandler("OnUpdate") then
+      self:SetHandler("OnUpdate", SearchButtonOnUpdate)
+    end
+  end
+  ButtonOnClickHandler(searchButton, SearchButtonLeftClickFunc)
+  local OnEnter = function(self)
+    if self.tip == nil or self.tip == "" then
+      return
+    end
+    if self:IsEnabled() then
+      return
+    end
+    SetTooltip(self.tip, self)
+  end
+  searchButton:SetHandler("OnEnter", OnEnter)
+  local OnLeave = function()
+    HideTooltip()
+  end
+  searchButton:SetHandler("OnLeave", OnLeave)
+  local scrollListCtrl = CreateScrollListCtrl(window, "scrollListCtrl", 0)
+  scrollListCtrl:SetExtent(window:GetWidth() - sideMargin * 2, 300)
+  scrollListCtrl:AddAnchor("TOP", upperBg, "BOTTOM", 0, 0)
+  local NameColumnDataSetFunc = function(subItem, data, setValue)
+    if setValue then
+      if data ~= nil then
+        subItem.slot:Show(true)
+        subItem.label:Show(true)
+        subItem.label:SetText(data.name)
+        subItem.slot:SetItem(data.itemType, data.itemGrade)
+      end
+    else
+      subItem.slot:Show(false)
+      subItem.label:Show(false)
+    end
+  end
+  local NameColumnLayoutSetFunc = function(widget, rowIndex, colIndex, subItem)
+    local slot = CreateSlotItemButton("slot", subItem)
+    slot:AddAnchor("LEFT", subItem, 0, 0)
+    slot:Show(false)
+    subItem.slot = slot
+    local label = subItem:CreateChildWidget("label", "label", 0, true)
+    label:Show(false)
+    label:SetExtent(subItem:GetWidth() - slot:GetWidth() - 10, FONT_SIZE.MIDDLE)
+    label:AddAnchor("LEFT", slot, "RIGHT", 5, 0)
+    label.style:SetAlign(ALIGN_LEFT)
+    label.style:SetEllipsis(true)
+    ApplyTextColor(label, FONT_COLOR.DEFAULT)
+  end
+  local RatioColumnDataSetFunc = function(subItem, data, setValue)
+    if setValue then
+      subItem:Show(true)
+      subItem:SetText(string.format("%d%%", data))
+    else
+      subItem:Show(false)
+    end
+  end
+  local function NameAscendingSortFunc(a, b)
+    return a[ROWDATA_COLUMN_OFFSET + COL.NAME].name < b[ROWDATA_COLUMN_OFFSET + COL.NAME].name
+  end
+  local function NameDescendingSortFunc(a, b)
+    return a[ROWDATA_COLUMN_OFFSET + COL.NAME].name > b[ROWDATA_COLUMN_OFFSET + COL.NAME].name
+  end
+  local function RatioAscendingSortFunc(a, b)
+    return a[ROWDATA_COLUMN_OFFSET + COL.RATIO] < b[ROWDATA_COLUMN_OFFSET + COL.RATIO]
+  end
+  local function RatioDescendingSortFunc(a, b)
+    return a[ROWDATA_COLUMN_OFFSET + COL.RATIO] > b[ROWDATA_COLUMN_OFFSET + COL.RATIO]
+  end
+  local targetWidth = scrollListCtrl.listCtrl:GetWidth()
+  scrollListCtrl:InsertColumn(locale.faction.name, targetWidth * 0.75, LCCIT_WINDOW, NameColumnDataSetFunc, NameAscendingSortFunc, NameDescendingSortFunc, NameColumnLayoutSetFunc)
+  scrollListCtrl:InsertColumn(locale.store_specialty.prices, targetWidth * 0.25, LCCIT_STRING, RatioColumnDataSetFunc, RatioAscendingSortFunc, RatioDescendingSortFunc)
+  scrollListCtrl:InsertRows(5, false)
+  for i = 1, #scrollListCtrl.listCtrl.column do
+    SettingListColumn(scrollListCtrl.listCtrl, scrollListCtrl.listCtrl.column[i])
+    DrawListCtrlColumnSperatorLine(scrollListCtrl.listCtrl.column[i], #scrollListCtrl.listCtrl.column, i)
+  end
+  local underLine = CreateLine(scrollListCtrl, "TYPE1")
+  underLine:AddAnchor("TOPLEFT", scrollListCtrl.listCtrl, -sideMargin / 2, LIST_COLUMN_HEIGHT - 2)
+  underLine:AddAnchor("TOPRIGHT", scrollListCtrl.listCtrl, sideMargin / 1.5, LIST_COLUMN_HEIGHT - 2)
+  function window:ShowProc()
+    productionFilter:Select(0)
+    productionFilter:SetText("")
+    destinationFilter:SetEnable(false)
+    destinationFilter:Select(0)
+    destinationFilter:SetText("")
+    scrollListCtrl:DeleteAllDatas()
+    searchButton:Enable(false)
+  end
+  local productionZones = X2Store:GetProductionZoneGroups()
+  productionZones = GetTableSort(productionZones)
+  window.productionZones = productionZones
+  local productionZoneNames = {}
+  for i = 1, #productionZones do
+    productionZoneNames[i] = productionZones[i].name
+  end
+  productionFilter.dropdownItem = productionZoneNames
+  productionFilter.limitItemCount = 10
+  local function FillRatioInfo(specialtyRatioTable)
+    scrollListCtrl:DeleteAllDatas()
+    for i = 1, #specialtyRatioTable do
+      scrollListCtrl:InsertData(i, 1, specialtyRatioTable[i].itemInfo)
+      scrollListCtrl:InsertData(i, 2, specialtyRatioTable[i].ratio)
+    end
+  end
+  local events = {
+    SPECIALTY_RATIO_BETWEEN_INFO = function(specialtyRatioTable)
+      FillRatioInfo(specialtyRatioTable)
+    end
+  }
+  window:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(window, events)
+  return window
+end
+local specialtyInfoWnd = CreateSpecialtyInfoWindow("specialtyInfoWnd", "UIParent")
+specialtyInfoWnd:AddAnchor("CENTER", "UIParent", 0, 0)
+function ToggleSpecialtyInfo(show)
+  if show == nil then
+    show = not specialtyInfoWnd:IsVisible()
+  end
+  specialtyInfoWnd:Show(show)
+end
+ADDON:RegisterContentTriggerFunc(UIC_SPECIALTY_INFO, ToggleSpecialtyInfo)

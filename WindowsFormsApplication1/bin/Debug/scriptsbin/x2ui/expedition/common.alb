@@ -1,0 +1,94 @@
+function CreateRoleIconDrawable(widget)
+  local roleIcon = widget:CreateChildWidget("label", "roleIcon", 0, true)
+  roleIcon:AddAnchor("TOPLEFT", widget, 0, 0)
+  roleIcon:Raise()
+  local texture = widget:CreateImageDrawable("ui/button/expedition.dds", "artwork")
+  texture:SetColor(1, 1, 1, 1)
+  texture:AddAnchor("CENTER", roleIcon, 0, 0)
+  roleIcon.texture = texture
+  local coords = {
+    {
+      164,
+      0,
+      15,
+      29
+    },
+    {
+      128,
+      54,
+      30,
+      29
+    },
+    {
+      0,
+      54,
+      31,
+      31
+    },
+    {
+      0,
+      27,
+      40,
+      26
+    },
+    {
+      0,
+      0,
+      40,
+      26
+    }
+  }
+  roleIcon.coords = coords
+  function roleIcon:SetRoleIcon(role, offsetX, offsetY)
+    local coord
+    if role == 255 then
+      coord = self.coords[#self.coords]
+    else
+      coord = self.coords[role + 1]
+    end
+    self.texture:SetCoords(coord[1], coord[2], coord[3], coord[4])
+    if offset == nil and offsetY == nil then
+      self.texture:SetExtent(coord[3], coord[4])
+    else
+      self.texture:SetExtent(coord[3] - offsetX, coord[4] - offsetY)
+    end
+  end
+end
+function CreateExpeditionInterestWnd(id, parent)
+  local window = CreateSubOptionWindow(id .. ".InterestWindow", parent)
+  window:SetExtent(160, 205)
+  local title = window:CreateChildWidget("label", "title", 0, true)
+  title:SetExtent(30, FONT_SIZE.LARGE)
+  title:SetAutoResize(true)
+  title.style:SetFontSize(FONT_SIZE.LARGE)
+  title:SetText(X2Locale:LocalizeUiText(COMMON_TEXT, "expedition_interest_title"))
+  title:AddAnchor("TOPLEFT", window, MARGIN.WINDOW_SIDE, MARGIN.WINDOW_SIDE)
+  title.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(title, FONT_COLOR.SOFT_BROWN)
+  window.interestChks = {}
+  local max_width = title:GetWidth()
+  local function CheckWindowMaxWidth(width)
+    if width > max_width then
+      max_width = width
+    end
+  end
+  local offset_y = 10
+  for i = 1, #expedMgmt.IR do
+    local str = X2Locale:LocalizeUiText(COMMON_TEXT, "expedition_interest_" .. expedMgmt.IR[i])
+    local checkbox = CreateCheckButton(id .. ".checkbox", window, str)
+    checkbox:AddAnchor("TOPLEFT", title, "BOTTOMLEFT", 0, offset_y)
+    checkbox:SetButtonStyle("soft_brown")
+    local icon = checkbox:CreateImageDrawable(TEXTURE_PATH.EXPEDITION_RECRUIT, "background")
+    icon:SetTextureInfo("icon_" .. expedMgmt.IR[i])
+    icon:AddAnchor("LEFT", checkbox, "RIGHT", 0, 0)
+    checkbox.textButton:RemoveAllAnchors()
+    checkbox.textButton:AddAnchor("LEFT", icon, "RIGHT", 4, 0)
+    local width = checkbox:GetWidth() + icon:GetWidth() + checkbox.textButton:GetWidth() + 5
+    CheckWindowMaxWidth(width)
+    offset_y = offset_y + 25
+    window.interestChks[i] = checkbox
+  end
+  max_width = max_width + MARGIN.WINDOW_SIDE * 2.2
+  window:SetWidth(max_width)
+  return window
+end

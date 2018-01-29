@@ -1,0 +1,32 @@
+MY_ABILITY_COUNT = 3
+function SetViewOfAbilityChangeFrame(id, parent)
+  local window = CreateWindow(id, parent)
+  window:SetExtent(abilityChangeLocale.abilityChangeFrame.extent.w, abilityChangeLocale.abilityChangeFrame.extent.h)
+  window:SetTitle(locale.abilityChanger.title)
+  window:SetSounds("ability_change")
+  local upperWindow = window:CreateChildWidget("window", "upperWindow", 0, true)
+  upperWindow:Show(true)
+  upperWindow:SetExtent(470, 140)
+  upperWindow:AddAnchor("TOPLEFT", window, MARGIN.WINDOW_SIDE, MARGIN.WINDOW_TITLE)
+  for i = 1, MAX.MY_ABILITY_COUNT do
+    localeView.abilityButton.CreateFunc(upperWindow, i)
+  end
+  local line = CreateLine(upperWindow, "TYPE1")
+  line:AddAnchor("TOPLEFT", upperWindow, "BOTTOMLEFT", 0, 5)
+  line:AddAnchor("TOPRIGHT", upperWindow, "BOTTOMRIGHT", 0, 5)
+  local lowerWindow = window:CreateChildWidget("window", "lowerWindow", 0, true)
+  lowerWindow:Show(true)
+  lowerWindow:SetExtent(470, 70)
+  lowerWindow:AddAnchor("TOPLEFT", upperWindow, "BOTTOMLEFT", 0, MARGIN.WINDOW_SIDE)
+  window.allAbilityInfos = X2Ability:GetAllAbility()
+  abilityChangeLocale.SetAbilityChangeLayoutFunc(lowerWindow)
+  local selectedIcon = DrawSkillFlameIcon(lowerWindow, "overlay")
+  selectedIcon:SetVisible(false)
+  lowerWindow.selectedIcon = selectedIcon
+  local info = {
+    leftButtonStr = GetUIText(ABILITY_CHANGER_TEXT, "title"),
+    rightButtonStr = GetCommonText("cancel")
+  }
+  CreateWindowDefaultTextButtonSet(window, info)
+  return window
+end

@@ -1,0 +1,793 @@
+local DialogDefaultHandler = function(wnd, infoTable)
+  local POPUP_WINDOW_DEFAULT_HEIGHT = 200
+  function wnd:GetOkSound()
+    return "event_message_box_default_onok"
+  end
+  local function OnOk()
+    if wnd.OkProc ~= nil then
+      wnd:OkProc()
+    end
+    F_SOUND:PlayUISound(wnd:GetOkSound(), true)
+    X2DialogManager:OnOK(wnd:GetId())
+  end
+  local function OnCancel()
+    if infoTable.buttonType == DBT_OK then
+      OnOk()
+      return
+    end
+    if wnd.CancelProc ~= nil then
+      wnd:CancelProc()
+    end
+    X2DialogManager:OnCancel(wnd:GetId())
+  end
+  local function DecorateWindow(window)
+    SetttingUIAnimation(window)
+    window.titleBar = CreateTitleBar(window:GetId() .. ".titleBar", window)
+    window:SetUILayer("dialog")
+    window:SetExtent(POPUP_WINDOW_WIDTH, POPUP_WINDOW_DEFAULT_HEIGHT)
+    window:AddAnchor("CENTER", "UIParent", 0, 0)
+    window:SetCloseOnEscape(true)
+    function window:SetTitle(text)
+      self.titleBar:SetTitleText(text)
+    end
+    window.layoutWidgets = {
+      window.titleBar,
+      window.textbox
+    }
+    function window:ReplaceTopWidget(widget)
+      if not widget then
+        UIParent:Warning(string.format("[Lua Error] Failed add layout widget - invalid widget"))
+        return
+      end
+      if widget:GetParent() ~= window then
+        UIParent:Warning(string.format("[Lua Error] this widget parent is not window, check please"))
+        return
+      end
+      self.layoutWidgets[1] = widget
+    end
+    function window:RegistBottomWidget(widget)
+      if not widget then
+        UIParent:Warning(string.format("[Lua Error] Failed add layout widget - invalid widget"))
+        return
+      end
+      if widget:GetParent() ~= window then
+        UIParent:Warning(string.format("[Lua Error] this widget parent is not window, check please"))
+        return
+      end
+      self.layoutWidgets[#self.layoutWidgets] = widget
+    end
+    function window:RegistBottomWidget(widget)
+      if not widget then
+        UIParent:Warning(string.format("[Lua Error] Failed add layout widget - invalid widget"))
+        return
+      end
+      if widget:GetParent() ~= window then
+        UIParent:Warning(string.format("[Lua Error] this widget parent is not window, check please"))
+        return
+      end
+      self.layoutWidgets[#self.layoutWidgets] = widget
+    end
+    function window:GetLayWidgetsHeight()
+      local _, height = F_LAYOUT:GetExtentWidgets(window.layoutWidgets[1], window.layoutWidgets[#window.layoutWidgets])
+      return height
+    end
+    function window:GetFrameHeight()
+      return self:GetLayWidgetsHeight() + math.abs(BUTTON_COMMON_INSET.MESSAGEBOX_BOTTOM) + window.btnOk:GetHeight() + 23
+    end
+    function window:Resize()
+      local height = self:GetFrameHeight()
+      if height < 165 then
+        height = 165
+      end
+      self:SetExtent(POPUP_WINDOW_WIDTH, height)
+    end
+    function window:SetContent(text, resize)
+      self.textbox:SetText(text)
+      local textHeight = self.textbox:GetTextHeight()
+      self.textbox:SetHeight(textHeight)
+      if resize ~= false then
+        self:Resize()
+      end
+    end
+    window:SetHandler("OnMouseDown", function()
+      return true
+    end)
+    window:SetHandler("OnMouseUp", function()
+    end)
+    local function OnShow()
+      if window.ShowProc ~= nil then
+        window:ShowProc()
+      end
+      SettingWindowSkin(window)
+      window:SetStartAnimation(true, true)
+    end
+    window:SetHandler("OnShow", OnShow)
+    function window:OnClose()
+      OnCancel()
+    end
+    window:SetHandler("OnCloseByEsc", OnCancel)
+  end
+  local function DecorateTextbox(textbox)
+    textbox:AddAnchor("TOP", wnd, 0, MARGIN.WINDOW_TITLE)
+    textbox:SetAutoResize(true)
+    textbox:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+    textbox:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, 50)
+    textbox.style:SetAlign(ALIGN_CENTER)
+    textbox.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE)
+    ApplyTextColor(textbox, FONT_COLOR.DEFAULT)
+  end
+  local DecorateButton = function(btn, func, text)
+    btn:SetText(text)
+    ApplyButtonSkin(btn, BUTTON_BASIC.DEFAULT)
+    btn:SetHandler("OnClick", function(_, arg)
+      if arg == "LeftButton" then
+        func()
+      end
+    end)
+  end
+  DecorateWindow(wnd)
+  DecorateTextbox(wnd.textbox)
+  DecorateButton(wnd.btnOk, OnOk, locale.messageBoxBtnText.ok)
+  if infoTable.buttonType == DBT_OK_CANCEL then
+    DecorateButton(wnd.btnCancel, OnCancel, locale.messageBoxBtnText.cancel)
+    local buttonTable = {
+      wnd.btnOk,
+      wnd.btnCancel
+    }
+    ReanchorDefaultTextButtonSet(buttonTable, wnd, BUTTON_COMMON_INSET.MESSAGEBOX_BOTTOM)
+  elseif infoTable.buttonType == DBT_OK then
+    wnd.btnOk:AddAnchor("BOTTOM", wnd, 0, BUTTON_COMMON_INSET.MESSAGEBOX_BOTTOM)
+  elseif infoTable.buttonType == DBT_CUSTOM then
+  else
+    LuaAssert(string.format("error - wrong type : %d", infoTable.type))
+    return
+  end
+  wnd:SetTitle(infoTable.title or "")
+  wnd:SetContent(infoTable.content or "")
+  wnd:SetSounds("dialog_common")
+  if infoTable.isModal == true then
+    wnd:SetWindowModal(true)
+  end
+end
+X2DialogManager:SetHandler(DLG_TASK_DEFAULT, DialogDefaultHandler)
+local IncludeItemIcon = function(wnd)
+  local ICON_OFFSET = 10
+  wnd.itemIcon = CreateItemIconButton(wnd:GetId() .. ".itemIcon", wnd)
+  wnd.itemIcon:AddAnchor("TOP", wnd.textbox, "BOTTOM", 0, ICON_OFFSET)
+  local itemTextbox = wnd:CreateChildWidget("textbox", "itemTextbox", 0, true)
+  itemTextbox:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, 35)
+  itemTextbox.style:SetAlign(ALIGN_CENTER)
+  itemTextbox:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  itemTextbox.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.LARGE)
+  ApplyTextColor(itemTextbox, FONT_COLOR.TITLE)
+  itemTextbox:AddAnchor("TOP", wnd.itemIcon, "BOTTOM", 0, ICON_OFFSET / 2)
+  local bg = CreateContentBackground(itemTextbox, "TYPE7", "BROWN", "background")
+  bg:SetExtent(170, 37)
+  bg:AddAnchor("CENTER", itemTextbox, 0, 3)
+  itemTextbox.bg = bg
+  function wnd:Resize()
+    local height = ICON_OFFSET + self.itemIcon:GetHeight() + bg:GetHeight()
+    self:SetExtent(POPUP_WINDOW_WIDTH, height + self:GetFrameHeight())
+  end
+  local function SetItemInfo(itemInfo, count)
+    if type(count) == "table" then
+      wnd.itemIcon:SetStack(count[1], count[2])
+    else
+      wnd.itemIcon:SetStack(count)
+    end
+    wnd.itemIcon:SetItemInfo(itemInfo)
+  end
+  local function SetItemContent(itemContent)
+    itemTextbox:SetText(itemContent)
+    local textHeight = itemTextbox:GetTextHeight() + 20
+    itemTextbox:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, textHeight)
+    local width = itemTextbox:GetLongestLineWidth()
+    bg:SetExtent(width + 70, textHeight + 10)
+  end
+  function wnd:SetContentEx(content, itemInfo, count, itemContent)
+    self:SetContent(content, false)
+    SetItemInfo(itemInfo, count)
+    SetItemContent(itemContent)
+    self:Resize()
+  end
+end
+local IncludeValueText = function(wnd)
+  local YOFFSET = 5
+  local VALUE_TEXT_BOX_HEIGHT = 35
+  local valueTextBox = wnd:CreateChildWidget("textbox", "valueTextBox", 0, true)
+  valueTextBox:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, VALUE_TEXT_BOX_HEIGHT)
+  valueTextBox:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  valueTextBox.style:SetAlign(ALIGN_CENTER)
+  valueTextBox.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.LARGE)
+  ApplyTextColor(valueTextBox, FONT_COLOR.TITLE)
+  valueTextBox:AddAnchor("TOP", wnd.textbox, "BOTTOM", 0, YOFFSET)
+  wnd:RegistBottomWidget(valueTextBox)
+  local bg = CreateContentBackground(valueTextBox, "TYPE7", "BROWN", "background")
+  bg:SetExtent(170, 37)
+  bg:AddAnchor("CENTER", valueTextBox, 0, 5)
+  valueTextBox.bg = bg
+  function wnd:Resize()
+    local height = valueTextBox:GetHeight()
+    if height < VALUE_TEXT_BOX_HEIGHT then
+      height = VALUE_TEXT_BOX_HEIGHT
+    end
+    bg:SetExtent(valueTextBox:GetLongestLineWidth() + 70, valueTextBox:GetHeight())
+    valueTextBox:SetHeight(height)
+    local wndHeight = self:GetFrameHeight()
+    self:SetExtent(POPUP_WINDOW_WIDTH, wndHeight)
+  end
+  function wnd:SetValueText(text)
+    valueTextBox:SetText(text)
+  end
+  function wnd:SetContentEx(content, valueText)
+    self:SetContent(content, false)
+    self:SetValueText(valueText)
+    self:Resize()
+  end
+end
+local IncludeValueTextEx = function(wnd)
+  local YOFFSET = 20
+  local VALUE_TEXT_BOX_HEIGHT = 35
+  wnd.textbox.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.LARGE)
+  local valueTextBox1 = wnd:CreateChildWidget("textbox", "valueTextBox1", 0, true)
+  valueTextBox1:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, VALUE_TEXT_BOX_HEIGHT)
+  valueTextBox1:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  valueTextBox1.style:SetAlign(ALIGN_CENTER)
+  valueTextBox1.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE)
+  valueTextBox1:AddAnchor("TOP", wnd.textbox, "BOTTOM", 0, YOFFSET)
+  ApplyTextColor(valueTextBox1, FONT_COLOR.TITLE)
+  local bg1 = CreateContentBackground(valueTextBox1, "TYPE7", "BROWN", "background")
+  bg1:SetExtent(170, 37)
+  bg1:AddAnchor("CENTER", valueTextBox1, 0, 5)
+  valueTextBox1.bg = bg1
+  local valueTextBox2 = wnd:CreateChildWidget("textbox", "valueTextBox2", 0, true)
+  valueTextBox2:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, VALUE_TEXT_BOX_HEIGHT)
+  valueTextBox2:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  valueTextBox2.style:SetAlign(ALIGN_CENTER)
+  valueTextBox2.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE)
+  valueTextBox2:AddAnchor("TOP", valueTextBox1, "BOTTOM", 0, YOFFSET)
+  ApplyTextColor(valueTextBox2, FONT_COLOR.TITLE)
+  function wnd:Resize()
+    local height1 = valueTextBox1:GetHeight()
+    if height1 < VALUE_TEXT_BOX_HEIGHT then
+      height1 = VALUE_TEXT_BOX_HEIGHT
+    end
+    valueTextBox1:SetHeight(height1)
+    local inset = 25
+    local height2 = valueTextBox2:GetTextHeight()
+    if not valueTextBox2:IsVisible() then
+      height2 = 0
+      inset = 10
+    end
+    valueTextBox2:SetHeight(height2)
+    bg1:SetExtent(valueTextBox1:GetLongestLineWidth() + 70, valueTextBox1:GetHeight() + 20)
+    local wndHeight = self:GetFrameHeight() + bg1:GetHeight() + height2 + inset
+    self:SetExtent(POPUP_WINDOW_WIDTH, wndHeight)
+  end
+  function wnd:SetValueText(text1, text2)
+    valueTextBox1:SetText(text1)
+    valueTextBox2:Show(false)
+    if text2 ~= nil and text2 ~= "" then
+      valueTextBox2:SetText(text2)
+      valueTextBox2:Show(true)
+    end
+  end
+  function wnd:SetContentEx(content, valueText1, valueText2)
+    self:SetContent(content, false)
+    self:SetValueText(valueText1, valueText2)
+    self:Resize()
+  end
+end
+local IncludeItemAndDescription = function(wnd)
+  local ICON_OFFSET = 10
+  wnd.itemIcon = CreateItemIconButton(wnd:GetId() .. ".itemIcon", wnd)
+  wnd.itemIcon:AddAnchor("TOP", wnd.textbox, "BOTTOM", 0, ICON_OFFSET)
+  local itemTextbox = wnd:CreateChildWidget("textbox", "itemTextbox", 0, true)
+  itemTextbox:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, 35)
+  itemTextbox.style:SetAlign(ALIGN_CENTER)
+  itemTextbox:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  itemTextbox.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE)
+  ApplyTextColor(itemTextbox, FONT_COLOR.GRAY)
+  itemTextbox:AddAnchor("TOP", wnd.itemIcon, "BOTTOM", 0, ICON_OFFSET / 2)
+  function wnd:Resize()
+    local height = ICON_OFFSET + self.itemIcon:GetHeight() + itemTextbox:GetHeight()
+    self:SetExtent(POPUP_WINDOW_WIDTH, height + self:GetFrameHeight())
+  end
+  local function SetItemInfo(itemInfo, count)
+    wnd.itemIcon:SetStack(count)
+    wnd.itemIcon:SetItemInfo(itemInfo)
+  end
+  local function SetDescription(description)
+    itemTextbox:SetText(description)
+    local textHeight = itemTextbox:GetTextHeight() + 20
+    itemTextbox:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, textHeight)
+  end
+  function wnd:SetContentEx(content, itemInfo, count, description)
+    self:SetContent(content, false)
+    SetItemInfo(itemInfo, count)
+    SetDescription(description)
+    self:Resize()
+  end
+end
+local IncludeThreeButton = function(wnd)
+  local THREE_BUTTON_MARGIN = 21
+  local btnSecond = wnd:CreateChildWidget("button", "btnSecond", 0, true)
+  ApplyButtonSkin(btnSecond, BUTTON_BASIC.DEFAULT)
+  local btnThird = wnd:CreateChildWidget("button", "btnThird", 0, true)
+  ApplyButtonSkin(btnThird, BUTTON_BASIC.DEFAULT)
+  btnSecond:AddAnchor("BOTTOM", wnd, 0, BUTTON_COMMON_INSET.MESSAGEBOX_BOTTOM)
+  wnd.btnOk:AddAnchor("RIGHT", btnSecond, "LEFT", 0, 0)
+  btnThird:AddAnchor("LEFT", btnSecond, "RIGHT", 0, 0)
+  local function ProcButtonClick(index)
+    if index < 1 or index > 3 then
+      X2DialogManager:OnCancel(wnd:GetId())
+      return
+    end
+    X2DialogManager:OnCustom(wnd:GetId(), index)
+  end
+  local function OnFirstBtnClick()
+    ProcButtonClick(1)
+  end
+  wnd.btnOk:SetHandler("OnClick", OnFirstBtnClick)
+  local function OnSecondBtnClick()
+    ProcButtonClick(2)
+  end
+  btnSecond:SetHandler("OnClick", OnSecondBtnClick)
+  local function OnThirdBtnClick()
+    ProcButtonClick(3)
+  end
+  btnThird:SetHandler("OnClick", OnThirdBtnClick)
+end
+local IncludeItemIconValueText = function(wnd)
+  local ICON_OFFSET = 15
+  local itemTextbox = wnd:CreateChildWidget("textbox", "itemTextbox", 0, true)
+  itemTextbox:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, 35)
+  itemTextbox.style:SetAlign(ALIGN_CENTER)
+  itemTextbox:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  itemTextbox.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.LARGE)
+  ApplyTextColor(itemTextbox, FONT_COLOR.TITLE)
+  itemTextbox:AddAnchor("TOP", wnd.textbox, "BOTTOM", ICON_SIZE.DEFAULT / 2, ICON_OFFSET)
+  wnd.itemIcon = CreateItemIconButton(wnd:GetId() .. ".itemIcon", wnd)
+  wnd.itemIcon:AddAnchor("RIGHT", itemTextbox, "LEFT", -6, 0)
+  local bg = CreateContentBackground(itemTextbox, "TYPE7", "BROWN", "background")
+  bg:SetExtent(170, 37)
+  bg:AddAnchor("CENTER", itemTextbox, 0, 5)
+  local valueTextbox = wnd:CreateChildWidget("textbox", "valueTextbox", 0, true)
+  valueTextbox:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, 35)
+  valueTextbox.style:SetAlign(ALIGN_CENTER)
+  valueTextbox:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  valueTextbox.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.LARGE)
+  valueTextbox:AddAnchor("TOP", itemTextbox, "BOTTOM", -(ICON_SIZE.DEFAULT / 2), ICON_OFFSET)
+  ApplyTextColor(valueTextbox, FONT_COLOR.TITLE)
+  local valueBg = CreateContentBackground(valueTextbox, "TYPE7", "BROWN", "background")
+  valueBg:SetExtent(170, 37)
+  valueBg:AddAnchor("CENTER", valueTextbox, 0, 3)
+  function wnd:Resize()
+    local height = ICON_OFFSET / 2 + self.itemIcon:GetHeight() + bg:GetHeight()
+    self:SetExtent(POPUP_WINDOW_WIDTH, height + self:GetFrameHeight())
+  end
+  local function SetItemInfo(itemInfo, count)
+    wnd.itemIcon:SetStack(count)
+    wnd.itemIcon:SetItemInfo(itemInfo)
+  end
+  local function SetItemContent(itemContent)
+    itemTextbox:SetText(itemContent)
+    local textHeight = itemTextbox:GetTextHeight() + 20
+    local width = itemTextbox:GetLongestLineWidth()
+    itemTextbox:SetWidth(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH)
+    itemTextbox:SetExtent(width + 5, textHeight)
+    bg:SetExtent(width + 70, textHeight + 20)
+  end
+  local function SetValue(value)
+    valueTextbox:SetText(value)
+    valueBg:SetExtent(valueTextbox:GetLongestLineWidth() + 70, valueTextbox:GetTextHeight() + 20)
+  end
+  function wnd:SetContentEx(content, itemInfo, count, itemContent, value)
+    self:SetContent(content, false)
+    SetItemInfo(itemInfo, count)
+    SetValue(value)
+    SetItemContent(itemContent)
+    self:Resize()
+  end
+end
+local IncludeItemIconValueTextEx = function(wnd)
+  local ICON_OFFSET = 15
+  wnd.textbox.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.LARGE)
+  local valueTextBox1 = wnd:CreateChildWidget("textbox", "valueTextBox1", 0, true)
+  valueTextBox1:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, 35)
+  valueTextBox1.style:SetAlign(ALIGN_CENTER)
+  valueTextBox1:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  valueTextBox1.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE)
+  valueTextBox1:AddAnchor("TOP", wnd.textbox, "BOTTOM", 0, ICON_OFFSET + 5)
+  ApplyTextColor(valueTextBox1, FONT_COLOR.TITLE)
+  local valueBg1 = CreateContentBackground(valueTextBox1, "TYPE7", "BROWN", "background")
+  valueBg1:SetExtent(170, 37)
+  valueBg1:AddAnchor("CENTER", valueTextBox1, 0, 3)
+  local itemTextbox = wnd:CreateChildWidget("textbox", "itemTextbox", 0, true)
+  itemTextbox:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, 35)
+  itemTextbox.style:SetAlign(ALIGN_CENTER)
+  itemTextbox:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  itemTextbox.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.LARGE)
+  itemTextbox:AddAnchor("TOP", valueTextBox1, "BOTTOM", ICON_SIZE.DEFAULT / 2, ICON_OFFSET)
+  ApplyTextColor(itemTextbox, FONT_COLOR.TITLE)
+  wnd.itemIcon = CreateItemIconButton(wnd:GetId() .. ".itemIcon", wnd)
+  wnd.itemIcon:AddAnchor("RIGHT", itemTextbox, "LEFT", -6, 0)
+  local bg = CreateContentBackground(itemTextbox, "TYPE7", "BROWN", "background")
+  bg:SetExtent(170, 37)
+  bg:AddAnchor("CENTER", itemTextbox, 0, 5)
+  local valueTextBox2 = wnd:CreateChildWidget("textbox", "valueTextBox2", 0, true)
+  valueTextBox2:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, 35)
+  valueTextBox2.style:SetAlign(ALIGN_CENTER)
+  valueTextBox2:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  valueTextBox2.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE)
+  valueTextBox2:AddAnchor("TOP", itemTextbox, "BOTTOM", -(ICON_SIZE.DEFAULT / 2), 5)
+  ApplyTextColor(valueTextBox2, FONT_COLOR.TITLE)
+  local valueBg2 = CreateContentBackground(valueTextBox2, "TYPE7", "BROWN", "background")
+  valueBg2:SetExtent(170, 37)
+  valueBg2:AddAnchor("CENTER", valueTextBox2, 0, 3)
+  function wnd:Resize()
+    local height = bg:GetHeight() + valueBg1:GetHeight() + valueBg1:GetHeight() + 10
+    self:SetExtent(POPUP_WINDOW_WIDTH, self:GetFrameHeight() + height)
+  end
+  local function SetItemInfo(itemInfo, count)
+    wnd.itemIcon:SetStack(count)
+    wnd.itemIcon:SetItemInfo(itemInfo)
+  end
+  local function SetItemContent(itemContent)
+    itemTextbox:SetText(itemContent)
+    local textHeight = itemTextbox:GetTextHeight() + 20
+    local width = itemTextbox:GetLongestLineWidth()
+    itemTextbox:SetWidth(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH)
+    itemTextbox:SetExtent(width + 5, textHeight)
+    bg:SetExtent(width + 70, textHeight)
+  end
+  local function SetValue(value1, value2)
+    valueTextBox1:SetText(value1)
+    valueTextBox2:SetText(value2)
+    valueBg1:SetExtent(valueTextBox1:GetLongestLineWidth() + 70, valueTextBox1:GetTextHeight() + 20)
+    valueBg2:SetExtent(valueTextBox2:GetLongestLineWidth() + 70, valueTextBox2:GetTextHeight() + 20)
+  end
+  function wnd:SetContentEx(content, itemInfo, count, itemContent, value1, value2)
+    self:SetContent(content, false)
+    SetItemInfo(itemInfo, count)
+    SetValue(value1, value2)
+    SetItemContent(itemContent)
+    self:Resize()
+  end
+end
+local IncludeTwoItemIconAndOneName = function(wnd)
+  local ICON_OFFSET = 10
+  local arrow = CreateIcon(wnd, "arrow")
+  arrow:AddAnchor("TOP", wnd.textbox, "BOTTOM", 0, 35)
+  ApplyTextureColor(arrow, TEXTURE_COLOR.ARROW_BROWN)
+  wnd.itemIcon = {}
+  wnd.itemIcon[1] = CreateItemIconButton(wnd:GetId() .. ".itemIcon1", wnd)
+  wnd.itemIcon[1]:SetExtent(ICON_SIZE.XLARGE, ICON_SIZE.XLARGE)
+  wnd.itemIcon[1]:AddAnchor("RIGHT", arrow, "LEFT", -5, 0)
+  wnd.itemIcon[2] = CreateItemIconButton(wnd:GetId() .. ".itemIcon2", wnd)
+  wnd.itemIcon[2]:SetExtent(ICON_SIZE.XLARGE, ICON_SIZE.XLARGE)
+  wnd.itemIcon[2]:AddAnchor("LEFT", arrow, "RIGHT", 7, 0)
+  local itemTextbox = wnd:CreateChildWidget("textbox", "itemTextbox", 0, true)
+  itemTextbox:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, 35)
+  itemTextbox.style:SetAlign(ALIGN_CENTER)
+  itemTextbox:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  itemTextbox.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.LARGE)
+  ApplyTextColor(itemTextbox, FONT_COLOR.TITLE)
+  itemTextbox:AddAnchor("TOP", arrow, "BOTTOM", 0, 2 * ICON_OFFSET)
+  local bg = CreateContentBackground(itemTextbox, "TYPE7", "BROWN", "background")
+  bg:SetExtent(170, 37)
+  bg:AddAnchor("CENTER", itemTextbox, 0, 3)
+  function wnd:Resize()
+    local height = ICON_OFFSET * 1.5 + self.itemIcon[1]:GetHeight() + bg:GetHeight()
+    self:SetExtent(POPUP_WINDOW_WIDTH, height + self:GetFrameHeight())
+  end
+  local function SetItemInfo(index, itemInfo)
+    wnd.itemIcon[index]:SetItemInfo(itemInfo)
+  end
+  local function SetItemContent(itemContent)
+    itemTextbox:SetText(itemContent)
+    local textHeight = itemTextbox:GetTextHeight() + 20
+    itemTextbox:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, textHeight)
+    local width = itemTextbox:GetLongestLineWidth()
+    bg:SetExtent(width + 70, textHeight + 5)
+  end
+  function wnd:SetContentEx(content, itemInfo1, itemInfo2, itemContent)
+    self:SetContent(content, false)
+    SetItemInfo(1, itemInfo1)
+    SetItemInfo(2, itemInfo2)
+    SetItemContent(itemContent)
+    self:Resize()
+  end
+end
+local IncludeThreeItemIconAndOneName = function(wnd)
+  local ICON_OFFSET = 10
+  local arrow = CreateIcon(wnd, "arrow")
+  arrow:AddAnchor("TOP", wnd.textbox, "BOTTOM", -25, 35)
+  ApplyTextureColor(arrow, TEXTURE_COLOR.ARROW_BROWN)
+  wnd.itemIcon = {}
+  wnd.itemIcon[1] = CreateItemIconButton(wnd:GetId() .. ".itemIcon1", wnd)
+  wnd.itemIcon[1]:SetExtent(ICON_SIZE.XLARGE, ICON_SIZE.XLARGE)
+  wnd.itemIcon[1]:AddAnchor("RIGHT", arrow, "LEFT", -5, 0)
+  wnd.itemIcon[2] = CreateItemIconButton(wnd:GetId() .. ".itemIcon2", wnd)
+  wnd.itemIcon[2]:SetExtent(ICON_SIZE.XLARGE, ICON_SIZE.XLARGE)
+  wnd.itemIcon[2]:AddAnchor("LEFT", arrow, "RIGHT", 7, 0)
+  wnd.itemIcon[3] = CreateItemIconButton(wnd:GetId() .. ".itemIcon2", wnd)
+  wnd.itemIcon[3]:SetExtent(ICON_SIZE.XLARGE, ICON_SIZE.XLARGE)
+  wnd.itemIcon[3]:AddAnchor("LEFT", arrow, "RIGHT", 62, 0)
+  local itemTextbox = wnd:CreateChildWidget("textbox", "itemTextbox", 0, true)
+  itemTextbox:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, 35)
+  itemTextbox.style:SetAlign(ALIGN_CENTER)
+  itemTextbox:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  itemTextbox.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.LARGE)
+  ApplyTextColor(itemTextbox, FONT_COLOR.TITLE)
+  itemTextbox:AddAnchor("TOP", arrow, "BOTTOM", 22, 2 * ICON_OFFSET)
+  local bg = CreateContentBackground(itemTextbox, "TYPE7", "BROWN", "background")
+  bg:SetExtent(170, 37)
+  bg:AddAnchor("CENTER", itemTextbox, 0, 3)
+  function wnd:Resize()
+    local height = ICON_OFFSET * 1.5 + self.itemIcon[1]:GetHeight() + bg:GetHeight()
+    self:SetExtent(POPUP_WINDOW_WIDTH, height + self:GetFrameHeight())
+  end
+  local function SetItemInfo(index, itemInfo)
+    wnd.itemIcon[index]:SetItemInfo(itemInfo)
+  end
+  local function SetItemContent(itemContent)
+    itemTextbox:SetText(itemContent)
+    local textHeight = itemTextbox:GetTextHeight() + 20
+    itemTextbox:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, textHeight)
+    local width = itemTextbox:GetLongestLineWidth()
+    bg:SetExtent(width + 70, textHeight + 5)
+  end
+  function wnd:SetContentEx(content, itemInfo1, itemInfo2, itemInfo3, itemContent)
+    self:SetContent(content, false)
+    SetItemInfo(1, itemInfo1)
+    SetItemInfo(2, itemInfo2)
+    SetItemInfo(3, itemInfo3)
+    SetItemContent(itemContent)
+    self:Resize()
+  end
+end
+local IncludeSeperateText = function(wnd)
+  local lowerText = wnd:CreateChildWidget("textbox", "lowerText", 0, true)
+  lowerText:AddAnchor("TOP", wnd.textbox, "BOTTOM", 0, MARGIN.WINDOW_SIDE / 2)
+  lowerText:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, FONT_SIZE.MIDDLE)
+  lowerText:SetAutoResize(true)
+  lowerText.style:SetAlign(ALIGN_CENTER)
+  lowerText:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  ApplyTextColor(lowerText, FONT_COLOR.DEFAULT)
+  wnd:RegistBottomWidget(lowerText)
+  function wnd:SetContent(upperText, lowerText)
+    self.textbox:SetText(upperText)
+    self.lowerText:SetText(lowerText)
+    self:Resize()
+  end
+  function wnd:SetTextColor(upperColor, lowerColor)
+    ApplyTextColor(self.textbox, upperColor)
+    ApplyTextColor(lowerText, lowerColor)
+  end
+  function wnd:SetTextSize(upperSize, lowerSize)
+    self.textbox.style:SetFontSize(upperSize)
+    lowerText.style:SetFontSize(lowerSize)
+  end
+end
+DIALOG_STYLE = {
+  INCLUDE_ITEM_ICON = 1,
+  INCLUDE_VALUE_TEXT = 2,
+  INCLUDE_ITEM_AND_DESCRIPTION = 3,
+  INCLUDE_THREE_BUTTON = 4,
+  INCLUDE_ITEM_ICON_VALUE_TEXT = 5,
+  INCLUDE_TWO_ITEM_ICON_AND_ONE_NAME = 6,
+  INCLUDE_VALUE_TEXT_EX = 7,
+  INCLUDE_ITEM_ICON_VALUE_TEXT_EX = 8,
+  INCLUDE_SEPERATE_TEXT = 9,
+  INCLUDE_THREE_ITEM_ICON_AND_ONE_NAME = 10
+}
+function ApplyDialogStyle(wnd, style)
+  local funcTable = {
+    [DIALOG_STYLE.INCLUDE_ITEM_ICON] = IncludeItemIcon,
+    [DIALOG_STYLE.INCLUDE_VALUE_TEXT] = IncludeValueText,
+    [DIALOG_STYLE.INCLUDE_VALUE_TEXT_EX] = IncludeValueTextEx,
+    [DIALOG_STYLE.INCLUDE_ITEM_AND_DESCRIPTION] = IncludeItemAndDescription,
+    [DIALOG_STYLE.INCLUDE_THREE_BUTTON] = IncludeThreeButton,
+    [DIALOG_STYLE.INCLUDE_ITEM_ICON_VALUE_TEXT] = IncludeItemIconValueText,
+    [DIALOG_STYLE.INCLUDE_ITEM_ICON_VALUE_TEXT_EX] = IncludeItemIconValueTextEx,
+    [DIALOG_STYLE.INCLUDE_TWO_ITEM_ICON_AND_ONE_NAME] = IncludeTwoItemIconAndOneName,
+    [DIALOG_STYLE.INCLUDE_THREE_ITEM_ICON_AND_ONE_NAME] = IncludeThreeItemIconAndOneName,
+    [DIALOG_STYLE.INCLUDE_SEPERATE_TEXT] = IncludeSeperateText
+  }
+  if funcTable[style] == nil then
+    return
+  end
+  funcTable[style](wnd)
+end
+function ShowPremiumServiceBuyCharacterCheck(index)
+  local function PremiumServiceBuyCharacterCheck(wnd, infoTable)
+    function wnd:OkProc()
+      ShowPremiumServiceBuy(index)
+    end
+    function wnd:CancelProc()
+      wnd:Show(false)
+    end
+    wnd:SetTitle(locale.premium.premium_buy)
+    wnd:SetContent(GetUIText(COMMON_TEXT, "premium_service_character_check", X2Player:GetPremiumItemReceiveCharacterName()), true)
+  end
+  X2DialogManager:RequestDefaultDialog(PremiumServiceBuyCharacterCheck, "")
+end
+function ShowPremiumServiceBuy(index)
+  local function PremiumServiceBuy(wnd, infoTable)
+    function wnd:OkProc()
+      local result = X2PremiumService:BuyPremiumService(index, premiumServiceLocale.showWeb)
+      if premiumServiceLocale.showWeb == false then
+        if result == nil or result == false then
+          local priceType = X2PremiumService:GetPremiumServicePriceType(index)
+          if priceType ~= nil then
+            ShowDeficiencyMoney(priceType, result)
+          end
+        else
+          PremiumResultWaitPage(true)
+          wnd:Show(false)
+        end
+      end
+    end
+    function wnd:CancelProc()
+      wnd:Show(false)
+    end
+    wnd:SetTitle(locale.premium.premium_buy)
+    wnd:SetContent(locale.premium.premium_buy_explan, true)
+    if premiumServiceLocale.warringMsg then
+      wnd.btnOk:Enable(false)
+      local textImg = wnd:CreateImageDrawable(TEXTURE_PATH.PREMIUM_BUY_DIALOG_TEXT, "overlay")
+      textImg:SetTextureInfo("text")
+      textImg:AddAnchor("TOP", wnd.textbox, "BOTTOM", 0, 25)
+      local textButton = CreateEmptyButton("textButton", wnd)
+      textButton:AddAnchor("TOPLEFT", textImg, 0, 0)
+      textButton:AddAnchor("BOTTOMRIGHT", textImg, 0, 0)
+      local color = {
+        normal = FONT_COLOR.GRAY,
+        highlight = FONT_COLOR.GRAY,
+        pushed = FONT_COLOR.GRAY,
+        disabled = FONT_COLOR.GRAY
+      }
+      local premiumWarringCheckButton = CreateCheckButton("premiumWarringCheckButton", wnd, GetUIText(PREMIUM_TEXT, "premium_warring_check"))
+      premiumWarringCheckButton:AddAnchor("TOP", textImg, "BOTTOM", -(premiumWarringCheckButton.textButton:GetWidth() / 2), 10)
+      SetButtonFontColor(premiumWarringCheckButton.textButton, color)
+      wnd.premiumWarringCheckButton = premiumWarringCheckButton
+      local _, height = F_LAYOUT:GetExtentWidgets(wnd.titleBar, premiumWarringCheckButton)
+      wnd:SetHeight(height + wnd.btnOk:GetHeight() + 40)
+      local function TextButtonOnClick()
+        X2PremiumService:OpenPremiumWarringSite(index)
+      end
+      textButton:SetHandler("OnClick", TextButtonOnClick)
+      function wnd.premiumWarringCheckButton:CheckBtnCheckChagnedProc()
+        local check = self:GetChecked()
+        wnd.btnOk:Enable(check)
+      end
+    end
+  end
+  X2DialogManager:RequestDefaultDialog(PremiumServiceBuy, "")
+end
+function ShowPremiumServiceBuyResult(msg, isNotice, priceType)
+  local function PremiumServiceBuyResult(wnd, infoTable)
+    function wnd:OkProc()
+      if isNotice == false then
+        X2PremiumService:ViewBuyCashWindow(priceType)
+      end
+      wnd:Show(false)
+    end
+    function wnd:CancelProc()
+      wnd:Show(false)
+    end
+    wnd:SetTitle("")
+    wnd:SetContent(msg, true)
+  end
+  if isNotice then
+    X2DialogManager:RequestNoticeDialog(PremiumServiceBuyResult, "")
+  else
+    X2DialogManager:RequestDefaultDialog(PremiumServiceBuyResult, "")
+  end
+end
+function RequestCashCharge(caller)
+  if X2Player:UseSteamCashCharge() then
+    X2Player:RequestCashCharge("")
+    return
+  end
+  if componentsLocale.cashBuy.useEmbededWebBrowser then
+    if caller.existCashChargeBrowser ~= true then
+      local extent = componentsLocale.cashBuy.embededWebBrowserExtent
+      local offset = componentsLocale.cashBuy.embededWebBrowserOffset
+      local webBrowserAnchor = componentsLocale.cashBuy.webBrowserAnchor
+      local cashChargeBrowser = SetViewOfWebbrowserWindow("cashChargeBrowser", "UIParent", extent.w, extent.h, offset.x, offset.y, webBrowserAnchor)
+      cashChargeBrowser.titleBar:SetTitleText(componentsLocale.cashBuy.webBrowserTitle)
+      cashChargeBrowser:AddAnchor("CENTER", "UIParent", 0, 0)
+      local function OnHide()
+        caller.existCashChargeBrowser = false
+        X2Player:RequestRefreshCash()
+      end
+      cashChargeBrowser:SetHandler("OnHide", OnHide)
+      X2Player:RequestCashCharge(cashChargeBrowser.webBrowser:GetId())
+      cashChargeBrowser:Show(true)
+      caller.existCashChargeBrowser = true
+    end
+  else
+    function DecorateCashChargeNotifyFunc(wnd, infoTable)
+      function wnd:OkProc()
+        X2Player:RequestCashCharge("")
+        wnd:Show(false)
+      end
+      wnd:SetTitle(GetUIText(INGAMESHOP_TEXT, "chargeCash"))
+      wnd:SetContent(GetUIText(INGAMESHOP_TEXT, "noticeForCashCharge"))
+    end
+    X2DialogManager:RequestDefaultDialog(DecorateCashChargeNotifyFunc, "")
+  end
+end
+function ShowRepresentCharacter(charIndex)
+  local function RepresentCharacterDialog(wnd, infoTable)
+    function wnd:OkProc()
+      X2LoginCharacter:SetRepresentCharacter(charIndex)
+      wnd:Show(false)
+    end
+    function wnd:CancelProc()
+      X2LoginCharacter:DeleteRepresentCharacter(charIndex)
+      wnd:Show(false)
+    end
+    function wnd:OnClose()
+      wnd:Show(false)
+    end
+    wnd:SetTitle(GetUIText(COMMON_TEXT, "set_represent_character_title"))
+    wnd:SetContent(GetUIText(COMMON_TEXT, "set_represent_character_content"), true)
+    wnd.btnOk:SetText(GetUIText(COMMON_TEXT, "set_represent_character"))
+    wnd.btnCancel:SetText(GetUIText(COMMON_TEXT, "clear_represent_character"))
+    local buttonTable = {
+      wnd.btnOk,
+      wnd.btnCancel
+    }
+    ReanchorDefaultTextButtonSet(buttonTable, wnd, BUTTON_COMMON_INSET.MESSAGEBOX_BOTTOM)
+    if X2LoginCharacter:GetRepresentCharacterIndex() == charIndex then
+      wnd.btnCancel:Enable(true)
+    else
+      wnd.btnCancel:Enable(false)
+    end
+  end
+  X2DialogManager:RequestDefaultDialog(RepresentCharacterDialog, "")
+end
+function ShowRepresentCharacterMsg(msg, isError)
+  local function RepresentCharacterResult(wnd, infoTable)
+    function wnd:OkProc()
+      wnd:Show(false)
+    end
+    function wnd:CancelProc()
+      wnd:Show(false)
+    end
+    if isError then
+      wnd:SetTitle(GetUIText(COMMON_TEXT, "represent_character_error_title"))
+    else
+      wnd:SetTitle(GetUIText(COMMON_TEXT, "represent_character_title"))
+    end
+    wnd:SetContent(msg, true)
+  end
+  X2DialogManager:RequestNoticeDialog(RepresentCharacterResult, "")
+end
+function DialogFirstPremiumBuyBonus(item)
+  local function firstPremiumBuyBonus(wnd, infoTable)
+    function wnd:OkProc()
+      wnd:Show(false)
+    end
+    ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_ITEM_AND_DESCRIPTION)
+    local title = GetUIText(COMMON_TEXT, "first_buy_bonus")
+    local description = GetUIText(COMMON_TEXT, "first_buy_bonus_description")
+    wnd:SetTitle(title)
+    wnd:SetContentEx("", item.itemInfo, item.itemCount, description)
+  end
+  X2DialogManager:RequestNoticeDialog(firstPremiumBuyBonus, "")
+end
+function DialogReloadCash(money)
+  local function reloadCash(wnd, infoTable)
+    function wnd:OkProc()
+      wnd:Show(false)
+    end
+    wnd:SetTitle(GetUIText(COMMON_TEXT, "reload_cash_title"))
+    wnd:SetContent(GetUIText(COMMON_TEXT, "reload_cash_content", money), true)
+  end
+  X2DialogManager:RequestNoticeDialog(reloadCash, "")
+end
+UIParent:SetEventHandler("RELOAD_CASH", DialogReloadCash)

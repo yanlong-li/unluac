@@ -1,0 +1,103 @@
+local MAX_BUFF_COUNT = 32
+local MAX_DEBUFF_COUNT = 24
+local path = "ui/hud/unit_raid_frame.dds"
+function SetViewOfUnitFrame(id, parent)
+  local w
+  if parent == "UIParent" then
+    w = CreateEmptyWindow(id, parent)
+  else
+    w = parent:CreateChildWidget("window", id, 0, true)
+  end
+  w:SetUILayer("game")
+  w:SetHeight(55)
+  local bg = w:CreateImageDrawable(TEXTURE_PATH.HUD, "artwork")
+  bg:SetCoords(0, 168, 304, 38)
+  bg:SetColor(ConvertColor(54), ConvertColor(41), ConvertColor(16), 1)
+  w.bg = bg
+  local level = CreateLevelLabel(id .. ".level ", w)
+  level:Show(true)
+  level:AddAnchor("TOPLEFT", w, 0, 0)
+  ApplyTextColor(level.label, FONT_COLOR.EXP_ORANGE)
+  w.level = level
+  local name = w:CreateChildWidget("label", "name", 0, true)
+  name:SetExtent(90, FONT_SIZE.MIDDLE)
+  name:AddAnchor("BOTTOMLEFT", level, "BOTTOMRIGHT", 3, -1)
+  name:SetAutoResize(true)
+  name.style:SetAlign(ALIGN_LEFT)
+  name.style:SetShadow(true)
+  ApplyTextColor(name, FONT_COLOR.WHITE)
+  local hpBar = CreateStatusBarOfUnitFrame(id .. ".hpBar", w, "hp")
+  hpBar:SetHeight(19)
+  hpBar:AddAnchor("TOPLEFT", level, "BOTTOMLEFT", 1, 5)
+  w.hpBar = hpBar
+  local hpBar_deco = hpBar:CreateThreePartDrawable(TEXTURE_PATH.HUD, "overlay")
+  hpBar_deco:SetHeight(8)
+  hpBar_deco:SetCoords(860, 35, 3, 8)
+  hpBar_deco:SetInset(1, 0, 1, 0)
+  hpBar_deco:SetColor(1, 1, 1, 0.9)
+  hpBar_deco:AddAnchor("TOPLEFT", hpBar, "BOTTOMLEFT", -1, 0)
+  hpBar_deco:AddAnchor("TOPRIGHT", hpBar, "BOTTOMRIGHT", 2, 0)
+  w.hpBar_deco = hpBar_deco
+  local hpLabel = hpBar:CreateChildWidget("label", "hpLabel", 0, true)
+  hpLabel:Show(false)
+  hpLabel:AddAnchor("BOTTOMRIGHT", hpBar, -1, -1)
+  hpLabel:SetAutoResize(true)
+  hpLabel:SetHeight(FONT_SIZE.SMALL)
+  hpLabel.style:SetAlign(ALIGN_RIGHT)
+  hpLabel.style:SetFontSize(FONT_SIZE.SMALL)
+  local mpBar = CreateStatusBarOfUnitFrame(id .. ".mpBar", w, "mp")
+  mpBar:SetHeight(13)
+  mpBar:AddAnchor("TOPLEFT", hpBar, "BOTTOMLEFT", 0, 0)
+  w.mpBar = mpBar
+  local mpLabel = mpBar:CreateChildWidget("label", "mpLabel", 0, true)
+  mpLabel:Show(false)
+  mpLabel:AddAnchor("TOPRIGHT", mpBar, -1, 2)
+  mpLabel:SetAutoResize(true)
+  mpLabel:SetHeight(FONT_SIZE.SMALL)
+  mpLabel.style:SetAlign(ALIGN_RIGHT)
+  mpLabel.style:SetFontSize(FONT_SIZE.SMALL)
+  local line = w:CreateImageDrawable(TEXTURE_PATH.HUD, "overlay")
+  line:SetHeight(8)
+  w.line = line
+  w.ability = CreateLabel(id .. ".ability", w)
+  w.ability:Show(false)
+  w.ability:SetHeight(19)
+  w.ability.style:SetAlign(ALIGN_RIGHT)
+  w.ability:SetAutoResize(true)
+  local combatIcon = w:CreateNinePartDrawable(TEXTURE_PATH.HUD, "background")
+  combatIcon:SetVisible(false)
+  combatIcon:SetCoords(814, 68, 26, 25)
+  combatIcon:SetInset(13, 12, 13, 12)
+  combatIcon:AddAnchor("TOPLEFT", hpBar, -10, -10)
+  combatIcon:AddAnchor("BOTTOMRIGHT", mpBar, 10, 10)
+  w.combatIcon = combatIcon
+  local buffWindow = CreateBuffWindow(id .. ".buffWindow", w, MAX_BUFF_COUNT, true, false)
+  buffWindow:Show(true)
+  w.buffWindow = buffWindow
+  local debuffWindow = CreateBuffWindow(id .. ".debuffWindow", w, MAX_DEBUFF_COUNT, false, false)
+  debuffWindow:Show(true)
+  debuffWindow:AddAnchor("TOPLEFT", w.buffWindow, "BOTTOMLEFT", 0, 0)
+  w.debuffWindow = debuffWindow
+  local eventWindow = CreateEmptyWindow(id .. ".eventWindow", w)
+  eventWindow:AddAnchor("TOPLEFT", w, 0, 0)
+  eventWindow:AddAnchor("BOTTOMRIGHT", w, 0, 0)
+  eventWindow:Show(true)
+  eventWindow:Raise()
+  eventWindow:RegisterForDrag("LeftButton")
+  w.eventWindow = eventWindow
+  local leaderMark = CreateLeaderMark(id .. ".leaderMark", w)
+  leaderMark:Show(false)
+  leaderMark:AddAnchor("LEFT", name, "RIGHT", 3, 1)
+  w.leaderMark = leaderMark
+  local lootIcon = CreateLootIconWidget(w)
+  lootIcon:Show(false)
+  lootIcon:AddAnchor("LEFT", hpBar, "RIGHT", 3, 0)
+  local pvpIcon = CreatePvpIconWidget(w)
+  pvpIcon:Show(false)
+  pvpIcon:AddAnchor("TOP", lootIcon, "BOTTOM", 0, 3)
+  local marker = w:CreateImageDrawable(TEXTURE_PATH.MAP_ICON, "overlay")
+  marker:SetVisible(false)
+  marker:SetExtent(24, 24)
+  w.marker = marker
+  return w
+end

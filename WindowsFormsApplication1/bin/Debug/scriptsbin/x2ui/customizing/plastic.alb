@@ -1,0 +1,617 @@
+local titleMargin, sideMargin, bottomMargin = GetWindowMargin()
+local SetPlasticWindowFunction = function(window)
+  local mixMode = false
+  function window:SetRaceGender(race, gender)
+    self.race = race
+    self.gender = gender
+    if IsBeautyShop() then
+      self.bg:SetColor(BEAUTYSHOP_COLOR[1], BEAUTYSHOP_COLOR[2], BEAUTYSHOP_COLOR[3], BEAUTYSHOP_COLOR[4])
+      self.bg_deco:SetColor(BEAUTYSHOP_COLOR[1], BEAUTYSHOP_COLOR[2], BEAUTYSHOP_COLOR[3], BEAUTYSHOP_COLOR[4])
+    else
+      self.bg:SetColor(RACE_COLOR_TABEL[race][1], RACE_COLOR_TABEL[race][2], RACE_COLOR_TABEL[race][3], RACE_COLOR_TABEL[race][4])
+      self.bg_deco:SetColor(RACE_COLOR_TABEL[race][1], RACE_COLOR_TABEL[race][2], RACE_COLOR_TABEL[race][3], RACE_COLOR_TABEL[race][4])
+    end
+    InitCustomizingParam()
+  end
+  function window:ClearSelectedItem()
+    self.presetWindow:ClearSelectedItem()
+    self.detailWindow:ClearSelectedItem()
+  end
+  function window:ResetUI()
+    self.portraitWindow:Init()
+    window:SelectPresetType(FACE)
+    window:ToggleDetailWindow(false)
+    self:ResetSaveData()
+  end
+  function window:SelectPresetType(type)
+    self.type = type
+    self.buttonMenu:SelectPresetType(type)
+    self.detailButton:SelectPresetType(type)
+    self.portraitWindow:SelectPresetType(type)
+    self.presetWindow:SelectPresetType(type)
+    self.detailWindow:SelectPresetType(type)
+    if self.detailWindow:IsVisible() then
+      self.portraitWindow:Enable(false, true)
+      self.presetWindow:Enable(false, true)
+    end
+  end
+  function window:ToggleDetailWindow(show)
+    local isVisible = not self.detailWindow:IsVisible()
+    if show ~= nil then
+      isVisible = show
+    end
+    self.detailWindow:Show(isVisible)
+    self.buttonMenu.buttons[FACE]:Enable(not isVisible)
+    self.portraitWindow:Enable(not isVisible, true)
+    self.presetWindow:Enable(not isVisible, true)
+    if isVisible then
+      ReadyToModifyDetail()
+    end
+    self:ShowSaveWindow(not isVisible, 500)
+    self.detailWindow:ToggleDetailWindow()
+  end
+  function window:Init()
+    self.buttonMenu:Init()
+    self.portraitWindow:Init()
+    self.presetWindow:Init()
+    self.detailWindow:Init()
+    self:ResetSaveData()
+    self:SelectPresetType(FACE)
+    mixMode = false
+    InitCustomizingParam()
+  end
+  function window:ReadyToMix()
+    X2Customizer:SaveCurrentParam(0)
+    self.buttonMenu:ReadyToMix()
+    self.portraitWindow:ReadyToMix()
+    self.presetWindow:ReadyToMix()
+    self.detailWindow:ReadyToMix()
+    self.detailButton:ReadyToMix()
+    self:ShowSaveWindow(false, 500)
+    mixMode = true
+  end
+  function window:CancelToMix()
+    CancelToMix()
+    self.buttonMenu:CancelToMix()
+    self.portraitWindow:CancelToMix()
+    self.presetWindow:CancelToMix()
+    self.detailButton:CancelToMix()
+    self:ShowSaveWindow(true, 500)
+    mixMode = false
+  end
+  function window:ConfirmToMix()
+    ConfirmToMix()
+    self.buttonMenu:ConfirmToMix()
+    self.portraitWindow:ConfirmToMix()
+    self.presetWindow:ConfirmToMix()
+    self.detailButton:ConfirmToMix()
+    self:ShowSaveWindow(true, 500)
+    mixMode = false
+  end
+  function window:SelectPresetItem(index)
+    if not mixMode then
+      SelectPresetItem(self.type, (index - 1) % MAX_VIEW_PRESET_COUNT + 1, true)
+    else
+      self.portraitWindow:SelectPresetItem(self.type, index)
+    end
+  end
+  function window:ConfirmToModifyDetail(isModified)
+    ConfirmToModifyDetail()
+    self.presetWindow:ResetSelectedIndex(isModified)
+  end
+  function window:CancelToModifyDetail()
+    CancelToModifyDetail()
+  end
+end
+local SetButtonMenuFunction = function(window, parent)
+  for i = 1, #window.buttons do
+    do
+      local button = window.buttons[i]
+      function button:OnClick()
+        parent:SelectPresetType(i)
+      end
+      button:SetHandler("OnClick", button.OnClick)
+    end
+  end
+  function window:SelectPresetType(type)
+    local color
+    if IsBeautyShop() then
+      color = GetBeautyShopButtonMenuFontColor()
+    else
+      color = GetLoginStageButtonMenuFontColor()
+    end
+    for i = 1, #window.buttons do
+      if i == type then
+        SetBGPushed(window.buttons[i], true, color)
+      else
+        SetBGPushed(window.buttons[i], false, color)
+      end
+    end
+  end
+  function window:ReadyToMix()
+    if parent.type == FACE then
+      window.buttons[EYES]:Enable(false)
+      window.buttons[NOSE]:Enable(false)
+      window.buttons[MOUTH]:Enable(false)
+      window.buttons[SHAPE]:Enable(false)
+    else
+      window.buttons[FACE]:Enable(false)
+    end
+  end
+  function window:CancelToMix()
+    self:Init()
+  end
+  function window:ConfirmToMix()
+    self:Init()
+  end
+  function window:Init()
+    for i = 1, #window.buttons do
+      window.buttons[i]:Enable(true)
+    end
+  end
+end
+local SetPortraitWindowFunction = function(window, parent)
+  local mixedIndex = {}
+  local sliderValue = {}
+  for i = 1, MAX_PRESET_TYPE do
+    mixedIndex[i] = 0
+    sliderValue[i] = 50
+  end
+  function window:SelectPresetType(type)
+    local str = locale.characterCreate.choiceMixPart(locale.characterCreate.customPresetType[type])
+    self.presetLabel:SetText(str)
+    if not self.readyMixButton:IsVisible() then
+      if mixedIndex[type] == 0 then
+        window:ReadyToMix()
+        sliderValue[type] = 50
+        window.slider:SetValue(sliderValue[type], false)
+      else
+        window:SelectPresetItem(type, mixedIndex[type])
+      end
+    end
+  end
+  function window:Init()
+    self.presetWnd:Show(false)
+    self.presetLabel:Show(false)
+    self.readyMixButton:Show(true)
+    self.mixButton:Show(false)
+    self.okButton:Show(false)
+    self.cancelButton:Show(false)
+    self.slider:Show(false)
+    for i = 1, MAX_PRESET_TYPE do
+      mixedIndex[i] = 0
+      sliderValue[i] = 50
+    end
+  end
+  function window:ReadyToMix()
+    self.presetWnd:Show(false)
+    self.presetLabel:Show(true)
+    self.readyMixButton:Show(false)
+    self.mixButton:Show(true)
+    self.mixButton:Enable(false)
+    self.okButton:Show(true)
+    self.okButton:Enable(false)
+    self.cancelButton:Show(true)
+    self.slider:Show(true)
+    self.slider:SetEnable(false)
+    self.slider:SetValue(sliderValue[parent.type], false)
+  end
+  function window:SelectToMix()
+    self.presetWnd:Show(true)
+    self.presetLabel:Show(false)
+    self.readyMixButton:Show(false)
+    self.mixButton:Show(true)
+    self.mixButton:Enable(true)
+    self.okButton:Show(true)
+    self.okButton:Enable(true)
+    self.cancelButton:Show(true)
+    self.slider:Show(true)
+    self.slider:SetEnable(true)
+  end
+  function window:CancelToMix()
+    self:Init()
+  end
+  function window:ConfirmToMix()
+    self:Init()
+  end
+  function window:SelectPresetItem(type, index)
+    self:SelectToMix()
+    self.presetWnd:SetPresetItem(parent.race, parent.gender, type, index)
+    if mixedIndex[type] ~= index then
+      mixedIndex[type] = index
+      sliderValue[type] = 50
+    end
+    window.slider:SetValue(sliderValue[type], false)
+    if index ~= 0 then
+      MixWithPresetItem(type, index, window.slider:GetValue(), false)
+    end
+  end
+  function window.readyMixButton:OnClick()
+    parent:ReadyToMix()
+  end
+  window.readyMixButton:SetHandler("OnClick", window.readyMixButton.OnClick)
+  function window.cancelButton:OnClick()
+    parent:CancelToMix()
+  end
+  window.cancelButton:SetHandler("OnClick", window.cancelButton.OnClick)
+  function window.okButton:OnClick()
+    parent:ConfirmToMix()
+  end
+  window.okButton:SetHandler("OnClick", window.okButton.OnClick)
+  function window.mixButton:OnClick()
+    MixWithPresetItem(parent.type, mixedIndex[parent.type], window.slider:GetValue(), true)
+  end
+  window.mixButton:SetHandler("OnClick", window.mixButton.OnClick)
+  function window.slider:OnSliderChanged(value)
+    if sliderValue[parent.type] ~= value then
+      sliderValue[parent.type] = value
+      MixWithPresetItem(parent.type, mixedIndex[parent.type], value, false)
+    end
+  end
+  window.slider:SetHandler("OnSliderChanged", window.slider.OnSliderChanged)
+end
+local SetPresetWindowFunction = function(window, parent)
+  window.selectedPage = {}
+  window.selectedItem = {}
+  window.backupItem = {}
+  for i = 1, MAX_VIEW_PRESET_COUNT do
+    do
+      local btn = window.item[i]
+      function btn:OnClick()
+        parent:SelectPresetItem(btn.index)
+        window.selectedItem[parent.type] = btn.index
+        if parent.type == FACE then
+          window.selectedItem[EYES] = 0
+          window.selectedItem[NOSE] = 0
+          window.selectedItem[MOUTH] = 0
+          window.selectedItem[SHAPE] = 0
+        else
+          window.selectedItem[FACE] = 0
+        end
+        window:UpdateSelect()
+      end
+      btn:SetHandler("OnClick", btn.OnClick)
+      function btn:OnEnter()
+        local tooltipMsg
+        if window.backupItem[parent.type] == btn.index then
+          tooltipMsg = locale.characterCreate.samePreset
+        else
+          if btn.index > 3 then
+            return
+          end
+          local strRace = GetRaceStr(parent.race)
+          local strGender = GetGenderStr(parent.gender)
+          local userPresetKey = string.format("user_preset_%d_%s_%s", btn.index, strRace, strGender)
+          tooltipMsg = GetCommonText(userPresetKey)
+        end
+        if tooltipMsg and string.len(tooltipMsg) > 0 then
+          SetTargetAnchorTooltip(tooltipMsg, "TOP", self, "BOTTOM", 0, -2)
+          local screenWidth = UIParent:GetScreenWidth()
+          local posX, posY = self:GetEffectiveOffset()
+          posX = posX + self:GetWidth() / 2
+          local overOffsetX = screenWidth - (posX + tooltip.window:GetWidth() / 2)
+          if overOffsetX < 0 then
+            tooltip.window:RemoveAllAnchors()
+            tooltip.window:AddAnchor("TOP", self, "BOTTOM", overOffsetX, -2)
+          end
+        end
+      end
+      btn:SetHandler("OnEnter", btn.OnEnter)
+      function btn:OnLeave()
+        HideTooltip()
+      end
+      btn:SetHandler("OnLeave", btn.OnLeave)
+    end
+  end
+  function window:SelectPresetType(type)
+    local page = window.selectedPage[type]
+    local dataCount = X2Customizer:GetCustomPresetCount(type)
+    for i = 1, MAX_VIEW_PRESET_COUNT do
+      if i > dataCount - (page - 1) * MAX_VIEW_PRESET_COUNT then
+        self.item[i]:Show(false)
+        self.item[i].icon:SetVisible(false)
+      else
+        self.item[i]:SetPresetItem(parent.race, parent.gender, type, (page - 1) * MAX_VIEW_PRESET_COUNT + i)
+        self.item[i]:Show(true)
+        self.item[i].icon:SetVisible(true)
+      end
+    end
+    self.pageControl:Show(dataCount > MAX_VIEW_PRESET_COUNT)
+    self.pageControl:SetPageByItemCount(dataCount, MAX_VIEW_PRESET_COUNT)
+    self.pageLabel:SetText(locale.characterCreate.titleText(locale.characterCreate.customPresetType[type]))
+    X2Customizer:InitSubParam(type, page)
+    window:UpdateSelect()
+  end
+  function window:Init()
+    for i = 1, MAX_VIEW_PRESET_COUNT do
+      ChangeButtonSkin(self.item[i], BUTTON_LOGINSTAGE.PRESET[parent.race])
+    end
+    for i = 1, MAX_PRESET_TYPE do
+      window.selectedPage[i] = 1
+      window.selectedItem[i] = 0
+      window.backupItem[i] = 0
+    end
+    if not X2LoginCharacter:IsRecustomizing() then
+      window.selectedItem[FACE] = X2Customizer:GetRaceDefaultPresetIndex(parent.race, parent.gender) + 1
+    end
+  end
+  function window:ReadyToMix()
+    for i = 1, MAX_PRESET_TYPE do
+      window.backupItem[i] = window.selectedItem[i]
+      window.selectedItem[i] = 0
+    end
+    window:UpdateSelect()
+  end
+  function window:CancelToMix()
+    for i = 1, MAX_PRESET_TYPE do
+      window.selectedItem[i] = window.backupItem[i]
+      window.backupItem[i] = 0
+    end
+    window:UpdateSelect()
+  end
+  function window:ConfirmToMix()
+    local clearAll = window.selectedItem[FACE] ~= 0
+    for i = 1, MAX_PRESET_TYPE do
+      if window.selectedItem[i] ~= 0 or clearAll or i == FACE then
+        window.selectedItem[i] = 0
+      else
+        window.selectedItem[i] = window.backupItem[i]
+      end
+      window.backupItem[i] = 0
+    end
+    window:UpdateSelect()
+  end
+  function window.pageControl:OnPageChanged(pageIndex, countPerPage)
+    window.selectedPage[parent.type] = pageIndex
+    window:SelectPresetType(parent.type)
+  end
+  function window:UpdateSelect()
+    for i = 1, MAX_VIEW_PRESET_COUNT do
+      SetBGPushed(window.item[i], window.item[i].index == window.selectedItem[parent.type])
+      window.item[i]:Enable(window.backupItem[parent.type] ~= i)
+      if window.backupItem[parent.type] == i then
+        window.item[i].icon:SetColor(1, 1, 1, 0.4)
+      else
+        window.item[i].icon:SetColor(1, 1, 1, 1)
+      end
+    end
+  end
+  function window:ResetSelectedIndex(modified)
+    for i = 1, MAX_PRESET_TYPE do
+      if modified[i] == true then
+        window.selectedItem[i] = 0
+        window.selectedItem[FACE] = 0
+      end
+    end
+    window:UpdateSelect()
+  end
+  function window:ClearSelectedItem()
+    for i = 1, MAX_PRESET_TYPE do
+      window.selectedItem[i] = 0
+    end
+    window:UpdateSelect()
+  end
+end
+local SetDetailButtonFunction = function(button, parent)
+  function button:OnClick()
+    parent:ToggleDetailWindow()
+  end
+  button:SetHandler("OnClick", button.OnClick)
+  function button:SelectPresetType(type)
+    if type == FACE then
+      self:Show(false)
+    else
+      self:Show(true)
+    end
+  end
+  function button:ReadyToMix()
+    self:Enable(false)
+  end
+  function button:CancelToMix()
+    self:Enable(true)
+  end
+  function button:ConfirmToMix()
+    self:Enable(true)
+  end
+end
+local SetDetailWindowFunction = function(window, parent)
+  local isModified = {}
+  for i = 1, MAX_PRESET_TYPE do
+    isModified[i] = false
+  end
+  local OnEnter = function(self)
+    SetTooltip(locale.characterCreate.smileTip, self)
+  end
+  window.smileBtn.textButton:SetHandler("OnEnter", OnEnter)
+  local OnLeave = function()
+    HideTooltip()
+  end
+  window.smileBtn.textButton:SetHandler("OnLeave", OnLeave)
+  for i = 1, MAX_PART_DETAIL_COUNT do
+    do
+      local control = window.controller[i]
+      function control:OnEnter()
+        ShowModifierTexture(parent.type, control.slider.targetIndex, window.guideWnd.face, window.guideWnd)
+        window.guideWnd.selectBodyPartsLabel:SetText(control.label.tooltip)
+      end
+      control:SetHandler("OnEnter", control.OnEnter)
+      function control:OnLeave()
+        HideModifierTexture(parent.type)
+        window.guideWnd.selectBodyPartsLabel:SetText("")
+      end
+      control:SetHandler("OnLeave", control.OnLeave)
+      function control.slider:OnSliderChanged(arg)
+        local value = control.slider:GetValue()
+        control.valueLabel:SetText(tostring(math.floor(value)))
+        ModifyFaceDetail(control.slider.targetIndex, value)
+        isModified[parent.type] = true
+      end
+      control.slider:SetHandler("OnSliderChanged", control.slider.OnSliderChanged)
+    end
+  end
+  local isSmile = false
+  function window.smileBtn:CheckBtnCheckChagnedProc(arg)
+    isSmile = arg
+    DoSmile(arg)
+  end
+  function window:InitModifierList(type)
+    if type == nil or type == 1 then
+      type = 2
+    end
+    self:SetTitle(locale.characterCreate.detailTitleText(locale.characterCreate.customPartList[type]))
+    local totalHeight = 5
+    ResetScroll(self.scrollWindow, 0)
+    local list = GetModifierOrderList(parent.race, type)
+    local offsetY = 5
+    local index = 1
+    for i = 1, MAX_PART_DETAIL_COUNT do
+      self.controller[i].slider.targetIndex = -1
+      self.controller[i]:Show(false)
+    end
+    for i = 1, #list do
+      if list[i].index ~= nil then
+        if list[i].index == 0 then
+          offsetY = 20
+        else
+          local mn, mx = GetFaceTargetMinMaxValue(list[i].index)
+          self.controller[index].label:SetText(GetModifierText(list[i].morph))
+          self.controller[index].label.tooltip = GetModifierText(list[i].morph)
+          self.controller[index].slider.targetIndex = list[i].index
+          self.controller[index].slider:SetMinMaxValues(mn, mx, false)
+          self.controller[index].slider:SetValue(GetFaceTargetCurValue(list[i].index), false)
+          self.controller[index].valueLabel:SetText(tostring(math.floor(self.controller[index].slider:GetValue())))
+          self.controller[index]:Show(true)
+          if index == 1 then
+            self.controller[index]:AddAnchor("TOPLEFT", self.scrollWindow.content, 0, offsetY)
+          else
+            self.controller[index]:AddAnchor("TOPLEFT", self.controller[index - 1], "BOTTOMLEFT", 0, offsetY)
+          end
+          totalHeight = totalHeight + self.controller[index]:GetHeight() + offsetY
+          offsetY = 5
+          index = index + 1
+        end
+      end
+    end
+    if type ~= MOUTH then
+      isSmile = false
+    end
+    window.smileBtn:SetChecked(isSmile)
+    DoSmile(isSmile and type == MOUTH)
+    ResetScroll(self.scrollWindow, totalHeight)
+  end
+  function window:SelectPresetType(type)
+    if type == MOUTH then
+      self.smileBtn:Show(true)
+    else
+      self.smileBtn:Show(false)
+    end
+    window:InitModifierList(type)
+  end
+  function window:Init()
+    self:Show(false)
+  end
+  function window:ReadyToMix()
+    self:Show(false)
+  end
+  function window:OnHide()
+    parent:ToggleDetailWindow(false)
+  end
+  window:SetHandler("OnHide", window.OnHide)
+  local function LeftButtonLeftClickFunc()
+    parent:ConfirmToModifyDetail(isModified)
+    window:Show(false)
+  end
+  window.leftButton:SetHandler("OnClick", LeftButtonLeftClickFunc)
+  local function RightButtonLeftClickFunc()
+    parent:CancelToModifyDetail()
+    window:Show(false)
+  end
+  window.rightButton:SetHandler("OnClick", RightButtonLeftClickFunc)
+  window.titleBar.closeButton:SetHandler("OnClick", RightButtonLeftClickFunc)
+  function window:ToggleDetailWindow()
+    self:InitModifierList(parent.type)
+    for i = 1, MAX_PRESET_TYPE do
+      isModified[i] = false
+    end
+  end
+  function window:ClearSelectedItem()
+    parent:ToggleDetailWindow(false)
+  end
+end
+function CreatePlasticWindow(id, parent)
+  local window = parent:CreateChildWidget("emptywidget", id, 0, true)
+  local bg = window:CreateNinePartDrawable(LOGIN_STAGE_TEXTURE_PATH.REMNANTS, "background")
+  bg:SetCoords(1021, 0, 3, 440)
+  bg:SetInset(1, 100, 1, 339)
+  bg:AddAnchor("TOPLEFT", window, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", window, 0, -150)
+  window.bg = bg
+  local bg_deco = window:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.REMNANTS, "background")
+  bg_deco:SetCoords(761, 0, 259, 196)
+  bg_deco:AddAnchor("TOPLEFT", window, 97, 0)
+  bg_deco:AddAnchor("TOPRIGHT", window, 0, 0)
+  bg_deco:SetColor(1, 1, 1, 1)
+  bg_deco:SetHeight(271)
+  window.bg_deco = bg_deco
+  local buttonMenu = CreatePlasticButtonMenu("buttonMenu", window)
+  buttonMenu:AddAnchor("TOPLEFT", window, "TOPLEFT", 0, 0)
+  SetButtonMenuFunction(buttonMenu, window)
+  window.buttonMenu = buttonMenu
+  local detailButton = CreateEmptyButton(id .. ".detailButton", window)
+  detailButton:AddAnchor("TOP", buttonMenu, "BOTTOM", -15, 0)
+  ApplyButtonSkin(detailButton, BUTTON_LOGINSTAGE.CUSTOM_DETAIL)
+  window.detailButton = detailButton
+  SetDetailButtonFunction(detailButton, window)
+  local portraitWindow = CreatePortraitWindow("portraitWindow", window)
+  portraitWindow:AddAnchor("TOPLEFT", buttonMenu, "TOPRIGHT", 0, sideMargin / 4)
+  SetPortraitWindowFunction(portraitWindow, window)
+  local presetWindow = CreatePresetWindow("presetWindow", window)
+  presetWindow:AddAnchor("TOPLEFT", portraitWindow, "BOTTOMLEFT", 0, 10)
+  SetPresetWindowFunction(presetWindow, window)
+  window:SetWidth(buttonMenu:GetWidth() + presetWindow:GetWidth() + MARGIN.WINDOW_SIDE)
+  local detailWindow = CreateDetailWindow("detailWindow", window)
+  detailWindow:AddAnchor("TOPRIGHT", "UIParent", -20, 50)
+  detailWindow:Show(false)
+  window.detailWindow = detailWindow
+  SetDetailWindowFunction(detailWindow, window)
+  local featureSet = X2Player:GetFeatureSet()
+  if not featureSet.beautyshopBypass then
+    local saveWindow = CreateSaveWindow(id .. "saveWindow", window)
+    saveWindow:AddAnchor("BOTTOMLEFT", window, 0, -5)
+    window.saveWindow = saveWindow
+  end
+  SetPlasticWindowFunction(window)
+  function window:SetBeautyShopStyle()
+    ApplyTextColor(presetWindow.pageLabel, FONT_COLOR.LOGIN_STAGE_BROWN)
+    buttonMenu:SetButtonMenuBeautyShopStyle()
+  end
+  function window:ResetSaveData()
+    if self.saveWindow ~= nil then
+      self.saveWindow:ResetData()
+    end
+  end
+  function window:ShowSaveWindow(flag, delay)
+    if self.saveWindow ~= nil then
+      self.saveWindow:Show(flag, delay)
+    end
+    if self.customSaveWnd ~= nil then
+      self.customSaveWnd:Show(flag, delay)
+    end
+  end
+  return window
+end
+function GetMaxFaceTargets(type)
+  if type > 1 then
+    return X2Customizer:GetNumFaceTargets(type - 1)
+  end
+  return 0
+end
+function GetFaceTargetIndex(type, index)
+  return X2Customizer:GetFaceTargetIndex(type - 1, index - 1)
+end
+function GetFaceTargetName(index)
+  return X2Customizer:GetFaceTargetName(index)
+end
+function GetFaceTargetMinMaxValue(index)
+  return X2Customizer:GetFaceTargetMinValue(index), X2Customizer:GetFaceTargetMaxValue(index)
+end

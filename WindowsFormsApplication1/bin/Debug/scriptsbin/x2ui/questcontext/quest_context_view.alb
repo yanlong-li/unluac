@@ -1,0 +1,60 @@
+function SetViewOfRewardSelectiveItem(id, parent)
+  local itemWnd = parent:CreateChildWidget("button", "itemWnd", 0, true)
+  itemWnd:Show(false)
+  ApplyButtonSkin(itemWnd, BUTTON_CONTENTS.QUEST_REWARD_ITEM)
+  local button = CreateItemIconButton(id .. ".button", itemWnd)
+  button:Show(true)
+  button:AddAnchor("LEFT", itemWnd, 0, 0)
+  itemWnd.button = button
+  return itemWnd
+end
+function SetViewOfRewardItem(id, parent, target, offset)
+  local nameLabel = CreateLabel(id[2], parent)
+  nameLabel:SetExtent(250, 53)
+  nameLabel:SetInset(50, 0, 0, 0)
+  nameLabel:AddAnchor("TOPLEFT", target, "BOTTOMLEFT", 0, (offset - 1) * 60 + 15)
+  nameLabel.style:SetAlign(ALIGN_LEFT)
+  nameLabel:SetLimitWidth(true)
+  ApplyTextColor(nameLabel, FONT_COLOR.REWARD)
+  local button = CreateItemIconButton(id[1], nameLabel)
+  button:Show(true)
+  button:AddAnchor("LEFT", nameLabel, 0, 0)
+  local bg = nameLabel:CreateImageDrawable(TEXTURE_PATH.REWARD, "background")
+  bg:SetCoords(0, 0, 198, 64)
+  bg:SetExtent(200, 71)
+  bg:AddAnchor("LEFT", button, "RIGHT", -10, 0)
+  return nameLabel, button
+end
+function MoveWindowTo(target, dst, moveType)
+  local finalX, finalY = 0, 0
+  local x, y = dst:GetOffset()
+  local cx, cy = dst:GetExtent()
+  local dx, dy = target:GetExtent()
+  local centerX = (x + x + cx) / 2
+  local width = UIParent:GetScreenWidth()
+  local isLeftSide = centerX < width / 2
+  if isLeftSide then
+    finalX = x + cx
+  else
+    finalX = x - dx
+  end
+  local height = UIParent:GetScreenHeight()
+  local isBottomCliped = height < y + dy
+  if isBottomCliped then
+    finalY = y - (y + dy - height)
+  else
+    finalY = y
+  end
+  target:RemoveAllAnchors()
+  target:AddAnchor("TOPLEFT", "UIParent", finalX, finalY)
+end
+questContext = CreateEmptyWindow("questContext", "UIParent")
+questContext.notifierGrid = {}
+questContext.notifierGrid.height = 300
+questContext.notifierGrid.taskMarkInset = {
+  -10,
+  2,
+  0,
+  0
+}
+questContext.notifierGrid.lastRowHeight = 0

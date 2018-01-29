@@ -1,0 +1,6 @@
+playerCastingBar = CreateCastingBar("playerCastingBar", "UIParent", "player")
+playerCastingBar:RegisterEvent("SPELLCAST_START")
+playerCastingBar:RegisterEvent("SPELLCAST_STOP")
+playerCastingBar:RegisterEvent("SPELLCAST_SUCCEEDED")
+playerCastingBar:AddAnchor("BOTTOM", "UIParent", 0, -150)
+playerCastingBar:Show(false)

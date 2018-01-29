@@ -1,0 +1,10 @@
+if X2Util:GetGameProvider() == TRION and X2Locale:GetLocale() == "en_us" then
+  rankingLocale.columnWidth = {
+    80,
+    50,
+    175,
+    190,
+    120,
+    120
+  }
+end

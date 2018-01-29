@@ -1,0 +1,4 @@
+if unitframeLocale == nil then
+  unitframeLocale = {}
+end
+unitframeLocale.tooltipForceLeft = false

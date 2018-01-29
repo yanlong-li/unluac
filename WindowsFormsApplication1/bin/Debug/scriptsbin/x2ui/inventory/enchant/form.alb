@@ -1,0 +1,296 @@
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+FORM_ENCHANT_WINDOW = {
+  GUIDE_ICON_ANCHOR = {0, 5},
+  UPPER_FRAME_HEIGHT = 55,
+  BOTTOM_FRAME_HEIGHT = 260
+}
+WINDOW_ENCHANT = {
+  GRADE_ENCHANT_TAB = {
+    MAGIC_SQUARE = {
+      COORDS = {
+        0,
+        0,
+        256,
+        256
+      },
+      EXTENT = {288, 288},
+      ANCHOR = {0, 50}
+    },
+    SLOT_ENCHANT_ITEM = {
+      ANCHOR = {10, -50},
+      EXTENT = {
+        ICON_SIZE.SLAVE,
+        ICON_SIZE.SLAVE
+      }
+    },
+    SLOT_SUPPORT_ITEM = {
+      ANCHOR = {-10, -50},
+      EXTENT = {
+        ICON_SIZE.SLAVE,
+        ICON_SIZE.SLAVE
+      },
+      TOOLTIP = X2Locale:LocalizeUiText(COMMON_TEXT, "grade_enchant_support_item_tooltip", FONT_COLOR_HEX.SOFT_YELLOW)
+    },
+    SLOT_SUPPORT_ITEM_LABEL = {
+      HEIGHT = FONT_SIZE.LARGE,
+      FONT_PATH = FONT_PATH.SNAIL,
+      FONT_SIZE = FONT_SIZE.LARGE,
+      TEXT = X2Locale:LocalizeUiText(COMMON_TEXT, "grade_enchant_support_item"),
+      COLOR = FONT_COLOR.ROLE_NONE,
+      ANCHOR = {0, 5}
+    },
+    RESULT_WINDOW = {
+      ANCHOR = {0, 345},
+      HEIGHT = 100
+    },
+    RESULT_WINDOW_HORIZON_LINE = {
+      ANCHOR = {0, 39},
+      EXTENT = {400, 3},
+      COLOR = {
+        1,
+        1,
+        1,
+        0.5
+      }
+    },
+    SUCCESS_POSSIBILITY = {
+      ANCHOR = {0, 5},
+      HEIGHT = LIST_COLUMN_HEIGHT,
+      COLOR = FONT_COLOR.DEFAULT,
+      TEXT = X2Locale:LocalizeUiText(COMMON_TEXT, "grade_enchant_success_possibility")
+    },
+    SUCCESS_POSSIBILITY_RESULT = {
+      ANCHOR = {0, 8}
+    },
+    DESTROY_POSSIBILITY = {
+      ANCHOR = {0, 0},
+      HEIGHT = LIST_COLUMN_HEIGHT,
+      COLOR = FONT_COLOR.DEFAULT,
+      TEXT = X2Locale:LocalizeUiText(COMMON_TEXT, "grade_enchant_destroy_possibility")
+    },
+    DESTROY_POSSIBILITY_RESULT = {
+      ANCHOR = {0, 8}
+    },
+    DOWNGRADE_POSSIBILITY = {
+      ANCHOR = {0, 0},
+      HEIGHT = LIST_COLUMN_HEIGHT,
+      COLOR = FONT_COLOR.DEFAULT,
+      TEXT = X2Locale:LocalizeUiText(COMMON_TEXT, "grade_enchant_downgrade_possibility")
+    },
+    DOWNGRADE_POSSIBILITY_RESULT = {
+      ANCHOR = {0, 8}
+    },
+    RESULT_UPGRADE = {
+      COORDS = {
+        413,
+        0,
+        27,
+        37
+      },
+      EXTENT = {27, 37}
+    },
+    RESULT_UPGRADE_2 = {
+      COORDS = {
+        413,
+        0,
+        54,
+        37
+      },
+      EXTENT = {54, 37}
+    },
+    RESULT_UPGRADE_3 = {
+      COORDS = {
+        413,
+        0,
+        81,
+        37
+      },
+      EXTENT = {81, 37}
+    },
+    RESULT_DOWNGRADE = {
+      COORDS = {
+        413,
+        37,
+        27,
+        -37
+      },
+      EXTENT = {27, 37}
+    },
+    RESULT_DOWNGRADE_2 = {
+      COORDS = {
+        413,
+        37,
+        54,
+        -37
+      },
+      EXTENT = {54, 37}
+    },
+    RESULT_DOWNGRADE_3 = {
+      COORDS = {
+        413,
+        37,
+        81,
+        -37
+      },
+      EXTENT = {81, 37}
+    },
+    RESULT_O = {
+      COORDS = {
+        384,
+        0,
+        29,
+        30
+      },
+      EXTENT = {29, 30}
+    },
+    RESULT_X = {
+      COORDS = {
+        384,
+        30,
+        29,
+        30
+      },
+      EXTENT = {29, 30}
+    },
+    MONEY = {
+      ANCHOR = {0, 16},
+      TEXT = X2Locale:LocalizeUiText(STABLER_TEXT, "cost")
+    },
+    WARNING_TEXT = {
+      LINE_SPACE = TEXTBOX_LINE_SPACE.MIDDLE,
+      COLOR = FONT_COLOR.RED,
+      TEXT = {
+        MAX_GRADE = GetCommonText("grade_enchant_max_grade_warning"),
+        DEFAULT = GetCommonText("grade_enchant_warning")
+      }
+    },
+    BOTTOM_BUTTON_STR = {
+      LEFT = X2Locale:LocalizeUiText(MSG_BOX_BTN_TEXT, "inlay"),
+      RIGHT = locale.common.cancel
+    }
+  },
+  SOCKET_ENCHANT_TAB = {
+    SOCKET_ITEM = {
+      BG = {
+        COORDS = {
+          128,
+          0,
+          128,
+          97
+        },
+        EXTENT = {128, 97},
+        ANCHOR = {-9, -6}
+      },
+      TARGET_TEXT = GetCommonText("socket_enchant_equipment"),
+      ENCHANT_TEXT = GetCommonText("socket_enchant_socket_item"),
+      FONT_COLOR = FONT_COLOR.PURPLE,
+      TOOLTIP = X2Locale:LocalizeUiText(COMMON_TEXT, "enchant_socket_item_tooltip", FONT_COLOR_HEX.SOFT_YELLOW)
+    },
+    CONVERT_ITEM = {
+      BG = {
+        COORDS = {
+          256,
+          0,
+          128,
+          97
+        },
+        EXTENT = {128, 97},
+        ANCHOR = {-8, -6}
+      },
+      TARGET_TEXT = GetCommonText("socket_convert_equipment"),
+      ENCHANT_TEXT = GetCommonText("socket_enchant_convert_item"),
+      FONT_COLOR = FONT_COLOR.GRAY_PURPLE,
+      TOOLTIP = X2Locale:LocalizeUiText(COMMON_TEXT, "enchant_convert_item_tooltip", FONT_COLOR_HEX.SOFT_YELLOW)
+    },
+    EXTRACT_ITEM = {
+      BG = {
+        COORDS = {
+          256,
+          0,
+          128,
+          97
+        },
+        EXTENT = {128, 97},
+        ANCHOR = {-8, -6}
+      },
+      TARGET_TEXT = GetCommonText("socket_extract_equipment"),
+      ENCHANT_TEXT = GetCommonText("socket_enchant_extract_item"),
+      FONT_COLOR = FONT_COLOR.GRAY_PURPLE,
+      TOOLTIP = X2Locale:LocalizeUiText(COMMON_TEXT, "enchant_extract_item_tooltip", FONT_COLOR_HEX.SOFT_YELLOW)
+    },
+    SOCKET_INFO_FRAME = {
+      ITEM_ICON_EXTENT = {
+        ICON_SIZE.APPELLAITON,
+        ICON_SIZE.APPELLAITON
+      },
+      ITEM_NAME = {
+        LINE_SPACE = TEXTBOX_LINE_SPACE.MIDDLE,
+        FONT_COLOR = FONT_COLOR.DEFAULT
+      }
+    },
+    CUR_SOCKET_INFO = {
+      ANCHOR = {0, 180},
+      FONT_COLOR = FONT_COLOR.PURPLE
+    },
+    SOCKET_LIST_FRAME_CONVERT = {
+      HEIGHT = 260,
+      ANCHOR = {0, 210}
+    },
+    WARNING_TEXT = {
+      TEXT = {
+        CONVERT = GetCommonText("socket_enchant_waring_text_unsocket"),
+        ALL_SOCKETING = GetCommonText("socket_enchant_waring_text_all_socketing"),
+        EXTRACT = GetCommonText("socket_enchant_waring_text_extract")
+      },
+      LINE_SPACE = TEXTBOX_LINE_SPACE.MIDDLE,
+      FONT_COLOR = FONT_COLOR.RED,
+      ANCHOR = {0, -63}
+    },
+    SPINNER_WND = {
+      EXTENT = {150, 34},
+      ANCHOR = {
+        0,
+        -sideMargin
+      }
+    },
+    BOTTOM_BUTTON_STR = {
+      LEFT = {
+        SOCKETING = GetCommonText("install_enchant_socket"),
+        UNSOCKET = X2Locale:LocalizeUiText(MSG_BOX_BTN_TEXT, "remove"),
+        EXTRACT = GetCommonText("extract")
+      },
+      RIGHT = locale.common.cancel
+    }
+  },
+  GEM_ENCHANT_TAB = {
+    CUR_ENCHAT_INFO = {
+      ANCHOR = {0, 200},
+      FONT_COLOR = FONT_COLOR.GRAY_PINK
+    },
+    WARNING_TEXT = {
+      WIDTH = 390,
+      TEXT = {
+        UNEQUIPED = GetCommonText("gem_enchant_waring_text_unequiped"),
+        EQUIPED = GetCommonText("gem_enchant_waring_text_equiped")
+      },
+      LINE_SPACE = TEXTBOX_LINE_SPACE.MIDDLE,
+      FONT_COLOR = FONT_COLOR.RED,
+      ANCHOR = {0, -63}
+    },
+    BOTTOM_BUTTON_STR = {
+      LEFT = GetCommonText("install_enchant_gem"),
+      RIGHT = locale.common.cancel
+    }
+  },
+  EVOLVING_ENCHANT_TAB = {
+    SUB_MENU = {
+      TEXTS = {
+        GetCommonText("evolving"),
+        GetCommonText("change_evolving_effect")
+      },
+      ANCHOR = {0, 5},
+      HEIGHT = 43
+    },
+    GUIDE_ICON_ANCHOR = {-10, 17}
+  }
+}

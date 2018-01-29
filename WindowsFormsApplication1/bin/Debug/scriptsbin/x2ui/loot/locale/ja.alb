@@ -1,0 +1,9 @@
+if X2Util:GetGameProvider() == GAMEON then
+  function lootLocale:GetItemName(itemName)
+    if itemName == "" then
+      return itemName
+    end
+    local name = X2Util:UTF8StringLimit(itemName, 28, "...")
+    return name
+  end
+end

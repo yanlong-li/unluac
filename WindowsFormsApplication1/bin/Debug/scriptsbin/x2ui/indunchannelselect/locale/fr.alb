@@ -1,0 +1,8 @@
+if X2Util:GetGameProvider() == TRION and X2Locale:GetLocale() == "fr" then
+  WINDOW_INDUN_CHANNEL_SELECT.CHANNEL_STATE_COORDS = {
+    UIParent:GetTextureData(TEXTURE_PATH.INDUN_CHANNEL_SELECT, "icon_Up").coords,
+    UIParent:GetTextureData(TEXTURE_PATH.INDUN_CHANNEL_SELECT, "icon_Moderate").coords,
+    UIParent:GetTextureData(TEXTURE_PATH.INDUN_CHANNEL_SELECT, "icon_Full").coords,
+    UIParent:GetTextureData(TEXTURE_PATH.INDUN_CHANNEL_SELECT, "icon_Maintenance").coords
+  }
+end

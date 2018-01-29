@@ -1,0 +1,96 @@
+local CreateItemListFrame = function(window)
+  local listInfos = {
+    width = auctionLocale.width.bidHistoryListCtrl,
+    height = 431,
+    anchorWidget = nil,
+    columns = {
+      {
+        name = locale.auction.name,
+        width = auctionLocale.nameColWidth.bidHistoryTab,
+        itemType = LCCIT_WINDOW,
+        itemPropFunc = CreateItemName,
+        limitLen = auctionLocale.nameColLimitLen.bidHistoryTab
+      },
+      {
+        name = locale.auction.leftTime,
+        width = auctionLocale.width.timeCol,
+        itemType = LCCIT_STRING,
+        itemPropFunc = CreateItemLeftTime
+      },
+      {
+        name = locale.auction.bidState,
+        width = auctionLocale.width.bidStateCol,
+        itemType = LCCIT_WINDOW,
+        itemPropFunc = CreateItemBiddingState
+      },
+      {
+        name = locale.auction.myBiddingPrice,
+        width = 175,
+        itemType = LCCIT_WINDOW,
+        itemPropFunc = CreateMyBiddingPrice
+      },
+      {
+        name = locale.auction.currentBidPrice,
+        width = 175,
+        itemType = LCCIT_WINDOW,
+        itemPropFunc = CreateItemBiddingPrice
+      }
+    }
+  }
+  CreateAuctionItemList(window, listInfos)
+end
+local CreateBottomFrame = function(window)
+  local availableMoney = CreateTitleMoneyWindow(window:GetId() .. ".availableMoney", window, nil, "vertical")
+  availableMoney:Show(true)
+  availableMoney:AddAnchor("BOTTOMLEFT", window, 0, 0)
+  window.availableMoney = availableMoney
+  local availableAAPoint = CreateTitleMoneyWindow(window:GetId() .. ".availableAAPoint", window, GetUIText(MONEY_TEXT, "aa_point"), "vertical")
+  if F_MONEY.currency.auctionFee == CURRENCY_AA_POINT or F_MONEY.currency.auctionBid == CURRENCY_AA_POINT then
+    availableAAPoint:Show(true)
+  else
+    availableAAPoint:Show(false)
+  end
+  availableAAPoint:AddAnchor("LEFT", availableMoney, "RIGHT", 20, 0)
+  window.availableAAPoint = availableAAPoint
+  if baselibLocale.showMoneyTooltip then
+    local OnEnter = function(self)
+      SetTooltip(locale.moneyTooltip.money, self)
+    end
+    availableMoney:SetHandler("OnEnter", OnEnter)
+    local OnEnter = function(self)
+      SetTooltip(locale.moneyTooltip.aapoint, self)
+    end
+    availableAAPoint:SetHandler("OnEnter", OnEnter)
+  end
+  local marketPriceBtn = CreateMarketPriceBtn("marketPriceBtn", window)
+  window.marketPriceBtn = marketPriceBtn
+  local directButton = window:CreateChildWidget("button", "directButton", 0, true)
+  directButton:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+  directButton:SetText(locale.auction.directBid)
+  ApplyButtonSkin(directButton, BUTTON_BASIC.DEFAULT)
+  if marketPriceBtn == nil then
+    directButton:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+  else
+    marketPriceBtn:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+    directButton:AddAnchor("BOTTOMRIGHT", marketPriceBtn, "BOTTOMLEFT", -5, 0)
+  end
+  local bidButton = window:CreateChildWidget("button", "bidButton", 0, true)
+  bidButton:AddAnchor("TOPRIGHT", directButton, "TOPLEFT", 0, 0)
+  bidButton:SetText(locale.auction.bid)
+  ApplyButtonSkin(bidButton, BUTTON_BASIC.DEFAULT)
+  local buttonTable = {directButton, bidButton}
+  AdjustBtnLongestTextWidth(buttonTable)
+  local moneyEditsWindow
+  if F_MONEY.currency.auctionBid == CURRENCY_AA_POINT then
+    moneyEditsWindow = CreateAAPointEditsWindow(window:GetId() .. ".moneyEditsWindow", window)
+  else
+    moneyEditsWindow = CreateMoneyEditsWindow(window:GetId() .. ".moneyEditsWindow", window)
+  end
+  moneyEditsWindow:AddAnchor("BOTTOMRIGHT", bidButton, "BOTTOMLEFT", 0, -5)
+  moneyEditsWindow:SetStyle("brown")
+  window.moneyEditsWindow = moneyEditsWindow
+end
+function SetViewOfAuctionBidHistoryFrame(window)
+  CreateItemListFrame(window)
+  CreateBottomFrame(window)
+end

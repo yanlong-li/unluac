@@ -1,0 +1,4 @@
+if X2Util:GetGameProvider() == MAILRU then
+  territoryLocale.width = 600
+  territoryLocale.peaceTitleFontSize = FONT_SIZE.LARGE
+end

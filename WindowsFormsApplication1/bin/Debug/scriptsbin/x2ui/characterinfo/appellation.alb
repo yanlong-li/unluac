@@ -1,0 +1,181 @@
+APPELLATION_INFO = {
+  TYPE = 1,
+  NAME = 2,
+  BUFF_INFO = 3
+}
+local ITEM_HEIGHT = 35
+local MAX_COUNT = 6
+function CreateAppellationWindow(id, parent)
+  local window = CreateWindow(id, parent)
+  window:SetExtent(POPUP_WINDOW_WIDTH, 430)
+  window:SetTitle(locale.appellation.title)
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local texts = {
+    locale.appellation.unable,
+    "",
+    "",
+    "",
+    "",
+    ""
+  }
+  local selectAppellationLabel = window:CreateChildWidget("label", "selectAppellationLabel", 0, true)
+  selectAppellationLabel:AddAnchor("TOP", window, 0, titleMargin + 10)
+  selectAppellationLabel:SetAutoResize(true)
+  selectAppellationLabel:SetHeight(FONT_SIZE.LARGE)
+  selectAppellationLabel.style:SetFontSize(FONT_SIZE.LARGE)
+  ApplyTextColor(selectAppellationLabel, FONT_COLOR.GREEN)
+  local selectBuff = CreateItemIconButton(selectAppellationLabel:GetId() .. ".buff", selectAppellationLabel)
+  selectBuff:SetExtent(ICON_SIZE.APPELLAITON, ICON_SIZE.APPELLAITON)
+  selectBuff:AddAnchor("LEFT", selectAppellationLabel, "RIGHT", 5, 0)
+  ApplySlotSkin(selectBuff, selectBuff.back, SLOT_STYLE.BUFF)
+  selectBuff.back:SetColor(TEXTURE_COLOR.SINERGY_BUFF[1], TEXTURE_COLOR.SINERGY_BUFF[2], TEXTURE_COLOR.SINERGY_BUFF[3], 1)
+  window.selectBuff = selectBuff
+  local buff_deco = selectBuff:CreateImageDrawable(TEXTURE_PATH.HUD, "overlay")
+  buff_deco:SetExtent(15, 8)
+  buff_deco:SetColor(TEXTURE_COLOR.SINERGY_BUFF[1], TEXTURE_COLOR.SINERGY_BUFF[2], TEXTURE_COLOR.SINERGY_BUFF[3], 1)
+  buff_deco:SetCoords(733, 168, 15, -8)
+  buff_deco:AddAnchor("BOTTOM", selectBuff, 0, 0)
+  local bg = CreateContentBackground(selectAppellationLabel, "TYPE8")
+  bg:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH + 20, 55)
+  bg:AddAnchor("TOP", window, 0, titleMargin - 12)
+  ApplyTextureColor(bg, TEXTURE_COLOR.TYPE3_BROWN)
+  selectAppellationLabel.bg = bg
+  local inset = sideMargin * 2.3
+  for i = 1, MAX_COUNT do
+    local button = window:CreateChildWidget("button", "button", i, true)
+    button:SetText(texts[i])
+    if i > 1 then
+      inset = sideMargin + 35
+    end
+    button:AddAnchor("TOPLEFT", window, sideMargin, titleMargin + (i - 1) * ITEM_HEIGHT + inset)
+    ApplyButtonSkin(button, BUTTON_CONTENTS.APPELLATION_LIST)
+  end
+  local line = CreateLine(window.button[1], "TYPE1")
+  line:SetColor(1, 1, 1, 0.5)
+  line:AddAnchor("TOPLEFT", window.button[1], "BOTTOMLEFT", 0, 4)
+  line:AddAnchor("TOPRIGHT", window.button[1], "BOTTOMRIGHT", 0, 4)
+  local function ResetButtons()
+    for i = 1, MAX_COUNT do
+      SetBGPushed(window.button[i], false, GetButtonDefaultFontColor())
+    end
+  end
+  for i = 1, MAX_COUNT do
+    local button = window.button[i]
+    function button:OnClick()
+      ResetButtons()
+      SetBGPushed(self, true, GetButtonDefaultFontColor())
+      window.selectedInfo = self.info
+      window:UpdateSelectedAppellation()
+    end
+    button:SetHandler("OnClick", button.OnClick)
+  end
+  for i = 2, MAX_COUNT do
+    local button = window.button[i]
+    local buff = CreateItemIconButton(button:GetId() .. ".buff", button)
+    buff:SetExtent(ICON_SIZE.APPELLAITON, ICON_SIZE.APPELLAITON)
+    buff:AddAnchor("RIGHT", button, 0, 0)
+    ApplySlotSkin(buff, buff.back, SLOT_STYLE.BUFF)
+    buff.back:SetColor(TEXTURE_COLOR.SINERGY_BUFF[1], TEXTURE_COLOR.SINERGY_BUFF[2], TEXTURE_COLOR.SINERGY_BUFF[3], 1)
+    button.buff = buff
+    local buff_deco = buff:CreateImageDrawable(TEXTURE_PATH.HUD, "overlay")
+    buff_deco:SetExtent(15, 8)
+    buff_deco:SetColor(TEXTURE_COLOR.SINERGY_BUFF[1], TEXTURE_COLOR.SINERGY_BUFF[2], TEXTURE_COLOR.SINERGY_BUFF[3], 1)
+    buff_deco:SetCoords(733, 168, 15, -8)
+    buff_deco:AddAnchor("BOTTOM", buff, 0, 0)
+  end
+  local infos = {
+    leftButtonStr = GetCommonText("ok"),
+    rightButtonStr = GetCommonText("cancel")
+  }
+  CreateWindowDefaultTextButtonSet(window, infos)
+  local pageControl = CreatePageControl(window:GetId() .. ".pageControl", window)
+  pageControl:AddAnchor("BOTTOM", window, 0, bottomMargin + -sideMargin / 3)
+  window.pageControl = pageControl
+  function window:UpdateSelectedAppellation()
+    local selectInfo = self.selectedInfo
+    if selectInfo == nil then
+      self.selectAppellationLabel:SetText(locale.appellation.unable)
+      ApplyTextColor(self.selectAppellationLabel, FONT_COLOR.DEFAULT)
+      selectBuff:Show(false)
+      selectAppellationLabel:AddAnchor("TOP", window, 0, titleMargin + 10)
+      return
+    end
+    self.selectAppellationLabel:SetText(selectInfo[APPELLATION_INFO.NAME])
+    ApplyTextColor(self.selectAppellationLabel, FONT_COLOR.GREEN)
+    local buffInfo = selectInfo[APPELLATION_INFO.BUFF_INFO]
+    if buffInfo ~= nil then
+      selectBuff:SetTooltip(buffInfo)
+      SetIconBackGround(selectBuff, buffInfo.path)
+      selectBuff:Show(true)
+    else
+      selectBuff:Show(false)
+    end
+    if selectBuff:IsVisible() then
+      selectAppellationLabel:AddAnchor("TOP", window, -(selectBuff:GetWidth() / 2), titleMargin + 10)
+    else
+      selectAppellationLabel:AddAnchor("TOP", window, 0, titleMargin + 10)
+    end
+  end
+  function window:Reset()
+    ResetButtons()
+    for i = 2, MAX_COUNT do
+      self.button[i]:Show(false)
+      self.button[i].info = nil
+    end
+  end
+  function window:FillAppellationData(page)
+    if page == nil then
+      page = pageControl:GetCurrentPageIndex()
+      self.selectedInfo = X2Player:GetShowingAppellation()
+    end
+    local count = X2Player:GetAppellationCount()
+    local infos = X2Player:GetAppellations(page)
+    pageControl:SetPageByItemCount(count, MAX_COUNT - 1)
+    self:Reset()
+    for k = 1, #infos do
+      local info = infos[k]
+      local button = self.button[k + 1]
+      button.info = info
+      button:Show(true)
+      button:SetText(info[APPELLATION_INFO.NAME])
+      local buff = info[APPELLATION_INFO.BUFF_INFO]
+      if buff ~= nil then
+        button.buff:SetTooltip(buff)
+        SetIconBackGround(button.buff, buff.path)
+        button.buff:Show(true)
+      else
+        button.buff:Show(false)
+      end
+    end
+    if self.selectedInfo == nil then
+      SetBGPushed(self.button[1], true, GetButtonDefaultFontColor())
+    else
+      for j = 2, MAX_COUNT do
+        local info = self.button[j].info
+        if info ~= nil and self.selectedInfo[APPELLATION_INFO.TYPE] == info[APPELLATION_INFO.TYPE] then
+          SetBGPushed(self.button[j], true, GetButtonDefaultFontColor())
+        end
+      end
+    end
+  end
+  local function LeftButtonLeftClickFunc()
+    local type = window.selectedInfo ~= nil and window.selectedInfo[APPELLATION_INFO.TYPE] or 0
+    local result = X2Player:ChangeAppellation(type)
+    window:Show(false)
+    if characterInfo.subtitle[INDEX_APPELLATION].appellationPopupBtn ~= nil then
+      characterInfo.subtitle[INDEX_APPELLATION].appellationPopupBtn:Enable(not result)
+    end
+  end
+  window.leftButton:SetHandler("OnClick", LeftButtonLeftClickFunc)
+  local function RightButtonLeftClickFunc()
+    window:Show(false)
+  end
+  window.rightButton:SetHandler("OnClick", RightButtonLeftClickFunc)
+  function pageControl:OnPageChanged(pageIndex, countPerPage)
+    window:FillAppellationData(pageIndex)
+  end
+  function window:ShowProc()
+    self:UpdateSelectedAppellation()
+  end
+  return window
+end

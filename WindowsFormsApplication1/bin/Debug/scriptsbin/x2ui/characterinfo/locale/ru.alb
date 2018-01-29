@@ -1,0 +1,11 @@
+if X2Util:GetGameProvider() == MAILRU then
+  characetInfoLocale.juryIconCoords = {
+    250,
+    106,
+    66,
+    18
+  }
+  characetInfoLocale.windowWidth = 430
+  characetInfoLocale.TabWidth = 95
+  characetInfoLocale.option = {wndWidth = 305, comboboxTitleWidth = 65}
+end

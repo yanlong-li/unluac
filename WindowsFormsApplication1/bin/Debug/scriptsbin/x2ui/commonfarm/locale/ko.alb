@@ -1,0 +1,27 @@
+if commonFarmLocale == nil then
+  commonFarmLocale = {}
+end
+commonFarmLocale.itemLineSpace = 6
+commonFarmLocale.infoWindowWidth = 510
+commonFarmLocale.myFarm = {
+  windowWidth = 600,
+  colWidth = {
+    165,
+    220,
+    100,
+    75
+  }
+}
+commonFarmLocale.contentFontSize = FONT_SIZE.MIDDLE
+function commonFarmLocale:SetMyFarmLocationColumn(subItem)
+  subItem.style:SetSnap(true)
+  subItem.style:SetShadow(false)
+  subItem:SetInset(0, 5, 0, 0)
+  ApplyTextColor(subItem, FONT_COLOR.DEFAULT)
+end
+function commonFarmLocale:FillLocationColumn(subItem, data)
+  subItem:SetText(tostring(data))
+end
+function commonFarmLocale:ResetLocationColumn(subItem)
+  subItem:SetText("")
+end

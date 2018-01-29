@@ -1,0 +1,32 @@
+if questLocale == nil then
+  questLocale = {}
+end
+questLocale.notifier = {
+  gridWidth = 260,
+  titleDefaultWidth = 215,
+  objectWidth = 215
+}
+questLocale.directing = {
+  message = {
+    lineSpace = 15,
+    width = function(inputWidth)
+      return inputWidth * 0.5
+    end
+  }
+}
+questLocale.guideTipHeight = 8
+questLocale.guideTipIcon = {
+  coords = {
+    7,
+    1,
+    0,
+    1,
+    1
+  }
+}
+function questLocale:GetLeaderShipPointText()
+  return GetUIText(COMMON_TEXT, "leadership_point")
+end
+function questLocale:GetActabilityText(actAbilityName, actAbilityStr)
+  return string.format("%s %s", actAbilityName, actAbilityStr)
+end

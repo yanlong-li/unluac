@@ -1,0 +1,277 @@
+local systemAlert
+local function CreateSystemAlertWindow(id, parent)
+  local wnd = parent:CreateChildWidget("message", "systemAlert", 0, true)
+  wnd.style:SetAlign(ALIGN_CENTER)
+  wnd.style:SetSnap(true)
+  wnd.style:SetShadow(true)
+  wnd.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.XLARGE)
+  wnd:SetLineSpace(2)
+  wnd:SetExtent(UIParent:GetScreenWidth(), 50)
+  wnd:Clickable(false)
+  wnd:SetTimeVisible(2)
+  wnd:SetMaxLines(2)
+  ApplyTextColor(wnd, FONT_COLOR.RED)
+  systemAlert = wnd
+  function wnd:HandleResult(result, arg)
+    local msg = ""
+    if arg ~= nil then
+      if type(arg) == "number" then
+        local fileInfo = X2Customizer:GetCustomDataInfoByIndex(arg)
+        msg = string.format("%s/%s", fileInfo.filepath, fileInfo.fullname)
+      else
+        msg = arg
+      end
+    end
+    if result == CDR_INVALID_RESULT then
+    elseif result == CDR_LOAD_SUCCESS then
+      self:AddMessage(locale.customSaveLoad.customLoadOkMsg(msg))
+    elseif result == CDR_SAVE_SUCCESS then
+      self:AddMessage(locale.customSaveLoad.customSaveMsg(msg))
+    elseif result == CDR_DELETE_SUCCESS then
+      self:AddMessage(locale.customSaveLoad.customDeleteMsg(msg))
+    elseif result == CDR_ERROR_AS_NO_PATH then
+      self:AddMessage(locale.customSaveLoad.customNoPath)
+    elseif result == CDR_ERROR_AS_NO_FILE then
+      self:AddMessage(locale.customSaveLoad.customNoFile)
+    elseif result == CDR_ERROR_AS_SAME_FILE then
+      local CustomSameFile = function(dlg, infoTable)
+        function dlg:OkProc()
+          local result = X2Customizer:SaveCustomData(fileName)
+          systemAlertWindow:HandleResult(result, selectIndex)
+          dlg:Show(false)
+        end
+        function dlg:CancelProc()
+          dlg:Show(false)
+        end
+        dlg:SetTitle(locale.customSaveLoad.customSave)
+        dlg:SetContent(locale.customSaveLoad.customSameFile, true)
+      end
+      X2DialogManager:RequestDefaultDialog(CustomSameFile, "")
+    elseif result == CDR_ERROR_AS_INVALID_DATA then
+      self:AddMessage(locale.customSaveLoad.customInvalidData)
+    elseif result == CDR_ERROR_AS_NOT_SELECT then
+      self:AddMessage(locale.customSaveLoad.customSelectMsg)
+    elseif result == CDR_ERROR_AS_NO_FILE_NAME then
+      self:AddMessage(locale.customSaveLoad.customNoNameMsg)
+    elseif result == CDR_ERROR_UNSERVICEABILITY_WORD then
+      self:AddMessage(GetUIText(COMMON_TEXT, "custom_save_unserviceability_word"))
+    end
+  end
+  return wnd
+end
+local function CreateCustomLoadWindow(id)
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local window = CreateWindow(id, "UIParent")
+  window:SetExtent(300, 440)
+  window:SetUILayer("dialog")
+  window:SetWindowModal(true)
+  window:Show(false)
+  window:SetTitle(locale.customSaveLoad.customLoad)
+  local selectIndex = 0
+  local pageCtrl = CreatePageControl("pageCtrl", window)
+  pageCtrl:AddAnchor("TOPLEFT", window, 0, 310)
+  pageCtrl:AddAnchor("BOTTOMRIGHT", window, 0, -60)
+  window.pageCtrl = pageCtrl
+  local loadFileInfoButton = {}
+  for i = 1, 5 do
+    local loadFileBtn = CreateEmptyButton(string.format("loadFileInfoButton%d", i), window)
+    loadFileBtn:AddAnchor("TOPLEFT", window, 6, (i - 1) * 50 + 55)
+    ApplyButtonSkin(loadFileBtn, BUTTON_LOGINSTAGE.CUSTOM_SAVE_LOAD)
+    loadFileInfoButton[i] = loadFileBtn
+  end
+  window.loadFileInfoButton = loadFileInfoButton
+  local overWrite = window:CreateChildWidget("button", "overWrite", 0, true)
+  overWrite:AddAnchor("BOTTOMLEFT", window, sideMargin / 1.5, -sideMargin)
+  overWrite:SetText(locale.customSaveLoad.customOverWrite)
+  ApplyButtonSkin(overWrite, BUTTON_BASIC.DEFAULT)
+  local delete = window:CreateChildWidget("button", "delete", 0, true)
+  delete:AddAnchor("BOTTOMRIGHT", window, -sideMargin / 1.5, -sideMargin)
+  delete:SetText(locale.customSaveLoad.customDelete)
+  ApplyButtonSkin(delete, BUTTON_BASIC.DEFAULT)
+  local loadOk = window:CreateChildWidget("button", "loadOk", 0, true)
+  loadOk:AddAnchor("BOTTOMRIGHT", delete, "BOTTOMLEFT", 0, 0)
+  loadOk:SetText(locale.customSaveLoad.customLoadOk)
+  ApplyButtonSkin(loadOk, BUTTON_BASIC.DEFAULT)
+  local buttonTable = {loadOk, delete}
+  AdjustBtnLongestTextWidth(buttonTable)
+  function loadFileInfoButton:LoadFileInfoChange(page)
+    local count = X2Customizer:GetSavedCustomDataCount()
+    local pageIndex = (page - 1) * 5
+    for i = 1, 5 do
+      if count >= pageIndex + i then
+        local fileInfo = X2Customizer:GetCustomDataInfoByIndex((page - 1) * 5 + i)
+        self[i]:SetText(fileInfo.name)
+        self[i]:Enable(true)
+      else
+        self[i]:SetText("")
+        self[i]:Enable(false)
+      end
+    end
+  end
+  function loadFileInfoButton:Select(index)
+    selectIndex = (pageCtrl.currentPage - 1) * 5 + index
+    for i = 1, 5 do
+      SetBGPushed(loadFileInfoButton[i], i == index, GetButtonDefaultFontColor())
+    end
+    loadOk:Enable(index ~= 0)
+    overWrite:Enable(index ~= 0)
+    delete:Enable(index ~= 0)
+  end
+  function pageCtrl:OnPageChanged()
+    loadFileInfoButton:Select(0)
+    loadFileInfoButton:LoadFileInfoChange(pageCtrl.currentPage)
+  end
+  pageCtrl:SetHandler("OnPageChanged", pageCtrl.OnPageChanged)
+  function loadOk:OnClick(arg)
+    if arg == "LeftButton" then
+      if selectIndex > 0 then
+        local function CustomLoadOkFile(wnd, infoTable)
+          function wnd:OkProc()
+            local result = X2Customizer:LoadCustomData(selectIndex)
+            ClearPlasticWnd()
+            SetCustomItemToParam(FACE, nil, false)
+            systemAlert:HandleResult(result, selectIndex)
+            wnd:Show(false)
+          end
+          function wnd:CancelProc()
+            wnd:Show(false)
+          end
+          wnd:SetTitle(locale.customSaveLoad.customLoadOk)
+          wnd:SetContent(locale.customSaveLoad.customLoadOkContent, true)
+        end
+        X2DialogManager:RequestDefaultDialog(CustomLoadOkFile, window:GetId())
+      else
+        systemAlert:HandleResult(CDR_ERROR_AS_NOT_SELECT)
+      end
+    end
+  end
+  loadOk:SetHandler("OnClick", loadOk.OnClick)
+  function overWrite:OnClick(arg)
+    if arg == "LeftButton" then
+      if selectIndex > 0 then
+        local function CustomOverWriteFile(wnd, infoTable)
+          function wnd:OkProc()
+            local result = X2Customizer:OverWriteCustomData(selectIndex)
+            systemAlert:HandleResult(result, selectIndex)
+            wnd:Show(false)
+          end
+          function wnd:CancelProc()
+            wnd:Show(false)
+          end
+          wnd:SetTitle(locale.customSaveLoad.customOverWrite)
+          if selectIndex > 0 then
+            local fileInfo = X2Customizer:GetCustomDataInfoByIndex(selectIndex)
+            wnd:SetContent(locale.customSaveLoad.customOverWriteContent(fileInfo.name), true)
+          end
+        end
+        X2DialogManager:RequestDefaultDialog(CustomOverWriteFile, window:GetId())
+      else
+        systemAlert:HandleResult(CDR_ERROR_AS_NOT_SELECT)
+      end
+    end
+  end
+  overWrite:SetHandler("OnClick", overWrite.OnClick)
+  function delete:OnClick(arg)
+    if arg == "LeftButton" then
+      if selectIndex > 0 then
+        local function CustomDeleteFile(wnd, infoTable)
+          function wnd:OkProc()
+            local result = X2Customizer:DeleteCustomData(selectIndex)
+            systemAlert:HandleResult(result)
+            if result == CDR_DELETE_SUCCESS then
+              X2Customizer:LoadCustomFile()
+              local count = X2Customizer:GetSavedCustomDataCount()
+              local maxPage = math.ceil(count / 5)
+              if maxPage == 0 then
+                maxPage = 1
+              end
+              pageCtrl:SetPageByItemCount(maxPage, 1)
+              pageCtrl:MoveFirstPage(1)
+            end
+            wnd:Show(false)
+          end
+          function wnd:CancelProc()
+            wnd:Show(false)
+          end
+          wnd:SetTitle(locale.customSaveLoad.customDelete)
+          if selectIndex > 0 then
+            local fileInfo = X2Customizer:GetCustomDataInfoByIndex(selectIndex)
+            wnd:SetContent(locale.customSaveLoad.customDeleteContent(fileInfo.name), true)
+          end
+        end
+        X2DialogManager:RequestDefaultDialog(CustomDeleteFile, window:GetId())
+      else
+        systemAlert:HandleResult(CDR_ERROR_AS_NOT_SELECT)
+      end
+    end
+  end
+  delete:SetHandler("OnClick", delete.OnClick)
+  function window:ShowProc()
+    local count = X2Customizer:GetSavedCustomDataCount()
+    local maxPage = math.ceil(count / 5)
+    if maxPage == 0 then
+      maxPage = 1
+    end
+    pageCtrl:SetPageByItemCount(maxPage, 1)
+    pageCtrl:MoveFirstPage()
+    loadFileInfoButton:LoadFileInfoChange(1)
+    loadFileInfoButton:Select(0)
+  end
+  window:SetHandler("OnShow", window.OnShow)
+  for i = 1, 5 do
+    do
+      local loadFileBtn = loadFileInfoButton[i]
+      function loadFileBtn:OnClick(arg)
+        if arg == "LeftButton" then
+          loadFileInfoButton:Select(i)
+        end
+      end
+      loadFileBtn:SetHandler("OnClick", loadFileBtn.OnClick)
+    end
+  end
+  return window
+end
+function CreateCustomSaveLoadWindow(id, parent)
+  local buttonWidth = customizingLocale.buttonWidth
+  local window = CreateEmptyWindow(id, parent)
+  local systemAlertWnd = CreateSystemAlertWindow("systemAlertWnd", window)
+  systemAlertWnd:AddAnchor("TOP", "UIParent", "TOP", 0, 20)
+  local loadBtn = window:CreateChildWidget("button", "loadBtn", 0, true)
+  loadBtn:AddAnchor("RIGHT", window, 0, 0)
+  loadBtn:SetText(locale.customSaveLoad.customLoad)
+  ApplyButtonSkin(loadBtn, BUTTON_BASIC.DEFAULT)
+  local customLoadWindow
+  function loadBtn:OnClick(arg)
+    if arg == "LeftButton" then
+      X2Customizer:LoadCustomFile()
+      if customLoadWindow == nil then
+        customLoadWindow = CreateCustomLoadWindow("customLoadWindow")
+        customLoadWindow:AddAnchor("BOTTOMRIGHT", loadBtn, "TOPRIGHT", 0, -20)
+        customLoadWindow:Show(true)
+      else
+        customLoadWindow:Show(true)
+      end
+    end
+  end
+  loadBtn:SetHandler("OnClick", loadBtn.OnClick)
+  local saveBtn = window:CreateChildWidget("button", "saveBtn", 0, true)
+  saveBtn:AddAnchor("RIGHT", loadBtn, "LEFT", 0, 0)
+  saveBtn:SetText(locale.customSaveLoad.customSave)
+  ApplyButtonSkin(saveBtn, BUTTON_BASIC.DEFAULT)
+  local customSaveWindow
+  function saveBtn:OnClick(arg)
+    if arg == "LeftButton" then
+      if customSaveWindow == nil then
+        customSaveWindow = ShowCustomSaveName(window, systemAlertWnd)
+      else
+        customSaveWindow:Show(true)
+      end
+    end
+  end
+  saveBtn:SetHandler("OnClick", saveBtn.OnClick)
+  local buttonTable = {loadBtn, saveBtn}
+  AdjustBtnLongestTextWidth(buttonTable)
+  local width = loadBtn:GetWidth() + saveBtn:GetWidth() + 5
+  window:SetExtent(width, BUTTON_SIZE.DEFAULT_SMALL.HEIGHT)
+  return window
+end

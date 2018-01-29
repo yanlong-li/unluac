@@ -1,0 +1,62 @@
+local assignementWnd
+local function ToggleAssignement(isShow, data)
+  local featureSet = X2Player:GetFeatureSet()
+  if not featureSet.achievement then
+    return
+  end
+  if assignementWnd == nil then
+    assignementWnd = CreateAssignementWindow("assignementWnd", "UIParent")
+  end
+  if isShow == nil then
+    isShow = not assignementWnd:IsVisible()
+  end
+  if isShow then
+    if data ~= nil and data.aId ~= 0 then
+      ToggleAssignmentWithAcheivement(data.aId)
+    elseif not assignementWnd:IsVisible() then
+      assignementWnd:Show(true)
+    end
+  elseif assignementWnd:IsVisible() then
+    assignementWnd:Show(false)
+  end
+end
+ADDON:RegisterContentTriggerFunc(UIC_ACHIEVEMENT, ToggleAssignement)
+local function ToggleTab(tabKind, index)
+  local featureSet = X2Player:GetFeatureSet()
+  if not featureSet.achievement and not featureSet.todayAssignment then
+    return
+  end
+  local wnd
+  for i = 1, #A_TAB_LIST do
+    if A_TAB_LIST[i] == tabKind then
+      if assignementWnd.tab ~= nil then
+        wnd = assignementWnd.tab.window[i]
+        assignementWnd.tab:SelectTab(i)
+      else
+        wnd = assignementWnd.bodyWnd
+      end
+    end
+  end
+  if wnd == nil then
+    return
+  end
+  wnd:ToggleWithAchievement(index)
+  if not assignementWnd:IsVisible() then
+    assignementWnd:Show(true)
+  end
+end
+function ToggleAssignmentWithAcheivement(aType)
+  local featureSet = X2Player:GetFeatureSet()
+  if not featureSet.achievement then
+    return
+  end
+  local aInfo = X2Achievement:GetAchievementInfo(aType)
+  if aInfo.type == nil then
+    return
+  end
+  if aInfo.mainCategory == AC_LEVEL then
+    ToggleTab(A_ASSIGNMENT_TYPE.RACIAL, aType)
+  else
+    ToggleTab(A_ASSIGNMENT_TYPE.ACHIEVEMENT, aType)
+  end
+end

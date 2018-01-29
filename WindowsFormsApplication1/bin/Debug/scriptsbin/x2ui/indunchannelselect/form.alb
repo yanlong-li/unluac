@@ -1,0 +1,68 @@
+WINDOW_INDUN_CHANNEL_SELECT = {
+  WINDOW = {
+    ANCHOR = {0, 0},
+    EXTENT = {430, 430},
+    TEXT = GetCommonText("indun_channel_select")
+  },
+  DUNGEON_TITLE = {
+    ANCHOR = {0, 50},
+    HEIGHT = FONT_SIZE.LARGE,
+    FONT_SIZE = FONT_SIZE.LARGE
+  },
+  DUNGEON_TITLE_LINE = {
+    WIDTH = 200,
+    LEFT = {
+      ANCHOR = {-110, 10}
+    },
+    RIGHT = {
+      ANCHOR = {0, 0}
+    }
+  },
+  SCROLL_LISTCTRL = {
+    EXTENT = {385, 280},
+    ANCHOR = {0, 13}
+  },
+  BOTTOM_BUTTON_STR = {
+    LEFT = X2Locale:LocalizeUiText(MSG_BOX_BTN_TEXT, "enter_instant_room"),
+    RIGHT = locale.common.cancel
+  },
+  PARTY_STATE = {
+    COORDS = {
+      0,
+      0,
+      30,
+      22
+    }
+  },
+  CHANNEL_STATE_COORDS = {
+    {
+      0,
+      22,
+      55,
+      21
+    },
+    {
+      0,
+      43,
+      55,
+      21
+    },
+    {
+      0,
+      64,
+      55,
+      21
+    },
+    {
+      0,
+      85,
+      55,
+      21
+    }
+  },
+  COLUMN_WIDTH = {
+    202,
+    80,
+    80
+  }
+}

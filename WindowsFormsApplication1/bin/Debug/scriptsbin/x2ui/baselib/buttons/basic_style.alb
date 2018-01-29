@@ -1,0 +1,1074 @@
+PAGE_BUTTON_COLOR = {
+  NORMAL = {
+    ConvertColor(73),
+    ConvertColor(45),
+    ConvertColor(11),
+    1
+  },
+  OVER = {
+    ConvertColor(131),
+    ConvertColor(91),
+    ConvertColor(42),
+    1
+  },
+  CLICK = {
+    ConvertColor(82),
+    ConvertColor(55),
+    ConvertColor(20),
+    1
+  },
+  DISABLE = {
+    ConvertColor(111),
+    ConvertColor(111),
+    ConvertColor(111),
+    1
+  }
+}
+BUTTON_BASIC = {
+  DEFAULT = {
+    drawableType = "ninePart",
+    path = TEXTURE_PATH.DEFAULT,
+    coordsKey = "btn",
+    autoResize = true,
+    fontColor = GetButtonDefaultFontColor(),
+    fontInset = {
+      left = 11,
+      right = 11,
+      top = 0,
+      bottom = 0
+    }
+  },
+  DEFAULT_DRAWABLE = {
+    drawableType = "drawable",
+    path = nil,
+    coordsKey = nil
+  },
+  TAB_SELECT = {
+    drawableType = "threePart",
+    path = TEXTURE_PATH.TAB_LIST,
+    coordsKey = "tab_selected",
+    fontColor = GetTitleButtonFontColor(),
+    fontSize = FONT_SIZE.LARGE,
+    fontInset = {
+      left = 15,
+      right = 15,
+      top = 1,
+      bottom = 0
+    },
+    autoResize = true
+  },
+  TAB_UNSELECT = {
+    drawableType = "threePart",
+    path = TEXTURE_PATH.TAB_LIST,
+    coordsKey = "tab_unselected",
+    fontColor = GetTitleButtonFontColor(),
+    fontSize = FONT_SIZE.LARGE,
+    fontInset = {
+      left = 15,
+      right = 15,
+      top = 1,
+      bottom = 0
+    },
+    autoResize = true
+  },
+  INGAMESHOP_TAB_SELECT = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.TAB_LIST,
+    coordsKey = "tab_selected",
+    fontColor = GetTitleButtonFontColor(),
+    fontSize = FONT_SIZE.MIDDLE,
+    fontInset = {
+      left = 15,
+      right = 15,
+      top = 1,
+      bottom = 0
+    },
+    autoResize = true
+  },
+  INGAMESHOP_TAB_UNSELECT = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.TAB_LIST,
+    coordsKey = "tab_unselected",
+    fontColor = GetTitleButtonFontColor(),
+    fontSize = FONT_SIZE.MIDDLE,
+    fontInset = {
+      left = 15,
+      right = 15,
+      top = 1,
+      bottom = 0
+    },
+    width = 80,
+    height = 25,
+    autoResize = true
+  },
+  FOLDER_CLOSE = {
+    drawableType = "drawable",
+    path = "ui/button/grid.dds",
+    coords = {
+      normal = {
+        0,
+        0,
+        21,
+        14
+      },
+      over = {
+        0,
+        15,
+        21,
+        14
+      },
+      click = {
+        22,
+        0,
+        21,
+        14
+      },
+      disable = {
+        22,
+        14,
+        21,
+        14
+      }
+    },
+    width = 21,
+    height = 21,
+    drawableAnchor = {
+      anchor = "LEFT",
+      x = -1,
+      y = 0
+    },
+    drawableExtent = {width = 21, height = 14}
+  },
+  FOLDER_OPEN = {
+    drawableType = "drawable",
+    path = "ui/button/grid.dds",
+    coords = {
+      normal = {
+        44,
+        0,
+        13,
+        21
+      },
+      over = {
+        58,
+        0,
+        13,
+        21
+      },
+      click = {
+        72,
+        0,
+        13,
+        21
+      },
+      disable = {
+        86,
+        0,
+        13,
+        21
+      }
+    },
+    width = 21,
+    height = 21,
+    drawableAnchor = {
+      anchor = "CENTER",
+      x = 0,
+      y = 1
+    },
+    drawableExtent = {width = 13, height = 21}
+  },
+  SPINNER_UP = {
+    drawableType = "drawable",
+    path = "ui/button/grid.dds",
+    coords = {
+      normal = {
+        0,
+        14,
+        21,
+        -14
+      },
+      over = {
+        0,
+        29,
+        21,
+        -14
+      },
+      click = {
+        22,
+        16,
+        21,
+        -14
+      },
+      disable = {
+        22,
+        28,
+        21,
+        -14
+      }
+    },
+    width = 21,
+    height = 14
+  },
+  SERVER_SLIDER_VERTICAL_THUMB = {
+    drawableType = "ninePart",
+    path = "ui/button/scroll_button.dds",
+    coords = {
+      normal = {
+        0,
+        10,
+        17,
+        41
+      },
+      over = {
+        18,
+        10,
+        17,
+        41
+      },
+      click = {
+        36,
+        10,
+        17,
+        41
+      },
+      disable = {
+        54,
+        10,
+        17,
+        41
+      }
+    },
+    inset = {
+      0,
+      22,
+      0,
+      18
+    },
+    width = 17,
+    height = 41
+  },
+  SLIDER_VERTICAL_THUMB = {
+    drawableType = "ninePart",
+    path = "ui/button/scroll_button.dds",
+    coords = {
+      normal = {
+        0,
+        10,
+        17,
+        41
+      },
+      over = {
+        18,
+        10,
+        17,
+        41
+      },
+      click = {
+        36,
+        10,
+        17,
+        41
+      },
+      disable = {
+        0,
+        0,
+        0,
+        0
+      }
+    },
+    inset = {
+      0,
+      22,
+      0,
+      18
+    },
+    width = 17,
+    height = 41
+  },
+  SLIDER_HORIZONTAL_THUMB = {
+    drawableType = "drawable",
+    path = "ui/button/scroll_button.dds",
+    coords = {
+      normal = {
+        101,
+        17,
+        17,
+        26
+      },
+      over = {
+        127,
+        17,
+        17,
+        26
+      },
+      click = {
+        153,
+        17,
+        17,
+        26
+      },
+      disable = {
+        179,
+        17,
+        17,
+        26
+      }
+    },
+    width = 17,
+    height = 26
+  },
+  SLIDER_UP = {
+    drawableType = "drawable",
+    path = "ui/button/scroll_button.dds",
+    coords = {
+      normal = {
+        0,
+        52,
+        19,
+        12
+      },
+      over = {
+        20,
+        52,
+        19,
+        12
+      },
+      click = {
+        40,
+        52,
+        19,
+        12
+      },
+      disable = {
+        60,
+        52,
+        19,
+        12
+      }
+    },
+    width = 19,
+    height = 12
+  },
+  SLIDER_DOWN = {
+    drawableType = "drawable",
+    path = "ui/button/scroll_button.dds",
+    coords = {
+      normal = {
+        0,
+        64,
+        19,
+        -12
+      },
+      over = {
+        20,
+        64,
+        19,
+        -12
+      },
+      click = {
+        40,
+        64,
+        19,
+        -12
+      },
+      disable = {
+        60,
+        64,
+        19,
+        -12
+      }
+    },
+    width = 19,
+    height = 11
+  },
+  WINDOW_CLOSE = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.DEFAULT,
+    coords = {
+      normal = {
+        949,
+        0,
+        44,
+        38
+      },
+      over = {
+        949,
+        39,
+        44,
+        38
+      },
+      click = {
+        949,
+        79,
+        44,
+        38
+      },
+      disable = {
+        949,
+        117,
+        44,
+        38
+      }
+    },
+    width = 44,
+    height = 38
+  },
+  WINDOW_SMALL_CLOSE = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coordsKey = "close_mini"
+  },
+  PAGE_FIRST = {
+    drawableType = "drawable",
+    path = BUTTON_TEXTURE_PATH.PAGE,
+    coords = {
+      normal = {
+        28,
+        0,
+        -12,
+        24
+      },
+      over = {
+        28,
+        0,
+        -12,
+        24
+      },
+      click = {
+        28,
+        0,
+        -12,
+        24
+      },
+      disable = {
+        28,
+        0,
+        -12,
+        24
+      }
+    },
+    drawableColor = {
+      normal = PAGE_BUTTON_COLOR.NORMAL,
+      over = PAGE_BUTTON_COLOR.OVER,
+      click = PAGE_BUTTON_COLOR.CLICK,
+      disable = PAGE_BUTTON_COLOR.DISABLE
+    },
+    width = 12,
+    height = 24
+  },
+  PAGE_PREV = {
+    drawableType = "drawable",
+    path = BUTTON_TEXTURE_PATH.PAGE,
+    coords = {
+      normal = {
+        16,
+        0,
+        -16,
+        32
+      },
+      over = {
+        16,
+        0,
+        -16,
+        32
+      },
+      click = {
+        16,
+        0,
+        -16,
+        32
+      },
+      disable = {
+        16,
+        0,
+        -16,
+        32
+      }
+    },
+    drawableColor = {
+      normal = PAGE_BUTTON_COLOR.NORMAL,
+      over = PAGE_BUTTON_COLOR.OVER,
+      click = PAGE_BUTTON_COLOR.CLICK,
+      disable = PAGE_BUTTON_COLOR.DISABLE
+    },
+    width = 16,
+    height = 32
+  },
+  PAGE_NEXT = {
+    drawableType = "drawable",
+    path = BUTTON_TEXTURE_PATH.PAGE,
+    coords = {
+      normal = {
+        0,
+        0,
+        16,
+        32
+      },
+      over = {
+        0,
+        0,
+        16,
+        32
+      },
+      click = {
+        0,
+        0,
+        16,
+        32
+      },
+      disable = {
+        0,
+        0,
+        16,
+        32
+      }
+    },
+    drawableColor = {
+      normal = PAGE_BUTTON_COLOR.NORMAL,
+      over = PAGE_BUTTON_COLOR.OVER,
+      click = PAGE_BUTTON_COLOR.CLICK,
+      disable = PAGE_BUTTON_COLOR.DISABLE
+    },
+    width = 16,
+    height = 32
+  },
+  PAGE_LAST = {
+    drawableType = "drawable",
+    path = BUTTON_TEXTURE_PATH.PAGE,
+    coords = {
+      normal = {
+        16,
+        0,
+        12,
+        24
+      },
+      over = {
+        16,
+        0,
+        12,
+        24
+      },
+      click = {
+        16,
+        0,
+        12,
+        24
+      },
+      disable = {
+        16,
+        0,
+        12,
+        24
+      }
+    },
+    drawableColor = {
+      normal = PAGE_BUTTON_COLOR.NORMAL,
+      over = PAGE_BUTTON_COLOR.OVER,
+      click = PAGE_BUTTON_COLOR.CLICK,
+      disable = PAGE_BUTTON_COLOR.DISABLE
+    },
+    width = 12,
+    height = 24
+  },
+  RESET = {
+    drawableType = "drawable",
+    path = BUTTON_TEXTURE_PATH.COMMON_RESET,
+    coords = {
+      normal = {
+        0,
+        0,
+        28,
+        28
+      },
+      over = {
+        28,
+        0,
+        28,
+        28
+      },
+      click = {
+        56,
+        0,
+        28,
+        28
+      },
+      disable = {
+        84,
+        0,
+        28,
+        28
+      }
+    },
+    width = 28,
+    height = 28
+  },
+  REMOVE = {
+    drawableType = "drawable",
+    path = BUTTON_TEXTURE_PATH.COMMON_REMOVE,
+    coords = {
+      normal = {
+        0,
+        0,
+        29,
+        31
+      },
+      over = {
+        28,
+        0,
+        29,
+        31
+      },
+      click = {
+        57,
+        0,
+        29,
+        31
+      },
+      disable = {
+        87,
+        0,
+        29,
+        31
+      }
+    },
+    width = 29,
+    height = 31
+  },
+  LISTCTRL_COLUMN = {
+    drawableType = "threePart",
+    path = TEXTURE_PATH.TAB_LIST,
+    coords = {
+      normal = {
+        0,
+        0,
+        0,
+        0
+      },
+      over = {
+        135,
+        65,
+        17,
+        20
+      },
+      click = {
+        135,
+        65,
+        17,
+        20
+      },
+      disable = {
+        0,
+        0,
+        0,
+        0
+      }
+    },
+    inset = {
+      3,
+      0,
+      3,
+      0
+    },
+    drawableColor = {
+      normal = {
+        1,
+        1,
+        1,
+        0
+      },
+      over = {
+        1,
+        1,
+        1,
+        0.7
+      },
+      click = {
+        1,
+        1,
+        1,
+        1
+      },
+      disable = {
+        1,
+        1,
+        1,
+        0
+      }
+    },
+    drawableAnchor = {
+      anchor = "CENTER",
+      x = 0,
+      y = 2
+    },
+    fontColor = GetTitleButtonFontColor(),
+    fontSize = FONT_SIZE.LARGE
+  },
+  ROTATE_RIGHT = {
+    drawableType = "drawable",
+    path = BUTTON_TEXTURE_PATH.COMMON_ROTATE,
+    coords = {
+      normal = {
+        0,
+        0,
+        38,
+        46
+      },
+      over = {
+        0,
+        45,
+        38,
+        46
+      },
+      click = {
+        38,
+        -1,
+        38,
+        46
+      },
+      disable = {
+        38,
+        45,
+        38,
+        46
+      }
+    },
+    width = 38,
+    height = 46
+  },
+  ROTATE_LEFT = {
+    drawableType = "drawable",
+    path = BUTTON_TEXTURE_PATH.COMMON_ROTATE,
+    coords = {
+      normal = {
+        38,
+        0,
+        -38,
+        46
+      },
+      over = {
+        38,
+        45,
+        -38,
+        46
+      },
+      click = {
+        76,
+        -1,
+        -38,
+        46
+      },
+      disable = {
+        76,
+        45,
+        -38,
+        46
+      }
+    },
+    width = 38,
+    height = 46
+  },
+  TOGGLE_BEAUTYSHOP = {
+    drawableType = "threePart",
+    path = TEXTURE_PATH.INGAME_SHOP,
+    coordsKey = "beautyshop",
+    fontInset = {
+      left = 40,
+      top = 0,
+      right = 13,
+      bottom = 0
+    },
+    autoResize = true,
+    fontAlign = ALIGN_LEFT,
+    fontColor = GetWhiteCheckButtonFontColor()
+  },
+  TOGGLE_GENDER_TRANSFER = {
+    drawableType = "threePart",
+    path = TEXTURE_PATH.INGAME_SHOP,
+    coordsKey = "gender_transfer",
+    fontInset = {
+      left = 40,
+      top = 0,
+      right = 13,
+      bottom = 0
+    },
+    autoResize = true,
+    fontAlign = ALIGN_LEFT,
+    fontColor = GetWhiteCheckButtonFontColor()
+  },
+  SLOT_SHAPE = {
+    drawableType = "ninePart",
+    path = TEXTURE_PATH.HUD,
+    layer = "overlay",
+    coords = {
+      normal = {
+        0,
+        0,
+        0,
+        0
+      },
+      over = {
+        743,
+        35,
+        13,
+        16
+      },
+      click = {
+        0,
+        0,
+        0,
+        0
+      },
+      disable = {
+        0,
+        0,
+        0,
+        0
+      }
+    },
+    drawableColor = {
+      normal = {
+        0,
+        0,
+        0,
+        0
+      },
+      over = {
+        1,
+        1,
+        1,
+        0.6
+      },
+      click = {
+        0,
+        0,
+        0,
+        0
+      },
+      disable = {
+        0,
+        0,
+        0,
+        0
+      }
+    },
+    drawableAnchor = {
+      offset = {
+        topleftX = 1,
+        topleftY = 1,
+        bottomrightX = -1,
+        bottomrightY = -1
+      }
+    },
+    inset = {
+      6,
+      7,
+      6,
+      8
+    },
+    width = ICON_SIZE.DEFAULT,
+    height = ICON_SIZE.DEFAULT
+  },
+  QUEST_NOTIFIER = {
+    {
+      drawableType = "ninePart",
+      path = TEXTURE_PATH.HUD,
+      coords = {
+        normal = {
+          GetTextureInfo(TEXTURE_PATH.HUD, "tab_chat_df"):GetCoords()
+        },
+        over = {
+          GetTextureInfo(TEXTURE_PATH.HUD, "tab_chat_ov"):GetCoords()
+        },
+        click = {
+          GetTextureInfo(TEXTURE_PATH.HUD, "tab_chat_on"):GetCoords()
+        },
+        disable = {
+          GetTextureInfo(TEXTURE_PATH.HUD, "tab_chat_select_ov"):GetCoords()
+        }
+      },
+      inset = GetTextureInfo(TEXTURE_PATH.HUD, "tab_chat_select_ov"):GetInset(),
+      drawableColor = {
+        normal = {
+          1,
+          1,
+          1,
+          0.7
+        },
+        over = {
+          1,
+          1,
+          1,
+          0.7
+        },
+        click = {
+          0,
+          0,
+          0,
+          0.7
+        },
+        disable = {
+          1,
+          1,
+          1,
+          0.7
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOMLEFT",
+        x = 0,
+        y = 0
+      },
+      drawableExtent = {width = 60, height = 38},
+      width = 60,
+      height = 30
+    },
+    {
+      drawableType = "drawable",
+      path = TEXTURE_PATH.HUD,
+      coords = {
+        disable = {
+          GetTextureInfo(TEXTURE_PATH.HUD, "tab_quest_df"):GetCoords()
+        },
+        over = {
+          GetTextureInfo(TEXTURE_PATH.HUD, "tab_quest_ov"):GetCoords()
+        },
+        click = {
+          GetTextureInfo(TEXTURE_PATH.HUD, "tab_quest_on"):GetCoords()
+        },
+        normal = {
+          GetTextureInfo(TEXTURE_PATH.HUD, "tab_quest_dis"):GetCoords()
+        }
+      },
+      drawableAnchor = {
+        anchor = "CENTER",
+        x = 0,
+        y = 0
+      },
+      drawableExtent = {width = 26, height = 29}
+    }
+  },
+  ASSIGNMENT_NOTIFIER = {
+    {
+      drawableType = "ninePart",
+      path = TEXTURE_PATH.HUD,
+      coords = {
+        normal = {
+          GetTextureInfo(TEXTURE_PATH.HUD, "tab_chat_df"):GetCoords()
+        },
+        over = {
+          GetTextureInfo(TEXTURE_PATH.HUD, "tab_chat_ov"):GetCoords()
+        },
+        click = {
+          GetTextureInfo(TEXTURE_PATH.HUD, "tab_chat_on"):GetCoords()
+        },
+        disable = {
+          GetTextureInfo(TEXTURE_PATH.HUD, "tab_chat_select_ov"):GetCoords()
+        }
+      },
+      inset = GetTextureInfo(TEXTURE_PATH.HUD, "tab_chat_select_ov"):GetInset(),
+      drawableColor = {
+        normal = {
+          1,
+          1,
+          1,
+          0.7
+        },
+        over = {
+          1,
+          1,
+          1,
+          0.7
+        },
+        click = {
+          0,
+          0,
+          0,
+          0.7
+        },
+        disable = {
+          1,
+          1,
+          1,
+          0.7
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOMLEFT",
+        x = 0,
+        y = 0
+      },
+      drawableExtent = {width = 60, height = 38},
+      width = 60,
+      height = 30
+    },
+    {
+      drawableType = "drawable",
+      path = TEXTURE_PATH.HUD,
+      coords = {
+        disable = {
+          GetTextureInfo(TEXTURE_PATH.HUD, "tab_result_df"):GetCoords()
+        },
+        over = {
+          GetTextureInfo(TEXTURE_PATH.HUD, "tab_result_ov"):GetCoords()
+        },
+        click = {
+          GetTextureInfo(TEXTURE_PATH.HUD, "tab_result_on"):GetCoords()
+        },
+        normal = {
+          GetTextureInfo(TEXTURE_PATH.HUD, "tab_result_dis"):GetCoords()
+        }
+      },
+      drawableAnchor = {
+        anchor = "CENTER",
+        x = 0,
+        y = 0
+      },
+      drawableExtent = {width = 31, height = 27}
+    }
+  },
+  PLUS = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.PLUS_MINUS,
+    coordsKey = "plus"
+  },
+  MINUS = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.PLUS_MINUS,
+    coordsKey = "minus"
+  },
+  HOUSING_SALE = {
+    drawableType = "drawable",
+    path = BUTTON_TEXTURE_PATH.HOUSING,
+    coordsKey = "btn_sale"
+  },
+  HOUSING_DEMOLISH = {
+    drawableType = "drawable",
+    path = BUTTON_TEXTURE_PATH.HOUSING,
+    coordsKey = "btn_remove"
+  },
+  HOUSING_DEMOLISH_PACKAGE = {
+    drawableType = "drawable",
+    path = BUTTON_TEXTURE_PATH.HOUSING,
+    coordsKey = "btn_demolish"
+  },
+  EQUIP_ITEM_GUIDE_MOVE_LEFT = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.EQUIP_ITEM_GUIDE,
+    coordsKey = "btn_left"
+  },
+  EQUIP_ITEM_GUIDE_MOVE_RIGHT = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.EQUIP_ITEM_GUIDE,
+    coordsKey = "btn_right"
+  },
+  EQUIP_ITEM_GUIDE_MAP = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.EQUIP_ITEM_GUIDE,
+    coordsKey = "btn_map"
+  },
+  EQUIP_ITEM_GUIDE_CRAFT = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.EQUIP_ITEM_GUIDE,
+    coordsKey = "btn_dic"
+  }
+}

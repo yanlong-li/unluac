@@ -1,0 +1,37 @@
+function CreatePalletColors(id, parent, colors, linePerColors)
+  local item = SetViewOfPalletColors(id, parent, colors, linePerColors)
+  return item
+end
+palletWindow = nil
+function CreatePopupPallet(id, parent)
+  local window = SetViewOfPopupPallet(id, parent)
+  function window.closeBtn:OnClick(arg)
+    local parent = window.closeBtn:GetParent()
+    if arg == "LeftButton" then
+      parent:Show(false)
+    end
+  end
+  window.closeBtn:SetHandler("OnClick", window.closeBtn.OnClick)
+  function window:SetSelectEventListenWidget(widget)
+    self.selectEventListenWidget = widget
+  end
+  for i = 1, #window.colors do
+    do
+      local btn = window.colors[i]
+      local color = window.colors[i].color:GetColor()
+      function btn:OnClick()
+        if window.selectEventListenWidget ~= nil and window.selectEventListenWidget.SelectedProcedure ~= nil then
+          window.selectEventListenWidget:SelectedProcedure(color.r, color.g, color.b, color.a)
+        end
+        window:Show(false)
+        palletWindow = nil
+      end
+      btn:SetHandler("OnClick", btn.OnClick)
+    end
+  end
+  function window:OnHide()
+    palletWindow = nil
+  end
+  window:SetHandler("OnHide", window.OnHide)
+  return window
+end

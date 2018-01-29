@@ -1,0 +1,217 @@
+function DrawTabSkin(tab, tabWindow, selectedButton, styleInfo)
+  if styleInfo == nil then
+    styleInfo = {lineType = "TYPE2", useBg = true}
+  end
+  local firstLine, secondLine = CreateLine(tab, styleInfo.lineType, "overlay")
+  firstLine:AddAnchor("TOPLEFT", tabWindow, -17, -3)
+  firstLine:AddAnchor("TOPRIGHT", selectedButton, "BOTTOMLEFT", 2, 0)
+  tab.firstLine = firstLine
+  secondLine:AddAnchor("TOPLEFT", selectedButton, "BOTTOMRIGHT", -2, -3)
+  secondLine:AddAnchor("TOPRIGHT", tabWindow, 15, 0)
+  tab.secondLine = secondLine
+  if styleInfo.useBg then
+    local bg = tab:CreateNinePartDrawable("ui/common/tab_list.dds", "background")
+    bg:SetCoords(0, 10, 3, 54)
+    bg:SetColor(1, 1, 1, 0.7)
+    bg:SetInset(1, 7, 1, 46)
+    bg:AddAnchor("TOPLEFT", tab, -16, 29)
+    bg:AddAnchor("BOTTOMRIGHT", tab, 16, 0)
+  end
+end
+function ReAnhorTabLine(widget, index)
+  if widget.firstLine ~= nil then
+    widget.firstLine:RemoveAllAnchors()
+    widget.firstLine:AddAnchor("TOPLEFT", widget.window[index], -15, -3)
+    widget.firstLine:AddAnchor("TOPRIGHT", widget.selectedButton[index], "BOTTOMLEFT", 2, 0)
+  end
+  if widget.secondLine ~= nil then
+    widget.secondLine:AddAnchor("TOPLEFT", widget.selectedButton[index], "BOTTOMRIGHT", -2, -3)
+    widget.secondLine:AddAnchor("TOPRIGHT", widget.window[index], 15, 0)
+  end
+end
+function CreateTab(id, parent, style)
+  local tab = parent:CreateChildWidget("tab", id, 0, true)
+  tab:AddAnchor("TOPLEFT", parent, MARGIN.WINDOW_SIDE, MARGIN.WINDOW_TITLE)
+  tab:AddAnchor("BOTTOMRIGHT", parent, -MARGIN.WINDOW_SIDE, -MARGIN.WINDOW_SIDE)
+  tab:SetCorner("TOPLEFT")
+  tab.tabButtonMaxWidth = 0
+  local GetTabStyleInfo = function(style)
+    local styles = {
+      default = {
+        selected = BUTTON_BASIC.TAB_SELECT,
+        unselected = BUTTON_BASIC.TAB_UNSELECT,
+        lineType = "TYPE2",
+        useBg = true,
+        fixedWidth = 0
+      },
+      customizing_hair_color = {
+        selected = BUTTON_LOGINSTAGE.HAIR_COLOR_SELECTED_TAB,
+        unselected = BUTTON_LOGINSTAGE.HAIR_COLOR_UNSELECTED_TAB,
+        lineType = "TYPE4",
+        useBg = false,
+        fixedWidth = 0
+      },
+      ingameshop = {
+        selected = BUTTON_BASIC.INGAMESHOP_TAB_SELECT,
+        unselected = BUTTON_BASIC.INGAMESHOP_TAB_UNSELECT,
+        lineType = "TYPE2",
+        useBg = true,
+        fixedWidth = 82
+      }
+    }
+    if style == nil then
+      style = "default"
+    end
+    return styles[style]
+  end
+  function tab:AddTabs(textTable)
+    for i = 1, #textTable do
+      self:AddSimpleTab(textTable[i])
+    end
+    local buttonTable = {}
+    local styleInfo = GetTabStyleInfo(style)
+    for i = 1, #self.window do
+      ApplyButtonSkin(self.selectedButton[i], styleInfo.selected)
+      ApplyButtonSkin(self.unselectedButton[i], styleInfo.unselected)
+      table.insert(buttonTable, tab.selectedButton[i])
+      table.insert(buttonTable, tab.unselectedButton[i])
+    end
+    tab.tabButtonMaxWidth = AdjustBtnLongestTextWidth(buttonTable, styleInfo.fixedWidth)
+    self:SetGap(-1)
+    DrawTabSkin(self, self.window[1], self.selectedButton[1], styleInfo)
+  end
+  local OnTabChanged = function(self, selected)
+    ReAnhorTabLine(self, selected)
+    if self.OnTabChangedProc ~= nil then
+      self:OnTabChangedProc(selected)
+    end
+  end
+  tab:SetHandler("OnTabChanged", OnTabChanged)
+  function tab:GetTabButtonMaxWidth()
+    return tab.tabButtonMaxWidth
+  end
+  return tab
+end
+function CreateImageTab(id, parent)
+  local tab = parent:CreateChildWidget("tab", id, 0, true)
+  tab:SetGap(0)
+  tab:SetOffset(0)
+  tab:SetCorner("TOPLEFT")
+  tab.divisionLine = {}
+  local function AnchorDivisionLine(index, needRevers)
+    if index <= 0 then
+      return
+    end
+    local divisionLine = tab.divisionLine[index]
+    if divisionLine == nil then
+      return
+    end
+    local offset = 0
+    if index % 3 == 1 then
+      if needRevers then
+        divisionLine:SetTextureInfo("reversed_division_line_1")
+      else
+        divisionLine:SetTextureInfo("division_line_1")
+      end
+      offset = 9
+    elseif index % 3 == 2 then
+      if needRevers then
+        divisionLine:SetTextureInfo("reversed_division_line_2")
+      else
+        divisionLine:SetTextureInfo("division_line_2")
+      end
+      offset = 1
+    else
+      if needRevers then
+        divisionLine:SetTextureInfo("reversed_division_line_3")
+      else
+        divisionLine:SetTextureInfo("division_line_3")
+      end
+      offset = 16
+    end
+    divisionLine:RemoveAllAnchors()
+    if needRevers then
+      divisionLine:AddAnchor("TOPLEFT", tab, index * tab.selectedButton[1]:GetWidth() - 25, offset)
+    else
+      divisionLine:AddAnchor("TOPLEFT", tab, index * tab.selectedButton[1]:GetWidth() - 2, offset)
+    end
+  end
+  function tab:AddTab(tabInfo)
+    if tabInfo.tabName == nil then
+      tabInfo.tabName = ""
+    end
+    self:AddSimpleTab(tabInfo.tabName)
+    local tabSize = #self.window
+    local selectedBtn = self.selectedButton[tabSize]
+    local unselectedBtn = self.unselectedButton[tabSize]
+    if tabInfo.defaultTab then
+      selectedBtn:SetExtent(BUTTON_SIZE.IMAGE_TAB.WIDTH, BUTTON_SIZE.IMAGE_TAB.HEIGHT)
+      unselectedBtn:SetExtent(BUTTON_SIZE.IMAGE_TAB.WIDTH, BUTTON_SIZE.IMAGE_TAB.HEIGHT)
+      SetButtonFontColor(selectedBtn, GetButtonDefaultFontColor())
+      SetButtonFontColor(unselectedBtn, GetButtonDefaultFontColor())
+      selectedBtn:SetInset(0, 0, 2, 0)
+      unselectedBtn:SetInset(0, 0, 2, 0)
+    else
+      ApplyButtonSkin(selectedBtn, tabInfo.buttonStyle)
+      ApplyButtonSkin(unselectedBtn, tabInfo.buttonStyle)
+    end
+    local divisionLine = self:CreateImageDrawable(TEXTURE_PATH.TAB_LIST, "artwork")
+    ApplyTextureColor(divisionLine, TEXTURE_COLOR.TAB_LINE)
+    self.divisionLine[tabSize] = divisionLine
+    AnchorDivisionLine(tabSize, false)
+    if tabInfo.tooltip ~= nil then
+      local function OnEnter()
+        SetVerticalTooltip(tabInfo.tooltip, selectedBtn)
+        SetVerticalTooltip(tabInfo.tooltip, unselectedBtn)
+      end
+      selectedBtn:SetHandler("OnEnter", OnEnter)
+      unselectedBtn:SetHandler("OnEnter", OnEnter)
+    end
+    if self.firstLine == nil and self.secondLine == nil then
+      if styleInfo == nil then
+        styleInfo = {lineType = "TYPE2", useBg = false}
+      end
+      DrawTabSkin(self, self.window[1], self.selectedButton[1], styleInfo)
+      self.firstLine:SetVisible(false)
+    end
+  end
+  function tab:AddTabs(tabInfos)
+    for i = 1, #tabInfos do
+      tab:AddTab(tabInfos[i])
+    end
+  end
+  local prevselected = 0
+  local function OnTabChanged(self, selected)
+    if self.OnTabChangedProc ~= nil then
+      self:OnTabChangedProc(selected)
+    end
+    if self.firstLine == nil or self.secondLine == nil or #self.divisionLine == 0 then
+      return
+    end
+    if selected == 1 then
+      self.firstLine:SetVisible(false)
+      self.secondLine:RemoveAllAnchors()
+      self.secondLine:AddAnchor("TOPLEFT", self.selectedButton[1], "BOTTOMRIGHT", 0, -3)
+      self.secondLine:AddAnchor("TOPRIGHT", tab, 11, 0)
+      local divisionLine = self.divisionLine[selected]
+      AnchorDivisionLine(1, false)
+      AnchorDivisionLine(prevselected - 1, false)
+    else
+      local selectedBtn = self.selectedButton[selected]
+      AnchorDivisionLine(selected, false)
+      AnchorDivisionLine(selected - 1, true)
+      AnchorDivisionLine(selected - 2, false)
+      self.firstLine:SetVisible(true)
+      self.firstLine:RemoveAllAnchors()
+      self.firstLine:AddAnchor("TOPLEFT", self.window[1], -10, -3)
+      self.firstLine:AddAnchor("TOPRIGHT", self.selectedButton[selected], "BOTTOMLEFT", 2, 0)
+      self.secondLine:SetVisible(true)
+      self.secondLine:RemoveAllAnchors()
+      self.secondLine:AddAnchor("TOPLEFT", self.selectedButton[selected], "BOTTOMRIGHT", 2, -3)
+      self.secondLine:AddAnchor("TOPRIGHT", self.window[1], 0, 0)
+    end
+    prevselected = selected
+  end
+  tab:SetHandler("OnTabChanged", OnTabChanged)
+  return tab
+end

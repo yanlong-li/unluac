@@ -1,0 +1,69 @@
+if X2Util:GetGameProvider() == MAILRU then
+  centerMessageLocale.killEffect = {
+    killEffectCoords = {
+      {
+        0,
+        220,
+        144,
+        36
+      },
+      {
+        0,
+        84,
+        412,
+        39
+      },
+      {
+        0,
+        123,
+        409,
+        39
+      },
+      {
+        0,
+        162,
+        470,
+        39
+      },
+      {
+        120,
+        89,
+        392,
+        39
+      },
+      {
+        0,
+        217,
+        396,
+        39
+      }
+    },
+    firstKilBloodlHelmetCoords = {
+      0,
+      108,
+      100,
+      108
+    },
+    deco = {
+      296,
+      100,
+      134,
+      100
+    }
+  }
+  FORM_CENTER_MESSAGE = {
+    NATION_INDEPENDENCE_COORDS = {
+      FLAG = UIParent:GetTextureData(TEXTURE_PATH.NATION_ALARM, "flag").coords,
+      DECLARE = UIParent:GetTextureData(TEXTURE_PATH.NATION_ALARM, "Declared").coords
+    },
+    ACHIEVEMENT_IMG_EXTENT = {
+      LOW_COMPLETE_TEXT = {124, 36},
+      LOW_RANK_LEFT_DECO = {80, 36}
+    }
+  }
+  function centerMessageLocale:GetEnchantResultItemStr(gradeStr, nameStr)
+    return string.format([[
+%s
+%s]], gradeStr, nameStr)
+  end
+end

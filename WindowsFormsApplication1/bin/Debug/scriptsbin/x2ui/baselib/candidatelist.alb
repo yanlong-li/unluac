@@ -1,0 +1,42 @@
+local candidateListEvent = {
+  CANDIDATE_LIST_SHOW = function()
+    candidateListWnd:Show(true)
+  end,
+  CANDIDATE_LIST_HIDE = function()
+    candidateListWnd:Show(false)
+  end,
+  CANDIDATE_LIST_CHANGED = function()
+    local retrieveCount = X2:GetCandidateOnceRetrieveCount()
+    for i = 1, retrieveCount do
+      local candidateString = X2:GetCandidateList(i)
+      if candidateString ~= nil and candidateString ~= "" then
+        candidateListWnd.candidateStringLabel[i]:SetText(candidateString)
+        candidateListWnd.idxLabel[i]:Show(true)
+        candidateListWnd.candidateStringLabel[i]:Show(true)
+      else
+        candidateListWnd.idxLabel[i]:Show(false)
+        candidateListWnd.candidateStringLabel[i]:Show(false)
+      end
+    end
+  end,
+  CANDIDATE_LIST_SELECTION_CHANGED = function()
+    local currentSelected = X2:GetCandidateSelectedIdxOnCurrentPage()
+    local retrieveCount = X2:GetCandidateOnceRetrieveCount()
+    for i = 1, retrieveCount do
+      if i == currentSelected then
+        candidateListWnd.idxLabel[i].style:SetColor(0.21, 0.9, 0.59, 1)
+        candidateListWnd.candidateStringLabel[i].style:SetColor(0.21, 0.9, 0.59, 1)
+      else
+        candidateListWnd.idxLabel[i].style:SetColor(1, 1, 1, 1)
+        candidateListWnd.candidateStringLabel[i].style:SetColor(1, 1, 1, 1)
+      end
+    end
+  end
+}
+candidateListWnd:SetHandler("OnEvent", function(this, event, ...)
+  candidateListEvent[event](...)
+end)
+candidateListWnd:RegisterEvent("CANDIDATE_LIST_SHOW")
+candidateListWnd:RegisterEvent("CANDIDATE_LIST_HIDE")
+candidateListWnd:RegisterEvent("CANDIDATE_LIST_CHANGED")
+candidateListWnd:RegisterEvent("CANDIDATE_LIST_SELECTION_CHANGED")

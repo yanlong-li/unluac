@@ -1,0 +1,220 @@
+function CreateRewardWindow(parent, id, itemCount)
+  local wnd = parent:CreateChildWidget("emptywidget", id, 0, true)
+  local rewardTitle = wnd:CreateChildWidget("textbox", "rewardTitle", 0, true)
+  rewardTitle:AddAnchor("TOPLEFT", wnd, 0, 0)
+  rewardTitle:AddAnchor("TOPRIGHT", wnd, 0, 0)
+  rewardTitle.style:SetAlign(ALIGN_LEFT)
+  rewardTitle.style:SetFontSize(FONT_SIZE.LARGE)
+  rewardTitle:SetAutoResize(true)
+  rewardTitle:SetHeight(FONT_SIZE.LARGE)
+  ApplyTextColor(rewardTitle, FONT_COLOR.HIGH_TITLE)
+  rewardTitle:SetText(GetCommonText("achievement_reward"))
+  local function CreateRewardTextBox(name)
+    local textbox = wnd:CreateChildWidget("textbox", name, 0, true)
+    textbox:SetAutoResize(true)
+    textbox.style:SetAlign(ALIGN_LEFT)
+    ApplyTextColor(textbox, FONT_COLOR.DEFAULT)
+    DrawRoundDingbat(textbox)
+    textbox:Show(false)
+    return textbox
+  end
+  local rewardExp = CreateRewardTextBox("rewardExp")
+  local rewardMoney = CreateRewardTextBox("rewardMoney")
+  local rewardAAPoint = CreateRewardTextBox("rewardAAPoint")
+  local rewardExpeditionExp = CreateRewardTextBox("rewardExpeditionExp")
+  local rewardLaborPower = CreateRewardTextBox("rewardLaborPower")
+  local rewardHonorPoint = CreateRewardTextBox("rewardHonorPoint")
+  local rewardDisHonorPoint = CreateRewardTextBox("rewardDisHonorPoint")
+  local rewardLivingPoint = CreateRewardTextBox("rewardLivingPoint")
+  local rewardContributionPoint = CreateRewardTextBox("rewardContributionPoint")
+  local rewardActability = CreateRewardTextBox("rewardActability")
+  wnd.rewardItemBtns = {}
+  for i = 1, itemCount do
+    local rewardItemBtn = CreateItemIconButton(id .. ".rewardItemBtn", wnd)
+    rewardItemBtn:Show(false)
+    if i == 1 then
+      rewardItemBtn:AddAnchor("TOPLEFT", rewardTitle, "BOTTOMLEFT", 0, 7)
+    else
+      rewardItemBtn:AddAnchor("TOPLEFT", wnd.rewardItemBtns[i - 1], "BOTTOMLEFT", 0, 7)
+    end
+    local name = rewardItemBtn:CreateChildWidget("label", "name", 0, true)
+    name:SetExtent(200, FONT_SIZE.MIDDLE)
+    name.style:SetAlign(ALIGN_LEFT)
+    name.style:SetFontSize(FONT_SIZE.MIDDLE)
+    name:SetLimitWidth(true)
+    ApplyTextColor(name, FONT_COLOR.TITLE)
+    name:AddAnchor("LEFT", rewardItemBtn, "RIGHT", 5, 0)
+    local count = rewardItemBtn:CreateChildWidget("label", "count", 0, true)
+    count:SetHeight(FONT_SIZE.MIDDLE)
+    count:SetAutoResize(true)
+    count.style:SetAlign(ALIGN_LEFT)
+    count.style:SetFontSize(FONT_SIZE.MIDDLE)
+    count:SetLimitWidth(true)
+    ApplyTextColor(count, FONT_COLOR.TITLE)
+    count:AddAnchor("TOPLEFT", name, "BOTTOMLEFT", 0, 3)
+    local bg = rewardItemBtn:CreateImageDrawable(TEXTURE_PATH.REWARD, "background")
+    bg:SetCoords(0, 0, 198, 64)
+    bg:SetHeight(71)
+    bg:AddAnchor("LEFT", rewardItemBtn, "RIGHT", -10, 0)
+    bg:AddAnchor("RIGHT", name, "RIGHT", 40, 0)
+    rewardItemBtn.bg = bg
+    wnd.rewardItemBtns[i] = rewardItemBtn
+  end
+  function wnd:FillReward(info)
+    local lastTarget = rewardTitle
+    local xOffset = 15
+    local yOffset = 8
+    local function SetLastTarget(widget)
+      widget:RemoveAllAnchors()
+      widget:AddAnchor("TOPLEFT", lastTarget, "BOTTOMLEFT", xOffset, yOffset)
+      widget:AddAnchor("TOPRIGHT", lastTarget, "BOTTOMRIGHT", 0, yOffset)
+      xOffset = 0
+      yOffset = 8
+      lastTarget = widget
+    end
+    local expValue = info.exp
+    if expValue ~= nil and tonumber(expValue) ~= 0 then
+      local str = string.format("%s %s|,%s;", GetUIText(COMMON_TEXT, "exp"), FONT_COLOR_HEX.BLUE, tostring(expValue))
+      SetLastTarget(rewardExp)
+      rewardExp:SetText(str)
+      rewardExp:Show(true)
+    else
+      rewardExp:SetText("")
+      rewardExp:Show(false)
+    end
+    local money = info.money
+    if money ~= nil and money ~= 0 then
+      local str = string.format("%s %s|m%d;", locale.questContext.rewardMoney, FONT_COLOR_HEX.BLUE, money)
+      SetLastTarget(rewardMoney)
+      rewardMoney:SetText(str)
+      rewardMoney:Show(true)
+    else
+      rewardMoney:SetText("")
+      rewardMoney:Show(false)
+    end
+    local aaPoint = info.aaPoint
+    if aaPoint ~= nil and aaPoint ~= 0 then
+      local str = string.format("%s %s|p%d;", locale.questContext.rewardAAPoint, FONT_COLOR_HEX.DEEP_ORANGE, aaPoint)
+      SetLastTarget(rewardAAPoint)
+      rewardAAPoint:SetText(str)
+      rewardAAPoint:Show(true)
+    else
+      rewardAAPoint:SetText("")
+      rewardAAPoint:Show(false)
+    end
+    local expeditionExpValue = info.expeditionExpValue
+    if expeditionExpValue ~= nil and expeditionExpValue ~= 0 then
+      local str = string.format("%s %s %s|,%s;", GetUIText(COMMUNITY_TEXT, "expedition"), GetUIText(COMMON_TEXT, "exp"), FONT_COLOR_HEX.BLUE, tostring(expeditionExpValue))
+      SetLastTarget(rewardExpeditionExp)
+      rewardExpeditionExp:SetText(str)
+      rewardExpeditionExp:Show(true)
+    else
+      rewardExpeditionExp:SetText("")
+      rewardExpeditionExp:Show(false)
+    end
+    local laborPower = info.laborPower
+    if laborPower ~= nil and laborPower ~= 0 then
+      local str = string.format("%s %s|,%s;", locale.attribute("labor_power"), FONT_COLOR_HEX.BLUE, tostring(laborPower))
+      SetLastTarget(rewardLaborPower)
+      rewardLaborPower:SetText(str)
+      rewardLaborPower:Show(true)
+    else
+      rewardLaborPower:SetText("")
+      rewardLaborPower:Show(false)
+    end
+    local honor = info.honor
+    if honor ~= nil and honor ~= 0 then
+      local str = string.format("%s %s|h%d;", GetUIText(COMMON_TEXT, "honor_point"), FONT_COLOR_HEX.BLUE, honor)
+      SetLastTarget(rewardHonorPoint)
+      rewardHonorPoint:SetText(str)
+      rewardHonorPoint:Show(true)
+    else
+      rewardHonorPoint:SetText("")
+      rewardHonorPoint:Show(false)
+    end
+    local crime = info.crime
+    if crime ~= nil and crime ~= 0 then
+      local str = string.format("%s %s|d%d;", locale.money.dishonor, FONT_COLOR_HEX.BLUE, crime)
+      SetLastTarget(rewardDisHonorPoint)
+      rewardDisHonorPoint:SetText(str)
+      rewardDisHonorPoint:Show(true)
+    else
+      rewardDisHonorPoint:SetText("")
+      rewardDisHonorPoint:Show(false)
+    end
+    local livingPoint = info.living
+    if livingPoint ~= nil and livingPoint ~= 0 then
+      local str = string.format("%s %s|l%d", locale.questContext.livingPoint, FONT_COLOR_HEX.BLUE, livingPoint)
+      SetLastTarget(rewardLivingPoint)
+      rewardLivingPoint:SetText(str)
+      rewardLivingPoint:Show(true)
+    else
+      rewardLivingPoint:SetText("")
+      rewardLivingPoint:Show(false)
+    end
+    local contributionPoint = info.contributionPoint
+    if contributionPoint ~= nil and contributionPoint ~= 0 then
+      local str = string.format("%s %s|w%d", locale.money.contribution_point, FONT_COLOR_HEX.BLUE, contributionPoint)
+      SetLastTarget(rewardContributionPoint)
+      rewardContributionPoint:SetText(str)
+      rewardContributionPoint:Show(true)
+    else
+      rewardContributionPoint:SetText("")
+      rewardContributionPoint:Show(false)
+    end
+    local actabilityInfo = info.actabilityInfo
+    if actabilityInfo ~= nil and actabilityInfo.point ~= 0 then
+      local str = string.format("%s %s %s%d", actabilityInfo.name, locale.skill.actabilityButtonText, FONT_COLOR_HEX.BLUE, actabilityInfo.point)
+      SetLastTarget(rewardActability)
+      rewardActability:SetText(str)
+      rewardActability:Show(true)
+    else
+      rewardActability:SetText("")
+      rewardActability:Show(false)
+    end
+    for i = 1, #wnd.rewardItemBtns do
+      if i <= #info.items then
+        if info.items[i].itemType ~= 0 then
+          local itemType = info.items[i].itemType
+          local itemCount = info.items[i].itemCount
+          local rewardItemBtn = wnd.rewardItemBtns[i]
+          local itemInfo = X2Item:GetItemInfoByType(itemType)
+          rewardItemBtn:SetItemInfo(itemInfo)
+          rewardItemBtn:Show(true)
+          rewardItemBtn.name:SetText(itemInfo.name)
+          rewardItemBtn.name:Show(true)
+          rewardItemBtn.bg:SetVisible(true)
+          if itemCount ~= nil and itemCount > 1 then
+            rewardItemBtn.name:AddAnchor("LEFT", rewardItemBtn, "RIGHT", 5, -5)
+            rewardItemBtn.count:Show(true)
+            rewardItemBtn.count:SetText(string.format("X %d", itemCount))
+          else
+            rewardItemBtn.name:AddAnchor("LEFT", rewardItemBtn, "RIGHT", 5, 0)
+            rewardItemBtn.count:Show(false)
+          end
+          if lastTarget == rewardTitle then
+            rewardItemBtn:AddAnchor("TOPLEFT", lastTarget, "BOTTOMLEFT", 0, yOffset)
+          else
+            rewardItemBtn:AddAnchor("TOPLEFT", lastTarget, "BOTTOMLEFT", 0, yOffset)
+          end
+          lastTarget = rewardItemBtn
+        else
+          wnd.rewardItemBtns[i]:Show(false)
+        end
+      else
+        wnd.rewardItemBtns[i]:Show(false)
+      end
+    end
+    if lastTarget == rewardTitle then
+      wnd:SetHeight(0)
+      wnd:Show(false)
+    else
+      local _, rY = wnd:GetOffset()
+      local _, tY = lastTarget:GetOffset()
+      local height = tY + lastTarget:GetHeight() - rY
+      wnd:SetHeight(height)
+      wnd:Show(true)
+    end
+  end
+  return wnd
+end

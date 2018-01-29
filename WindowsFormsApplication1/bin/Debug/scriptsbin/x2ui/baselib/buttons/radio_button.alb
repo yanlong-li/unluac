@@ -1,0 +1,241 @@
+function SetViewOfRadioButton(id, parent, count, direction, firstOffset, gap, textTable, style)
+  local buttons = {}
+  for i = 1, count do
+    do
+      local button = UIParent:CreateWidget("checkbutton", id .. "[" .. i .. "]", parent)
+      button:Show(true)
+      button.index = i
+      ButtonInit(button)
+      local textButton = CreateEmptyButton(id .. "[" .. i .. "]" .. ".textButton", button)
+      textButton:Show(true)
+      textButton:SetAutoResize(true)
+      textButton:SetHeight(17)
+      textButton:AddAnchor("LEFT", button, "RIGHT", 5, 0)
+      if textTable ~= nil and textTable[i] ~= nil then
+        textButton:SetText(textTable[i])
+      end
+      textButton.style:SetAlign(ALIGN_LEFT)
+      button.textButton = textButton
+      function button:SetButtonStyle(style)
+        local coords = {}
+        if style == "default" then
+          CreateButtonBackGround(button, "drawable", TEXTURE_PATH.DEFAULT, "background", 6)
+          self:SetExtent(15, 15)
+          coords[1] = {
+            1009,
+            0,
+            15,
+            15
+          }
+          coords[2] = {
+            1009,
+            0,
+            15,
+            15
+          }
+          coords[3] = {
+            1009,
+            0,
+            15,
+            15
+          }
+          coords[4] = {
+            1009,
+            0,
+            15,
+            15
+          }
+          coords[5] = {
+            994,
+            0,
+            15,
+            15
+          }
+          coords[6] = {
+            994,
+            0,
+            15,
+            15
+          }
+        elseif style == "tooltip" then
+          CreateButtonBackGround(button, "drawable", TEXTURE_PATH.HUD, "background", 6)
+          self:SetExtent(19, 19)
+          coords[1] = {
+            830,
+            47,
+            19,
+            19
+          }
+          coords[2] = {
+            830,
+            47,
+            19,
+            19
+          }
+          coords[3] = {
+            830,
+            47,
+            19,
+            19
+          }
+          coords[4] = {
+            830,
+            47,
+            19,
+            19
+          }
+          coords[5] = {
+            850,
+            47,
+            19,
+            19
+          }
+          coords[6] = {
+            850,
+            47,
+            19,
+            19
+          }
+        end
+        for j = 1, #coords do
+          SetButtonCoordsForBg(button, button.bgs[j], coords[j])
+        end
+      end
+      if style == nil then
+        button:SetButtonStyle("default")
+      else
+        button:SetButtonStyle(style)
+      end
+      SetButtonBackground(button)
+      buttons[i] = button
+    end
+  end
+  if firstOffset == nil then
+    firstOffset = {}
+    firstOffset.x = 0
+    firstOffset.y = 0
+  end
+  if gap == nil then
+    gap = 0
+  end
+  function buttons:SetTextButtonStyle(style)
+    if style == "soft_brown" then
+      for i = 1, count do
+        SetButtonFontColor(buttons[i].textButton, GetSoftCheckButtonFontColor())
+      end
+    else
+      for i = 1, count do
+        SetButtonFontColor(buttons[i].textButton, GetBlueButtonFontColor())
+      end
+    end
+  end
+  function buttons:SetOffset(target, offsetX, offsetY, buttonGap)
+    for i = 1, count do
+      local button = buttons[i]
+      if i == 1 then
+        button:AddAnchor("TOPLEFT", target, "TOPLEFT", offsetX, offsetY)
+      elseif direction == "horizen" then
+        button:AddAnchor("LEFT", buttons[i - 1], "RIGHT", buttonGap, 0)
+      elseif direction == "vertical" then
+        button:AddAnchor("TOPLEFT", buttons[i - 1], "BOTTOMLEFT", 0, buttonGap)
+      end
+    end
+  end
+  buttons:SetOffset(parent, firstOffset.x, firstOffset.y, gap)
+  return buttons
+end
+function CreateRadioButton(id, parent, count, direction, firstOffset, gap, textTable, style)
+  local buttons = SetViewOfRadioButton(id, parent, count, direction, firstOffset, gap, textTable, style)
+  function buttons:Show(show, visibleIdx)
+    if visibleIdx == nil then
+      visibleIdx = count
+    end
+    for i = 1, visibleIdx do
+      buttons[i]:Show(show)
+      if buttons[i].textButton ~= nil then
+        buttons[i].textButton:Show(show)
+      end
+    end
+  end
+  function buttons:Enable(enable)
+    local alpha = 1
+    if not enable then
+      alpha = 0.5
+    end
+    for i = 1, count do
+      buttons[i]:Enable(enable)
+      buttons[i].textButton:Enable(enable)
+      buttons[i]:SetAlpha(alpha)
+      buttons[i].textButton:SetAlpha(alpha)
+    end
+  end
+  function buttons:Check(index, trigger)
+    if count < 2 then
+      return
+    end
+    trigger = trigger or false
+    for i = 1, count do
+      if i == index then
+        buttons[i]:SetChecked(true, trigger)
+      else
+        buttons[i]:SetChecked(false, trigger)
+      end
+    end
+  end
+  function buttons:GetChecked()
+    for i = 1, count do
+      if buttons[i]:GetChecked() == true then
+        return i
+      end
+    end
+  end
+  for i = 1, #buttons do
+    do
+      local button = buttons[i]
+      function button:OnClick()
+        if self:GetChecked() == true then
+          self:SetChecked(false)
+        end
+      end
+      button:SetHandler("OnClick", button.OnClick)
+      function button:OnCheckChanged()
+        if count < 2 then
+          return
+        end
+        if self:GetChecked() then
+          for j = 1, count do
+            if j ~= self.index then
+              buttons[j]:SetChecked(false, false)
+            end
+          end
+          if self.RadioBtnCheckChangedProc ~= nil then
+            self:RadioBtnCheckChangedProc()
+          end
+          if buttons.RadioBtnCheckChangedProc ~= nil then
+            buttons:RadioBtnCheckChangedProc(self.index)
+          end
+        else
+          local checked = false
+          for j = 1, count do
+            checked = buttons[j]:GetChecked()
+          end
+          if checked == false then
+            self:SetChecked(true, false)
+            checkedIndex = self.index
+          end
+        end
+      end
+      button:SetHandler("OnCheckChanged", button.OnCheckChanged)
+      function button.textButton:OnClick()
+        if count < 2 then
+          return
+        end
+        if button:GetChecked() == false then
+          button:SetChecked(true)
+        end
+      end
+      button.textButton:SetHandler("OnClick", button.textButton.OnClick)
+    end
+  end
+  return buttons
+end

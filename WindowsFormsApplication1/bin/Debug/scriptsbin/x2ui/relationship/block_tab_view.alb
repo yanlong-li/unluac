@@ -1,0 +1,43 @@
+function SetViewOfBlockTabWindow(window)
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local frame = CreateScrollListCtrl(window, "frame", 0)
+  frame:Show(true)
+  frame:AddAnchor("TOPLEFT", window, 0, sideMargin / 2)
+  frame:AddAnchor("BOTTOMRIGHT", window, 0, bottomMargin)
+  frame:SetUseDoubleClick(true)
+  local DataSetFunc = function(subItem, data, setValue)
+    if setValue then
+      subItem:SetText(data[BLOCK_COL.NAME])
+    end
+  end
+  local LayoutSetFunc = function(frame, rowIndex, colIndex, subItem)
+    DefaultListItemSetting(subItem)
+    subItem.style:SetAlign(ALIGN_LEFT)
+  end
+  local columnWidth = relationshipLocale.blockTab.columnWidth
+  frame:InsertColumn(locale.faction.name, columnWidth.name, LCCIT_STRING, DataSetFunc, NameAscendingSortFunc, NameDescendingSortFunc, LayoutSetFunc)
+  frame:InsertColumn(locale.expedition.memo, columnWidth.memo, LCCIT_STRING, DataSetFunc, nil, nil, LayoutSetFunc)
+  frame:InsertRows(10, false)
+  DrawListCtrlUnderLine(frame.listCtrl)
+  ListCtrlOverClickTextureSetting(frame.listCtrl)
+  for i = 1, #frame.listCtrl.column do
+    SettingListColumn(frame.listCtrl, frame.listCtrl.column[i])
+    DrawListCtrlColumnSperatorLine(frame.listCtrl.column[i], #frame.listCtrl.column, i)
+    if i == #frame.listCtrl.column then
+      frame.listCtrl.column[i]:Enable(false)
+    end
+  end
+  local namePolicyInfo = X2Util:GetNamePolicyInfo(VNT_CHAR)
+  local inputNameExtent = relationshipLocale.blockTab.inputName.extent
+  local inputName = window:CreateChildWidget("editbox", "inputName", 0, true)
+  inputName:SetExtent(inputNameExtent[1], inputNameExtent[2])
+  inputName:AddAnchor("BOTTOMLEFT", window, 0, 0)
+  inputName:SetMaxTextLength(namePolicyInfo.local_max)
+  ApplyEditSkin(inputName)
+  CreateEditGuideText(inputName, locale.common.input_name_guide)
+  local addBlockButton = window:CreateChildWidget("button", "addBlockButton", 0, true)
+  addBlockButton:Enable(false)
+  addBlockButton:SetText(locale.block.add)
+  addBlockButton:AddAnchor("BOTTOMLEFT", inputName, "BOTTOMRIGHT", 3, 1)
+  ApplyButtonSkin(addBlockButton, BUTTON_BASIC.DEFAULT)
+end

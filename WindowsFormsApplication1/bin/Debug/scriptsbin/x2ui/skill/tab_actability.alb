@@ -1,0 +1,880 @@
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+local EXPERT_GRADE = {NEWBIE = 0, PROBATION = 1}
+local MAX_GRADE_COUNT = X2Ability:GetGradeInfo(EXPERT_GRADE.PROBATION).expertLimit
+local GetGradeNameWithColor = function(grade, color, name)
+  local string_value = ""
+  if grade ~= 0 and name ~= nil then
+    string_value = string.format("|c%s[%s]", color, name)
+  else
+    string_value = string.format("|c%s%s", color, name)
+  end
+  return string_value
+end
+local GetGradeUpLimitWithColor = function(color, upLimitValue)
+  return string.format("|c%s|,%d;", color, upLimitValue)
+end
+local function GetCurrentExpertCount()
+  local totalCount = 0
+  for k = EXPERT_GRADE.PROBATION, X2Ability:GetMaxGrade() do
+    local count = X2Ability:GetActabilityCountByGrade(k)
+    totalCount = totalCount + count
+  end
+  return totalCount
+end
+local function GetUpgradeButtonTooltip(upgradeButton)
+  local info = upgradeButton:GetParent().itemInfo
+  if not upgradeButton:IsEnabled() and not X2Ability:CanUpgradeExpert(info.type) then
+    local next_gradeInfo = X2Ability:GetGradeInfo(info.grade + 1)
+    local maxAbilityPoint = upgradeButton:GetParent().maxAbilityPoint
+    local count = 0
+    for grade = next_gradeInfo.grade, X2Ability:GetMaxGrade() do
+      count = count + X2Ability:GetActabilityCountByGrade(grade)
+    end
+    if next_gradeInfo.expertLimit == count then
+      if info.grade == EXPERT_GRADE.NEWBIE then
+        return GetUIText(COMMON_TEXT, "expert_count_limit_tooltip_for_newbie")
+      else
+        return locale.skill.actability.sampleTip(next_gradeInfo.name, next_gradeInfo.expertLimit, next_gradeInfo.grade == X2Ability:GetMaxGrade())
+      end
+    end
+    if maxAbilityPoint <= info.point then
+      return locale.skill.actability.sampleTip(next_gradeInfo.name, next_gradeInfo.expertLimit, next_gradeInfo.grade == X2Ability:GetMaxGrade())
+    else
+      return locale.skill.actability.warning_more_actability
+    end
+  end
+  return GetUIText(COMMON_TEXT, "expert_upgrade_default_tooltip")
+end
+local GetDownButtonTooltip = function(downButton)
+  return GetUIText(COMMON_TEXT, "expert_downgrade_default_tooltip")
+end
+local function CreateItemWindow(parent, itemInfo, dialogOwner)
+  local itemWindow = UIParent:CreateWidget("emptywidget", "itemWindow", parent)
+  itemWindow:Show(true)
+  itemWindow:SetExtent(200, 40)
+  itemWindow.itemInfo = itemInfo
+  local grade_bg = CreateContentBackground(itemWindow, "TYPE1")
+  grade_bg:AddAnchor("TOPLEFT", itemWindow, -10, -6)
+  grade_bg:AddAnchor("BOTTOMRIGHT", itemWindow, 10, 5)
+  ApplyTextureColor(grade_bg, TEXTURE_COLOR.BOX_BROWN)
+  itemWindow.grade_bg = grade_bg
+  local actabilityPoint = itemWindow:CreateChildWidget("label", "actabilityPoint", 0, true)
+  actabilityPoint:SetNumberOnly(true)
+  actabilityPoint:SetText(string.format("%d", itemInfo.point + itemInfo.modifyPoint))
+  actabilityPoint:AddAnchor("TOPLEFT", itemWindow, 45, 21)
+  actabilityPoint.style:SetAlign(ALIGN_LEFT)
+  if itemInfo.modifyPoint == 0 then
+    ApplyTextColor(actabilityPoint, FONT_COLOR.DEFAULT)
+  else
+    ApplyTextColor(actabilityPoint, FONT_COLOR.GREEN)
+  end
+  local upgradeButton = itemWindow:CreateChildWidget("button", "upgradeButton", 0, true)
+  upgradeButton:Show(false)
+  upgradeButton:AddAnchor("TOPRIGHT", itemWindow, localeView.actionPointUpgrateButton, 5)
+  ApplyButtonSkin(upgradeButton, BUTTON_CONTENTS.ACTABILITY_UP)
+  local downgradeButton = itemWindow:CreateChildWidget("button", "downgradeButton", 0, true)
+  downgradeButton:Show(false)
+  downgradeButton:AddAnchor("TOPRIGHT", itemWindow, localeView.actionPointDownGradeButton, 8)
+  ApplyButtonSkin(downgradeButton, BUTTON_CONTENTS.ACTABILITY_DOWN)
+  local bg = itemWindow:CreateNinePartDrawable(TEXTURE_PATH.DEFAULT, "artwork")
+  bg:SetCoords(949, 199, 10, 10)
+  bg:SetInset(4, 4, 5, 5)
+  bg:SetExtent(ICON_SIZE.DEFAULT, ICON_SIZE.DEFAULT)
+  local itemIcon = itemWindow:CreateIconImageDrawable("Textures/Defaults/White.dds", "artwork")
+  itemIcon:SetColor(1, 1, 1, 1)
+  itemIcon:SetCoords(0, 0, 128, 128)
+  itemIcon:SetExtent(40, 40)
+  itemIcon:AddAnchor("LEFT", itemWindow, 0, 0)
+  itemIcon:ClearAllTextures()
+  itemWindow.itemIcon = itemIcon
+  bg:AddAnchor("CENTER", itemIcon, 0, 0)
+  local name = CreateActabilityGradeIconWidget("name", itemWindow)
+  name:AddAnchor("TOPLEFT", itemIcon, "TOPRIGHT", 3, -2)
+  itemWindow.name = name
+  local gauge = CreateSkillBar(itemWindow:GetId() .. ".gauge", itemWindow)
+  gauge:SetWidth(155)
+  gauge:AddAnchor("BOTTOMLEFT", itemIcon, "BOTTOMRIGHT", 2, 0)
+  itemWindow.minAbilityPoint = X2Ability:GetMinActabilityPoint(itemInfo.type)
+  itemWindow.maxAbilityPoint = X2Ability:GetMaxActabilityPoint(itemInfo.type)
+  gauge:SetMinMaxValues(itemWindow.minAbilityPoint, itemWindow.maxAbilityPoint)
+  gauge:SetValue(itemInfo.point)
+  itemWindow.gauge = gauge
+  function itemWindow:DefaultSetting(info)
+    local gradeInfo = X2Ability:GetGradeInfo(info.grade)
+    local itemInfo = self.itemInfo
+    self.gauge:ChangeStatusBarTextureOfActabilityGrade(gradeInfo.gaugeColorString)
+    local nameStr = string.format("%s", itemInfo.name)
+    self.name:SetGradeInfo(info.grade, nameStr, gradeInfo.colorString)
+    self.upgradeButton:Show(false)
+    self.downgradeButton:Show(false)
+    self.actabilityPoint:SetText(string.format("%d", self.itemInfo.point + self.itemInfo.modifyPoint))
+    if self.itemInfo.modifyPoint == 0 then
+      ApplyTextColor(self.actabilityPoint, FONT_COLOR.DEFAULT)
+    else
+      ApplyTextColor(self.actabilityPoint, FONT_COLOR.GREEN)
+    end
+    local upgradeable = X2Ability:CanUpgradeExpert(info.type)
+    local downgradeable = X2Ability:CanDowngradeExpert(info.type)
+    self.upgradeButton:Enable(upgradeable)
+    if upgradeable then
+      ApplyTextureColor(self.grade_bg, TEXTURE_COLOR.ACTABILITY_POSSIBLE_UP_BG)
+    else
+      ApplyTextureColor(self.grade_bg, TEXTURE_COLOR.BOX_BROWN)
+    end
+    self.downgradeButton:Enable(downgradeable)
+    if info.grade ~= EXPERT_GRADE.NEWBIE and info.grade ~= X2Ability:GetMaxGrade() then
+      self.upgradeButton:Show(true)
+      self.downgradeButton:Show(true)
+    elseif info.grade == EXPERT_GRADE.NEWBIE and info.point >= self.maxAbilityPoint then
+      self.upgradeButton:Show(true)
+    elseif info.grade == X2Ability:GetMaxGrade() then
+      self.downgradeButton:Show(true)
+    end
+    if self.upgradeButton:IsVisible() then
+      self.upgradeButton:RemoveAllAnchors()
+      if self.downgradeButton:IsVisible() then
+        upgradeButton:AddAnchor("TOPRIGHT", itemWindow, localeView.actionPointUpgrateButton, 5)
+      else
+        upgradeButton:AddAnchor("TOPRIGHT", itemWindow, localeView.actionPointDownGradeButton, 5)
+      end
+    end
+  end
+  itemWindow:DefaultSetting(itemWindow.itemInfo)
+  local function OnEnter(self)
+    if upgradeButton:IsMouseOver() or downgradeButton:IsMouseOver() then
+      return
+    end
+    local info = self.itemInfo
+    local function GetPercent(grade, curPoint, minPoint, maxPoint)
+      if grade > EXPERT_GRADE.NEWBIE then
+        return (curPoint - minPoint) / (maxPoint - minPoint) * 100
+      else
+        return curPoint / maxPoint * 100
+      end
+    end
+    local percent = GetPercent(info.grade, info.point, itemWindow.minAbilityPoint, itemWindow.maxAbilityPoint)
+    local calcPoint = info.point + info.modifyPoint
+    local gradeInfo = X2Ability:GetGradeInfo(info.grade)
+    local str = ""
+    if info.modifyPoint == 0 then
+      str = string.format([[
+|c%s%s [%s: %d%%]|r
+|,%d;/|,%d;]], gradeInfo.colorString, info.name, gradeInfo.name, percent, info.point, itemWindow.maxAbilityPoint)
+    else
+      str = string.format([[
+|c%s%s [%s: %d%%]|r
+|,%d;%s+|,%d;|r / |,%d;]], gradeInfo.colorString, info.name, gradeInfo.name, percent, info.point, FONT_COLOR_HEX.SINERGY, info.modifyPoint, itemWindow.maxAbilityPoint)
+    end
+    SetTooltip(str, self)
+  end
+  itemWindow:SetHandler("OnEnter", OnEnter)
+  local OnLeave = function()
+    HideTooltip()
+  end
+  itemWindow:SetHandler("OnLeave", OnLeave)
+  function itemWindow:Update(info)
+    self.itemInfo = info
+    gauge:SetValue(info.point)
+    self:DefaultSetting(info)
+  end
+  function itemWindow:ChangeGrade(info, minAbilityPoint, maxAbilityPoint)
+    self.minAbilityPoint = minAbilityPoint
+    self.maxAbilityPoint = maxAbilityPoint
+    self.itemInfo = info
+    gauge:SetMinMaxValues(minAbilityPoint, maxAbilityPoint)
+    gauge:SetValue(info.point)
+    self:DefaultSetting(info)
+  end
+  local function OnEnter(self)
+    SetTooltip(GetUpgradeButtonTooltip(self), self)
+  end
+  upgradeButton:SetHandler("OnEnter", OnEnter)
+  local OnLeave = function()
+    HideTooltip()
+  end
+  upgradeButton:SetHandler("OnLeave", OnLeave)
+  local function OnEnter(self)
+    SetTooltip(GetDownButtonTooltip(self), self)
+  end
+  downgradeButton:SetHandler("OnEnter", OnEnter)
+  local OnLeave = function()
+    HideTooltip()
+  end
+  downgradeButton:SetHandler("OnLeave", OnLeave)
+  local function CreateActabilityDialog(dialog)
+    local titleContent = dialog:CreateChildWidget("textbox", "titleContent", 0, true)
+    titleContent:SetWidth(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH)
+    titleContent:AddAnchor("TOP", dialog, 0, titleMargin)
+    titleContent.style:SetFontSize(FONT_SIZE.LARGE)
+    ApplyTextColor(titleContent, FONT_COLOR.DEFAULT)
+    local gradeContent = dialog:CreateChildWidget("emptywidget", "gradeContent", 0, true)
+    gradeContent:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, 45)
+    gradeContent:AddAnchor("TOP", titleContent, "BOTTOM", 0, sideMargin / 2)
+    local bg = CreateContentBackground(gradeContent, "TYPE2")
+    bg:AddAnchor("TOPLEFT", gradeContent, -5, 0)
+    bg:AddAnchor("BOTTOMRIGHT", gradeContent, 5, 0)
+    ApplyTextureColor(bg, TEXTURE_COLOR.BOX_BROWN)
+    local arrow = gradeContent:CreateImageDrawable(BUTTON_TEXTURE_PATH.PAGE, "background")
+    arrow:SetCoords(0, 0, 16, 32)
+    arrow:SetColor(ConvertColor(73), ConvertColor(45), ConvertColor(11), 1)
+    arrow:SetExtent(9.6, 19.2)
+    arrow:AddAnchor("CENTER", bg, 0, -2)
+    local prevGrade = CreateActabilityGradeIconWidget("prevGrade", dialog)
+    prevGrade:AddAnchor("RIGHT", arrow, "LEFT", -10, 1)
+    prevGrade:SetHeight(FONT_SIZE.LARGE)
+    prevGrade.label.style:SetFontSize(FONT_SIZE.LARGE)
+    dialog.prevGrade = prevGrade
+    local nextGrade = CreateActabilityGradeIconWidget("nextGrade", dialog)
+    nextGrade:AddAnchor("LEFT", arrow, "RIGHT", 10, 1)
+    nextGrade:SetHeight(FONT_SIZE.LARGE)
+    nextGrade.label.style:SetFontSize(FONT_SIZE.LARGE)
+    dialog.nextGrade = nextGrade
+    dialog.textbox:RemoveAllAnchors()
+    dialog.textbox:AddAnchor("TOP", gradeContent, "BOTTOM", 0, sideMargin / 2)
+  end
+  local SetActabilityDialog = function(dialog, itemInfo, isUpgrade)
+    local prevGrade, nextGrade, str
+    if isUpgrade then
+      prevGrade = itemInfo.grade
+      nextGrade = itemInfo.grade + 1
+      str = locale.skill.actability.upgrade_content(itemInfo.name)
+    else
+      prevGrade = itemInfo.grade
+      nextGrade = itemInfo.grade - 1
+      str = locale.skill.actability.downgrade_content(itemInfo.name)
+    end
+    dialog.titleContent:SetText(str)
+    dialog.titleContent:SetHeight(dialog.titleContent:GetTextHeight())
+    local prevGradeInfo = X2Ability:GetGradeInfo(prevGrade)
+    local nextGradeInfo = X2Ability:GetGradeInfo(nextGrade)
+    dialog.prevGrade:SetGradeInfo(prevGrade, prevGradeInfo.name, prevGradeInfo.colorString)
+    dialog.nextGrade:SetGradeInfo(nextGrade, nextGradeInfo.name, nextGradeInfo.colorString)
+  end
+  local function LeftClickFuncUpgradeBtn(self)
+    X2DialogManager:DeleteByOwnerWindow(dialogOwner:GetId())
+    local function MakeUpgradeMessage(itemInfo)
+      local curGradeInfo = X2Ability:GetGradeInfo(itemInfo.grade)
+      local nextGradeInfo = X2Ability:GetGradeInfo(itemInfo.grade + 1)
+      local curCount = 0
+      for grade = nextGradeInfo.grade, X2Ability:GetMaxGrade() do
+        curCount = curCount + X2Ability:GetActabilityCountByGrade(grade)
+      end
+      local remainCount = nextGradeInfo.expertLimit - curCount - 1
+      local msg2 = locale.skill.actability.content_max_actability_increase(GetGradeUpLimitWithColor(curGradeInfo.colorString, curGradeInfo.upLimit), GetGradeUpLimitWithColor(nextGradeInfo.colorString, nextGradeInfo.upLimit))
+      local msg4 = ""
+      if tonumber(curGradeInfo.upPrice) ~= 0 and curGradeInfo.upPrice ~= nil then
+        msg4 = string.format(F_MONEY.currency.pipeString[curGradeInfo.upCurrency], curGradeInfo.upPrice)
+      end
+      local msg5 = locale.skill.actability.upgrade_warning(nextGradeInfo.name, remainCount)
+      if msg4 ~= "" then
+        return string.format([[
+%s
+%s
+
+%s]], msg2, msg4, msg5)
+      end
+      return string.format([[
+%s
+
+%s]], msg2, msg5)
+    end
+    local function DialogHandler(wnd, infoTable)
+      infoTable.title = locale.skill.actability.upgrade_title
+      infoTable.content = MakeUpgradeMessage(itemWindow.itemInfo)
+      CreateActabilityDialog(wnd)
+      SetActabilityDialog(wnd, itemWindow.itemInfo, true)
+      wnd:SetTitle(infoTable.title)
+      wnd:SetContent(infoTable.content)
+      function wnd:OkProc()
+        X2Ability:UpgradeExpert(itemWindow.itemInfo.type)
+      end
+    end
+    X2DialogManager:RequestDefaultDialog(DialogHandler, dialogOwner:GetId())
+  end
+  ButtonOnClickHandler(upgradeButton, LeftClickFuncUpgradeBtn)
+  function downgradeButton:OnClick(arg)
+    if arg ~= "LeftButton" then
+      return
+    end
+    X2DialogManager:DeleteByOwnerWindow(dialogOwner:GetId())
+    local function MakeDowngradeMessage(itemInfo)
+      local curGradeInfo = X2Ability:GetGradeInfo(itemInfo.grade)
+      local preGradeInfo = X2Ability:GetGradeInfo(itemInfo.grade - 1)
+      local msg2 = locale.skill.actability.content_max_actability_decrease(GetGradeUpLimitWithColor(curGradeInfo.colorString, curGradeInfo.upLimit), GetGradeUpLimitWithColor(preGradeInfo.colorString, preGradeInfo.upLimit))
+      local msg3 = ""
+      if curGradeInfo.upLimit == itemInfo.point then
+        local GetValue = function(color1, value1, color2, value2)
+          return GetUIText(COMMON_TEXT, "percent_to_percent", color1, tostring(value1), color2, tostring(value2))
+        end
+        local curColor = GetHexColorForString(curGradeInfo.colorString)
+        local preColor = GetHexColorForString(preGradeInfo.colorString)
+        msg3 = string.format([[
+%s %s
+%s %s
+%s %s]], GetUIText(COMMON_TEXT, "livelihood_exp_decrease"), GetValue(curColor, curGradeInfo.expMul, preColor, preGradeInfo.expMul), GetUIText(COMMON_TEXT, "use_labor_power_increase"), GetValue(curColor, curGradeInfo.advantage, preColor, preGradeInfo.advantage), GetUIText(COMMON_TEXT, "casting_time_increase"), GetValue(curColor, curGradeInfo.castAdvantage, preColor, preGradeInfo.castAdvantage))
+      end
+      local msg4 = ""
+      if tonumber(curGradeInfo.downPrice) ~= 0 and curGradeInfo.downPrice ~= nil then
+        msg4 = string.format(F_MONEY.currency.pipeString[curGradeInfo.downCurrency], curGradeInfo.downPrice)
+      end
+      local msg5 = locale.skill.actability.downgrade_warning(MAX_GRADE_COUNT - GetCurrentExpertCount())
+      if msg4 ~= "" and msg3 ~= "" then
+        return string.format([[
+%s
+%s
+
+%s
+
+%s]], msg2, msg3, msg4, msg5)
+      elseif msg3 == "" and msg4 == "" then
+        return string.format([[
+%s
+
+%s]], msg2, msg5)
+      elseif msg4 == "" then
+        return string.format([[
+%s
+
+%s
+
+%s]], msg2, msg3, msg5)
+      else
+        return string.format([[
+%s
+%s
+
+%s]], msg2, msg4, msg5)
+      end
+    end
+    local function DialogHandler(wnd, infoTable)
+      infoTable.title = locale.skill.actability.downgrade_title
+      infoTable.content = MakeDowngradeMessage(itemWindow.itemInfo)
+      CreateActabilityDialog(wnd)
+      SetActabilityDialog(wnd, itemWindow.itemInfo, false)
+      wnd:SetTitle(infoTable.title)
+      wnd:SetContent(infoTable.content)
+      function wnd:OkProc()
+        X2Ability:DowngradeExpert(itemWindow.itemInfo.type)
+      end
+    end
+    X2DialogManager:RequestDefaultDialog(DialogHandler, dialogOwner:GetId())
+  end
+  downgradeButton:SetHandler("OnClick", downgradeButton.OnClick)
+  return itemWindow
+end
+local function CreateExpertDialog(id, parent)
+  local window = CreateWindow(id, parent)
+  window:SetExtent(POPUP_WINDOW_WIDTH, 350)
+  window:SetTitle(locale.skill.actability.expert_expand)
+  window:SetWindowModal(true)
+  window:SetUILayer("dialog")
+  window:EnableHidingIsRemove(true)
+  window:Show(false)
+  local content = window:CreateChildWidget("label", "content", 0, true)
+  content:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, FONT_SIZE.LARGE)
+  content:AddAnchor("TOP", window, 0, titleMargin)
+  content.style:SetFontSize(FONT_SIZE.LARGE)
+  content:SetText(locale.skill.actability.expand_msg1)
+  ApplyTextColor(content, FONT_COLOR.DEFAULT)
+  local countFrame = window:CreateChildWidget("emptywidget", "countFrame", 0, true)
+  countFrame:SetWidth(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH)
+  countFrame:AddAnchor("TOP", content, "BOTTOM", 0, sideMargin)
+  local bg = CreateContentBackground(countFrame, "TYPE2")
+  bg:AddAnchor("TOPLEFT", countFrame, -sideMargin / 2, -sideMargin / 2)
+  bg:AddAnchor("BOTTOMRIGHT", countFrame, sideMargin / 2, sideMargin / 2)
+  ApplyTextureColor(bg, TEXTURE_COLOR.BOX_BROWN)
+  local currentEnableCount = window:CreateChildWidget("textbox", "currentEnableCount", 0, true)
+  currentEnableCount:SetWidth(125)
+  currentEnableCount.style:SetFontSize(FONT_SIZE.LARGE)
+  currentEnableCount:SetLineSpace(3)
+  currentEnableCount:AddAnchor("TOPLEFT", countFrame, sideMargin / 2, 0)
+  ApplyTextColor(currentEnableCount, FONT_COLOR.DEFAULT)
+  local arrow = CreateIcon(window, "arrow")
+  arrow:AddAnchor("LEFT", currentEnableCount, "RIGHT", 0, 0)
+  ApplyTextureColor(arrow, TEXTURE_COLOR.ARROW_BLUE)
+  local expandEnableCount = window:CreateChildWidget("textbox", "expandEnableCount", 0, true)
+  expandEnableCount:SetWidth(125)
+  expandEnableCount.style:SetFontSize(FONT_SIZE.LARGE)
+  expandEnableCount:SetLineSpace(3)
+  expandEnableCount:AddAnchor("TOPRIGHT", countFrame, -sideMargin / 2, 0)
+  ApplyTextColor(expandEnableCount, FONT_COLOR.BLUE)
+  local itemFrame = window:CreateChildWidget("emptywidget", "itemFrame", 0, true)
+  itemFrame:SetHeight(ICON_SIZE.DEFAULT)
+  local itemName = window:CreateChildWidget("textbox", "itemName", 0, true)
+  itemName:SetLineSpace(3)
+  itemName:AddAnchor("BOTTOMRIGHT", itemFrame, 0, -3)
+  itemName.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(itemName, FONT_COLOR.DEFAULT)
+  local itemIconButton = CreateItemIconButton(window:GetId() .. ".itemIconButton", window)
+  itemIconButton:AddAnchor("LEFT", itemFrame, 0, 0)
+  window.itemIconButton = itemIconButton
+  local valueFrame = window:CreateChildWidget("emptywidget", "valueFrame", 0, true)
+  valueFrame:SetHeight(FONT_SIZE.MIDDLE)
+  local bg = valueFrame:CreateImageDrawable(TEXTURE_PATH.MONEY_WINDOW, "background")
+  bg:SetCoords(0, 0, 190, 29)
+  bg:SetColor(1, 1, 1, 0.8)
+  bg:SetHeight(29)
+  bg:AddAnchor("LEFT", valueFrame, -sideMargin / 2, 0)
+  bg:AddAnchor("RIGHT", valueFrame, sideMargin / 2, 0)
+  local valueTitle = window:CreateChildWidget("label", "valueTitle", 0, true)
+  valueTitle:SetAutoResize(true)
+  valueTitle:SetHeight(FONT_SIZE.MIDDLE)
+  valueTitle:AddAnchor("LEFT", valueFrame, 0, 0)
+  ApplyTextColor(valueTitle, FONT_COLOR.DEFAULT)
+  local value = window:CreateChildWidget("textbox", "value", 0, true)
+  value:SetHeight(FONT_SIZE.MIDDLE)
+  value:AddAnchor("RIGHT", valueFrame, 0, 0)
+  value.style:SetAlign(ALIGN_RIGHT)
+  ApplyTextColor(value, FONT_COLOR.DEFAULT)
+  local warningText = window:CreateChildWidget("label", "warningText", 0, true)
+  warningText:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, FONT_SIZE.LARGE)
+  warningText:AddAnchor("BOTTOM", window, 0, bottomMargin + -sideMargin / 2)
+  ApplyTextColor(warningText, FONT_COLOR.RED)
+  local info = {
+    leftButtonStr = GetUIText(SKILL_TEXT, "do_expand"),
+    leftButtonLeftClickFunc = function()
+      X2Ability:ExpandExpert()
+      window:Show(false)
+    end,
+    rightButtonStr = GetCommonText("cancel"),
+    rightButtonLeftClickFunc = function()
+      window:Show(false)
+    end
+  }
+  CreateWindowDefaultTextButtonSet(window, info)
+  local function SetValue(point)
+    value:SetWidth(POPUP_WINDOW_WIDTH)
+    value:SetText(string.format("|l%d;", point))
+    value:SetWidth(value:GetLongestLineWidth() + 10)
+    local info = X2Player:GetGamePoints()
+    local livingPoint = info.livingPointStr
+    if livingPoint == nil then
+      livingPoint = 0
+    end
+    if point > tonumber(livingPoint) then
+      ApplyTextColor(value, FONT_COLOR.RED)
+    else
+      ApplyTextColor(value, FONT_COLOR.DEFAULT)
+    end
+    valueFrame:SetWidth(value:GetLongestLineWidth() + valueTitle:GetWidth() + sideMargin * 2)
+  end
+  local function SetName(name, curCount, needCount)
+    itemName:SetWidth(POPUP_WINDOW_WIDTH)
+    itemName:SetText(string.format([[
+%s
+%d/%d]], name, curCount, needCount))
+    itemName:SetWidth(itemName:GetLongestLineWidth() + 10)
+    itemName:SetHeight(itemName:GetTextHeight())
+    if curCount < needCount then
+      ApplyTextColor(itemName, FONT_COLOR.RED)
+    else
+      ApplyTextColor(itemName, FONT_COLOR.DEFAULT)
+    end
+    itemFrame:SetWidth(itemName:GetLongestLineWidth() + itemIconButton:GetWidth() + 15)
+    itemFrame:AddAnchor("TOP", countFrame, "BOTTOM", 0, sideMargin)
+  end
+  local function SetDialogHeight()
+    local height = titleMargin + content:GetHeight() + countFrame:GetHeight() + window.leftButton:GetHeight() + warningText:GetHeight() + sideMargin * 1.5
+    if valueFrame:IsVisible() and itemFrame:IsVisible() then
+      height = height + valueFrame:GetHeight() + itemFrame:GetHeight() + sideMargin * 4.5
+    elseif valueFrame:IsVisible() then
+      height = height + valueFrame:GetHeight() + sideMargin * 4
+    elseif itemFrame:IsVisible() then
+      height = height + itemFrame:GetHeight() + sideMargin * 3.5
+    end
+    window:SetHeight(height)
+  end
+  function window:FillData()
+    local info = X2Ability:GetExpandExpertInfo()
+    self.currentEnableCount:SetText(string.format([[
+%s
+%s]], locale.skill.actability.current_enable_count, MAX_GRADE_COUNT))
+    self.currentEnableCount:SetHeight(self.currentEnableCount:GetTextHeight())
+    self.expandEnableCount:SetText(string.format([[
+%s
+%s]], locale.skill.actability.expand_enable_count, MAX_GRADE_COUNT + 1))
+    self.expandEnableCount:SetHeight(self.expandEnableCount:GetTextHeight())
+    self.countFrame:SetHeight(self.expandEnableCount:GetTextHeight())
+    self.itemFrame:Show(false)
+    self.valueFrame:RemoveAllAnchors()
+    self.valueFrame:Show(false)
+    if info.requireItemType == nil and info.requireLP == 0 then
+    elseif info.requireItemType == nil and info.requireLP ~= 0 then
+      self.valueFrame:Show(true)
+      self.valueFrame:AddAnchor("TOP", countFrame, "BOTTOM", 0, sideMargin * 1.3)
+      self.valueTitle:SetText(locale.money.living_point)
+      SetValue(info.requireLP)
+    elseif info.requireItemType ~= nil and info.requireItemCount ~= nil and info.requireItemCount ~= 0 and info.requireLP == 0 then
+      self.itemFrame:Show(true)
+      local itemInfo = X2Item:GetItemInfoByType(info.requireItemType)
+      AddTooltipFunction(self.itemIconButton, itemInfo, itemInfo.lookType, itemInfo.itemGrade, false)
+      SetName(itemInfo.name, X2Bag:CountBagItemByItemType(itemInfo.itemType), info.requireItemCount)
+    else
+      self.itemFrame:Show(true)
+      local itemInfo = X2Item:GetItemInfoByType(info.requireItemType)
+      AddTooltipFunction(self.itemIconButton, itemInfo, itemInfo.lookType, itemInfo.itemGrade, false)
+      SetName(itemInfo.name, X2Bag:CountBagItemByItemType(itemInfo.itemType), info.requireItemCount)
+      self.valueFrame:Show(true)
+      self.valueFrame:AddAnchor("TOP", itemFrame, "BOTTOM", 0, sideMargin / 1.5)
+      self.valueTitle:SetText(locale.money.living_point)
+      SetValue(info.requireLP)
+    end
+    self.warningText:SetText(locale.skill.actability.expand_msg3(info.remainExpandCnt))
+    SetDialogHeight()
+  end
+  return window
+end
+function CreateActabilityPage(parent)
+  local possibleUpgrade = parent:CreateChildWidget("emptywidget", "possible_upgrade", 0, true)
+  possibleUpgrade:AddAnchor("TOPLEFT", parent, 0, sideMargin)
+  possibleUpgrade:AddAnchor("TOPRIGHT", parent, 0, sideMargin)
+  possibleUpgrade:SetHeight(30)
+  local possibleUpgrade_bg = CreateContentBackground(possibleUpgrade, "TYPE1")
+  possibleUpgrade_bg:AddAnchor("TOPLEFT", possibleUpgrade, -10, -6)
+  possibleUpgrade_bg:AddAnchor("BOTTOMRIGHT", possibleUpgrade, -20, 0)
+  ApplyTextureColor(possibleUpgrade_bg, TEXTURE_COLOR.BOX_BROWN)
+  possibleUpgrade.possibleUpgrade_bg = possibleUpgrade_bg
+  local possibleUpgradeCountTitle = possibleUpgrade:CreateChildWidget("label", "possibleUpgradeCountTitle", 0, true)
+  possibleUpgradeCountTitle:AddAnchor("CENTER", possibleUpgrade, -5, -5)
+  possibleUpgradeCountTitle:SetHeight(FONT_SIZE.LARGE)
+  possibleUpgradeCountTitle:SetAutoResize(true)
+  possibleUpgradeCountTitle.style:SetFontSize(FONT_SIZE.LARGE)
+  ApplyTextColor(possibleUpgradeCountTitle, FONT_COLOR.MIDDLE_TITLE)
+  possibleUpgradeCountTitle:SetText(string.format("%s: ", GetUIText(COMMON_TEXT, "possible_expert_upgrade_count_title")))
+  local possibleUpgradeCountText = possibleUpgrade:CreateChildWidget("label", "possibleUpgradeCountText", 0, true)
+  possibleUpgradeCountText:AddAnchor("LEFT", possibleUpgradeCountTitle, "RIGHT", 5, 0)
+  possibleUpgradeCountText:SetHeight(FONT_SIZE.LARGE)
+  possibleUpgradeCountText.style:SetFontSize(FONT_SIZE.LARGE)
+  ApplyTextColor(possibleUpgradeCountText, FONT_COLOR.BLUE)
+  local page = CreateScrollWindow(parent, "actability_page", 0)
+  page:AddAnchor("TOPLEFT", possibleUpgrade, "BOTTOMLEFT", 0, 5)
+  page:AddAnchor("BOTTOMRIGHT", parent, 0, -sideMargin * 2)
+  function possibleUpgrade:Update()
+    local possibleUpgradeCount = 0
+    for i = 1, #page.actabilityItem do
+      local item = page.actabilityItem[i]
+      if item.upgradeButton:IsEnabled() then
+        possibleUpgradeCount = possibleUpgradeCount + 1
+      end
+    end
+    self.possibleUpgradeCountText:SetText(tostring(possibleUpgradeCount))
+  end
+  local function CreateCountLabel(id, parent)
+    local allCount = parent:CreateChildWidget("label", id, 0, false)
+    ApplyTextColor(allCount, FONT_COLOR.DEFAULT)
+    allCount:SetHeight(FONT_SIZE.MIDDLE)
+    allCount.style:SetAlign(ALIGN_LEFT)
+    allCount.style:SetFontSize(FONT_SIZE.MIDDLE)
+    allCount:SetAutoResize(true)
+    function allCount:Update()
+      local str = X2Locale:LocalizeUiText(COMMON_TEXT, "actability_guide_tooltip", tostring(GetCurrentExpertCount()), tostring(MAX_GRADE_COUNT))
+      allCount:SetText(str)
+    end
+    return allCount
+  end
+  local gradeInfoBtn = page:CreateChildWidget("button", "gradeInfoBtn", 0, true)
+  gradeInfoBtn:AddAnchor("TOPLEFT", page, "BOTTOMLEFT", 0, sideMargin / 2)
+  gradeInfoBtn:SetText(GetUIText(COMMON_TEXT, "grade_info"))
+  ApplyButtonSkin(gradeInfoBtn, BUTTON_BASIC.DEFAULT)
+  parent.gradeInfoWnd = nil
+  local function CreateGradeInfoWnd()
+    local window = CreateWindow("gradeInfoWnd", "UIParent")
+    window:Show(false)
+    window:SetExtent(skillLocale.actabilityGradeInfoWnd.width, 495)
+    window:AddAnchor("CENTER", "UIParent", 0, 0)
+    window:SetTitle(GetUIText(COMMON_TEXT, "grade_info"))
+    window:EnableHidingIsRemove(true)
+    local contentWidth = window:GetWidth() - sideMargin * 2
+    local listCtrl = CreateListCtrl("listCtrl", window)
+    listCtrl:SetExtent(contentWidth, 380)
+    listCtrl:AddAnchor("TOP", window, 0, titleMargin)
+    local function LayoutFunc(frame, rowIndex, colIndex, subItem)
+      local gradeIcon = CreateActabilityGradeIconWidget("gradeIcon", subItem)
+      gradeIcon:AddAnchor("LEFT", subItem, sideMargin / 1.5, 0)
+      subItem.gradeIcon = gradeIcon
+      local count = subItem:CreateChildWidget("textbox", "count", 0, true)
+      count:SetExtent(45, FONT_SIZE.MIDDLE)
+      count:AddAnchor("RIGHT", subItem, skillLocale.actabilityGradeInfoWnd.countOffset, 0)
+      count.style:SetAlign(ALIGN_LEFT)
+      ApplyTextColor(count, FONT_COLOR.DEFAULT)
+    end
+    local DataSetFunc = function(subItem, data, setValue)
+      if setValue then
+        subItem.gradeIcon:SetGradeInfo(data.grade, data.name, data.colorString)
+        subItem.count:SetText(data.countStr)
+      else
+        subItem.gradeIcon:SetGradeInfo()
+        subItem.count:SetText("")
+      end
+    end
+    local columnWidth = skillLocale.actabilityGradeInfoWnd.columnWidth
+    listCtrl:InsertColumn(GetUIText(COMMON_TEXT, "grade_per_count"), columnWidth[1], LCCIT_WINDOW, LayoutFunc, DataSetFunc)
+    listCtrl:InsertColumn(GetUIText(COMMON_TEXT, "livelihood_exp_increase"), columnWidth[2], LCCIT_STRING)
+    listCtrl:InsertColumn(GetUIText(COMMON_TEXT, "use_labor_power_decrease"), columnWidth[3], LCCIT_STRING)
+    listCtrl:InsertColumn(GetUIText(COMMON_TEXT, "casting_time_decrease"), columnWidth[4], LCCIT_STRING)
+    listCtrl:InsertRows(10, false)
+    DrawListCtrlUnderLine(listCtrl.listCtrl, nil, false)
+    for i = 1, #listCtrl.listCtrl.column do
+      SettingListColumn(listCtrl.listCtrl, listCtrl.listCtrl.column[i])
+      DrawListCtrlColumnSperatorLine(listCtrl.listCtrl.column[i], #listCtrl.listCtrl.column, i, f)
+      listCtrl.listCtrl.column[i].style:SetFontSize(skillLocale.actabilityGradeInfoWnd.columnFontSize)
+    end
+    ListCtrlItemGuideLine(listCtrl.listCtrl.items, listCtrl:GetRowCount() + 1)
+    for i = 1, #listCtrl.listCtrl.items do
+      local item = listCtrl.listCtrl.items[i]
+      item.line:SetVisible(true)
+    end
+    local bg = CreateContentBackground(listCtrl, "TYPE2")
+    bg:AddAnchor("TOPLEFT", listCtrl.listCtrl.column[1], "BOTTOMLEFT", 0, -5)
+    bg:AddAnchor("BOTTOMRIGHT", listCtrl, 0, 0)
+    ApplyTextureColor(bg, TEXTURE_COLOR.BOX_BROWN)
+    local GetAbleCount = function(grade)
+      local gradeInfo = X2Ability:GetGradeInfo(grade)
+      local maxCount = gradeInfo.expertLimit
+      for i = grade, X2Ability:GetMaxGrade() + 1 do
+        maxCount = maxCount - X2Ability:GetActabilityCountByGrade(i)
+      end
+      return maxCount
+    end
+    local color = GetHexColorForString(X2Ability:GetGradeInfo(EXPERT_GRADE.NEWBIE).colorString)
+    for i = EXPERT_GRADE.PROBATION + 1, X2Ability:GetMaxGrade() + 1 do
+      local gradeInfo = X2Ability:GetGradeInfo(i - 1)
+      local curGradeCount = X2Ability:GetActabilityCountByGrade(i - 1)
+      local firstInfo = {
+        grade = gradeInfo.grade,
+        name = gradeInfo.name,
+        colorString = gradeInfo.colorString,
+        countStr = string.format("%d %s(%d)|r", curGradeCount, color, GetAbleCount(i - 1))
+      }
+      listCtrl:InsertData(i, 1, firstInfo)
+      listCtrl:InsertData(i, 2, string.format("%d%%", gradeInfo.expMul))
+      listCtrl:InsertData(i, 3, string.format("%d%%", gradeInfo.advantage))
+      listCtrl:InsertData(i, 4, string.format("%d%%", gradeInfo.castAdvantage))
+    end
+    local str = X2Locale:LocalizeUiText(COMMON_TEXT, "actability_guide_desc", color)
+    local desc = window:CreateChildWidget("textbox", "desc", 0, false)
+    ApplyTextColor(desc, FONT_COLOR.DEFAULT)
+    desc:SetExtent(contentWidth, FONT_SIZE.MIDDLE)
+    desc:AddAnchor("TOPLEFT", listCtrl, "BOTTOMLEFT", sideMargin / 2, 5)
+    desc:SetText(str)
+    desc:SetWidth(desc:GetLongestLineWidth() + 10)
+    desc.style:SetAlign(ALIGN_LEFT)
+    local allCount = CreateCountLabel("allCount", window)
+    allCount:SetHeight(FONT_SIZE.LARGE)
+    allCount.style:SetFontSize(FONT_SIZE.LARGE)
+    allCount:AddAnchor("TOPRIGHT", listCtrl, "BOTTOMRIGHT", -sideMargin / 2, 5)
+    allCount:SetAutoResize(true)
+    allCount:Update()
+    local tip = window:CreateChildWidget("label", "tip", 0, false)
+    tip:SetExtent(contentWidth, FONT_SIZE.LARGE)
+    tip.style:SetFontSize(FONT_SIZE.LARGE)
+    tip:AddAnchor("TOPLEFT", desc, "BOTTOMLEFT", 0, sideMargin / 2)
+    tip:SetText(GetUIText(ABILITY_CATEGORY_DESCRIPTION_TEXT, "actability_expert_grade_effect_rule"))
+    tip.style:SetAlign(ALIGN_LEFT)
+    ApplyTextColor(tip, FONT_COLOR.BLUE)
+    local function OnHide()
+      parent.gradeInfoWnd = nil
+    end
+    window:SetHandler("OnHide", OnHide)
+    function window:Update()
+      allCount:Update()
+      for i = EXPERT_GRADE.PROBATION + 1, X2Ability:GetMaxGrade() + 1 do
+        local curGradeCount = X2Ability:GetActabilityCountByGrade(i - 1)
+        local str = string.format("%d %s(%d)|r", curGradeCount, color, GetAbleCount(i - 1))
+        local subItem = self.listCtrl.listCtrl.items[i - 1].subItems[1]
+        subItem.count:SetText(str)
+      end
+    end
+    return window
+  end
+  local function OnClick()
+    if parent.gradeInfoWnd ~= nil then
+      parent.gradeInfoWnd:Show(not parent.gradeInfoWnd:IsVisible())
+      return
+    end
+    if parent.gradeInfoWnd == nil then
+      parent.gradeInfoWnd = CreateGradeInfoWnd()
+    end
+    parent.gradeInfoWnd:Show(true)
+  end
+  gradeInfoBtn:SetHandler("OnClick", OnClick)
+  local expandBtn = page:CreateChildWidget("button", "expandBtn", 0, true)
+  expandBtn:AddAnchor("TOPRIGHT", page, "BOTTOMRIGHT", 0, sideMargin / 2)
+  expandBtn:SetText(locale.skill.actability.expert_expand)
+  ApplyButtonSkin(expandBtn, BUTTON_BASIC.DEFAULT)
+  local function ExpandBtnLeftClickFunc()
+    if page.dialog == nil then
+      page.dialog = CreateExpertDialog(page:GetId() .. ".dialog", "UIParent")
+    end
+    page.dialog:FillData()
+    page.dialog:Show(true)
+    page.dialog:AddAnchor("CENTER", page, 0, 0)
+    local function OnHide()
+      page.dialog = nil
+    end
+    page.dialog:SetHandler("OnHide", OnHide)
+  end
+  ButtonOnClickHandler(expandBtn, ExpandBtnLeftClickFunc)
+  local OnEnter = function(self)
+    if not self:IsEnabled() then
+      SetTooltip(locale.skill.actability.expandWarning, self)
+    end
+  end
+  expandBtn:SetHandler("OnEnter", OnEnter)
+  local OnLeave = function()
+    HideTooltip()
+  end
+  expandBtn:SetHandler("OnLeave", OnLeave)
+  function expandBtn:Update()
+    self:Enable(X2Ability:CanExpandExpert())
+  end
+  local allCount = CreateCountLabel("allCount", page)
+  allCount:AddAnchor("RIGHT", expandBtn, "LEFT", -sideMargin / 2.5, 0)
+  allCount:Update()
+  page.actabilityItem = {}
+  local function CreateSection(titleStr, elemInfos)
+    local section = UIParent:CreateWidget("emptywidget", "section", page.content)
+    local title = section:CreateChildWidget("label", "title", 0, false)
+    title:SetAutoResize(true)
+    title:SetHeight(FONT_SIZE.LARGE)
+    title.style:SetFontSize(FONT_SIZE.LARGE)
+    title:AddAnchor("TOPLEFT", section, 0, 0)
+    title:SetText(titleStr)
+    ApplyTextColor(title, FONT_COLOR.MIDDLE_TITLE)
+    local index = 1
+    local x = 0
+    local y = sideMargin + 2
+    section.item = {}
+    for i = 1, #elemInfos do
+      local elemInfo = elemInfos[i]
+      local acInfo = X2Ability:GetMyActabilityInfo(elemInfo.actabilityGroupType)
+      local info = X2Craft:GetActabilityGroupInfoByGroupType(elemInfo.actabilityGroupType)
+      local item = CreateItemWindow(section, acInfo, parent)
+      item:AddAnchor("TOPLEFT", section, x, y)
+      if info.skill_page_visible == true then
+        item.itemIcon:AddTexture(info.icon_path)
+      end
+      page.actabilityItem[#page.actabilityItem + 1] = item
+      x = x + 207
+      if i % 3 == 0 then
+        x = 0
+        y = y + 55
+      end
+    end
+    section:SetHeight(math.floor(#elemInfos / 3 + 0.5) * 55 + sideMargin)
+    return section
+  end
+  local infos = X2Ability:GetActabilityViewInfo()
+  local y = 0
+  for i = 1, #infos do
+    local info = infos[i]
+    local section = CreateSection(info.name, info.elems)
+    section:AddAnchor("TOPLEFT", page.content, 0, y)
+    section:AddAnchor("TOPRIGHT", page.content, 0, y)
+    y = y + section:GetHeight()
+    if i ~= #infos then
+      local line = CreateLine(section, "TYPE1")
+      line:AddAnchor("TOPLEFT", section, "BOTTOMLEFT", 0, 0)
+      line:AddAnchor("TOPRIGHT", section, "BOTTOMRIGHT", 0, 0)
+      y = y + sideMargin - 5
+    end
+  end
+  page.height = y
+  possibleUpgrade:Update()
+  local OnBoundChanged = function(self)
+    ResetScroll(self, self.height)
+  end
+  page:SetHandler("OnBoundChanged", OnBoundChanged)
+  function page:Update(actabilityId)
+    for i = 1, #page.actabilityItem do
+      local item = page.actabilityItem[i]
+      if item.itemInfo.type == actabilityId then
+        local info = X2Ability:GetMyActabilityInfo(actabilityId)
+        item:Update(info)
+        possibleUpgrade:Update()
+        return
+      end
+    end
+  end
+  function page:GradeChange(actabilityId)
+    for i = 1, #page.actabilityItem do
+      local item = page.actabilityItem[i]
+      if actabilityId ~= nil and item.itemInfo.type == actabilityId then
+        local info = X2Ability:GetMyActabilityInfo(actabilityId)
+        local minAbilityPoint = X2Ability:GetMinActabilityPoint(actabilityId)
+        local maxAbilityPoint = X2Ability:GetMaxActabilityPoint(actabilityId)
+        item:ChangeGrade(info, minAbilityPoint, maxAbilityPoint)
+      else
+        item:DefaultSetting(item.itemInfo)
+      end
+    end
+    possibleUpgrade:Update()
+  end
+  function page:UpdateAll()
+    for i = 1, #page.actabilityItem do
+      local item = page.actabilityItem[i]
+      local info = X2Ability:GetMyActabilityInfo(item.itemInfo.type)
+      if info ~= nil then
+        item:Update(info)
+      end
+    end
+    possibleUpgrade:Update()
+  end
+  function page:UpdateActabilityPoint()
+    for i = 1, #page.actabilityItem do
+      local item = page.actabilityItem[i]
+      local info = X2Ability:GetMyActabilityInfo(item.itemInfo.type)
+      item.itemInfo = info
+      item.actabilityPoint:SetText(string.format("%d", item.itemInfo.point + item.itemInfo.modifyPoint))
+      if item.itemInfo.modifyPoint == 0 then
+        ApplyTextColor(item.actabilityPoint, FONT_COLOR.DEFAULT)
+      else
+        ApplyTextColor(item.actabilityPoint, FONT_COLOR.GREEN)
+      end
+    end
+  end
+  local events = {
+    ACTABILITY_EXPERT_CHANGED = function(actabilityId)
+      page:Update(actabilityId)
+    end,
+    ACTABILITY_EXPERT_GRADE_CHANGED = function(actabilityId)
+      page:GradeChange(actabilityId)
+      page.expandBtn:Update()
+      allCount:Update()
+      if parent.gradeInfoWnd ~= nil then
+        parent.gradeInfoWnd:Update()
+      end
+    end,
+    ACTABILITY_MODIFIER_UPDATE = function()
+      page:UpdateAll()
+    end,
+    UNIT_EQUIPMENT_CHANGED = function()
+      page:UpdateAll()
+    end,
+    CHANGE_ACTABILITY_DECO_NUM = function()
+      page:UpdateAll()
+    end,
+    ACTABILITY_REFRESH_ALL = function()
+      page:UpdateAll()
+      page.expandBtn:Update()
+      allCount:Update()
+      if parent.gradeInfoWnd ~= nil then
+        parent.gradeInfoWnd:Update()
+      end
+    end,
+    ACTABILITY_EXPERT_EXPANDED = function()
+      page:UpdateAll()
+      page.expandBtn:Update()
+      MAX_GRADE_COUNT = X2Ability:GetGradeInfo(EXPERT_GRADE.PROBATION).expertLimit
+      allCount:Update()
+      if parent.gradeInfoWnd ~= nil then
+        parent.gradeInfoWnd:Update()
+      end
+    end
+  }
+  page:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(page, events)
+  return page
+end

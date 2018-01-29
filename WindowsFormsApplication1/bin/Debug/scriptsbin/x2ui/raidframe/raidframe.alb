@@ -1,0 +1,266 @@
+function GetPartyAndSlotIndex(memberIndex)
+  if memberIndex == nil then
+    return
+  end
+  memberIndex = memberIndex - 1
+  if memberIndex < 0 then
+    LuaAssert(string.format("memberIndex is invalid"))
+    return
+  end
+  local maxPartyMember = X2Team:GetMaxPartyMembers()
+  local party = math.floor(memberIndex / maxPartyMember) + 1
+  local slot = math.floor(memberIndex % maxPartyMember) + 1
+  return party, slot
+end
+function CreateRaidFrame(id)
+  local w = SetViewOfRaidFrame(id)
+  function w:OnShow()
+    self:Refresh()
+    if X2Team:GetPartyFrameVisible() == true then
+      if baselibLocale.useQQTalk then
+        self:AddAnchor("TOPLEFT", "UIParent", 195 + BUTTON_CONTENTS.ENTERED_TEAM_TALK_ROOM.width, 145)
+      else
+        self:AddAnchor("TOPLEFT", "UIParent", 195, 145)
+      end
+    else
+      self:AddAnchor("TOPLEFT", "UIParent", 0, 145)
+    end
+  end
+  w:SetHandler("OnShow", w.OnShow)
+  function w:OnMouseDown(arg)
+    if arg == "LeftButton" and X2Input:IsShiftKeyDown() then
+      X2Cursor:ClearCursor()
+      X2Cursor:SetCursorImage(CURSOR_PATH.MOVE, 0, 0)
+      w:StartMoving()
+    end
+    return true
+  end
+  w:SetHandler("OnMouseDown", w.OnMouseDown)
+  function w:OnMouseUp(arg)
+    if arg == "LeftButton" then
+      X2Cursor:ClearCursor()
+      w:StopMovingOrSizing()
+    end
+  end
+  w:SetHandler("OnMouseUp", w.OnMouseUp)
+  function w:Refresh(memberIndex)
+    local MAX_RAID_PARTIES = X2Team:GetMaxParties()
+    local party, slot = GetPartyAndSlotIndex(memberIndex)
+    if X2Team:IsRaidTeam() == false then
+      return
+    end
+    if party ~= nil then
+      if slot ~= nil then
+        if w.party[party].members[slot]:Refresh() then
+          w.party[party]:Show(true)
+        end
+      else
+        w.party[party]:Refresh()
+      end
+      if X2Team:CountTeamMembersInParty(party) > 0 and X2Team:GetPartyVisible(party) == true then
+        w.party[party]:Show(true)
+      else
+        w.party[party]:Show(false)
+      end
+    else
+      for i = 1, MAX_RAID_PARTIES do
+        w.party[i]:Refresh()
+        if X2Team:CountTeamMembersInParty(i) > 0 and X2Team:GetPartyVisible(i) == true then
+          w.party[i]:Show(true)
+        else
+          w.party[i]:Show(false)
+        end
+      end
+    end
+  end
+  function w:UpdateMovedMembers(fromMemberIndex, toMemberIndex)
+    local party1, slot1 = GetPartyAndSlotIndex(fromMemberIndex)
+    local party2, slot2 = GetPartyAndSlotIndex(toMemberIndex)
+    if party1 == nil or slot1 == nil or party2 == nil or slot2 == nil then
+      return
+    end
+    local MAX_RAID_PARTY_MEMBERS = X2Team:GetMaxPartyMembers()
+    local memberIndex_1 = (party1 - 1) * MAX_RAID_PARTY_MEMBERS + (slot1 - 1) + 1
+    local memberIndex_2 = (party2 - 1) * MAX_RAID_PARTY_MEMBERS + (slot2 - 1) + 1
+    local member_1 = string.format("team%d", memberIndex_1)
+    local member_2 = string.format("team%d", memberIndex_2)
+    self.party[party1].members[slot1].combatIcon:SetVisible(X2Unit:UnitCombatState(member_1))
+    self.party[party2].members[slot2].combatIcon:SetVisible(X2Unit:UnitCombatState(member_2))
+    self.party[party1].members[slot1].marker:SetVisible(false)
+    self.party[party1].members[slot1]:SetMarker(X2Unit:GetUnitId(member_1))
+    self.party[party1].members[slot1]:UpdateNameLabelWidth()
+    self.party[party2].members[slot2].marker:SetVisible(false)
+    self.party[party2].members[slot2]:SetMarker(X2Unit:GetUnitId(member_2))
+    self.party[party2].members[slot2]:UpdateNameLabelWidth()
+  end
+  function w:SetPartyVisible(party, visible)
+    w.party[party]:Show(visible)
+    if visible then
+      w.party[party]:Refresh()
+    end
+  end
+  function w:UpdateAllMembersCombatState()
+    local maxPartyMembers = X2Team:GetMaxPartyMembers()
+    local maxParties = X2Team:GetMaxParties()
+    for i = 1, maxParties do
+      for j = 1, maxPartyMembers do
+        local memberIndex = (i - 1) * maxPartyMembers + (j - 1) + 1
+        RaidFrame.party[i].members[j].combatIcon:SetVisible(X2Unit:UnitCombatState(string.format("team%d", memberIndex)))
+      end
+    end
+  end
+  function w:OnScale()
+    self:OnShow()
+  end
+  w:SetHandler("OnScale", w.OnScale)
+  return w
+end
+local raidFrameEvents = {}
+RaidFrame = nil
+function ToggleRaidFrame(show)
+  if show and not X2Team:IsRaidTeam() then
+    return
+  end
+  if show == false and RaidFrame == nil then
+    return
+  end
+  if RaidFrame == nil then
+    RaidFrame = CreateRaidFrame("raidFrame", "UIParent")
+    RaidFrame:SetSimpleMode(X2Team:GetSimpleView())
+    RaidFrame:EnableHidingIsRemove(true)
+    RaidFrame:SetHandler("OnEvent", function(this, event, ...)
+      raidFrameEvents[event](...)
+    end)
+    RaidFrame:RegisterEvent("TEAM_MEMBERS_CHANGED")
+    RaidFrame:RegisterEvent("TOGGLE_RAID_FRAME_PARTY")
+    RaidFrame:RegisterEvent("TEAM_ROLE_CHANGED")
+    RaidFrame:RegisterEvent("LOOTING_RULE_MASTER_CHANGED")
+    RaidFrame:RegisterEvent("LOOTING_RULE_METHOD_CHANGED")
+    RaidFrame:RegisterEvent("TOGGLE_PARTY_FRAME")
+    RaidFrame:RegisterEvent("RAID_FRAME_SIMPLE_VIEW")
+    RaidFrame:RegisterEvent("UNIT_COMBAT_STATE_CHANGED")
+    RaidFrame:RegisterEvent("UPDATE_QQTALK_ROOM_USER")
+  end
+  local isShow = show
+  if isShow == nil then
+    isShow = not RaidFrame:IsVisible()
+  end
+  if isShow == true and X2Team:GetRaidFrameVisible() == false then
+    RaidFrame:Show(false)
+    RaidFrame = nil
+    return
+  end
+  RaidFrame:Show(isShow)
+  RaidFrame:UpdateAllMembersCombatState()
+  if isShow == false then
+    RaidFrame = nil
+  end
+end
+UIParent:SetEventHandler("TOGGLE_RAID_FRAME", ToggleRaidFrame)
+if X2Team:IsRaidTeam() then
+  ToggleRaidFrame(true)
+end
+raidFrameEvents = {
+  TEAM_MEMBERS_CHANGED = function(arg1, arg2, arg3, arg4, arg5)
+    if RaidFrame == nil then
+      return
+    end
+    if arg1 == "joined" and arg2 == false or arg1 == "refreshed" and arg2 == false or arg1 == "leaved" and arg2 == false or arg1 == "kicked" and arg2 == false then
+      RaidFrame:Refresh(arg4)
+    elseif arg1 == "leaved_by_self" and arg2 == false or arg1 == "dismissed" and arg2 == false or arg1 == "kicked_by_self" and arg2 == false then
+      ToggleRaidFrame(false)
+    elseif arg1 == "moved" then
+      RaidFrame:Refresh(arg3)
+      RaidFrame:Refresh(arg4)
+      RaidFrame:UpdateMovedMembers(arg3, arg4)
+    else
+      RaidFrame:Refresh()
+    end
+  end,
+  TOGGLE_RAID_FRAME_PARTY = function(party, visible)
+    if RaidFrame == nil then
+      return
+    end
+    RaidFrame:SetPartyVisible(party, visible)
+  end,
+  TEAM_ROLE_CHANGED = function(memberIndex, role)
+    local party, slot = GetPartyAndSlotIndex(memberIndex)
+    RaidFrame.party[party].members[slot]:ChangeHpBarTexture_role(RaidFrame.simple, role)
+  end,
+  LOOTING_RULE_MASTER_CHANGED = function()
+    if RaidFrame == nil then
+      return
+    end
+    local maxPartyMembers = X2Team:GetMaxPartyMembers()
+    local maxParties = X2Team:GetMaxParties()
+    for i = 1, maxParties do
+      for j = 1, maxPartyMembers do
+        RaidFrame.party[i].members[j]:UpdateLeaderMark()
+      end
+    end
+  end,
+  LOOTING_RULE_METHOD_CHANGED = function()
+    if RaidFrame == nil then
+      return
+    end
+    local maxPartyMembers = X2Team:GetMaxPartyMembers()
+    local maxParties = X2Team:GetMaxParties()
+    for i = 1, maxParties do
+      for j = 1, maxPartyMembers do
+        RaidFrame.party[i].members[j]:UpdateLeaderMark()
+      end
+    end
+  end,
+  TOGGLE_PARTY_FRAME = function(show)
+    if RaidFrame == nil then
+      return
+    end
+    if show == true then
+      if baselibLocale.useQQTalk then
+        RaidFrame:AddAnchor("TOPLEFT", "UIParent", 195 + BUTTON_CONTENTS.ENTERED_TEAM_TALK_ROOM.width, 145)
+      else
+        RaidFrame:AddAnchor("TOPLEFT", "UIParent", 195, 145)
+      end
+    else
+      RaidFrame:AddAnchor("TOPLEFT", "UIParent", 0, 145)
+    end
+  end,
+  RAID_FRAME_SIMPLE_VIEW = function(simple)
+    if RaidFrame == nil then
+      return
+    end
+    RaidFrame:SetSimpleMode(simple)
+  end,
+  UNIT_COMBAT_STATE_CHANGED = function(arg1, arg2)
+    if RaidFrame == nil then
+      return
+    end
+    local maxPartyMembers = X2Team:GetMaxPartyMembers()
+    local maxParties = X2Team:GetMaxParties()
+    for i = 1, maxParties do
+      for j = 1, maxPartyMembers do
+        RaidFrame.party[i].members[j]:ShowCombatIcon(arg1, arg2)
+      end
+    end
+  end,
+  UPDATE_QQTALK_ROOM_USER = function()
+    if RaidFrame == nil then
+      return
+    end
+    local maxPartyMembers = X2Team:GetMaxPartyMembers()
+    local maxParties = X2Team:GetMaxParties()
+    for i = 1, maxParties do
+      for j = 1, maxPartyMembers do
+        RaidFrame.party[i].members[j]:UpdateQQTalk()
+      end
+    end
+  end
+}
+local ConvertToRaidTeam = function()
+  ToggleRaidFrame(true)
+end
+UIParent:SetEventHandler("CONVERT_TO_RAID_TEAM", ConvertToRaidTeam)
+local LeftLoading = function()
+  ToggleRaidFrame(X2Team:IsRaidTeam() and X2Team:GetRaidFrameVisible())
+end
+UIParent:SetEventHandler("LEFT_LOADING", LeftLoading)

@@ -1,0 +1,21 @@
+if hudLocale == nil then
+  hudLocale = {}
+end
+function hudLocale.MakeHudTimeString()
+  local isAm, hour, minute = X2Time:GetGameTime()
+  local str = string.format("%s %d : %02d", isAm and hour < 12 and locale.clock.am or locale.clock.pm, hour, minute)
+  return str
+end
+hudLocale.buildGuide = {
+  frame = {
+    extent = {width = 450, height = 275}
+  },
+  bg = {
+    AnchorOffset = {x = 0, y = 0}
+  },
+  guide_text = {width = 230}
+}
+hudLocale.visiblePremiumBtn = true
+hudLocale.alterTexts = {
+  battleClose = GetUIText(INSTANT_GAME_TEXT, "battle_close")
+}

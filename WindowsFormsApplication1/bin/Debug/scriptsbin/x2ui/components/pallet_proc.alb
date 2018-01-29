@@ -1,0 +1,31 @@
+palletProc = {}
+function ShowPallet(anchorInfo, eventListenWidget)
+  if palletWindow == nil then
+    palletWindow = CreatePopupPallet("defaultPallet[1]", "UIParent")
+    palletWindow:SetUILayer("hud")
+    palletWindow:SetCloseOnEscape(true)
+  end
+  if anchorInfo.targetAnchor == nil then
+    anchorInfo.targetAnchor = "TOPLEFT"
+  end
+  if anchorInfo.myAnchor == nil then
+    anchorInfo.myAnchor = "TOPRIGHT"
+  end
+  if anchorInfo.x == nil then
+    anchorInfo.x = 2
+  end
+  if anchorInfo.y == nil then
+    anchorInfo.y = -2
+  end
+  palletWindow:RemoveAllAnchors()
+  palletWindow:Show(true)
+  palletWindow:AddAnchor(anchorInfo.targetAnchor, anchorInfo.target, anchorInfo.myAnchor, anchorInfo.x, anchorInfo.y)
+  palletWindow.selectColor = nil
+  palletWindow:SetSelectEventListenWidget(eventListenWidget)
+  palletWindow:EnableHidingIsRemove(true)
+end
+function HidePallet()
+  if palletWindow ~= nil then
+    palletWindow:Show(false)
+  end
+end

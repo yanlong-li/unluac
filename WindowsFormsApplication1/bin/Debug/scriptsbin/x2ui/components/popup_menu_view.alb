@@ -1,0 +1,131 @@
+local buttonWidth = 105
+local buttonHeight = 20
+local frameMargin = 10
+function SetViewOfPopupMenuFrame(id, parent)
+  local w = CreateEmptyWindow(id, parent)
+  w:SetTitleInset(0, frameMargin, 0, 0)
+  CreateTooltipDrawable(w)
+  w.buttons = {}
+  function w:Resize()
+    local count = #self.buttons
+    local width = 0
+    for i = 1, count do
+      local btn = self.buttons[i]
+      local w = btn:GetWidth()
+      if width < w then
+        width = w
+      end
+      btn:SetAutoResize(false)
+    end
+    for i = 1, count do
+      self.buttons[i]:SetExtent(width, buttonHeight)
+    end
+    local height = frameMargin * 2 + count * buttonHeight
+    width = frameMargin * 2 + width
+    self:SetExtent(width, height)
+  end
+  function w:AddButton(info)
+    local btnColor = {
+      normal = {
+        ConvertColor(209),
+        ConvertColor(192),
+        ConvertColor(172),
+        1
+      },
+      highlight = {
+        ConvertColor(233),
+        ConvertColor(197),
+        ConvertColor(155),
+        1
+      },
+      pushed = {
+        ConvertColor(200),
+        ConvertColor(168),
+        ConvertColor(129),
+        1
+      },
+      disabled = {
+        ConvertColor(120),
+        ConvertColor(120),
+        ConvertColor(120),
+        1
+      }
+    }
+    local index = #self.buttons + 1
+    local btn = self:CreateChildWidget("button", "button", index, true)
+    SetButtonFontColor(btn, btnColor)
+    if index == 1 then
+      btn:AddAnchor("TOPLEFT", w, frameMargin, frameMargin)
+    else
+      btn:AddAnchor("TOPLEFT", self.buttons[index - 1], "BOTTOMLEFT", 0, 0)
+    end
+    local insetLeft = 5
+    local insetRight = 5
+    if info.text_inset ~= nil then
+      insetLeft = insetLeft + info.text_inset.left
+      insetRight = insetRight + info.text_inset.right
+    end
+    if info.text_color ~= nil then
+      local valType = type(info.text_color)
+      if valType == "string" then
+        local color = Hex2Dec(info.text_color)
+        SetButtonFontOneColor(btn, {
+          color[1],
+          color[2],
+          color[3],
+          color[4]
+        })
+      elseif valType == "table" then
+        SetButtonFontOneColor(btn, {
+          info.text_color[1],
+          info.text_color[2],
+          info.text_color[3],
+          info.text_color[4]
+        })
+      end
+    end
+    if info.radio ~= nil then
+      local firstOffset = {}
+      firstOffset.x = 0
+      firstOffset.y = 3
+      local radioBtn = CreateRadioButton(btn:GetId() .. ".checkBoxes", btn, 1, nil, firstOffset, nil, "tooltip")
+      radioBtn:SetTextButtonStyle("soft_brown")
+      radioBtn[1]:SetChecked(info.radio)
+      btn.radioBtn = radioBtn[1]
+      insetLeft = insetLeft + 16
+    end
+    if info.check ~= nil then
+      local check = btn:CreateImageDrawable(TEXTURE_PATH.OVERHEAD_MARK, "background")
+      check:AddAnchor("LEFT", btn, 0, 0)
+      check:SetExtent(17, 13)
+      if info.check.value then
+        check:SetCoords(239, 225, 17, 13)
+      else
+        check:SetCoords(239, 238, 17, 13)
+      end
+      check:SetVisible(info.check.isShow)
+      insetLeft = insetLeft + 20
+    end
+    if info.image ~= nil then
+      local image = btn:CreateImageDrawable(info.image.path, "background")
+      if info.anchorInfo ~= nil then
+        image:AddAnchor(info.anchorInfo.myAnchor, btn, info.anchorInfo.targetAnchor, info.anchorInfo.anchorX, info.anchorInfo.anchorY)
+      else
+        image:AddAnchor("RIGHT", btn, -insetRight, 0)
+        insetRight = insetRight + info.image.width + 3
+      end
+      image:SetExtent(info.image.width, info.image.height)
+      image:SetCoords(info.image.x, info.image.y, info.image.width, info.image.height)
+    end
+    btn:SetInset(insetLeft, 0, insetRight, 0)
+    btn:SetAutoResize(true)
+    btn:SetText(info.text)
+    btn.style:SetShadow(false)
+    btn.style:SetAlign(ALIGN_LEFT)
+    self.buttons[index] = btn
+    return btn
+  end
+  w:EnableHidingIsRemove(true)
+  w:SetCloseOnEscape(true)
+  return w
+end

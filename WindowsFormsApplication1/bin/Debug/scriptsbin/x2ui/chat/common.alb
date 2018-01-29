@@ -1,0 +1,162 @@
+local InsertToCheckBoxTabls = function(checkBoxTable, checkBox, extraValue)
+  if checkBoxTable == nil then
+    return
+  end
+  if checkBoxTable.boxArray == nil then
+    checkBoxTable.boxArray = {}
+  end
+  table.insert(checkBoxTable.boxArray, checkBox)
+  if extraValue == nil then
+    return
+  end
+  if checkBoxTable.boxMapUseExtraValue == nil then
+    checkBoxTable.boxMapUseExtraValue = {}
+  end
+  checkBoxTable.boxMapUseExtraValue[extraValue] = checkBox
+end
+function SetViewOfColorPickCheckGroup(id, parent, info, checkBoxs)
+  local window = CreateCheckGroupWindow(id, parent, info)
+  if info.menuTexts ~= nil then
+    window.colorPicks = {}
+    if info.menuChkboxOffset == nil then
+      info.menuChkboxOffset = 145
+    end
+    for i = 1, #info.menuTexts do
+      local colorPick = CreateColorPickButtons(id .. ".colorPick" .. i, window.checks[i])
+      colorPick:SetExtent(23, 15)
+      colorPick:AddAnchor("TOPLEFT", window.checks[i], info.menuChkboxOffset, 3)
+      window.colorPicks[i] = colorPick
+      window.checks[i].colorPick = colorPick
+      InsertToCheckBoxTabls(checkBoxs, window.checks[i], info.extraValue[i])
+    end
+  end
+  if info.subMenuTexts ~= nil then
+    window.subColorPicks = {}
+    if info.submenuChkboxOffset == nil then
+      info.submenuChkboxOffset = 127
+    end
+    for j = 1, #info.subMenuTexts do
+      local colorPick = CreateColorPickButtons(id .. ".colorPick" .. j, window.subChecks[j])
+      colorPick:SetExtent(23, 15)
+      colorPick:AddAnchor("TOPLEFT", window.subChecks[j], info.submenuChkboxOffset, 3)
+      window.subColorPicks[j] = colorPick
+      window.subChecks[j].colorPick = colorPick
+      InsertToCheckBoxTabls(checkBoxs, window.subChecks[j], info.subExtraValue[j])
+    end
+  end
+  return window
+end
+function CreateColorPickCheckGroup(id, parent, info, checkBoxs)
+  local window = SetViewOfColorPickCheckGroup(id, parent, info, checkBoxs)
+  local anchorInfo = {}
+  if info.menuTexts ~= nil then
+    for i = 1, #info.menuTexts do
+      do
+        local button = window.colorPicks[i]
+        anchorInfo.target = button
+        function button:SelectedProcedure(r, g, b, a)
+          self.colorBG:SetColor(r, g, b, a)
+          for j = 1, #window.subChecks do
+            window.subChecks[j].colorPick.colorBG:SetColor(r, g, b, a)
+          end
+        end
+        function button:OnClick(arg)
+          if arg == "LeftButton" then
+            ShowPallet(anchorInfo, button)
+          end
+        end
+        button:SetHandler("OnClick", button.OnClick)
+      end
+    end
+  end
+  if info.subMenuTexts ~= nil then
+    for i = 1, #info.subMenuTexts do
+      do
+        local button = window.subColorPicks[i]
+        anchorInfo.target = button
+        function button:SelectedProcedure(r, g, b, a)
+          self.colorBG:SetColor(r, g, b, a)
+        end
+        function button:OnClick(arg)
+          if arg == "LeftButton" then
+            ShowPallet(anchorInfo, button)
+          end
+        end
+        button:SetHandler("OnClick", button.OnClick)
+      end
+    end
+  end
+  return window
+end
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+function AddLinkItem(linkText)
+  if linkText ~= nil then
+    X2Chat:AddItemLinkToActiveChatInput(linkText)
+    return true
+  end
+  return false
+end
+function AddItemLinkHandlerToMessageWidget(widget)
+  function widget:OnMouseDown(arg)
+    local info = self:GetLinkInfoOnCursor()
+    if info.linkType == "none" then
+      return false
+    else
+      return true
+    end
+  end
+  widget:SetHandler("OnMouseDown", widget.OnMouseDown)
+  function widget:OnClick(arg)
+    local info = self:GetLinkInfoOnCursor()
+    if info.linkType == "item" and arg == "LeftButton" then
+      local itemInfo = X2Item:InfoFromLink(info.itemLinkText, tostring(info.linkKind))
+      ShowItemLinkTooltip(itemInfo)
+      return true
+    end
+    if info.linkType == "character" and arg == "RightButton" then
+      local name = info.characterName
+      local data = {
+        isHostile = info.isHostile,
+        messageTimeStamp = info.messageTimeStamp
+      }
+      ActivatePopupMenu(self, name, data)
+      self:BackupString(name)
+      return true
+    end
+    if info.linkType == "quest" and arg == "LeftButton" then
+      ShowQuestLinkTooltip(info)
+      return true
+    end
+    return false
+  end
+  widget:SetHandler("OnClick", widget.OnClick)
+  widget:EnableItemLink(true)
+end
+function DrawChatTypeListBackground(listWidget)
+  local bg = listWidget:CreateNinePartDrawable(TEXTURE_PATH.HUD, "background")
+  bg:AddAnchor("TOPLEFT", listWidget, -1, -10)
+  bg:AddAnchor("BOTTOMRIGHT", listWidget, 1, 0)
+  bg:SetCoords(858, 0, 10, 44)
+  bg:SetInset(5, 21, 4, 22)
+end
+function DrawChatEditBackground(editWidget)
+  local bg = editWidget:CreateNinePartDrawable(TEXTURE_PATH.HUD, "background")
+  bg:SetCoords(784, 35, 11, 15)
+  bg:SetInset(5, 7, 5, 7)
+  bg:SetColor(1, 1, 1, 1)
+  bg:AddAnchor("TOPLEFT", editWidget, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", editWidget, 0, 0)
+end
+function DrawLineDoubleTarget(widget, widget_2)
+  local line = widget:CreateImageDrawable(TEXTURE_PATH.DEFAULT, "overlay")
+  line:SetExtent(0, 3)
+  line:SetCoords(0, 1007, 311, 3)
+  line:AddAnchor("LEFT", widget, 0, 0)
+  line:AddAnchor("RIGHT", widget_2, 0, 0)
+  widget.line = line
+  if widget:GetHeight() > widget_2:GetHeight() then
+    line:AddAnchor("BOTTOM", widget, 0, 5)
+  else
+    line:AddAnchor("BOTTOM", widget_2, 0, 5)
+  end
+end

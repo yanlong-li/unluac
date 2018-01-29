@@ -1,0 +1,43 @@
+if X2Util:GetGameProvider() == MAILRU then
+  commonFarmLocale.myFarm = {
+    windowWidth = 680,
+    colWidth = {
+      185,
+      260,
+      140,
+      55
+    }
+  }
+  commonFarmLocale.contentFontSize = FONT_SIZE.SMALL
+  commonFarmLocale.infoWindowWidth = 600
+  function commonFarmLocale:SetMyFarmLocationColumn(subItem)
+    local label = subItem:CreateChildWidget("label", "label", 0, true)
+    label:SetInset(0, 5, 0, 0)
+    label:SetLimitWidth(true)
+    label:AddAnchor("TOPLEFT", subItem, 10, 0)
+    label:AddAnchor("BOTTOMRIGHT", subItem, -10, 0)
+    label.style:SetSnap(true)
+    label.style:SetShadow(false)
+    label.style:SetAlign(ALIGN_LEFT)
+    ApplyTextColor(label, FONT_COLOR.DEFAULT)
+    local OnEnter = function(self)
+      if self.tip == nil then
+        return
+      end
+      SetTargetAnchorTooltip(self.tip, "TOPLEFT", self, "BOTTOMRIGHT", -10, -10)
+    end
+    label:SetHandler("OnEnter", OnEnter)
+    local OnLeave = function()
+      HideTooltip()
+    end
+    label:SetHandler("OnLeave", OnLeave)
+  end
+  function commonFarmLocale:FillLocationColumn(subItem, data)
+    subItem.label:SetText(tostring(data))
+    subItem.label.tip = tostring(data)
+  end
+  function commonFarmLocale:ResetLocationColumn(subItem)
+    subItem.label:SetText("")
+    subItem.label.tip = nil
+  end
+end

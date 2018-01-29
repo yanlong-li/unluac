@@ -1,0 +1,8 @@
+if X2Util:GetGameProvider() == TRION then
+  craftingLocale.abilityGroup = {
+    btnFontSize = FONT_SIZE.MIDDLE,
+    btnStartOffset = 0,
+    btnOffsetX = 52
+  }
+  craftingLocale.windowWidth = 800
+end

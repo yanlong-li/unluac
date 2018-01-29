@@ -1,0 +1,742 @@
+local progressTab = questContext.contextListBack.tab.window[1]
+local objectiveEmptyWidgetConfig = {}
+objectiveEmptyWidgetConfig.width = 225
+objectiveEmptyWidgetConfig.checkBoxInset = {
+  20,
+  5,
+  0,
+  0
+}
+objectiveEmptyWidgetConfig.lastRowHeight = 8
+local buttonPool = {}
+local buttonPoolCount = 0
+local function GetCheckButtonFromPool(parent)
+  if buttonPool[parent] == nil then
+    buttonPool[parent] = {}
+  end
+  local buttons = buttonPool[parent]
+  local buttonCount = table.getn(buttons)
+  local btn
+  for i = 1, buttonCount do
+    local existBtn = buttons[i]
+    if existBtn.isUsed == false then
+      btn = existBtn
+      btn.isUsed = true
+      break
+    end
+  end
+  if btn == nil then
+    buttonPoolCount = buttonPoolCount + 1
+    local id = string.format("ButtonPoolItem.%d", buttonPoolCount)
+    btn = CreateCheckButton(id, parent)
+    btn.isUsed = true
+    local OnEnter = function(self)
+      if self:IsEnabled() then
+        return
+      end
+      SetTooltip(GetUIText(COMMON_TEXT, "race_quest_register_condition"), self)
+    end
+    btn:SetHandler("OnEnter", OnEnter)
+    table.insert(buttons, btn)
+  end
+  return btn
+end
+local function ResetButtonPool()
+  for _, buttons in pairs(buttonPool) do
+    for _, btn in pairs(buttons) do
+      btn:Show(false)
+      btn:RemoveAllAnchors()
+      btn.questType = nil
+      btn.isUsed = false
+    end
+  end
+end
+local SetViewOfMultilineEditbox = function(id, parent)
+  local widget = UIParent:CreateWidget("textbox", id, parent)
+  widget:SetExtent(170, 60)
+  widget:SetInset(0, 0, 0, 0)
+  widget:SetLineSpace(3)
+  widget.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE)
+  widget.style:SetAlign(ALIGN_TOP_LEFT)
+  widget.style:SetSnap(true)
+  return widget
+end
+local labelPool = {}
+local labelPoolCount = 0
+local function GetLabelFromPool(parent)
+  if labelPool[parent] == nil then
+    labelPool[parent] = {}
+  end
+  local labels = labelPool[parent]
+  local labelCount = table.getn(labels)
+  local lab
+  for i = 1, labelCount do
+    local existLab = labels[i]
+    if existLab.isUsed == false then
+      lab = existLab
+      lab.isUsed = true
+      break
+    end
+  end
+  if lab == nil then
+    labelPoolCount = labelPoolCount + 1
+    local id = string.format("LabelPoolItem.%d", labelPoolCount)
+    lab = SetViewOfMultilineEditbox(id, parent)
+    lab.isUsed = true
+    lab.questDetailIcon = lab:CreateImageDrawable(TEXTURE_PATH.QUEST_LIST, "overlay")
+    lab.questDetailIcon:AddAnchor("TOPLEFT", lab, "TOPRIGHT", 0, -2)
+    lab.questDetailIcon:SetVisible(false)
+    lab.currentDrawable = lab:CreateImageDrawable(TEXTURE_PATH.DEFAULT, "background")
+    lab.currentDrawable:SetCoords(353, 995, 190, 29)
+    lab.currentDrawable:SetColor(ConvertColor(90), ConvertColor(156), ConvertColor(255), 0.3)
+    lab.currentDrawable:AddAnchor("TOPLEFT", lab, "TOPLEFT", 0, -6)
+    lab.currentDrawable:AddAnchor("BOTTOMRIGHT", lab, "BOTTOMRIGHT", 30, 8)
+    lab.currentDrawable:SetVisible(false)
+    lab.selectedDrawable = lab:CreateImageDrawable(TEXTURE_PATH.DEFAULT, "background")
+    lab.selectedDrawable:SetCoords(353, 995, 190, 29)
+    lab.selectedDrawable:SetColor(ConvertColor(90), ConvertColor(156), ConvertColor(255), 0.3)
+    lab.selectedDrawable:AddAnchor("TOPLEFT", lab, "TOPLEFT", 0, -6)
+    lab.selectedDrawable:AddAnchor("BOTTOMRIGHT", lab, "BOTTOMRIGHT", 30, 8)
+    lab.selectedDrawable:SetVisible(false)
+    table.insert(labels, lab)
+  end
+  return lab
+end
+local function ResetLabelPool()
+  for _, labels in pairs(labelPool) do
+    for _, lab in pairs(labels) do
+      lab:Show(false)
+      lab:RemoveAllAnchors()
+      lab.questDetailIcon:SetVisible(false)
+      lab.currentDrawable:SetVisible(false)
+      lab.selectedDrawable:SetVisible(false)
+      lab.isUsed = false
+    end
+  end
+end
+local folderPool = {}
+local folderPoolCount = 0
+local function GetFolderFromPool(parent)
+  if folderPool[parent] == nil then
+    folderPool[parent] = {}
+  end
+  local folders = folderPool[parent]
+  local folderCount = table.getn(folders)
+  local fld
+  for _, existFld in pairs(folders) do
+    if existFld.isUsed == false then
+      fld = existFld
+      fld.isUsed = true
+      break
+    end
+  end
+  if fld == nil then
+    folderPoolCount = folderPoolCount + 1
+    local id = string.format("folderPoolItem.%d", folderPoolCount)
+    fld = SetViewOfFolder(id, parent)
+    fld.isUsed = true
+    table.insert(folders, fld)
+  end
+  return fld
+end
+local function ResetFolderPool()
+  for _, folder in pairs(folderPool) do
+    for _, fld in pairs(folder) do
+      if fld.isUsed ~= nil and fld.isUsed == false then
+        fld:CloseFolder()
+      else
+        fld.isUsed = false
+      end
+      local titleHeight = FOLER_ITEM_LIST_HEIGHT
+      fld:RemoveAllAnchors()
+      fld:SetTitleHeight(titleHeight)
+      fld:SetExtendLength(0)
+      fld:Show(false)
+    end
+  end
+end
+local emptyWidgetPool = {}
+local emptyWidgetPoolCount = 0
+local function GetEmptyWidgetFromPool(parent)
+  if emptyWidgetPool[parent] == nil then
+    emptyWidgetPool[parent] = {}
+  end
+  local emptyWidgets = emptyWidgetPool[parent]
+  local emptyWidgetCount = table.getn(emptyWidgets)
+  local emptyWidget
+  for i = 1, emptyWidgetCount do
+    local existEmptyWidget = emptyWidgets[i]
+    if existEmptyWidget.isUsed == false then
+      emptyWidget = existEmptyWidget
+      emptyWidget.isUsed = true
+      break
+    end
+  end
+  if emptyWidget == nil then
+    local id = string.format("emptyWidgetPoolItem.%d", emptyWidgetCount + 1)
+    parent = parent or "UIParent"
+    emptyWidget = UIParent:CreateWidget("emptywidget", id, parent)
+    emptyWidget.isUsed = true
+    table.insert(emptyWidgets, emptyWidget)
+  end
+  return emptyWidget
+end
+local function ResetEmptyWidgetPool()
+  for _, emptyWidgets in pairs(emptyWidgetPool) do
+    for _, emptyWidget in pairs(emptyWidgets) do
+      emptyWidget:Show(false)
+      emptyWidget.questIndex = nil
+      emptyWidget.questType = nil
+      emptyWidget.title = nil
+      emptyWidget.checkBox = nil
+      emptyWidget.index = nil
+      emptyWidget:ReleaseHandler("OnClick")
+      emptyWidget:ReleaseHandler("OnEnter")
+      emptyWidget:ReleaseHandler("OnLeave")
+      emptyWidget:RemoveAllAnchors()
+      emptyWidget.isUsed = false
+    end
+  end
+end
+local questFolders = {}
+function GetQuestFolderByName(name)
+  return questFolders[name]
+end
+local function SetQuestFolderByName(name, folder)
+  questFolders[name] = folder
+end
+local questCheckBox = {}
+local function GetQuestCheckBoxByType(qtype)
+  return questCheckBox[qtype]
+end
+local function SetQuestCheckBoxByType(qtype, checkBox)
+  questCheckBox[qtype] = checkBox
+end
+local function ResetQuestCheckBoxByType()
+  questCheckBox = {}
+end
+local questContextStateValues
+local function InitEmptyQuestListData()
+  if questContextStateValues == nil then
+    questContextStateValues = {}
+  end
+  if questContextStateValues.folderStates == nil then
+    questContextStateValues.folderStates = {}
+  end
+  if questContextStateValues.checkBoxStates == nil then
+    questContextStateValues.checkBoxStates = {}
+    local count = X2Quest:GetActiveQuestListCount()
+    for i = 1, count do
+      local qtype = X2Quest:GetActiveQuestType(i)
+      if AddableQuest(qtype) then
+        questContextStateValues.checkBoxStates[qtype] = true
+      end
+    end
+  end
+end
+InitEmptyQuestListData()
+local function SaveQuestContextValues()
+  X2:SetQuestContextStateValuesUiData(questContextStateValues)
+end
+function InitQuestListData()
+  questContextStateValues = X2:GetQuestContextStateValuesUiData()
+  InitEmptyQuestListData()
+  local tempQuestList = {}
+  for questType, state in pairs(questContextStateValues.checkBoxStates) do
+    if IsExistQuestTypeInJournal(questType) and AddableQuest(questType) then
+      tempQuestList[questType] = state
+    else
+      missMatch = true
+    end
+  end
+  if missMatch then
+    questContextStateValues.checkBoxStates = nil
+    questContextStateValues.checkBoxStates = tempQuestList
+    SaveQuestContextValues()
+  end
+  local count = X2Quest:GetActiveQuestListCount()
+  for i = 1, count do
+    local qtype = X2Quest:GetActiveQuestType(i)
+    if AddableQuest(qtype) then
+      questContextStateValues.checkBoxStates[qtype] = HasNotifierQuestList(qtype)
+    end
+  end
+end
+function SetQuestFolderState(type, state)
+  questContextStateValues.folderStates[type] = state
+  SaveQuestContextValues()
+end
+local function SetQuestListCheckBoxState(qtype, state)
+  questContextStateValues.checkBoxStates[qtype] = state
+  SaveQuestContextValues()
+end
+function RemoveQuestListCheckBoxState(qtype)
+  if questContextStateValues.checkBoxStates[qtype] ~= nil then
+    questContextStateValues.checkBoxStates[qtype] = nil
+    SaveQuestContextValues()
+  end
+end
+local function SetLastDetailQuestType(qtype)
+  questContextStateValues.lastDetailQuestType = qtype
+  SaveQuestContextValues()
+end
+function GetFolderListTotalHeight()
+  local totalHeight = 0
+  for _, folder in pairs(questFolders) do
+    if folder ~= nil then
+      totalHeight = totalHeight + folder:GetHeight()
+    end
+  end
+  return totalHeight
+end
+function UpdateMainQuestsInQuestList(taregetQtype, status)
+  local checkedQuestType = 0
+  if taregetQtype ~= nil then
+    checkedQuestType = taregetQtype
+  end
+  local mainQuest = {}
+  for questTypeKey, checked in pairs(questContextStateValues.checkBoxStates) do
+    if X2Quest:IsMainQuest(questTypeKey) then
+      if checkedQuestType == 0 and checked then
+        checkedQuestType = questTypeKey
+      end
+      table.insert(mainQuest, questTypeKey)
+    else
+      local checkBox = GetQuestCheckBoxByType(questTypeKey)
+      if checkBox ~= nil then
+        checkBox:SetEnableCheckButton(true)
+      end
+    end
+  end
+  local enable = checkedQuestType == 0 and true or false
+  if status == "completed" then
+    enable = true
+  end
+  for i = 1, #mainQuest do
+    local qtype = mainQuest[i]
+    local checkBox = GetQuestCheckBoxByType(qtype)
+    if checkBox ~= nil then
+      if checkedQuestType == qtype then
+        checkBox:SetChecked(true)
+        checkBox:SetEnableCheckButton(true)
+        SetQuestListCheckBoxState(qtype, true)
+      else
+        checkBox:SetChecked(false)
+        checkBox:SetEnableCheckButton(enable)
+        SetQuestListCheckBoxState(qtype, false)
+      end
+    end
+  end
+end
+function SetQuestListState()
+  questContext.contextListBack:ApplyLastWindowOffset()
+  questContext.contextListBack:ApplyLastWindowExtent()
+  for type, state in pairs(questContextStateValues.folderStates) do
+    local key = X2Quest:GetQuestCategoryName(type)
+    local folder = GetQuestFolderByName(key)
+    if folder ~= nil then
+      if state == "open" then
+        folder:OpenFolder()
+      else
+        folder:CloseFolder()
+      end
+    end
+  end
+  progressTab.scrollWnd.emptyWidget:SetHeight(GetFolderListTotalHeight())
+  for qtype, checked in pairs(questContextStateValues.checkBoxStates) do
+    local checkBox = GetQuestCheckBoxByType(qtype)
+    if checkBox ~= nil then
+      checkBox:SetChecked(checked)
+    end
+  end
+  UpdateMainQuestsInQuestList()
+  FillDetailInfos(questContextStateValues.lastDetailQuestType)
+  ResetEmptyWidgetListScroll(progressTab.scrollWnd, progressTab.scrollWnd.emptyWidget)
+end
+function UpdateCurrentQuestNotifier()
+  for qtype, checked in pairs(questContextStateValues.checkBoxStates) do
+    if checked then
+      AddQuestToNotifier(qtype)
+    else
+      RemoveQuestFromNotifier(qtype, false)
+    end
+  end
+end
+local function ExistMainQuest()
+  for qtype, checked in pairs(questContextStateValues.checkBoxStates) do
+    if X2Quest:IsMainQuest(qtype) then
+      return true
+    end
+  end
+  return false
+end
+function UpdateQuestList(qtype, status)
+  if qtype == nil or status == nil then
+    return
+  end
+  if not AddableQuest(qtype) then
+    return
+  end
+  local checkBox = GetQuestCheckBoxByType(qtype)
+  if checkBox ~= nil and status == "started" then
+    checkBox:SetChecked(true)
+    checkBox:SetEnableCheckButton(true)
+    SetQuestListCheckBoxState(qtype, true)
+    if X2Quest:IsMainQuest(qtype) and ExistMainQuest() then
+      UpdateMainQuestsInQuestList(qtype)
+    end
+    local objEmptyWidget = checkBox:GetParent()
+    if objEmptyWidget == nil then
+      return
+    end
+    local childEmptyWidget = objEmptyWidget:GetParent()
+    if childEmptyWidget == nil then
+      return
+    end
+    local folder = childEmptyWidget:GetParent()
+    if folder == nil then
+      return
+    end
+    folder:OpenFolder()
+  end
+end
+local function UpdateLastDetailQuest()
+  local qtype = questContextStateValues.lastDetailQuestType
+  if qtype ~= nil and not AddableQuest(qtype) then
+    qtype = nil
+    SetLastDetailQuestType(qtype)
+  end
+  if qtype == nil or not IsExistQuestTypeInJournal(qtype) then
+    local count = X2Quest:GetActiveQuestListCount()
+    local lastQuestType = 0
+    for i = count, 1, -1 do
+      qtype = X2Quest:GetActiveQuestType(i)
+      if AddableQuest(qtype) then
+        SetLastDetailQuestType(qtype)
+        break
+      end
+    end
+  end
+end
+local function SetCheckBoxHandler(checkBox, qtype)
+  checkBox.questType = qtype
+  function checkBox:CheckBtnCheckChagnedProc(checked)
+    local questType = self.questType
+    if questType == nil then
+      return
+    end
+    SetQuestListCheckBoxState(questType, checked)
+    SyncNotifierQuestList()
+    UpdateMainQuestsInQuestList()
+    if checked then
+      AddQuestToNotifier(questType)
+    else
+      RemoveQuestFromNotifier(questType, false)
+    end
+  end
+end
+local function SetCheckBox(widget)
+  widget.checkBox = GetCheckButtonFromPool(widget)
+  local questType = widget.questType
+  local inset = objectiveEmptyWidgetConfig.checkBoxInset
+  widget.checkBox:AddAnchor("TOPLEFT", widget, "TOPLEFT", inset[1], inset[2])
+  widget.checkBox:Show(true)
+  SetQuestCheckBoxByType(questType, widget.checkBox)
+  SetCheckBoxHandler(widget.checkBox, questType)
+end
+local function MakeTitle(parent, questItem)
+  local listTitle = questItem.listTitle
+  if listTitle == false then
+    listTitle = "unknown"
+  end
+  local label = GetLabelFromPool(parent)
+  label.questDetailIcon:SetVisible(true)
+  label.questDetailIcon:SetTextureInfo(X2Quest:GetQuestDetail(questItem.questType))
+  if label.questDetailIcon:GetWidth() == 0 or label.questDetailIcon:GetHeight() == 0 then
+    label.questDetailIcon:SetVisible(false)
+  end
+  label:SetText(listTitle)
+  local height = label:GetTextHeight()
+  label:SetHeight(height)
+  label:Show(true)
+  return label, height
+end
+local function UnselectObjectiveEmptyWidget(objectiveEmptyWidget)
+  for _, emptyWidgets in pairs(emptyWidgetPool) do
+    for _, emptyWidget in pairs(emptyWidgets) do
+      if emptyWidget ~= objectiveEmptyWidget and emptyWidget.isUsed and emptyWidget.title ~= nil and emptyWidget.title.selectedDrawable ~= nil then
+        emptyWidget.title.selectedDrawable:SetVisible(false)
+      end
+    end
+  end
+end
+local SelectObjectiveEmptyWidget = function(objectiveEmptyWidget)
+  if objectiveEmptyWidget.title ~= nil and objectiveEmptyWidget.title.selectedDrawable ~= nil then
+    objectiveEmptyWidget.title.selectedDrawable:SetVisible(true)
+  end
+end
+local MouseEnterObjectiveEmptyWidget = function(objectiveEmptyWidget)
+  if objectiveEmptyWidget.title ~= nil and objectiveEmptyWidget.title.currentDrawable ~= nil then
+    objectiveEmptyWidget.title.currentDrawable:SetVisible(true)
+  end
+end
+local MouseLeaveObjectiveEmptyWidget = function(objectiveEmptyWidget)
+  if objectiveEmptyWidget.title ~= nil and objectiveEmptyWidget.title.currentDrawable ~= nil then
+    objectiveEmptyWidget.title.currentDrawable:SetVisible(false)
+  end
+end
+local function MakeQuestObjectiveEmptyWidget(parent, questItem, withoutLastRow)
+  local emptyWidget = GetEmptyWidgetFromPool(parent)
+  emptyWidget:SetWidth(objectiveEmptyWidgetConfig.width)
+  emptyWidget.questIndex = questItem.questIndex
+  emptyWidget.questType = questItem.questType
+  local item = questItem
+  local title, titleHeight = MakeTitle(emptyWidget, item)
+  emptyWidget.title = SetLevelColor(title, item)
+  SetCheckBox(emptyWidget)
+  emptyWidget.title:AddAnchor("TOPLEFT", emptyWidget.checkBox, "TOPRIGHT", -1, 2)
+  local function SetEmptyWidgetEventHandler(widget)
+    function widget:OnClick(arg)
+      if self.questIndex ~= nil then
+        FillDetailInfos(self.questType)
+        SelectObjectiveEmptyWidget(widget)
+        UnselectObjectiveEmptyWidget(widget)
+      end
+    end
+    widget:ReleaseHandler("OnClick")
+    widget:SetHandler("OnClick", widget.OnClick)
+    function widget:OnEnter(arg)
+      if self.questIndex ~= nil then
+        MouseEnterObjectiveEmptyWidget(widget)
+      end
+    end
+    widget:ReleaseHandler("OnEnter")
+    widget:SetHandler("OnEnter", widget.OnEnter)
+    function widget:OnLeave(arg)
+      if self.questIndex ~= nil then
+        MouseLeaveObjectiveEmptyWidget(widget)
+      end
+    end
+    widget:ReleaseHandler("OnLeave")
+    widget:SetHandler("OnLeave", widget.OnLeave)
+  end
+  SetEmptyWidgetEventHandler(emptyWidget)
+  local lastRowHeight = objectiveEmptyWidgetConfig.lastRowHeight
+  local height = titleHeight + lastRowHeight
+  emptyWidget:SetHeight(height)
+  if GetQuestListCheckValue(questItem.questType) == nil then
+    SetQuestListCheckBoxState(questItem.questType, true)
+  end
+  emptyWidget:Show(true)
+  return emptyWidget, height
+end
+local function MakeQuestChildEmptyWidget(parent, category)
+  local emptyWidget = GetEmptyWidgetFromPool(parent)
+  local row = 1
+  local questCount = table.getn(category)
+  local objectiveEmptyWidget
+  local height = 0
+  local anchorTarget = emptyWidget
+  for i = 1, questCount do
+    if i == questCount then
+      objectiveEmptyWidget, childHeight = MakeQuestObjectiveEmptyWidget(emptyWidget, category[i], true)
+    else
+      objectiveEmptyWidget, childHeight = MakeQuestObjectiveEmptyWidget(emptyWidget, category[i], false)
+    end
+    objectiveEmptyWidget.index = i
+    if i == 1 then
+      objectiveEmptyWidget:AddAnchor("TOPLEFT", anchorTarget, "TOPLEFT", 0, 0)
+    else
+      objectiveEmptyWidget:AddAnchor("TOPLEFT", anchorTarget, "BOTTOMLEFT", 0, 0)
+    end
+    anchorTarget = objectiveEmptyWidget
+    height = height + childHeight
+    if category[i].questType == questContextStateValues.lastDetailQuestType then
+      SelectObjectiveEmptyWidget(objectiveEmptyWidget)
+    end
+  end
+  emptyWidget:SetHeight(height)
+  emptyWidget:Show(true)
+  return emptyWidget, height
+end
+local function MakeQuestFolder(parent, category)
+  local folder = GetFolderFromPool(parent)
+  local categoryText
+  if category[1] == nil then
+    categoryText = "MainQuest"
+  else
+    categoryText = category[1].category
+  end
+  folder.categoryType = category[1].categoryType
+  SetQuestFolderByName(categoryText, folder)
+  folder:SetTitleText(categoryText)
+  folder.titleBtn:SetText(categoryText)
+  local emptyWidget, height = MakeQuestChildEmptyWidget(folder, category)
+  local folderTitleHeight = FOLER_ITEM_LIST_HEIGHT
+  folder.childEmptyWidget = emptyWidget
+  folder:SetTitleHeight(folderTitleHeight)
+  folder:SetChildWidget(emptyWidget)
+  folder:SetExtendLength(height)
+  folder:UseAnimation(false)
+  folder:FixedCloseFolder()
+  folder:Show(true)
+  return folder, folderTitleHeight, state
+end
+local function MakeQuestContextList(widget, questItems)
+  local questCount = questItems.count
+  widget:Show(true)
+  if questCount == 0 then
+    return
+  end
+  local index = 1
+  local categoryGroup = questItems.categoryGroup
+  local anchorTarget = widget
+  for _, category in pairs(categoryGroup) do
+    local folder, titleHeight, state = MakeQuestFolder(widget, category)
+    if anchorTarget == widget then
+      folder:AddAnchor("TOPLEFT", anchorTarget, "TOPLEFT", 0, 0)
+      folder:AddAnchor("TOPRIGHT", anchorTarget, "TOPRIGHT", 0, 0)
+    else
+      folder:AddAnchor("TOPLEFT", anchorTarget, "BOTTOMLEFT", 0, 0)
+      folder:AddAnchor("TOPRIGHT", anchorTarget, "BOTTOMRIGHT", 0, 0)
+    end
+    anchorTarget = folder
+  end
+end
+local function UpdateActiveQuestCountText()
+  local GetQuestListCount = function()
+    local count = X2Quest:GetActiveQuestListCount()
+    local total = 0
+    for i = 1, count do
+      local qtype = X2Quest:GetActiveQuestType(i)
+      if AddableQuest(qtype) then
+        total = total + 1
+      end
+    end
+    return total
+  end
+  local questCount = progressTab.questCount
+  local str = string.format("%s %s%s", locale.questContext.questCount, FONT_COLOR_HEX.BLUE, GetQuestListCount())
+  questCount:SetWidth(500)
+  questCount:SetText(str)
+  questCount:SetWidth(questCount:GetLongestLineWidth() + 5)
+  local countInfo = X2Quest:GetMaxLimitCountInfo()
+  local titleStr = GetUIText(COMMON_TEXT, "quest_max_limit_count")
+  local bodyStr = ""
+  for i = 1, #countInfo do
+    local detailInfo = countInfo[i]
+    local countStr = string.format("%s%d|r/%d", FONT_COLOR_HEX.SKYBLUE, detailInfo.curCount, detailInfo.maxCount)
+    if detailInfo.curCount == detailInfo.maxCount then
+      countStr = string.format("%s%d/%d|r", FONT_COLOR_HEX.RED, detailInfo.curCount, detailInfo.maxCount)
+    end
+    local nameStr = GetUIText(COMMON_TEXT, string.format("quest_detail_%s", detailInfo.name_key))
+    if bodyStr == "" then
+      bodyStr = string.format("%s %s", nameStr, countStr)
+    else
+      bodyStr = string.format([[
+%s
+%s %s]], bodyStr, nameStr, countStr)
+    end
+  end
+  progressTab.guide.tip:SetTooltip(titleStr, bodyStr)
+  local function OnEnter()
+    SetDefaultTooltipAnchor(progressTab.guide, progressTab.guide.tip)
+    progressTab.guide.tip:Show(true)
+  end
+  progressTab.guide:SetHandler("OnEnter", OnEnter)
+  local function OnLeave()
+    progressTab.guide.tip:Show(false)
+  end
+  progressTab.guide:SetHandler("OnLeave", OnLeave)
+end
+function MakeQuestList()
+  if ResetButtonPool ~= nil then
+    ResetButtonPool()
+  end
+  if ResetFolderPool ~= nil then
+    ResetFolderPool()
+  end
+  if ResetLabelPool ~= nil then
+    ResetLabelPool()
+  end
+  if ResetEmptyWidgetPool ~= nil then
+    ResetEmptyWidgetPool()
+  end
+  ResetQuestCheckBoxByType()
+  UpdateLastDetailQuest()
+  local emptyWidget = progressTab.scrollWnd.emptyWidget
+  local questItems = GetMergedQuests()
+  MakeQuestContextList(emptyWidget, questItems)
+  UpdateActiveQuestCountText()
+end
+function ClearDetailInfosCompareQuestType(qtype)
+  if progressTab.journal:GetCurQuestType() == qtype then
+    progressTab.journal:SetCurQuestType(nil)
+  end
+end
+function FillDetailInfos(questType)
+  local function JournalButtonVisible(isShow)
+    progressTab.journal.mapViewBtn:Show(isShow)
+    progressTab.journal.questDropBtn:Show(isShow)
+  end
+  progressTab.journal:Init()
+  JournalButtonVisible(false)
+  if questType == nil then
+    return
+  end
+  local notActive = IndexFromQuestType(questType) == 0
+  if notActive then
+    return
+  end
+  progressTab.journal:FillJournal("questList", questType)
+  JournalButtonVisible(true)
+  SetLastDetailQuestType(qtype)
+end
+function RefreshDetailWindow()
+  FillDetailInfos(progressTab.journal:GetCurQuestType())
+end
+function SelectQuestList(qType)
+  local list = progressTab.scrollWnd.emptyWidget
+  local folders = folderPool[list]
+  local found
+  for _, folder in pairs(folders) do
+    local emptyWidgets = emptyWidgetPool[folder]
+    for _, emptyWidget in pairs(emptyWidgets) do
+      local childEmptyWidgets = emptyWidgetPool[emptyWidget]
+      for _, childEmptyWidget in pairs(childEmptyWidgets) do
+        if childEmptyWidget.isUsed and childEmptyWidget.questType == qType then
+          SelectObjectiveEmptyWidget(childEmptyWidget)
+          if "open" ~= folder:GetState() and "opening" ~= folder:GetState() then
+            folder:ToggleState()
+          end
+          found = childEmptyWidget
+        end
+      end
+    end
+  end
+  if found ~= nil then
+    UnselectObjectiveEmptyWidget(found)
+  end
+end
+function questContext.contextListBack.tab:OnTabChanged(selected)
+  ReAnhorTabLine(self, selected)
+end
+questContext.contextListBack.tab:SetHandler("OnTabChanged", questContext.contextListBack.tab.OnTabChanged)
+function GetQuestListCheckValue(questType)
+  return questContextStateValues.checkBoxStates[questType]
+end
+local function OnHide()
+  UpdateQuestFullAnim(false)
+  progressTab.guide.arrow:Animation(false, false)
+end
+questContext.contextListBack:SetHandler("OnHide", OnHide)
+function questContext.contextListBack:ShowProc()
+  if not questContext.contextListBack.isFullAnimReady then
+    return
+  end
+  local arrow = progressTab.guide.arrow
+  arrow:Animation(true, false)
+end
+function UpdateQuestFullAnim(bool)
+  questContext.contextListBack.isFullAnimReady = bool
+end

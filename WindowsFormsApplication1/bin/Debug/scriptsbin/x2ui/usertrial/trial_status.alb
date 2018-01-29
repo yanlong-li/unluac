@@ -1,0 +1,117 @@
+local CreateTrialStatusWindow = function(id)
+  local window = CreateEmptyWindow(id, "UIParent")
+  window:Show(false)
+  window:AddAnchor("TOP", "UIParent", 0, 90)
+  local bg = window:CreateImageDrawable(TEXTURE_PATH.USER_TRIAL_STATUS, "background")
+  bg:SetTextureInfo("background")
+  bg:AddAnchor("TOPLEFT", window, -50, 0)
+  bg:AddAnchor("BOTTOMRIGHT", window, 50, 0)
+  local iconDisableCoords = {
+    {
+      GetTextureInfo(TEXTURE_PATH.USER_TRIAL_STATUS, "opencourt_dis"):GetCoords()
+    },
+    {
+      GetTextureInfo(TEXTURE_PATH.USER_TRIAL_STATUS, "charges_dis"):GetCoords()
+    },
+    {
+      GetTextureInfo(TEXTURE_PATH.USER_TRIAL_STATUS, "pleas_dis"):GetCoords()
+    },
+    {
+      GetTextureInfo(TEXTURE_PATH.USER_TRIAL_STATUS, "judge_dis"):GetCoords()
+    },
+    {
+      GetTextureInfo(TEXTURE_PATH.USER_TRIAL_STATUS, "sentence_dis"):GetCoords()
+    }
+  }
+  local iconNormalCoords = {
+    {
+      GetTextureInfo(TEXTURE_PATH.USER_TRIAL_STATUS, "opencourt_df"):GetCoords()
+    },
+    {
+      GetTextureInfo(TEXTURE_PATH.USER_TRIAL_STATUS, "charges_df"):GetCoords()
+    },
+    {
+      GetTextureInfo(TEXTURE_PATH.USER_TRIAL_STATUS, "pleas_df"):GetCoords()
+    },
+    {
+      GetTextureInfo(TEXTURE_PATH.USER_TRIAL_STATUS, "judge_df"):GetCoords()
+    },
+    {
+      GetTextureInfo(TEXTURE_PATH.USER_TRIAL_STATUS, "sentence_df"):GetCoords()
+    }
+  }
+  window.icons = {}
+  local offsetX = 30
+  for i = 1, 5 do
+    local icon = window:CreateImageDrawable(TEXTURE_PATH.USER_TRIAL_STATUS, "background")
+    icon:SetCoords(iconDisableCoords[i][1], iconDisableCoords[i][2], iconDisableCoords[i][3], iconDisableCoords[i][4])
+    icon:SetExtent(iconDisableCoords[i][3], iconDisableCoords[i][4])
+    icon:AddAnchor("LEFT", window, offsetX, 0)
+    window.icons[i] = icon
+    offsetX = offsetX + iconDisableCoords[i][3] + 15
+  end
+  window:SetExtent(offsetX + 30, iconDisableCoords[1][4] + 20)
+  for i = 1, 4 do
+    local arrowImage = window:CreateImageDrawable(BUTTON_TEXTURE_PATH.PAGE, "background")
+    arrowImage:SetCoords(0, 0, 16, 32)
+    arrowImage:SetExtent(9, 18)
+    arrowImage:AddAnchor("LEFT", window.icons[i], "RIGHT", 5, 0)
+    arrowImage:SetColor(PAGE_BUTTON_COLOR.NORMAL[1], PAGE_BUTTON_COLOR.NORMAL[2], PAGE_BUTTON_COLOR.NORMAL[3], PAGE_BUTTON_COLOR.NORMAL[4])
+  end
+  function window:SelectInitIcon()
+    self.icons[1]:SetCoords(iconNormalCoords[1][1], iconNormalCoords[1][2], iconNormalCoords[1][3], iconNormalCoords[1][4])
+  end
+  function window:SelectTestimonyIcon()
+    self.icons[2]:SetCoords(iconNormalCoords[2][1], iconNormalCoords[2][2], iconNormalCoords[2][3], iconNormalCoords[2][4])
+  end
+  function window:SelectFinalStatementIcon()
+    self.icons[3]:SetCoords(iconNormalCoords[3][1], iconNormalCoords[3][2], iconNormalCoords[3][3], iconNormalCoords[3][4])
+  end
+  function window:SelectSentenceIcon()
+    self.icons[4]:SetCoords(iconNormalCoords[4][1], iconNormalCoords[4][2], iconNormalCoords[4][3], iconNormalCoords[4][4])
+  end
+  function window:SelectRulingIcon()
+    self.icons[5]:SetCoords(iconNormalCoords[5][1], iconNormalCoords[5][2], iconNormalCoords[5][3], iconNormalCoords[5][4])
+  end
+  function window:ResetAllIcon()
+    for i = 1, #self.icons do
+      self.icons[i]:SetCoords(iconDisableCoords[i][1], iconDisableCoords[i][2], iconDisableCoords[i][3], iconDisableCoords[i][4])
+    end
+  end
+  return window
+end
+local trialStatusWnd = CreateTrialStatusWindow("trialStatusBar")
+local function TrialStatus(state, cur)
+  trialStatusWnd:ResetAllIcon()
+  if state > TRIAL_FREE and state < TRIAL_TESTIMONY then
+    trialStatusWnd:SelectInitIcon()
+  end
+  if state == TRIAL_TESTIMONY then
+    trialStatusWnd:SelectTestimonyIcon()
+  end
+  if state == TRIAL_FINAL_STATEMENT then
+    trialStatusWnd:SelectFinalStatementIcon()
+  end
+  if state == TRIAL_SENTENCE then
+    trialStatusWnd:SelectSentenceIcon()
+  end
+  if state > TRIAL_SENTENCE then
+    trialStatusWnd:SelectRulingIcon()
+  end
+  curJury = cur
+  if state > TRIAL_FREE then
+    local stateString = locale.trial.stateMessage[state + 1]
+    X2Chat:DispatchChatMessage(CMF_SYSTEM, stateString)
+    trialStatusWnd:Show(true)
+  end
+end
+UIParent:SetEventHandler("TRIAL_STATUS", TrialStatus)
+local function TrialClosed()
+  trialStatusWnd:Show(false)
+end
+UIParent:SetEventHandler("TRIAL_CLOSED", TrialClosed)
+local TrialCanceled = function()
+  local stateString = locale.trial.canceled
+  X2Chat:DispatchChatMessage(CMF_SYSTEM, stateString)
+end
+UIParent:SetEventHandler("TRIAL_CANCELED", TrialCanceled)

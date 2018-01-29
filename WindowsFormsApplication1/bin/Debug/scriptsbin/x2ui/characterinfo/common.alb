@@ -1,0 +1,267 @@
+function SetTooltipHandlers(widgets)
+  for i = 1, #widgets do
+    local widget = widgets[i]
+    local OnEnter = function(self)
+      SetTooltip(self.tooltipText, self)
+    end
+    widget:SetHandler("OnEnter", OnEnter)
+  end
+end
+function SetExtraTooltipHandlers(widgets)
+  for i = 1, #widgets do
+    local widget = widgets[i]
+    function widget:OnEnter()
+      local extraInfo = ""
+      if self.GetExtraInfo ~= nil then
+        extraInfo = self:GetExtraInfo()
+      end
+      if self.isAppellation then
+        extraInfo = self:GetText()
+      end
+      if extraInfo == "" then
+        return
+      end
+      SetTooltip(extraInfo, self)
+    end
+    widget:SetHandler("OnEnter", widget.OnEnter)
+    function widget:OnLeave()
+      HideTooltip()
+    end
+    widget:SetHandler("OnLeave", widget.OnLeave)
+  end
+end
+function CreateDefaultSubTitle(id, parent, width, height)
+  local widget = parent:CreateChildWidget("label", id, 0, true)
+  widget:SetText("")
+  widget:SetExtent(width, height)
+  widget:SetLimitWidth(true)
+  widget.style:SetAlign(ALIGN_LEFT)
+  return widget
+end
+function CreateCrimePointTextBox(parent, width, height)
+  local widget = UIParent:CreateWidget("textbox", "character.window.crimePoint", parent)
+  widget:SetExtent(width, height)
+  widget.style:SetAlign(ALIGN_LEFT)
+  function widget:Update()
+    local info = X2Player:GetCrimeInfo()
+    local point = info.crimePoint
+    if point == nil then
+      return
+    end
+    local color
+    if point < 50 then
+      color = FONT_COLOR_HEX.DEFAULT
+    else
+      color = FONT_COLOR_HEX.RED
+    end
+    local pointStr = string.format("%s|,%d;|r / 50", color, point)
+    self:SetText(pointStr)
+  end
+  widget:SetHandler("OnEvent", function(this, event, ...)
+    widget:Update()
+  end)
+  widget:RegisterEvent("CRIME_REPORTED")
+  widget:RegisterEvent("LEFT_LOADING")
+  widget:Update()
+  return widget
+end
+function CreateHonorPointLabel(parent, width, height)
+  local widget = UIParent:CreateWidget("textbox", "character.window.honorPoint", parent)
+  widget:SetExtent(width, height)
+  widget.style:SetAlign(ALIGN_LEFT)
+  function widget:Update()
+    local info = X2Player:GetGamePoints()
+    local point = info.honorPointStr
+    if point == nil then
+      return
+    end
+    self:SetText(string.format("|h%s;", point))
+  end
+  widget:SetHandler("OnEvent", function(this, event, ...)
+    widget:Update()
+  end)
+  widget:RegisterEvent("PLAYER_HONOR_POINT")
+  widget:Update()
+  return widget
+end
+function CreateLivingPointLabel(parent, width, height)
+  local widget = UIParent:CreateWidget("textbox", "character.window.livingPoint", parent)
+  widget:SetExtent(width, height)
+  widget.style:SetAlign(ALIGN_LEFT)
+  function widget:Update()
+    local info = X2Player:GetGamePoints()
+    local point = info.livingPointStr
+    if point == nil then
+      return
+    end
+    self:SetText(string.format("|l%s;", point))
+  end
+  widget:SetHandler("OnEvent", function(this, event, ...)
+    widget:Update()
+  end)
+  widget:RegisterEvent("PLAYER_LIVING_POINT")
+  widget:Update()
+  return widget
+end
+function CreateLastSeasonLeadershipPointLabel(parent, width, height)
+  local widget = UIParent:CreateWidget("label", "character.window.leadershipPoint", parent)
+  widget:SetExtent(width, height)
+  widget:SetAutoResize(true)
+  widget:SetNumberOnly(true)
+  local enableElection = widget:CreateChildWidget("emptywidget", "enableElection", 0, true)
+  enableElection:Show(false)
+  enableElection:AddAnchor("LEFT", widget, "RIGHT", 3, 0)
+  local texture = enableElection:CreateImageDrawable(TEXTURE_PATH.HERO_ELECTION_ALERT, "background")
+  texture:SetTextureInfo("icon_vote01")
+  texture:AddAnchor("CENTER", enableElection, 0, 0)
+  enableElection:SetExtent(texture:GetExtent())
+  local OnEnter = function(self)
+    SetTooltip(GetUIText(COMMON_TEXT, "hero_election_enable_tooltip_of_character_info_window"), self)
+  end
+  enableElection:SetHandler("OnEnter", OnEnter)
+  function widget:Update()
+    local info = X2Player:GetGamePoints()
+    local point = info.periodLeadershipPointStr
+    if point == nil then
+      return
+    end
+    self:SetText(string.format("%s", point))
+    local factionId = X2Hero:GetClientFactionID()
+    local isMoribundNation = X2Nation:IsMoribundNation(factionId)
+    enableElection:Show(not isMoribundNation and X2Hero:IsVoter())
+  end
+  widget:SetHandler("OnEvent", function(this, event, ...)
+    widget:Update()
+  end)
+  widget:RegisterEvent("HERO_SCORE_UPDATED")
+  widget:RegisterEvent("START_HERO_ELECTION_PERIOD")
+  widget:RegisterEvent("UPDATE_HERO_ELECTION_CONDITION")
+  widget:RegisterEvent("END_HERO_ELECTION_PERIOD")
+  widget:RegisterEvent("NATION_INVITE")
+  widget:RegisterEvent("NATION_KICK")
+  widget:Update()
+  return widget
+end
+function CreateAccumLeadershipPointLabel(parent, width, height)
+  local widget = UIParent:CreateWidget("label", "character.window.accumLeadershipPoint", parent)
+  widget:SetExtent(width, height)
+  widget:SetAutoResize(true)
+  widget:SetNumberOnly(true)
+  function widget:Update()
+    local info = X2Player:GetGamePoints()
+    local point = info.leadershipPointStr
+    if point == nil then
+      return
+    end
+    self:SetText(string.format("%s", point))
+  end
+  widget:SetHandler("OnEvent", function(this, event, ...)
+    widget:Update()
+  end)
+  widget:RegisterEvent("HERO_SCORE_UPDATED")
+  widget:Update()
+  return widget
+end
+function CreateJuryPointLabel(parent, width, height)
+  local widget = CreateLabel("character.window.juryPoint", parent)
+  widget:SetExtent(width, height)
+  widget:SetAutoResize(true)
+  widget:SetNumberOnly(true)
+  local juryCoords = characetInfoLocale.juryIconCoords
+  local iconWindow = widget:CreateChildWidget("emptywidget", "iconWnd", 0, true)
+  iconWindow:SetExtent(juryCoords[3], juryCoords[4])
+  iconWindow:AddAnchor("LEFT", widget, "RIGHT", 3, 0)
+  local juryIcon = iconWindow:CreateImageDrawable(TEXTURE_PATH.CHARACTER_INFO, "background")
+  juryIcon:SetCoords(juryCoords[1], juryCoords[2], juryCoords[3], juryCoords[4])
+  juryIcon:AddAnchor("TOPLEFT", iconWindow, 0, 0)
+  juryIcon:AddAnchor("BOTTOMRIGHT", iconWindow, 0, 0)
+  function iconWindow:OnEnter()
+    X2Trial:RequestJuryWaitingNumber()
+  end
+  iconWindow:SetHandler("OnEnter", iconWindow.OnEnter)
+  function iconWindow:OnLeave()
+    HideTooltip()
+  end
+  iconWindow:SetHandler("OnLeave", iconWindow.OnLeave)
+  function widget:Update()
+    local point = X2Player:GetJuryPoint()
+    if point == nil then
+      return
+    end
+    self:SetText(string.format("%d", point - 1))
+  end
+  local juryStatusEvents = {
+    PLAYER_JURY_POINT = function()
+      widget:Update()
+    end,
+    JURY_WAITING_NUMBER = function(num)
+      local tooltip_str = locale.trial.wait_jury_tip(num)
+      SetTargetAnchorTooltip(tooltip_str, "BOTTOMLEFT", iconWindow, "TOPRIGHT", -3, 3)
+    end
+  }
+  widget:SetHandler("OnEvent", function(this, event, ...)
+    juryStatusEvents[event](...)
+  end)
+  widget:RegisterEvent("PLAYER_JURY_POINT")
+  widget:RegisterEvent("JURY_WAITING_NUMBER")
+  widget:Update()
+  return widget
+end
+function CreateAppellationLabel(parent, width, height)
+  local widget = CreateLabel("character.window.appellation", parent)
+  widget:SetExtent(width, height)
+  widget:SetText(locale.appellation.have_not_appellation)
+  widget.style:SetEllipsis(true)
+  widget.isAppellation = true
+  ApplyTextColor(widget, FONT_COLOR.GREEN)
+  function widget:Update()
+    local info = X2Player:GetShowingAppellation()
+    if info == nil then
+      if X2Player:GetAppellationCount() >= 1 then
+        self:SetText(locale.appellation.unable)
+      else
+        self:SetText(locale.appellation.have_not_appellation)
+      end
+      ApplyTextColor(self, FONT_COLOR.DEFAULT)
+      return
+    end
+    self:SetText(info[APPELLATION_INFO.NAME])
+    ApplyTextColor(self, FONT_COLOR.GREEN)
+  end
+  widget:Update()
+  local events = {
+    APPELLATION_GAINED = function()
+      widget:Update()
+    end,
+    APPELLATION_CHANGED = function(stringId)
+      if X2Unit:GetUnitId("player") ~= stringId then
+        return
+      end
+      widget:Update()
+    end
+  }
+  widget:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(widget, events)
+  return widget
+end
+function CreateDishonorPointWindow(parent, width, height)
+  local widget = UIParent:CreateWidget("textbox", "character.window.DishonorPoint", parent)
+  widget:SetExtent(width, height)
+  widget.style:SetAlign(ALIGN_LEFT)
+  function widget:Update()
+    local info = X2Player:GetCrimeInfo()
+    local dishonorPoint = info.crimeRecord
+    if dishonorPoint == nil then
+      return
+    end
+    self:SetText(string.format("%d", dishonorPoint))
+  end
+  widget:SetHandler("OnEvent", function(this, event, ...)
+    widget:Update()
+  end)
+  widget:RegisterEvent("CRIME_REPORTED")
+  widget:Update()
+  return widget
+end

@@ -1,0 +1,16 @@
+FORM_CENTER_MESSAGE = {
+  NATION_INDEPENDENCE_COORDS = {
+    FLAG = {
+      0,
+      51,
+      67,
+      77
+    },
+    DECLARE = {
+      0,
+      0,
+      172,
+      51
+    }
+  }
+}

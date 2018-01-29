@@ -1,0 +1,21 @@
+ENCHANT_RESULT = {
+  BREAK = 0,
+  DOWNGRADE = 1,
+  FAIL = 2,
+  SUCCESS = 3,
+  GREATE_SUCCESS = 4
+}
+ITEM_GRADES = {
+  COMMON = 0,
+  POOR = 1,
+  UNCOMMON = 2,
+  RARE = 3,
+  ANCIENT = 4,
+  HEROIC = 5,
+  UNIQUE = 6,
+  ARTIFACT = 7,
+  WONDER = 8,
+  EPIC = 9,
+  LEGENDARY = 10,
+  MYTHIC = 11
+}

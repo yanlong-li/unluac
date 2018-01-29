@@ -1,0 +1,35 @@
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+function CreateScheduleWindow(parent)
+  local bg = parent:CreateImageDrawable(TEXTURE_PATH.EVENT_CENTER_SCHEDULE, "background")
+  bg:SetTextureInfo("schedule_info")
+  bg:AddAnchor("CENTER", parent, 0, 0)
+  local timeZone = CreateLabel(parent:GetId() .. ".timeZone", parent)
+  timeZone:SetExtent(50, FONT_SIZE.MIDDLE)
+  timeZone:AddAnchor("TOPLEFT", parent, eventcenterLocale.timeZone.x, eventcenterLocale.timeZone.y)
+  ApplyTextColor(timeZone, FONT_COLOR.BLUE)
+  timeZone.style:SetFontSize(FONT_SIZE.MIDDLE)
+  timeZone:SetText(GetCommonText("timeZone" .. tostring(X2Util:GetDdcmsTimeOffset())))
+  for i = 1, 15 do
+    do
+      local label = parent:CreateChildWidget("label", "scheduleTitle", i, true)
+      label:SetExtent(153, 28)
+      if i == 1 then
+        label:AddAnchor("TOPLEFT", parent, 10, 20)
+        ApplyTextColor(label, FONT_COLOR.BLUE)
+      elseif i == 8 then
+        label:AddAnchor("TOPLEFT", parent.scheduleTitle[i - 1], "BOTTOMLEFT", 0, 8)
+        ApplyTextColor(label, FONT_COLOR.BLUE)
+      else
+        label:AddAnchor("TOPLEFT", parent.scheduleTitle[i - 1], "BOTTOMLEFT", 0, 0)
+      end
+      function label:OnEnter()
+        SetTooltip(GetCommonText("event_center_content_schedule_" .. i), label, false, 350)
+      end
+      label:SetHandler("OnEnter", label.OnEnter)
+      function label:OnLeave()
+        HideTooltip()
+      end
+      label:SetHandler("OnLeave", label.OnLeave)
+    end
+  end
+end

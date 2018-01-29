@@ -1,0 +1,405 @@
+local titleMargin, sideMargin, bottomMargin = GetWindowMargin()
+local contentWidth = 260
+local PAGE_HEIGHT = {
+  DEFAULT = 315,
+  NOT_DEFAULT = 225,
+  USE_SLIDER_DEFAULT_COUNT = 365,
+  USE_SLIDER_NOT_DEFAULT_COUNT = 280
+}
+local SettingCustomTabTitle = function(window, text)
+  window:SetTitleText(text)
+  window:SetTitleInset(CUSTOMIZE_INSET, CUSTOMIZE_INSET, 0, 0)
+  window.titleStyle:SetFont(FONT_PATH.SNAIL, FONT_SIZE.XXLARGE)
+  window.titleStyle:SetAlign(ALIGN_TOP_LEFT)
+  ApplyTitleFontColor(window, FONT_COLOR.TITLE)
+end
+function CreateCosmeticItemButton(id, parent, index)
+  if index == nil then
+    index = 0
+  end
+  local button = parent:CreateChildWidget("button", id, index, true)
+  ApplyButtonSkin(button, BUTTON_LOGINSTAGE.CUSTOM_ITEM)
+  local icon = button:CreateImageDrawable("ui/login_stage/no_image.dds", "background")
+  icon:SetExtent(CUSTOMIZE_ITEM_PAGE, CUSTOMIZE_ITEM_PAGE)
+  icon:AddAnchor("CENTER", button, 0, 0)
+  button.icon = icon
+  local newIcon = button:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.BEAUTYSHOP, "overlay")
+  newIcon:SetTextureInfo("new")
+  newIcon:AddAnchor("TOPLEFT", button, 0, 0)
+  newIcon:SetVisible(false)
+  local hotIcon = button:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.BEAUTYSHOP, "overlay")
+  hotIcon:SetTextureInfo("special")
+  hotIcon:AddAnchor("TOPLEFT", button, 0, 0)
+  hotIcon:SetVisible(false)
+  function button:SetCosmeticItem(race, gender, type, index)
+    local path = "ui/login_stage/no_image.dds"
+    local hot = false
+    local new = false
+    if index <= GetCosmeticItemCount(race, gender, type) then
+      path, hot, new = GetCosmeticItemInfo(race, gender, type, index)
+      button.icon:SetColor(1, 1, 1, 1)
+      button:Enable(true)
+    else
+      button.icon:SetColor(1, 1, 1, 0.2)
+      button:Enable(false)
+    end
+    icon:SetTexture(path)
+    hotIcon:RemoveAllAnchors()
+    hotIcon:AddAnchor("TOPLEFT", button, 0, 0)
+    hotIcon:SetVisible(hot)
+    local offsetY = hot and hotIcon:GetHeight() or 0
+    newIcon:RemoveAllAnchors()
+    newIcon:AddAnchor("TOPLEFT", button, 0, offsetY)
+    newIcon:SetVisible(new)
+    self.index = index
+  end
+  return button
+end
+local CreatePalletSection = function(id, parent)
+  local section = parent:CreateChildWidget("emptywidget", id, 0, true)
+  local pallet = section:CreateChildWidget("paintcolorpicker", "pallet", 0, true)
+  pallet:Show(true)
+  pallet:SetExtent(254, 99)
+  pallet:AddAnchor("TOPLEFT", section, 0, 0)
+  local spectrum = pallet:GetSpectrumWidget()
+  spectrum:SetExtent(225, 97)
+  pallet.spectrum = spectrum
+  local spectrumBg = pallet:CreateNinePartDrawable(LOGIN_STAGE_TEXTURE_PATH.REMNANTS, "background")
+  spectrumBg:SetCoords(291, 462, 7, 7)
+  spectrumBg:SetInset(3, 3, 3, 3)
+  spectrumBg:AddAnchor("TOPLEFT", spectrum, 0, 0)
+  spectrumBg:AddAnchor("BOTTOMRIGHT", spectrum, 0, 0)
+  pallet:SetSpectrumBg(spectrumBg)
+  local posButton = spectrum:CreateChildWidget("button", "posButton", 0, true)
+  posButton:Show(true)
+  posButton:Enable(true)
+  posButton:AddAnchor("CENTER", spectrum, 0, 0)
+  ApplyButtonSkin(posButton, BUTTON_LOGINSTAGE.PALLECT_PICKER)
+  local luminance = pallet:GetLuminanceWidget()
+  luminance:SetExtent(15, 97)
+  luminance:AddAnchor("LEFT", spectrum, "RIGHT", 11, 0)
+  pallet.luminance = luminance
+  local luminanceBg = pallet:CreateNinePartDrawable(LOGIN_STAGE_TEXTURE_PATH.REMNANTS, "background")
+  luminanceBg:SetCoords(291, 462, 7, 7)
+  luminanceBg:SetInset(3, 3, 3, 3)
+  luminanceBg:AddAnchor("TOPLEFT", luminance, 0, 0)
+  luminanceBg:AddAnchor("BOTTOMRIGHT", luminance, 0, 0)
+  pallet:SetLuminanceBg(luminanceBg)
+  local slider = CreateSlider(luminance:GetId() .. ".slider", luminance)
+  slider:SetExtent(18, 108)
+  slider:SetMinThumbLength(12)
+  slider:SetOrientation(0)
+  slider:SetMinMaxValues(0, 100)
+  slider:SetInitialValue(50, false)
+  ApplyButtonSkin(slider.thumb, BUTTON_LOGINSTAGE.LUMINANCE_PICKER)
+  slider.bg:SetVisible(false)
+  slider:AddAnchor("TOPLEFT", luminance, "TOPLEFT", 1, -5)
+  pallet.luminance.slider = slider
+  return section
+end
+local CreateSliderSection = function(id, parent, titleStr)
+  local section = parent:CreateChildWidget("emptywidget", id, 0, true)
+  local title = section:CreateChildWidget("label", "title", 0, true)
+  title:SetExtent(parent:GetWidth(), FONT_SIZE.MIDDLE)
+  title:SetText(titleStr)
+  title.style:SetAlign(ALIGN_LEFT)
+  title:AddAnchor("TOPLEFT", section, 0, 0)
+  ApplyTextColor(title, FONT_COLOR.LOGIN_STAGE_BROWN)
+  local slider = CreateSlider(string.format("%s.slider", id), section)
+  slider:SetWidth(parent:GetWidth())
+  slider:SetBgColor(TEXTURE_COLOR.LOGIN_STAGE_SLIDER)
+  slider:AddAnchor("TOPLEFT", title, "BOTTOMLEFT", 0, 5)
+  section.slider = slider
+  function section:SetMinMaxValues(minV, maxV)
+    slider:SetMinMaxValues(minV, maxV)
+  end
+  function section:SetInitialValue(v)
+    slider:SetInitialValue(v)
+  end
+  function section:SetEnable(enable)
+    slider:SetEnable(enable)
+  end
+  function section:SetValue(value, trigger)
+    slider:SetValue(value, trigger)
+  end
+  local _, height = F_LAYOUT:GetExtentWidgets(title, slider)
+  section:SetExtent(parent:GetWidth(), height)
+  return section
+end
+local function CreateCosmeticPalletStyleWindow(parent, tabIndex, index)
+  local window = parent:CreateChildWidget("window", string.format("styleWnd[%d]", index), 0, true)
+  window:SetExtent(260, 130)
+  window.titleStyle:SetAlign(ALIGN_TOP_LEFT)
+  window.index = index
+  local title = window:CreateChildWidget("textbox", "title", 0, true)
+  title:SetExtent(260, 15)
+  title:AddAnchor("TOPLEFT", window, 0, 2)
+  title.style:SetAlign(ALIGN_LEFT)
+  title.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.LARGE)
+  ApplyTextColor(title, FONT_COLOR.LOGIN_STAGE_BROWN)
+  local palletSection = CreatePalletSection("palletSection", window)
+  palletSection:AddAnchor("TOPLEFT", title, "BOTTOMLEFT", 0, 8)
+  return window
+end
+local function CreateCosmeticPageStyleWindow(parent, tabIndex, index, defaultCount, useSlider)
+  local frame = parent:CreateChildWidget("window", string.format("stylePageWnd[%d]", index), 0, true)
+  frame.index = index
+  frame.defaultCount = defaultCount
+  frame.useSlider = useSlider or false
+  local height
+  if defaultCount then
+    frame.itemMaxCount = 9
+    height = PAGE_HEIGHT.USE_SLIDER_DEFAULT_COUNT
+  else
+    frame.itemMaxCount = 6
+    height = PAGE_HEIGHT.USE_SLIDER_NOT_DEFAULT_COUNT
+  end
+  if useSlider then
+    frame:SetExtent(258, height)
+  else
+    frame:SetExtent(258, PAGE_HEIGHT.DEFAULT)
+  end
+  local title = frame:CreateChildWidget("textbox", "title", 0, true)
+  title:SetExtent(260, 15)
+  title:AddAnchor("TOPLEFT", frame, 0, 2)
+  title.style:SetAlign(ALIGN_LEFT)
+  title.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.LARGE)
+  ApplyTextColor(title, FONT_COLOR.LOGIN_STAGE_BROWN)
+  local pageControl = CreatePageControl(frame:GetId() .. ".pageControl", frame)
+  pageControl:AddAnchor("TOP", frame, 0, CUSTOMIZE_ITEM_PAGE * (frame.itemMaxCount / 3) + title:GetHeight() * 2)
+  frame.pageControl = pageControl
+  local xOffset = 0
+  local yOffset = 22
+  frame.item = {}
+  for i = 1, frame.itemMaxCount do
+    local item = CreateCosmeticItemButton("item", frame, i)
+    item:AddAnchor("TOPLEFT", frame, xOffset, yOffset)
+    if i % 3 == 0 then
+      xOffset = 0
+      yOffset = yOffset + CUSTOMIZE_ITEM_PAGE + 3
+    else
+      xOffset = xOffset + CUSTOMIZE_ITEM_PAGE + 3
+    end
+  end
+  local deleteButton = frame:CreateChildWidget("button", "deleteButton", 0, true)
+  deleteButton:AddAnchor("TOPRIGHT", frame, 5, -7)
+  ApplyButtonSkin(deleteButton, BUTTON_BASIC.REMOVE)
+  if useSlider then
+    local sliderTitle = frame:CreateChildWidget("label", "sliderTitle", 0, true)
+    sliderTitle:SetAutoResize(true)
+    sliderTitle:SetHeight(FONT_SIZE.MIDDLE)
+    sliderTitle:AddAnchor("TOP", pageControl, "BOTTOM", 0, 5)
+    sliderTitle:AddAnchor("LEFT", frame, 0, 5)
+    ApplyTextColor(sliderTitle, FONT_COLOR.LOGIN_STAGE_BROWN)
+    local slider = CreateSlider(frame:GetId() .. ".slider", frame)
+    slider:SetWidth(270)
+    slider:SetMinMaxValues(0, 100)
+    slider:SetInitialValue(100, false)
+    slider:SetBgColor(TEXTURE_COLOR.LOGIN_STAGE_SLIDER)
+    slider:AddAnchor("TOPLEFT", sliderTitle, "BOTTOMLEFT", -5, 5)
+    frame.slider = slider
+  end
+  return frame
+end
+local function CreateCosmeticCompoundStyleWindow(parent, tabIndex, index, defaultCount)
+  local max_width = 260
+  local window = CreateCosmeticPageStyleWindow(parent, tabIndex, index, defaultCount)
+  local modifierWnd = window:CreateChildWidget("emptywidget", "modifierWnd", 0, true)
+  modifierWnd:SetExtent(contentWidth, 110)
+  modifierWnd:AddAnchor("TOPLEFT", window, "BOTTOMLEFT", 0, 0)
+  local posLabel = modifierWnd:CreateChildWidget("label", "posLabel", 0, true)
+  posLabel:SetText(locale.characterCreate.customTypepos)
+  posLabel:SetExtent(25, 15)
+  posLabel.style:SetAlign(ALIGN_LEFT)
+  posLabel:AddAnchor("TOPLEFT", modifierWnd, 0, 0)
+  ApplyTextColor(posLabel, FONT_COLOR.LOGIN_STAGE_BROWN)
+  local posWindow = modifierWnd:CreateChildWidget("emptywidget", "posWindow", 0, true)
+  posWindow:SetExtent(max_width, 91)
+  posWindow:AddAnchor("TOPLEFT", posLabel, "BOTTOMLEFT", 0, 2)
+  local bg = posWindow:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.REMNANTS, "background")
+  bg:SetCoords(192, 197, 247, 96)
+  bg:AddAnchor("TOPLEFT", posWindow, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", posWindow, 0, 0)
+  local posButton = posWindow:CreateChildWidget("button", "posButton", 0, true)
+  posButton:AddAnchor("CENTER", posWindow, 0, 0)
+  ApplyButtonSkin(posButton, BUTTON_LOGINSTAGE.POS_CIRCLE)
+  local extentSliderSection = CreateSliderSection("extentSliderSection", modifierWnd, locale.characterCreate.customTypescale)
+  extentSliderSection:SetMinMaxValues(0, 85)
+  extentSliderSection:SetInitialValue(50, false)
+  extentSliderSection:AddAnchor("TOPLEFT", posWindow, "BOTTOMLEFT", 0, 10)
+  modifierWnd.extentSliderSection = extentSliderSection
+  local rotateSliderSection = CreateSliderSection("rotateSliderSection", modifierWnd, locale.characterCreate.customTyperotation)
+  rotateSliderSection:SetMinMaxValues(0, 100)
+  rotateSliderSection:SetInitialValue(50, false)
+  rotateSliderSection:AddAnchor("TOPLEFT", extentSliderSection, "BOTTOMLEFT", 0, 7)
+  modifierWnd.rotateSliderSection = rotateSliderSection
+  return window
+end
+local function CreateCosmeticHairColorStyleWindow(parent, tabIndex, index, defaultCount)
+  local window = parent:CreateChildWidget("window", string.format("styleWnd[%d]", index), 0, true)
+  window:SetExtent(260, 290)
+  window.titleStyle:SetAlign(ALIGN_TOP_LEFT)
+  window.index = index
+  local pageStyle = CreateCosmeticPageStyleWindow(parent, tabIndex, index, defaultCount)
+  pageStyle:AddAnchor("TOPLEFT", window, 0, 0)
+  window.pageStyle = pageStyle
+  local tab = CreateTab("tab", window, "customizing_hair_color")
+  tab:Show(false)
+  tab:RemoveAllAnchors()
+  tab:AddAnchor("TOPLEFT", window, 0, 0)
+  tab:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+  local text = {
+    GetUIText(COMMON_TEXT, "hair_default_dyeing"),
+    GetUIText(COMMON_TEXT, "hair_part_dyeing")
+  }
+  tab:AddTabs(text)
+  local function CreateDefaultDyeingTab(tabWindow)
+    local palletSection = CreatePalletSection("palletSection", tabWindow)
+    palletSection:AddAnchor("TOPLEFT", tabWindow, 2, sideMargin / 3)
+    tabWindow.index = index
+  end
+  local function CreatePartDyeingTab(tabWindow)
+    local twoToneSection = CreateSliderSection("twoToneSection", tabWindow, GetUIText(COMMON_TEXT, "hair_twotone_dyeing"))
+    twoToneSection:AddAnchor("TOPLEFT", tabWindow, 0, sideMargin / 3)
+    twoToneSection:SetMinMaxValues(0, 100)
+    twoToneSection:SetInitialValue(0, false)
+    twoToneSection.value = 0
+    local bridgeSection = CreateSliderSection("bridgeSection", tabWindow, GetUIText(COMMON_TEXT, "hair_bridge_dyeing"))
+    bridgeSection:AddAnchor("TOPLEFT", twoToneSection, "BOTTOMLEFT", 0, 7)
+    bridgeSection:SetMinMaxValues(0, 100)
+    bridgeSection:SetInitialValue(0, false)
+    bridgeSection.value = 0
+    local palletSection = CreatePalletSection("palletSection", tabWindow)
+    palletSection:AddAnchor("TOPLEFT", bridgeSection, "BOTTOMLEFT", 0, sideMargin / 3)
+    tabWindow.index = index
+  end
+  CreateDefaultDyeingTab(tab.window[1])
+  CreatePartDyeingTab(tab.window[2])
+  return window
+end
+local function CreateCosmeticTabFrame(window, tabIndex)
+  local default_race = RACE_NUIAN
+  local default_gender = GENDER_MALE
+  window.index = tabIndex
+  local bg = window:CreateNinePartDrawable(LOGIN_STAGE_TEXTURE_PATH.REMNANTS, "background")
+  bg:SetCoords(1021, 0, 3, 440)
+  bg:SetInset(1, 100, 1, 339)
+  bg:AddAnchor("TOPLEFT", window, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", window, 0, -50)
+  window.bg = bg
+  window.styleWindow = {}
+  local styleTypeList = STYLE_LIST[default_race][default_gender][tabIndex]
+  for i = 1, #styleTypeList do
+    local styleType = styleTypeList[i]
+    local windowType = STYLE_WINDOW_TYPE[styleType]
+    local inset = 15
+    if windowType == STYLE_PAGE_DEFAULT_COUNT then
+      window.styleWindow[i] = CreateCosmeticPageStyleWindow(window, tabIndex, i, true)
+      SetCosmeticPageStyleWindowFunction(window.styleWindow[i], window)
+    elseif windowType == STYLE_PAGE_NOT_DEFAULT_COUNT then
+      window.styleWindow[i] = CreateCosmeticPageStyleWindow(window, tabIndex, i, false)
+      SetCosmeticPageStyleWindowFunction(window.styleWindow[i], window)
+    elseif windowType == STYLE_PAGE_USE_SLIDER_DEFAULT_COUNT then
+      window.styleWindow[i] = CreateCosmeticPageStyleWindow(window, tabIndex, i, true, true)
+      SetCosmeticPageStyleWindowFunction(window.styleWindow[i], window)
+    elseif windowType == STYLE_PAGE_USE_SLIDER_NOT_DEFAULT_COUNT then
+      window.styleWindow[i] = CreateCosmeticPageStyleWindow(window, tabIndex, i, false, true)
+      SetCosmeticPageStyleWindowFunction(window.styleWindow[i], window)
+    elseif windowType == STYLE_PALLET then
+      window.styleWindow[i] = CreateCosmeticPalletStyleWindow(window, tabIndex, i)
+      SetCosmeticPalletStyleWindowFunction(window.styleWindow[i], window)
+    elseif windowType == STYLE_COMPOUND then
+      window.styleWindow[i] = CreateCosmeticCompoundStyleWindow(window, tabIndex, i, true)
+      SetCosmeticCompoundStyleWindowFunction(window.styleWindow[i], window)
+    elseif windowType == STYLE_HAIR_COLOR then
+      window.styleWindow[i] = CreateCosmeticHairColorStyleWindow(window, tabIndex, i, true)
+      SetCosmeticHairColorStyleWindowFunction(window.styleWindow[i], window)
+    end
+    if window.styleWindow[i] ~= nil then
+      if i == 1 then
+        window.styleWindow[i]:AddAnchor("TOPLEFT", window, CUSTOMIZE_INSET, CUSTOMIZE_INSET * 3)
+      else
+        window.styleWindow[i]:AddAnchor("TOPLEFT", window.styleWindow[i - 1], "BOTTOMLEFT", 0, CUSTOMIZE_INSET / 1.5)
+      end
+    end
+    SettingCustomTabTitle(window, locale.characterCreate.adornStyleList[tabIndex])
+  end
+end
+function CreateCosmeticButtonMenu(id, parent)
+  local window = parent:CreateChildWidget("emptywidget", id, 0, true)
+  window:SetExtent(100, 350)
+  local bg = window:CreateThreePartDrawable(LOGIN_STAGE_TEXTURE_PATH.REMNANTS, "background")
+  bg:SetCoords(1021, 0, 3, 440)
+  bg:SetInset(1, 0, 1, 0)
+  bg:AddAnchor("TOPLEFT", window, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", window, 0, 150)
+  window.bg = bg
+  window.buttons = {}
+  local height = 0
+  for i = 1, MAX_TAB_TYPE do
+    local button = CreateEmptyButton(string.format("button[%d]", i), window)
+    button:SetText(locale.characterCreate.adornStyleList[i])
+    ApplyButtonSkin(button, BUTTON_LOGINSTAGE.TAB_UNSELECT_LEFT)
+    button:AddAnchor("TOP", window, 0, (i - 1) * button:GetHeight())
+    height = height + (i - 1) * button:GetHeight()
+    window.buttons[i] = button
+  end
+  local btnMaxWidth = AdjustBtnLongestTextWidth(window.buttons)
+  window:SetExtent(btnMaxWidth, height)
+  function window:SetButtonMenuBeautyShopStyle()
+    for i = 1, MAX_TAB_TYPE do
+      ChangeButtonSkin(self.buttons[i], BUTTON_BEAUTYSHOP.TAB_UNSELECT_LEFT)
+      self.buttons[i]:SetExtent(72, 48)
+    end
+    local btnMaxWidth = AdjustBtnLongestTextWidth(window.buttons)
+    window:SetExtent(btnMaxWidth, height)
+  end
+  return window
+end
+function CreateCosmeticTabWindow(id, parent)
+  local tab = parent:CreateChildWidget("tab", id, 0, true)
+  tab:SetVertical(true)
+  tab:SetCorner("TOPRIGHT")
+  local bg = tab:CreateThreePartDrawable(LOGIN_STAGE_TEXTURE_PATH.REMNANTS, "background")
+  bg:SetCoords(1021, 0, 3, 400)
+  bg:SetInset(1, 0, 1, 0)
+  tab.bg = bg
+  local buttonTable = {}
+  for tabIndex = 1, MAX_TAB_TYPE do
+    tab:AddSimpleTab(locale.characterCreate.adornStyleList[tabIndex])
+    ApplyButtonSkin(tab.selectedButton[tabIndex], BUTTON_LOGINSTAGE.TAB_SELECT_LEFT)
+    ApplyButtonSkin(tab.unselectedButton[tabIndex], BUTTON_LOGINSTAGE.TAB_UNSELECT_LEFT)
+    table.insert(buttonTable, tab.selectedButton[tabIndex])
+    table.insert(buttonTable, tab.unselectedButton[tabIndex])
+    CreateCosmeticTabFrame(tab.window[tabIndex], tabIndex)
+  end
+  local btnMaxWidth = AdjustBtnLongestTextWidth(buttonTable)
+  tab:SetExtent(btnMaxWidth + 285, SCREEN_HEIGHT)
+  bg:SetExtent(btnMaxWidth + 1, 400)
+  bg:AddAnchor("TOPRIGHT", tab, 0, 0)
+  local closeButton = tab:CreateChildWidget("button", "closeButton", 0, true)
+  ApplyButtonSkin(closeButton, BUTTON_LOGINSTAGE.STYLE_CLOSE)
+  closeButton:AddAnchor("RIGHT", tab, -btnMaxWidth + closeButton:GetWidth() - 2, 0)
+  local closebg = closeButton:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.REMNANTS, "background")
+  closebg:SetColor(1, 1, 1, 0.5)
+  closebg:SetCoords(465, 78, 61, 68)
+  closebg:SetExtent(61, 68)
+  closebg:AddAnchor("LEFT", closeButton, 3, 2)
+  function tab:SetTabButtonBeautyShopStyle()
+    for tabIndex = 1, MAX_TAB_TYPE do
+      ApplyButtonSkin(tab.selectedButton[tabIndex], BUTTON_BEAUTYSHOP.TAB_SELECT_LEFT)
+      ApplyButtonSkin(tab.unselectedButton[tabIndex], BUTTON_BEAUTYSHOP.TAB_UNSELECT_LEFT)
+    end
+  end
+  tab:SetGap(1)
+  local height = tab.selectedButton[1]:GetHeight() * MAX_TAB_TYPE
+  local fixCheckbox = CreateCheckButton(id .. ".fixCheckbox", tab, locale.characterCreate.fix)
+  if btnMaxWidth < fixCheckbox.textButton:GetWidth() + 5 then
+    fixCheckbox:AddAnchor("TOPLEFT", bg, 8, height + MARGIN.WINDOW_SIDE)
+  else
+    fixCheckbox:AddAnchor("TOPRIGHT", tab, -(fixCheckbox.textButton:GetWidth() + 5), height + MARGIN.WINDOW_SIDE)
+  end
+  SetButtonFontColor(fixCheckbox.textButton, GetWhiteCheckButtonFontColor())
+  tab.fixCheckbox = fixCheckbox
+  return tab
+end

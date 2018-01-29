@@ -1,0 +1,8 @@
+if eventcenterLocale == nil then
+  eventcenterLocale = {}
+end
+eventcenterLocale.attendancePopup = true
+eventcenterLocale.width = {
+  eventInfo = {list = 290, desc = 560}
+}
+eventcenterLocale.timeZone = {x = 68, y = 214}

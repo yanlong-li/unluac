@@ -1,0 +1,25 @@
+if X2Util:GetGameProvider() == TENCENT then
+  questLocale.notifier = {
+    gridWidth = 260,
+    titleDefaultWidth = 215,
+    objectWidth = 215
+  }
+  questLocale.directing = {
+    message = {
+      lineSpace = 15,
+      width = function(inputWidth)
+        return inputWidth * 0.5
+      end
+    }
+  }
+  questLocale.guideTipHeight = 8
+  questLocale.guideTipIcon = {
+    coords = {
+      8,
+      3,
+      3,
+      3,
+      3
+    }
+  }
+end

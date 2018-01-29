@@ -1,0 +1,31 @@
+if loginStageCommonLocale == nil then
+  loginStageCommonLocale = {}
+end
+loginStageCommonLocale.pageTitleCoords = {
+  selectCharacter = {
+    460,
+    280,
+    132,
+    34
+  },
+  createRace = {
+    698,
+    301,
+    107,
+    34
+  },
+  createAbility = {
+    698,
+    267,
+    107,
+    34
+  },
+  createCustomizing = {
+    592,
+    280,
+    106,
+    34
+  }
+}
+loginStageCommonLocale.made_html_path = "ui/login_stage/html/made_kr.html"
+loginStageCommonLocale.max_character_count = 6

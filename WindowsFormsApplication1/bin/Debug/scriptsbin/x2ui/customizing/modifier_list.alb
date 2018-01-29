@@ -1,0 +1,452 @@
+local modifierOrder = {}
+local DEFAULT_RACE = RACE_NUIAN
+function GetModifierOrderList(race, type)
+  local list = {}
+  if modifierOrder[race] == nil or modifierOrder[race][type] == nil then
+    race = DEFAULT_RACE
+  end
+  local orderSet = modifierOrder[race][type]
+  if orderSet == nil then
+    return nil
+  end
+  for i = 1, #orderSet do
+    for j = 1, #orderSet[i] do
+      list[#list + 1] = {
+        morph = orderSet[i][j],
+        index = nil
+      }
+    end
+    list[#list + 1] = {morph = "SPACE", index = 0}
+  end
+  local maxTargets = GetMaxFaceTargets(type)
+  for i = 1, maxTargets do
+    local targetIndex = GetFaceTargetIndex(type, i)
+    local morph = GetFaceTargetName(targetIndex)
+    local hasIndex = false
+    for j = 1, #list do
+      if morph == list[j].morph then
+        list[j].index = targetIndex
+        hasIndex = true
+        break
+      end
+    end
+    if not hasIndex then
+      list[#list + 1] = {morph = morph, index = targetIndex}
+    end
+  end
+  return list
+end
+function GetModifierText(morph)
+  if X2Player:GetFeatureSet().dwarfWarborn then
+    local temporaryString = {
+      eye_AllSize = "\235\136\136 \236\160\132\236\178\180\237\129\172\234\184\176",
+      eye_Zsize = "\235\136\136 \236\131\129\237\149\152\237\129\172\234\184\176",
+      eye_LowerEyelid = "\235\136\136\235\176\145\236\130\180",
+      eye_EyesXposition = "\235\136\136 \236\162\140\236\154\176\236\156\132\236\185\152",
+      eye_EyesYposition = "\235\136\136 \235\143\140\236\182\156",
+      eye_PupilXposition = "\235\136\136\235\143\153\236\158\144 \236\162\140\236\154\176\236\156\132\236\185\152",
+      eye_PupilZposition = "\235\136\136\235\143\153\236\158\144 \236\131\129\237\149\152\236\156\132\236\185\152",
+      eye_BrowRotation = "\235\136\136\236\141\185 \234\176\129\235\143\132",
+      eye_Forehead = "\235\175\184\234\176\132 \235\143\140\236\182\156",
+      nose_NasalWidth = "\235\175\184\234\176\132 \235\132\147\236\157\180",
+      nose_Xwidth = "\236\189\167\235\140\128 \235\132\147\236\157\180",
+      nose_Zlength = "\236\189\148 \236\131\129\237\149\152\234\184\184\236\157\180",
+      nose_Nostril = "\236\189\167\234\181\172\235\169\141 \235\133\184\236\182\156",
+      nose_AllElevation = "\236\189\148\235\182\128\235\182\132 \236\160\132\236\178\180\235\143\140\236\182\156",
+      mouth_LipUpperThickness = "\236\156\151\236\158\133\236\136\160 \235\145\144\234\187\152",
+      mouth_LipLowerThickness = "\236\149\132\235\158\171\236\158\133\236\136\160 \235\145\144\234\187\152",
+      mouth_Yelevation = "\236\158\133 \235\143\140\236\182\156",
+      mouth_Rotate = "\236\158\133 \234\176\129\235\143\132",
+      FS_AllWidth = "\236\150\188\234\181\180 \236\160\132\236\178\180 \236\162\140\236\154\176\235\132\147\236\157\180",
+      FS_AllLength = " \236\150\188\234\181\180 \236\160\132\236\178\180 \236\131\129\237\149\152\234\184\184\236\157\180",
+      FS_JawSize = "\236\162\140\236\154\176 \237\132\177\237\129\172\234\184\176",
+      FS_JawLength = "\237\132\177\235\129\157 \236\131\129\237\149\152\234\184\184\236\157\180",
+      FS_JawAllZposition = "\237\132\177\236\160\132\236\178\180 \236\131\129\237\149\152\236\156\132\236\185\152",
+      FS_ChinAllYposition = "\237\132\177\235\129\157 \235\143\140\236\182\156",
+      FS_JawAllYposition = "\237\132\177 \236\160\132\236\178\180 \235\143\140\236\182\156",
+      FS_EarSize = "\234\183\128 \237\129\172\234\184\176"
+    }
+    if temporaryString[morph] ~= nil then
+      return temporaryString[morph]
+    end
+  end
+  return locale.characterCreate.getParamText(morph)
+end
+modifierOrder[DEFAULT_RACE] = {}
+modifierOrder[RACE_WARBORN] = {}
+modifierOrder[DEFAULT_RACE][EYES] = {
+  {
+    "eye_Size",
+    "eye_Length",
+    "eye_Rotate",
+    "eye_Close"
+  },
+  {
+    "eye_Zposition",
+    "eye_Xposition",
+    "eye_Yposition"
+  },
+  {
+    "eye_SloeDown",
+    "eye_LacrimalRotate",
+    "eye_LacrimalCaruncle"
+  },
+  {
+    "eye_EyelineZcenter",
+    "eye_EyelineZinner",
+    "eye_LowShapeShallow"
+  },
+  {
+    "eye_DoubleEyelidAngle",
+    "eye_DoubleEyelidThickness",
+    "eye_DoubleEyelidYthicknes",
+    "eye_EyeCoverVolume"
+  },
+  {
+    "eye_PupilSize",
+    "eye_PupilRotate",
+    "eye_RotateUp"
+  },
+  {
+    "eye_BrowridgeDown",
+    "eye_SupraorbitalRidge",
+    "eye_BrowRotate",
+    "eye_BrowThickness",
+    "eye_Innerbrow",
+    "eye_BridgeLength"
+  }
+}
+modifierOrder[RACE_WARBORN][EYES] = {
+  {
+    "eye_AllSize",
+    "eye_Zsize",
+    "eye_Rotate",
+    "eye_LowerEyelid"
+  },
+  {
+    "eye_Zposition",
+    "eye_EyesXposition",
+    "eye_EyesYposition"
+  },
+  {
+    "eye_PupilSize",
+    "eye_PupilXposition",
+    "eye_PupilZposition"
+  },
+  {
+    "eye_BrowridgeDown",
+    "eye_BrowRotation",
+    "eye_SupraorbitalRidge",
+    "eye_Forehead"
+  }
+}
+modifierOrder[DEFAULT_RACE][NOSE] = {
+  {
+    "nose_Size",
+    "nose_Width",
+    "nose_Height",
+    "nose_Length"
+  },
+  {
+    "nose_SeptonasalTractus",
+    "nose_SeptumZposition",
+    "nose_SeptonasalAxialPosition",
+    "nose_AlarNasi"
+  },
+  {
+    "nose_AlarVolume",
+    "nose_AlarReduction",
+    "nose_AlarHeight",
+    "nose_AlarDepth",
+    "nose_AlarZposition"
+  },
+  {
+    "nose_NasalBoneElevation",
+    "nose_NasalBoneVolume"
+  },
+  {
+    "nose_NasalBoneWidth",
+    "nose_NasalUpperSideY",
+    "nose_NasalUpperZ"
+  },
+  {
+    "nose_YShape"
+  }
+}
+modifierOrder[RACE_WARBORN][NOSE] = {
+  {
+    "nose_NasalWidth",
+    "nose_Xwidth",
+    "nose_AlarReduction",
+    "nose_SeptonasalTractus"
+  },
+  {
+    "nose_SeptonasalAxialPosition",
+    "nose_Zlength",
+    "nose_SeptumZposition",
+    "nose_Nostril"
+  },
+  {
+    "nose_NasalBoneElevation",
+    "nose_Height",
+    "nose_AllElevation"
+  }
+}
+modifierOrder[DEFAULT_RACE][MOUTH] = {
+  {
+    "mouth_Size",
+    "mouth_Length"
+  },
+  {
+    "mouth_Zposition",
+    "mouth_Yposition",
+    "mouth_LipFoward",
+    "mouth_UnderbiteOverbite"
+  },
+  {
+    "mouth_LipClosedShape",
+    "mouth_LipSideY",
+    "mouth_Deform"
+  },
+  {
+    "mouth_LipDeform",
+    "mouth_LipUpperShapeFlow",
+    "mouth_UpperLipThickness",
+    "mouth_LipUpperVol"
+  },
+  {
+    "mouth_LipLowerShapeFlow",
+    "mouth_LowerLipThickness",
+    "mouth_LipLowerVol",
+    "mouth_LipLowerWidth"
+  },
+  {
+    "mouth_LipShapeLowY",
+    "mouth_LipOpen",
+    "mouth_LipShapeUpperWidth"
+  },
+  {
+    "mouth_ToothWidth",
+    "mouth_ToothZposition",
+    "mouth_ToothSize"
+  }
+}
+modifierOrder[RACE_WARBORN][MOUTH] = {
+  {
+    "mouth_Length",
+    "mouth_LipUpperThickness",
+    "mouth_LipLowerThickness"
+  },
+  {
+    "mouth_Zposition",
+    "mouth_Deform"
+  },
+  {
+    "mouth_Yelevation",
+    "mouth_LipOpen",
+    "mouth_Rotate"
+  }
+}
+modifierOrder[DEFAULT_RACE][SHAPE] = {
+  {
+    "FS_Width",
+    "FS_ForeheadWidth"
+  },
+  {
+    "FS_JawSize",
+    "FS_JawShape",
+    "FS_JawShapeZ",
+    "FS_JawZposition"
+  },
+  {
+    "FS_JawShapeFlow",
+    "FS_JawWidth"
+  },
+  {
+    "FS_ChinVolume",
+    "FS_ChinYposition",
+    "FS_SubmaxillaYposition"
+  },
+  {
+    "FS_ChinWidth",
+    "FS_JawNeckVol"
+  },
+  {
+    "FS_CheekboneVolume",
+    "FS_CheekboneZ",
+    "FS_CheekMeat",
+    "FS_Front"
+  },
+  {
+    "FS_EarSize",
+    "elf_ElfEar",
+    "FS_EarRotateX",
+    "elf_EarRotate"
+  },
+  {
+    "FS_NewPreset"
+  }
+}
+modifierOrder[RACE_WARBORN][SHAPE] = {
+  {
+    "FS_AllWidth",
+    "FS_AllLength",
+    "FS_CheekboneVolume",
+    "FS_JawSize"
+  },
+  {
+    "FS_ChinWidth",
+    "FS_JawLength",
+    "FS_JawAllZposition",
+    "FS_ChinAllYposition",
+    "FS_JawAllYposition"
+  },
+  {
+    "FS_CheekMeat",
+    "FS_JawNeckVol",
+    "FS_EarSize"
+  }
+}
+local TEXTURE_PATH = {}
+TEXTURE_PATH[FACE] = nil
+TEXTURE_PATH[EYES] = "ui/login_stage/customizing/guide/eyes.dds"
+TEXTURE_PATH[NOSE] = "ui/login_stage/customizing/guide/nose.dds"
+TEXTURE_PATH[MOUTH] = "ui/login_stage/customizing/guide/mouth.dds"
+TEXTURE_PATH[SHAPE] = "ui/login_stage/customizing/guide/shape.dds"
+local modifierTexture = {}
+local modifierInfo = {}
+for i = 1, MAX_PRESET_TYPE do
+  modifierTexture[i] = {}
+  modifierTexture[i].drawable = nil
+  modifierTexture[i].index = 0
+end
+function ShowModifierTexture(type, index, target, parent)
+  if modifierTexture[type] == nil then
+    return
+  end
+  if modifierTexture[type].index == index then
+    return
+  end
+  local morph = GetFaceTargetName(index)
+  local info = modifierInfo[morph]
+  if info == nil then
+    return
+  end
+  if modifierTexture[type].drawable == nil then
+    modifierTexture[type].drawable = parent:CreateImageDrawable(TEXTURE_PATH[type], "overlay")
+  end
+  local drawable = modifierTexture[type].drawable
+  drawable:SetExtent(info.width, info.height)
+  drawable:SetCoords(info.offsetX, info.offsetY, info.width, info.height)
+  drawable:RemoveAllAnchors()
+  drawable:AddAnchor(info.myAnchor, target, info.myAnchor, info.anchorX, info.anchorY)
+  drawable:SetVisible(true)
+end
+function HideModifierTexture(type)
+  if modifierTexture[type].drawable ~= nil then
+    modifierTexture[type].drawable:SetVisible(false)
+    modifierTexture[type].index = 0
+  end
+end
+local function AddModifierTexture(morph, offsetX, offsetY, width, height, myAnchor, anchorX, anchorY)
+  modifierInfo[morph] = {
+    offsetX = offsetX,
+    offsetY = offsetY,
+    width = width,
+    height = height,
+    myAnchor = myAnchor,
+    targetAnchor = myAnchor,
+    anchorX = anchorX,
+    anchorY = anchorY
+  }
+end
+AddModifierTexture("eye_Size", 319, 0, 98, 35, "TOP", -15, 22)
+AddModifierTexture("eye_Length", 93, 30, 90, 21, "TOP", -17, 30)
+AddModifierTexture("eye_Rotate", 0, 37, 90, 20, "TOP", -17, 26)
+AddModifierTexture("eye_Close", 418, 82, 94, 20, "TOP", -15, 28)
+AddModifierTexture("eye_Zposition", 216, 0, 102, 31, "TOP", -15, 23)
+AddModifierTexture("eye_Xposition", 0, 0, 92, 36, "TOP", -15, 23)
+AddModifierTexture("eye_Yposition", 93, 0, 122, 29, "TOP", -20, 23)
+AddModifierTexture("eye_SloeDown", 323, 36, 101, 25, "TOP", -15, 25)
+AddModifierTexture("eye_LacrimalRotate", 425, 30, 53, 20, "TOP", -17, 30)
+AddModifierTexture("eye_LacrimalCaruncle", 0, 58, 68, 25, "TOP", -18, 30)
+AddModifierTexture("eye_EyelineZcenter", 184, 32, 79, 27, "TOP", -17, 14)
+AddModifierTexture("eye_EyelineZinner", 264, 37, 58, 29, "TOP", -18, 24)
+AddModifierTexture("eye_LowShapeShallow", 69, 58, 97, 17, "TOP", -15, 35)
+AddModifierTexture("eye_DoubleEyelidAngle", 130, 83, 84, 13, "TOP", -16, 27)
+AddModifierTexture("eye_DoubleEyelidThickness", 130, 97, 99, 31, "TOP", -14, 23)
+AddModifierTexture("eye_DoubleEyelidYthicknes", 0, 0, 0, 0, "TOP", 0, 0)
+AddModifierTexture("eye_EyeCoverVolume", 0, 84, 129, 28, "TOP", -20, 20)
+AddModifierTexture("eye_PupilSize", 418, 0, 90, 28, "TOP", -17, 23)
+AddModifierTexture("eye_PupilRotate", 230, 91, 79, 23, "TOP", -16, 30)
+AddModifierTexture("eye_RotateUp", 326, 82, 91, 30, "TOP", -16, 22)
+AddModifierTexture("eye_BrowridgeDown", 226, 67, 99, 23, "TOP", -13, 11)
+AddModifierTexture("eye_SupraorbitalRidge", 326, 62, 117, 19, "TOP", -15, 15)
+AddModifierTexture("eye_BrowRotate", 0, 168, 88, 22, "TOP", -14, 15)
+AddModifierTexture("eye_BrowThickness", 0, 132, 98, 35, "TOP", -13, 7)
+AddModifierTexture("eye_Innerbrow", 0, 113, 116, 18, "TOP", -18, 33)
+AddModifierTexture("eye_BridgeLength", 167, 60, 58, 22, "TOP", -18, 10)
+AddModifierTexture("nose_Size", 19, 0, 65, 50, "TOP", -17.5, 28)
+AddModifierTexture("nose_Width", 85, 0, 70, 44, "TOP", -19, 28)
+AddModifierTexture("nose_Height", 156, 0, 71, 44, "TOP", -17.5, 28)
+AddModifierTexture("nose_Length", 0, 51, 34, 54, "TOP", -11, 24)
+AddModifierTexture("nose_SeptonasalTractus", 81, 51, 72, 14, "TOP", -19, 60)
+AddModifierTexture("nose_SeptumZposition", 155, 51, 29, 29, "TOP", -10, 55)
+AddModifierTexture("nose_SeptonasalAxialPosition", 35, 51, 45, 27, "TOP", -16, 53)
+AddModifierTexture("nose_AlarNasi", 86, 83, 21, 21, "TOP", -20, 55)
+AddModifierTexture("nose_AlarVolume", 108, 83, 65, 36, "CENTER", -17, -4)
+AddModifierTexture("nose_AlarReduction", 81, 66, 69, 16, "CENTER", -17, -3)
+AddModifierTexture("nose_AlarHeight", 35, 83, 50, 33, "CENTER", -18, -2)
+AddModifierTexture("nose_AlarDepth", 185, 51, 69, 23, "CENTER", -19, -3)
+AddModifierTexture("nose_AlarZposition", 174, 83, 53, 25, "CENTER", -19, -3)
+AddModifierTexture("nose_NasalBoneElevation", 0, 117, 70, 31, "TOP", -18, 30)
+AddModifierTexture("nose_NasalBoneVolume", 71, 120, 86, 31, "TOP", -17, 28)
+AddModifierTexture("nose_NasalBoneWidth", 158, 120, 86, 21, "TOP", -18, 30)
+AddModifierTexture("nose_NasalUpperSideY", 0, 149, 62, 26, "TOP", -22, 32)
+AddModifierTexture("nose_NasalUpperZ", 63, 152, 75, 40, "TOP", -25, 25)
+AddModifierTexture("nose_YShape", 0, 0, 18, 44, "TOP", -19, 29)
+AddModifierTexture("mouth_Size", 0, 203, 79, 42, "BOTTOM", -17, -25)
+AddModifierTexture("mouth_Length", 146, 204, 94, 15, "BOTTOM", -17, -38)
+AddModifierTexture("mouth_Zposition", 0, 175, 69, 27, "BOTTOM", -15, -33)
+AddModifierTexture("mouth_Yposition", 86, 161, 92, 36, "BOTTOM", -13, -27)
+AddModifierTexture("mouth_LipFoward", 0, 154, 84, 20, "BOTTOM", -17, -35)
+AddModifierTexture("mouth_UnderbiteOverbite", 72, 44, 71, 36, "BOTTOM", -22, -30)
+AddModifierTexture("mouth_LipClosedShape", 0, 112, 40, 10, "BOTTOM", -16, -45)
+AddModifierTexture("mouth_LipSideY", 0, 136, 85, 17, "BOTTOM", -14, -42)
+AddModifierTexture("mouth_Deform", 86, 136, 67, 25, "BOTTOM", -16, -36)
+AddModifierTexture("mouth_LipDeform", 0, 123, 42, 12, "BOTTOM", -15, -46.5)
+AddModifierTexture("mouth_LipUpperShapeFlow", 179, 162, 58, 20, "BOTTOM", -17, -46)
+AddModifierTexture("mouth_UpperLipThickness", 154, 125, 53, 36, "BOTTOM", -10, -31)
+AddModifierTexture("mouth_LipUpperVol", 65, 99, 72, 36, "BOTTOM", -17, -31)
+AddModifierTexture("mouth_LipLowerShapeFlow", 147, 220, 64, 23, "BOTTOM", -18, -27)
+AddModifierTexture("mouth_LowerLipThickness", 201, 81, 49, 42, "BOTTOM", -10, -25)
+AddModifierTexture("mouth_LipLowerVol", 72, 81, 83, 17, "BOTTOM", -16, -38)
+AddModifierTexture("mouth_LipLowerWidth", 156, 81, 44, 23, "BOTTOM", -15, -27)
+AddModifierTexture("mouth_LipShapeLowY", 144, 44, 93, 34, "BOTTOM", -19, -17)
+AddModifierTexture("mouth_LipOpen", 191, 0, 52, 43, "BOTTOM", -20, -26)
+AddModifierTexture("mouth_LipShapeUpperWidth", 0, 93, 64, 18, "BOTTOM", -18, -49)
+AddModifierTexture("mouth_ToothWidth", 72, 0, 118, 43, "BOTTOM", -12, -19)
+AddModifierTexture("mouth_ToothZposition", 0, 0, 71, 92, "BOTTOM", -14, 5)
+AddModifierTexture("mouth_ToothSize", 80, 203, 66, 42, "BOTTOM", -16, -25)
+AddModifierTexture("FS_Width", 0, 0, 148, 106, "CENTER", -2, 2)
+AddModifierTexture("FS_ForeheadWidth", 149, 0, 124, 63, "TOP", -7, -15)
+AddModifierTexture("FS_JawSize", 0, 295, 118, 131, "CENTER", 0, 25)
+AddModifierTexture("FS_JawShape", 245, 120, 121, 59, "BOTTOM", -11, -13)
+AddModifierTexture("FS_JawShapeZ", 132, 161, 112, 54, "BOTTOM", -6, -18)
+AddModifierTexture("FS_JawZposition", 0, 107, 110, 53, "BOTTOM", -7, -11)
+AddModifierTexture("FS_JawShapeFlow", 354, 184, 111, 50, "BOTTOM", -7, -17)
+AddModifierTexture("FS_JawWidth", 111, 107, 109, 53, "BOTTOM", -9, -11)
+AddModifierTexture("FS_ChinVolume", 395, 0, 60, 31, "BOTTOM", -12, -12)
+AddModifierTexture("FS_ChinYposition", 406, 32, 55, 25, "BOTTOM", -22, -12)
+AddModifierTexture("FS_SubmaxillaYposition", 0, 161, 131, 81, "BOTTOM", -7, -9)
+AddModifierTexture("FS_ChinWidth", 456, 0, 51, 29, "BOTTOM", -14, -12)
+AddModifierTexture("FS_JawNeckVol", 245, 180, 108, 72, "BOTTOM", -5, -5)
+AddModifierTexture("FS_CheekboneVolume", 149, 64, 131, 42, "CENTER", -8, -18)
+AddModifierTexture("FS_CheekboneZ", 274, 0, 120, 43, "CENTER", -9, -18)
+AddModifierTexture("FS_CheekMeat", 281, 44, 124, 75, "BOTTOM", -6, -14)
+AddModifierTexture("FS_Front", 161, 216, 79, 82, "BOTTOM", -15, -8)
+AddModifierTexture("FS_EarSize", 0, 243, 160, 51, "CENTER", 0, -23)
+AddModifierTexture("elf_ElfEar", 0, 243, 160, 51, "CENTER", 0, -23)
+AddModifierTexture("FS_EarRotateX", 367, 120, 140, 63, "CENTER", 3, -19)
+AddModifierTexture("elf_EarRotate", 367, 120, 140, 63, "CENTER", 3, -19)
+AddModifierTexture("FS_NewPreset", 119, 299, 134, 120, "CENTER", 0, 0)

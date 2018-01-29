@@ -1,0 +1,6 @@
+if dialogLocale == nil then
+  dialogLocale = {}
+end
+function dialogLocale:LayoutChangeImprisionOrTrial(wnd, btnOk, btnCancel)
+  return
+end

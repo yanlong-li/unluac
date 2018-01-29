@@ -1,0 +1,189 @@
+local maxStoreItemCount = X2Store:GetSellItemsMaxCount()
+STORE_MAX_DEFAULT_ITEM_COLUMN = 2
+STORE_MAX_BUY_ROW = 6
+STORE_MAX_SELL_ROW = maxStoreItemCount / STORE_MAX_DEFAULT_ITEM_COLUMN
+STORE_MAX_BACK_ROW = 7
+STORE_MAX_CART_ROW = 1
+STORE_MAX_CART_COL = maxStoreItemCount - 6
+STORE_CURRENCY = CURRENCY_GOLD
+SOLDITEMLIST = nil
+function GetCartEmptySlotCount(slots)
+  local count = 0
+  for i = 1, #slots do
+    local bag = slots[i]
+    if bag[1] == nil then
+      count = count + 1
+    end
+  end
+  return count
+end
+function GetSellEmptySlotNumber(slots)
+  for i = 1, #slots do
+    local slotNumber = slots[i].slotNumber
+    if slotNumber == nil then
+      return i
+    end
+  end
+  return "full"
+end
+local SetViewOfStoreItemWindow = function(id, parent)
+  local window = CreateEmptyButton(id, parent)
+  window:SetExtent(215, 55)
+  local itemIconButton = CreateItemIconButton(window:GetId() .. ".button", window)
+  itemIconButton:AddAnchor("LEFT", window, 5, 0)
+  local expeditionLevel = itemIconButton:CreateTextDrawable(FONT_PATH.DEFAULT, FONT_SIZE.XLARGE, "overlay")
+  expeditionLevel:SetExtent(FONT_SIZE.XLARGE, FONT_SIZE.XLARGE)
+  expeditionLevel:SetVisible(false)
+  expeditionLevel.style:SetAlign(ALIGN_CENTER)
+  expeditionLevel.style:SetShadow(true)
+  expeditionLevel:AddAnchor("CENTER", itemIconButton, 0, 0)
+  itemIconButton.expeditionLevel = expeditionLevel
+  function itemIconButton:ProcessExpeditionLevelCheck(itemType)
+    self.expeditionLevel:SetVisible(false)
+    if itemType == nil or itemType == 0 then
+      return ICON_BUTTON_OVERLAY_COLOR.NONE
+    end
+    if STORE_CURRENCY ~= CURRENCY_CONTRIBUTION_POINT then
+      return ICON_BUTTON_OVERLAY_COLOR.NONE
+    end
+    local reqExpedLevel = X2Item:GetExpeditionLevelRequirement(itemType) or 0
+    if reqExpedLevel ~= 0 then
+      local myExpedLevel = X2Faction:GetMyExpeditionLevel() or 0
+      if reqExpedLevel > myExpedLevel then
+        ApplyTextColor(self.expeditionLevel, FONT_COLOR.SKYBLUE)
+        self.expeditionLevel:SetVisible(true)
+        self.expeditionLevel:SetText(tostring(reqExpedLevel))
+        if self.limitLevel ~= nil then
+          self.limitLevel:SetVisible(false)
+        end
+        return ICON_BUTTON_OVERLAY_COLOR.BLACK
+      end
+    end
+    self.expeditionLevel:SetVisible(false)
+    return ICON_BUTTON_OVERLAY_COLOR.NONE
+  end
+  window.itemIconButton = itemIconButton
+  local moneyWindow = CreateTitleMoneyWindow(id, window, "", "vertical")
+  moneyWindow:AddAnchor("LEFT", itemIconButton, "RIGHT", 5, 3)
+  moneyWindow.bg:SetCoords(20, 0, 165, 29)
+  ApplyTextColor(moneyWindow.title, FONT_COLOR.DEFAULT)
+  window.moneyWindow = moneyWindow
+  return window
+end
+function CreateStoreItemWindow(id, parent, itemInfo)
+  local info = {}
+  info.name = ""
+  info.money = 0
+  info.path = EMPTY_SLOT_PATH
+  if itemInfo ~= nil then
+    info = itemInfo
+  end
+  local window = SetViewOfStoreItemWindow(id, parent)
+  function window:GetButton()
+    return self, self.itemIconButton
+  end
+  function window.itemIconButton:Update(info)
+    window:Update(info)
+  end
+  function window:SetTooltip(setTooltip)
+    self.itemIconButton:SetTooltip(setTooltip)
+  end
+  function window:Init()
+    self.moneyWindow:SetTitle("")
+    self.moneyWindow:Update("")
+    self.itemIconButton:Init()
+  end
+  function window:Update(itemInfo)
+    if itemInfo ~= nil then
+      if itemInfo.name ~= nil then
+        self.moneyWindow:SetTitle(tostring(itemInfo.name))
+      end
+      if itemInfo.currency ~= CURRENCY_HONOR_POINT then
+      else
+        self.moneyWindow:UpdateHonorPoint(itemInfo.honorPrice)
+        break
+      end
+      if itemInfo.currency ~= CURRENCY_LIVING_POINT then
+      else
+        self.moneyWindow:UpdateLivingPoint(itemInfo.livingPointPrice)
+        break
+      end
+      if itemInfo.currency ~= CURRENCY_CONTRIBUTION_POINT then
+      else
+        self.moneyWindow:UpdateContributionPoint(itemInfo.contributionPointPrice)
+        break
+      end
+      if itemInfo.money ~= nil or itemInfo.cost ~= nil then
+        if itemInfo.currency == CURRENCY_AA_POINT then
+          self.moneyWindow:UpdateAAPoint(itemInfo.money or itemInfo.cost)
+        else
+          self.moneyWindow:Update(itemInfo.money or itemInfo.cost)
+        end
+      end
+      if itemInfo.stack ~= nil then
+        self.itemIconButton:SetStack(tostring(itemInfo.stack))
+      end
+      self.itemIconButton:SetItemInfo(itemInfo)
+      if itemInfo.cost == -1 then
+        self.itemIconButton:Enable(false)
+      else
+        self.itemIconButton:Enable(true)
+      end
+    else
+      self:Init()
+    end
+  end
+  return window
+end
+function SetViewOfStoreItemSetSlot(parent, x, y)
+  local item = {}
+  local width = 230
+  local height = 53
+  for i = 1, x * y do
+    item[i] = CreateStoreItemWindow("$parent" .. ".item[" .. i .. "]", parent)
+    item[i]:Show(true)
+    item[i]:SetExtent(width, height)
+    item[i]:SetSounds("default_r")
+    item[i].itemIconButton:SetSounds("default_r")
+  end
+  local row = 0
+  local col = 0
+  for k = 1, x do
+    for j = 1, y do
+      local index = y * k - y + j
+      item[index]:AddAnchor("TOPLEFT", parent, "TOPLEFT", row * (width + 10), col * height + 10)
+      row = row + 1
+      if row > 1 then
+        row = 0
+        col = col + 1
+      end
+    end
+  end
+  return item
+end
+function SetViewOfStoreItemSlot(parent, x, y, locX, locY, slotInset)
+  local item = {}
+  for i = 1, x * y do
+    item[i] = CreateItemIconButton("$parent" .. ".item[" .. i .. "]", parent)
+    item[i]:Show(true)
+    item[i]:SetSounds("default_r")
+    item[i]:RegisterForDrag("LeftButton")
+  end
+  local row = 0
+  local col = 0
+  for k = 1, x do
+    for j = 1, y do
+      local index = y * k - y + j
+      if slotInset == nil then
+        slotInset = 50
+      end
+      item[index]:AddAnchor("TOPLEFT", parent, "TOPLEFT", (k - 1) * slotInset + locX, (j - 1) * 50 + locY)
+      row = row + 1
+      if row > 1 then
+        row = 0
+        col = col + 1
+      end
+    end
+  end
+  return item
+end

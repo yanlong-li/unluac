@@ -1,0 +1,123 @@
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+local SetViewOfWindow = function(id, parent)
+  local window = CreateWindow(id, parent)
+  window:SetExtent(POPUP_WINDOW_WIDTH, 535)
+  window:AddAnchor("CENTER", parent, 0, 0)
+  window:SetTitle(GetUIText(COMMON_TEXT, "selective_item"))
+  local contentLabel = window:CreateChildWidget("label", "contentLabel", 0, false)
+  contentLabel:SetExtent(window:GetWidth(), 20)
+  contentLabel:SetText("")
+  contentLabel:AddAnchor("TOPLEFT", window, "TOPLEFT", 20, 50)
+  contentLabel:AddAnchor("TOPRIGHT", window, "TOPRIGHT", -20, 50)
+  contentLabel.style:SetFontSize(FONT_SIZE.LARGE)
+  ApplyTextColor(contentLabel, FONT_COLOR.MIDDLE_TITLE)
+  local DataSetter = function(subItem, data, setValue)
+    subItem.check:Show(setValue)
+    subItem.check:SetChecked(false)
+    subItem.itemWnd:Show(setValue)
+    subItem.itemName:Show(setValue)
+    if setValue then
+      subItem.check:Enable(data.selectable)
+      subItem.itemName:SetText(data.name)
+      subItem.itemWnd:SetItem(data.type, data.grade, data.count)
+      function subItem.check:CheckBtnCheckChagnedProc(checked)
+        X2Bag:SetSelectiveItem(data.idx, checked)
+      end
+    end
+  end
+  local LayoutSetter = function(widget, rowIndex, colIndex, subItem)
+    local checkBox = CreateCheckButton(".check", subItem)
+    checkBox:AddAnchor("LEFT", subItem, "LEFT", 18, 0)
+    checkBox:Show(false)
+    checkBox:SetChecked(false)
+    subItem.check = checkBox
+    local itemWnd = CreateSlotItemButton(subItem:GetId() .. ".itemWnd", subItem)
+    itemWnd:SetExtent(ICON_SIZE.DEFAULT, ICON_SIZE.DEFAULT)
+    itemWnd:AddAnchor("LEFT", checkBox, "RIGHT", 3, 0)
+    itemWnd:Show(false)
+    subItem.itemWnd = itemWnd
+    local itemName = subItem:CreateChildWidget("label", "itemName", 0, true)
+    itemName:SetAutoResize(true)
+    itemName:SetHeight(FONT_SIZE.MIDDLE)
+    itemName:AddAnchor("LEFT", itemWnd, "RIGHT", 10, 0)
+    ApplyTextColor(itemName, FONT_COLOR.MIDDLE_TITLE)
+    itemName:Show(false)
+    subItem.itemName = itemName
+  end
+  local listWidth = window:GetWidth() - 30
+  local scrollList = CreateScrollListCtrl(window, "scrollList", 0)
+  scrollList:SetExtent(listWidth, 342)
+  scrollList:DisableColumButton()
+  scrollList:AddAnchor("TOPLEFT", window, "TOPLEFT", 15, 105)
+  scrollList:AddAnchor("TOPRIGHT", window, "TOPRIGHT", -25, 105)
+  scrollList:InsertColumn("", listWidth, LCCIT_WINDOW, DataSetter, nil, nil, LayoutSetter)
+  scrollList:InsertRows(6, false)
+  scrollList:Show(true)
+  local bg = CreateContentBackground(scrollList, "TYPE2")
+  bg:SetExtent(323, 382)
+  bg:AddAnchor("TOPLEFT", contentLabel, "BOTTOMLEFT", -5, 15)
+  ApplyTextureColor(bg, TEXTURE_COLOR.BOX_BROWN)
+  local centerX = scrollList:GetWidth() / 2
+  local okButton = window:CreateChildWidget("button", "okButton", 0, true)
+  okButton:SetText(GetUIText(COMMON_TEXT, "selective_item"))
+  ApplyButtonSkin(okButton, BUTTON_BASIC.DEFAULT)
+  okButton:AddAnchor("TOPLEFT", scrollList, "BOTTOMLEFT", centerX - okButton:GetWidth(), 30)
+  okButton:Enable(false)
+  function OnClick(self, arg)
+    local function DialogHandler(wnd)
+      wnd:SetTitle(GetUIText(COMMON_TEXT, "selective_item"))
+      wnd:SetContent(GetUIText(COMMON_TEXT, "confirm_using_selective_item"))
+      function wnd:OkProc()
+        X2Bag:HandleSelectiveItems()
+        window:Show(false)
+      end
+    end
+    X2DialogManager:RequestDefaultDialog(DialogHandler, window:GetId())
+  end
+  okButton:SetHandler("OnClick", OnClick)
+  local cancelButton = window:CreateChildWidget("button", "cancelButton", 0, true)
+  cancelButton:SetText(GetUIText(COMMON_TEXT, "cancel"))
+  ApplyButtonSkin(cancelButton, BUTTON_BASIC.DEFAULT)
+  cancelButton:AddAnchor("TOPRIGHT", scrollList, "BOTTOMRIGHT", cancelButton:GetWidth() - centerX, 30)
+  function OnCancel(self, arg)
+    window:Show(false)
+  end
+  cancelButton:SetHandler("OnClick", OnCancel)
+  function window:SelectiveItemList(data)
+    local selectionCount = data.select
+    contentLabel:SetText(X2Locale:LocalizeUiText(COMMON_TEXT, "selective_item_desc", tostring(selectionCount)))
+    scrollList:DeleteAllDatas()
+    for i = 1, #data do
+      scrollList:InsertRowData(i, 1, data[i])
+    end
+    scrollList:UpdateView()
+  end
+  function window:ReadyStatusUpdated(status)
+    okButton:Enable(status)
+  end
+  return window
+end
+local function CreateContentWindow(id, parent)
+  local window = SetViewOfWindow(id, parent)
+  local events = {
+    SKILL_SELECTIVE_ITEM = function(list)
+      if window ~= nil and window:IsVisible() == false then
+        window:Show(true)
+      end
+      window:SelectiveItemList(list)
+    end,
+    SKILL_SELECTIVE_ITEM_NOT_AVAILABLE = function()
+      AddMessageToSysMsgWindow(X2Locale:LocalizeUiText(COMMON_TEXT, "selective_item_not_available"))
+    end,
+    SKILL_SELECTIVE_ITEM_READY_STATUS = function(status)
+      window:ReadyStatusUpdated(status.ready)
+    end
+  }
+  window:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(window, events)
+  window:Show(false)
+  return window
+end
+CreateContentWindow("selectiveItemWnd", "UIParent")

@@ -1,0 +1,323 @@
+local TARGET_TO_TARGET_FRAME_WIDTH = 120
+function CreateTargetToTargetFrame(id, parent)
+  local frame = CreateUnitFrame(id, parent)
+  frame:SetWidth(TARGET_TO_TARGET_FRAME_WIDTH)
+  function frame:ApplyFrameStyle()
+    self.bg:SetCoords(305, 168, 154, 38)
+    self.bg:RemoveAllAnchors()
+    self.bg:AddAnchor("TOPLEFT", self.hpBar, -1, -4)
+    self.bg:AddAnchor("BOTTOMRIGHT", self.mpBar, 3, 4)
+    self.hpBar:SetWidth(TARGET_TO_TARGET_FRAME_WIDTH)
+    self.mpBar:SetWidth(TARGET_TO_TARGET_FRAME_WIDTH)
+    self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.S_HP_FRIENDLY)
+    self.mpBar:ApplyBarTexture(STATUSBAR_STYLE.S_MP)
+    self.line:SetCoords(305, 207, 152, 8)
+    self.line:RemoveAllAnchors()
+    self.line:AddAnchor("TOPLEFT", self.hpBar, "BOTTOMLEFT", -1, -3)
+    self.line:AddAnchor("TOPRIGHT", self.hpBar, "BOTTOMRIGHT", 1, -3)
+    self.buffWindow:AddAnchor("TOPLEFT", self.mpBar, "BOTTOMLEFT", -1, 4)
+    self.buffWindow:SetLayout(5, 24, 2, 2, false)
+    self.debuffWindow:SetLayout(5, 24, 2, 2, false)
+  end
+  function frame:UpdateFrameStyle_ForUniType(detailType)
+    self.bg:SetCoords(305, 168, 154, 38)
+    self.buffWindow:SetLayout(5, 24, 2, 2, false)
+    self.debuffWindow:SetLayout(5, 24, 2, 2, false)
+    if detailType == "slave" or detailType == "housing" or detailType == "transfer" then
+      self.level:Show(false)
+      self.name:RemoveAllAnchors()
+      self.name:AddAnchor("TOPLEFT", self, 0, 4)
+      self.pvpIcon:Show(false)
+      self.lootIcon:Show(false)
+      self.leaderMark:Show(false)
+      self.hpBar:SetHeight(UNIT_FRAME_HEIGHT.HP_BAR + UNIT_FRAME_HEIGHT.MP_BAR)
+      self.mpBar:Show(false)
+      self.buffWindow:AddAnchor("TOPLEFT", self.hpBar, "BOTTOMLEFT", 0, 4)
+      self.bg:RemoveAllAnchors()
+      self.bg:AddAnchor("TOPLEFT", self.hpBar, -1, 0)
+      self.bg:AddAnchor("BOTTOMRIGHT", self.hpBar, 4, 0)
+      self.line:SetCoords(0, 207, 302, 8)
+      self.line:RemoveAllAnchors()
+      self.line:AddAnchor("TOPLEFT", self.hpBar, "BOTTOMLEFT", -1, 0)
+      self.line:AddAnchor("TOPRIGHT", self.hpBar, "BOTTOMRIGHT", 1, 0)
+    else
+      self.level:Show(true)
+      self.name:RemoveAllAnchors()
+      self.name:AddAnchor("LEFT", self.level, "RIGHT", 3, 1)
+      self.hpBar:SetHeight(UNIT_FRAME_HEIGHT.HP_BAR)
+      self.mpBar:Show(true)
+      self.mpBar:SetHeight(UNIT_FRAME_HEIGHT.MP_BAR)
+      self.bg:RemoveAllAnchors()
+      self.bg:AddAnchor("TOPLEFT", self.hpBar, -1, -3)
+      self.bg:AddAnchor("BOTTOMRIGHT", self.mpBar, 4, 3)
+      self.line:SetCoords(0, 207, 302, 8)
+      self.line:RemoveAllAnchors()
+      self.line:AddAnchor("TOPLEFT", self.hpBar, "BOTTOMLEFT", -1, -3)
+      self.line:AddAnchor("TOPRIGHT", self.hpBar, "BOTTOMRIGHT", 1, -3)
+      self.hpBar:AddAnchor("TOPLEFT", self.level, "BOTTOMLEFT", 1, 5)
+      self.hpBar:AddAnchor("RIGHT", self, 0, 0)
+      self.mpBar:AddAnchor("TOPLEFT", self.hpBar, "BOTTOMLEFT", 0, 0)
+      self.mpBar:AddAnchor("TOPRIGHT", self.hpBar, "BOTTOMRIGHT", 0, 0)
+      self.buffWindow:AddAnchor("TOPLEFT", self.mpBar, "BOTTOMLEFT", 0, 4)
+    end
+  end
+  function frame:ChangeHpBarTexture(factionInfo, socialInfo)
+    if factionInfo == "hostile" then
+      self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.S_HP_HOSTILE)
+    elseif factionInfo == "neutral" then
+      self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.S_HP_NEUTRAL)
+    elseif factionInfo == "friendly" then
+      self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.S_HP_FRIENDLY)
+    end
+  end
+  function frame:UpdateHpBarTexture_FirstHitByMe(hpBar, combatState)
+    if combatState and X2Unit:IsFirstHitByMeOrMyTeam("target") == false then
+      hpBar:ApplyBarTexture(STATUSBAR_STYLE.S_HP_PREEMTIVE_STRIKE)
+    end
+  end
+  function frame:UpdateNameStyle(unitType)
+    if unitType == "npc" then
+      self.name:SetAutoResize(false)
+      self.name:SetLimitWidth(true)
+      local width = self:GetWidth() - self.level:GetWidth() - 10
+      self.name:SetWidth(width)
+    else
+      self.name:SetAutoResize(true)
+      self.name:SetLimitWidth(false)
+      self.leaderMark:RemoveAllAnchors()
+      self.leaderMark:AddAnchor("LEFT", self.name, "RIGHT", 3, 1)
+    end
+  end
+  function frame:UpdateMarkerAnchor(unitType)
+    self.marker:RemoveAllAnchors()
+    if unitType == "npc" then
+      local width = self.name.style:GetTextWidth(self.name:GetText())
+      local labelWidth = self.name:GetWidth()
+      if width >= labelWidth then
+        width = labelWidth - 10
+      end
+      self.marker:AddAnchor("LEFT", self.name, width, 0)
+    elseif self.leaderMark:IsVisible() then
+      self.marker:AddAnchor("LEFT", self.leaderMark, "RIGHT", -1, -1)
+    else
+      self.marker:AddAnchor("LEFT", self.name, "RIGHT", 0, 0)
+    end
+  end
+  function frame:ChangeTarget()
+    if self.target == nil then
+      return
+    end
+    local factionInfo = X2Unit:GetCombatRelationshipStr(self.target)
+    self:ChangeHpBarTexture(factionInfo, socialInfo)
+    local unitType, detailType = GetUnitType(self.target)
+    self:UpdateNameStyle(unitType)
+    self:UpdateFrameStyle_ForUniType(detailType)
+    self:SetMarker(X2Unit:GetUnitId("targettarget"), self:UpdateMarkerAnchor(uniType))
+    if uniType == "npc" and detailType == "npc" then
+      self:UpdateHpBarTexture_FirstHitByMe(self.hpBar, X2Unit:UnitCombatState("targettarget"))
+    end
+  end
+  function frame:UpdateFactionInfo()
+    if self:IsVisible() then
+      local factionInfo = X2Unit:GetCombatRelationshipStr(self.target)
+      self:ChangeHpBarTexture(factionInfo, socialInfo)
+    end
+  end
+  frame:ApplyFrameStyle()
+  frame:SetTarget("targettarget")
+  frame.id = nil
+  return frame
+end
+ttargetFrame = CreateTargetToTargetFrame("ttargetFrame", "UIParent")
+ttargetFrame:Show(false)
+function ttargetFrame:MakeOriginWindowPos(reset)
+  if ttargetFrame == nil then
+    return
+  end
+  ttargetFrame:RemoveAllAnchors()
+  ttargetFrame:SetWidth(TARGET_TO_TARGET_FRAME_WIDTH)
+  if reset then
+    ttargetFrame:AddAnchor("TOPLEFT", targetFrame, "TOPRIGHT", F_LAYOUT:CalcDontApplyUIScale(20), 0)
+  else
+    ttargetFrame:AddAnchor("TOPLEFT", targetFrame, "TOPRIGHT", 20, 0)
+  end
+end
+ttargetFrame:MakeOriginWindowPos()
+AddUISaveHandlerByKey("targettotarget", ttargetFrame)
+ttargetFrame:ApplyLastWindowOffset()
+function ttargetFrame:IsTargetTargetVisible()
+  local ttargetName = X2Unit:UnitName("targettarget")
+  if ttargetName ~= nil then
+    local targetType = X2Unit:GetTargetTypeString() or ""
+    if targetType == "npc" and X2Unit:UnitCombatState("target") then
+      return true
+    elseif targetType == "character" then
+      return true
+    end
+  end
+  return false
+end
+function ttargetFrame:Update()
+  local ttargetId = X2Unit:GetUnitId("targettarget")
+  if ttargetId ~= nil and self:IsTargetTargetVisible() then
+    if self.id == nil or self.id ~= ttargetId then
+      self.id = ttargetId
+      self:Show(true)
+      self:SetTarget("targettarget")
+    end
+    local targetToTargetCombatState = X2Unit:UnitCombatState("targettarget")
+    self:ShowCombatIcon(targetToTargetCombatState)
+  else
+    self.id = nil
+    self:Show(false)
+  end
+  return true
+end
+function ttargetFrame:TargetChanged()
+  if self:IsTargetTargetVisible() then
+    self:Show(true)
+    self:SetTarget("targettarget")
+    local state = X2Unit:UnitCombatState("targettarget")
+    targetFrame:ShowCombatIcon(state)
+    self:ChangeTarget()
+  else
+    self:Show(false)
+  end
+end
+local targetToTargetEvent = {
+  LOOTING_RULE_MASTER_CHANGED = function(lootMethod)
+    ttargetFrame:UpdateLootIcon()
+  end,
+  LOOTING_RULE_MASTER_CHANGED = function()
+    targetFrame:UpdateLootIcon()
+  end,
+  FORCE_ATTACK_CHANGED = function(stringId, on)
+    ttargetFrame:ShowPVPIcon(stringId, on)
+  end,
+  TARGET_CHANGED = function(stringId, targetType)
+    ttargetFrame:TargetChanged()
+  end,
+  TARGET_TO_TARGET_CHANGED = function(stringId, targetType)
+    ttargetFrame:TargetChanged()
+  end,
+  ENTERED_WORLD = function(w)
+    local stringId = X2Unit:GetTargetUnitId()
+    if stringId == nil then
+      return
+    end
+    ttargetFrame:TargetChanged()
+    ttargetFrame:ShowCombatIcon(X2Unit:UnitCombatState("player"))
+  end,
+  UNIT_COMBAT_STATE_CHANGED = function(arg1, arg2)
+    if arg1 == true and arg2 == X2Unit:GetUnitId("targettarget") then
+      ttargetFrame:ShowCombatIcon(arg1)
+    end
+  end,
+  TEAM_MEMBERS_CHANGED = function(arg1, arg2, arg3, arg4, arg5)
+    if arg1 == "joined_by_self" then
+      ttargetFrame:UpdateLootIcon()
+      ttargetFrame:UpdateLeaderMark()
+      ttargetFrame.marker:SetVisible(false)
+      local targetId = X2Unit:GetUnitId("targettarget")
+      ttargetFrame:SetMarker(targetId, targetFrame:UpdateMarkerAnchor("character"))
+    elseif arg1 == "kicked" then
+      ttargetFrame:UpdateLootIcon()
+      ttargetFrame:UpdateLeaderMark()
+    elseif arg1 == "leaved_by_self" then
+      ttargetFrame.marker:SetVisible(false)
+    elseif arg1 == "leaved" then
+      ttargetFrame:UpdateLootIcon()
+      ttargetFrame:UpdateLeaderMark()
+    elseif arg1 == "dismissed" or arg1 == "kicked_by_self" then
+      ttargetFrame:ShowLeaderMark(false)
+      ttargetFrame:ShowLootIcon(false)
+      ttargetFrame.marker:SetVisible(false)
+    elseif arg1 == "owner_changed" then
+      local myMemberIndex = X2Team:GetTeamPlayerIndex()
+      if arg4 == myMemberIndex or arg5 == myMemberIndex then
+        ttargetFrame:UpdateLeaderMark()
+        ttargetFrame:UpdateMarkerAnchor()
+      end
+    end
+  end,
+  LEVEL_CHANGED = function()
+    if ttargetFrame:IsTargetTargetVisible() then
+      ttargetFrame:UpdateLevel()
+    end
+  end,
+  TEAM_MEMBER_DISCONNECTED = function(arg1, stringId, partyNo, slot)
+    if arg1 ~= nil and X2Unit:UnitIsOffline("targettarget") then
+      ttargetFrame:Show(false)
+    end
+  end,
+  STARTED_DUEL = function()
+    ttargetFrame:UpdateFactionInfo()
+  end,
+  ENDED_DUEL = function()
+    ttargetFrame:UpdateFactionInfo()
+  end,
+  LEFT_LOADING = function()
+    ttargetFrame:ShowCombatIcon(X2Unit:UnitCombatState("player"))
+  end,
+  UNIT_NAME_CHANGED = function(unitId)
+    if ttargetFrame ~= nil and ttargetFrame.target ~= nil and X2Unit:GetUnitId(ttargetFrame.target) == unitId then
+      local unitType, detailType = GetUnitType("targettarget")
+      ttargetFrame:UpdateName()
+      ttargetFrame:UpdateMarkerAnchor(unitType)
+    end
+  end,
+  SET_OVERHEAD_MARK = function(unitId, markerIndex, visible)
+    local ttargetId = X2Unit:GetUnitId("targettarget")
+    if ttargetId ~= unitId then
+      return
+    end
+    if not visible then
+      ttargetFrame.marker:SetVisible(false)
+      return
+    end
+    local unitType, detailType = GetUnitType("targettarget")
+    ttargetFrame:SetMarker(ttargetId, ttargetFrame:UpdateMarkerAnchor(unitType))
+  end,
+  ABILITY_CHANGED = function()
+    ttargetFrame:UpdateTooltip()
+  end,
+  ABILITY_SET_CHANGED = function()
+    ttargetFrame:UpdateTooltip()
+  end
+}
+ttargetFrame:SetHandler("OnEvent", function(this, event, ...)
+  targetToTargetEvent[event](...)
+end)
+RegistUIEvent(ttargetFrame, targetToTargetEvent)
+ttargetCastingBar = CreateCastingBar("ttargetCastingBar", ttargetFrame, "targettarget")
+ttargetCastingBar:Show(false)
+ttargetCastingBar:SetWidth(120)
+ttargetCastingBar:AddAnchor("TOPLEFT", ttargetFrame.debuffWindow, "BOTTOMLEFT", 0, 0)
+ttargetCastingBar:RegisterEvent("SPELLCAST_START")
+ttargetCastingBar:RegisterEvent("SPELLCAST_STOP")
+ttargetCastingBar:RegisterEvent("SPELLCAST_SUCCEEDED")
+local SetTargetToTarget = function(bar, stringId)
+  if stringId == nil then
+    bar.unit = "none"
+  elseif X2Unit:GetUnitId("player") == stringId then
+    bar.unit = "player"
+  elseif X2Unit:GetUnitId("target") == stringId then
+    bar.unit = "target"
+  else
+    bar.unit = "targettarget"
+  end
+end
+local targetChangeEvent = {
+  TARGET_CHANGED = function(stringId, targetType)
+    local ttargetId = X2Unit:GetUnitId("targettarget")
+    SetTargetToTarget(ttargetCastingBar, ttargetId)
+    ttargetCastingBar:Refresh()
+  end,
+  TARGET_TO_TARGET_CHANGED = function(stringId, targetType)
+    SetTargetToTarget(ttargetCastingBar, stringId)
+    ttargetCastingBar:Refresh()
+  end
+}
+ttargetCastingBar:SetEventProc(targetChangeEvent)
+ttargetCastingBar:RegisterEvent("TARGET_CHANGED")
+ttargetCastingBar:RegisterEvent("TARGET_TO_TARGET_CHANGED")

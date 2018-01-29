@@ -1,0 +1,135 @@
+UNIT_FRAME_HEIGHT = {HP_BAR = 19, MP_BAR = 13}
+function CreateAbilityIcon(id, parent, target)
+  local size = 12
+  local jobIconFrame = parent:CreateChildWidget("emptywidget", id, 0, true)
+  jobIconFrame:Show(true)
+  local bg = jobIconFrame:CreateThreePartDrawable(TEXTURE_PATH.HUD, "background")
+  bg:SetCoords(510, 454, 18, 17)
+  bg:SetInset(8, 0, 9, 0)
+  bg:SetColor(1, 1, 1, 0.4)
+  bg:AddAnchor("TOPLEFT", jobIconFrame, -5, 1)
+  bg:AddAnchor("BOTTOMRIGHT", jobIconFrame, 5, 1)
+  jobIconFrame.icons = {}
+  for i = 1, MAX.MY_ABILITY_COUNT do
+    local icon = jobIconFrame:CreateImageDrawable(TEXTURE_PATH.HUD, "overlay")
+    icon:SetVisible(false)
+    icon:AddAnchor("LEFT", jobIconFrame, (i - 1) * size, 0)
+    jobIconFrame.icons[i] = icon
+  end
+  local OnEnter = function(self)
+    self.tip = self.tip or ""
+    if self.tip ~= "" then
+      SetTargetAnchorTooltip(self.tip, "TOPLEFT", self, "BOTTOMRIGHT", 0, 0)
+    end
+  end
+  jobIconFrame:SetHandler("OnEnter", OnEnter)
+  local OnLeave = function()
+    HideTooltip()
+  end
+  jobIconFrame:SetHandler("OnLeave", OnLeave)
+  function jobIconFrame:SetAbility(target)
+    local templates = X2Unit:GetTargetAbilityTemplates(target)
+    if templates == nil then
+      return
+    end
+    local coords = {
+      {
+        480,
+        498,
+        size,
+        size
+      },
+      {
+        534,
+        483,
+        size,
+        size
+      },
+      {
+        492,
+        498,
+        size,
+        size
+      },
+      {
+        510,
+        483,
+        size,
+        size
+      },
+      {
+        522,
+        471,
+        size,
+        size
+      },
+      {
+        528,
+        454,
+        size,
+        size
+      },
+      {
+        504,
+        498,
+        size,
+        size
+      },
+      {
+        522,
+        483,
+        size,
+        size
+      },
+      {
+        534,
+        471,
+        size,
+        size
+      },
+      {
+        510,
+        471,
+        size,
+        size
+      }
+    }
+    for i = 1, MAX.MY_ABILITY_COUNT do
+      self.icons[i]:Show(false)
+    end
+    local count = 0
+    local str = ""
+    for i = 1, #templates do
+      local ability = templates[i]
+      local index = X2Ability:FindAbilityIndexForStr(ability.name)
+      if index ~= 11 then
+        local iconCoords = coords[index]
+        self.icons[i]:SetVisible(true)
+        self.icons[i]:SetCoords(iconCoords[1], iconCoords[2], iconCoords[3], iconCoords[4])
+        self.icons[i]:SetExtent(iconCoords[3], iconCoords[4])
+        count = count + 1
+      end
+      if ability.name ~= "invalid ability" then
+        if str == "" then
+          str = locale.common.abilityCategory[ability.name]
+        else
+          str = string.format("%s, %s", str, locale.common.abilityCategory[ability.name])
+        end
+      end
+    end
+    self:SetExtent(count * size, 17)
+    self.tip = str
+  end
+  jobIconFrame:SetAbility(target)
+end
+function GetUnitGrade(target)
+  local unitId = X2Unit:GetUnitId(target)
+  local unitType, detail = X2Unit:GetUnitTypeString(target)
+  if unitId == nil then
+    return nil
+  end
+  if unitType ~= "npc" or detail ~= "npc" then
+    return "normal"
+  end
+  return X2Unit:GetUnitGradeById(unitId)
+end

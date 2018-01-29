@@ -1,0 +1,10 @@
+if X2Util:GetGameProvider() == GAMEON then
+  skillLocale.actabilityNotifySpaceLine = -5
+  skillLocale.combatTab = {
+    jobName = {
+      AddAnchor = function(label, target, margin)
+        label:AddAnchor("TOPRIGHT", target, "TOPRIGHT", 0, margin / 1.5)
+      end
+    }
+  }
+end

@@ -1,0 +1,46 @@
+local titleMargin, sideMargin, bottomMargin = GetWindowMargin()
+characterCreate.step2 = {}
+local step2 = characterCreate.step2
+step2.content = CreateCustomizingWindow("content", characterCreate.bgWindow)
+step2.content:SetExtent(SCREEN_WIDTH, SCREEN_HEIGHT * 0.75)
+step2.content:AddAnchor("CENTER", characterCreate.bgWindow, "CENTER", 0, 0)
+step2.content:Clickable(false)
+local guide = CreateCustomMouseGuide("guide", step2.content)
+guide:AddAnchor("RIGHT", characterCreate.bgWindow.stepCompleteButton, "LEFT", -25, 0)
+step2.content.guide = guide
+step2.content.rightPanel = CreateRightPanel("step2.content.rightPanel", step2.content, 2)
+step2.content.rightPanel:SetWidth(400)
+local rightPanel = step2.content.rightPanel
+rightPanel.bodyWnd = CreatePlasticWindow("plasticWnd", rightPanel)
+rightPanel.bodyWnd:AddAnchor("TOPRIGHT", rightPanel, 0, 0)
+rightPanel.bodyWnd:AddAnchor("BOTTOMRIGHT", rightPanel, 0, 0)
+local leftPanel = step2.content.leftPanel
+leftPanel = CreateCosmeticWindow("cosmeticWindow", step2.content)
+leftPanel:AddAnchor("TOPLEFT", characterCreate.bgWindow, 0, 0)
+rightPanel.raceBgWindow = {}
+for i = 1, #RACE_TYPE do
+  local race = RACE_TYPE[i]
+  rightPanel.raceBgWindow[i] = CreateLoginStageBgWindow(STEP2_BG_PATH[race])
+  rightPanel.raceBgWindow[i]:Show(false)
+end
+local featureSet = X2Player:GetFeatureSet()
+if featureSet.customsaveload or featureSet.beautyshopBypass then
+  local customSaveLoadWnd = CreateCustomSaveLoadWindow("customSaveLoadWnd", rightPanel)
+  customSaveLoadWnd:AddAnchor("BOTTOMRIGHT", rightPanel, -10, -80)
+  rightPanel.bodyWnd.customSaveWnd = customSaveLoadWnd
+end
+function step2:SetRaceGender()
+  rightPanel.bodyWnd:SetRaceGender(characterCreate.raceIndex, characterCreate.genderIndex)
+  leftPanel:SetRaceGender(characterCreate.raceIndex, characterCreate.genderIndex)
+  rightPanel.bodyWnd:Init()
+  leftPanel:Init()
+  if X2LoginCharacter:IsRecustomizing() then
+    rightPanel.bodyWnd:ClearSelectedItem()
+  end
+  isInit = true
+end
+function step2.content:OnShow()
+  rightPanel.bodyWnd:ResetUI()
+  leftPanel:ResetUI()
+end
+step2.content:SetHandler("OnShow", step2.content.OnShow)

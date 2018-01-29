@@ -1,0 +1,86 @@
+function SetViewOfRefurbishmentWindow(tabWindow)
+  local commonWidth = tabWindow:GetWidth()
+  local deco = tabWindow:CreateImageDrawable(TEXTURE_PATH.SCALE_ENCHANT, "background")
+  deco:SetTextureInfo("effect")
+  deco:AddAnchor("TOP", tabWindow, 0, 40)
+  local slotTargetItem = CreateTargetSlot(tabWindow, GetUIText(COMMON_TEXT, "gem_enchant_equipment"))
+  slotTargetItem:AddAnchor("RIGHT", deco, "LEFT", 47, 10)
+  local slotEnchantItem = CreateItemEnchantDefaultSlot("slotEnchantItem", tabWindow, GetCommonText("tetrahedron"), FONT_COLOR.BLUE)
+  slotEnchantItem:AddAnchor("LEFT", deco, "RIGHT", -47, 10)
+  tabWindow.slotEnchantItem = slotEnchantItem
+  local bg = tabWindow:CreateImageDrawable(TEXTURE_PATH.SCALE_ENCHANT, "background")
+  bg:SetTextureInfo("socket_blue")
+  bg:AddAnchor("CENTER", slotEnchantItem, -9, -5)
+  slotEnchantItem.bg = bg
+  local infoFrame = tabWindow:CreateChildWidget("emptywidget", "infoFrame", 0, false)
+  infoFrame:SetExtent(commonWidth, FORM_ENCHANT_WINDOW.UPPER_FRAME_HEIGHT)
+  infoFrame:AddAnchor("TOPLEFT", tabWindow, 0, 200)
+  tabWindow.infoFrame = infoFrame
+  local textbox = infoFrame:CreateChildWidget("textbox", "textbox", 0, true)
+  textbox:AddAnchor("TOPLEFT", infoFrame, 0, 0)
+  textbox:AddAnchor("BOTTOMRIGHT", infoFrame, 0, 0)
+  textbox.style:SetFontSize(FONT_SIZE.LARGE)
+  ApplyTextColor(textbox, FONT_COLOR.GREEN)
+  local bgColor = {
+    ConvertColor(6),
+    ConvertColor(62),
+    ConvertColor(190),
+    0.2
+  }
+  local bg = CreateContentBackground(infoFrame, "TYPE5")
+  bg:AddAnchor("TOPLEFT", infoFrame, -10, 0)
+  bg:AddAnchor("BOTTOMRIGHT", infoFrame, 10, 0)
+  ApplyTextureColor(bg, bgColor)
+  local modifierFrame = CreateEnchantListFrame("modifierFrame", tabWindow)
+  modifierFrame:AddAnchor("TOPLEFT", infoFrame, "BOTTOMLEFT", 0, 0)
+  local modifierList = CreateListCtrl("listCtrl", tabWindow)
+  modifierList:SetExtent(modifierFrame:GetExtent())
+  modifierList:AddAnchor("TOPLEFT", modifierFrame, 0, 0)
+  tabWindow.modifierList = modifierList
+  local NameColumnLayoutFunc = function(widget, rowIndex, colIndex, subItem)
+    local name = subItem:CreateChildWidget("label", "name", 0, true)
+    name:Show(true)
+    name:SetExtent(85, FONT_SIZE.MIDDLE)
+    name:AddAnchor("LEFT", subItem, 15, 0)
+    name.style:SetEllipsis(true)
+    name.style:SetAlign(ALIGN_LEFT)
+    ApplyTextColor(name, FONT_COLOR.DEFAULT)
+  end
+  local NameColumnDataSetFunc = function(subItem, data, setValue)
+    if setValue then
+      subItem.name:SetText(data)
+    else
+      subItem.name:SetText("")
+    end
+  end
+  local DataSetFunc = function(subItem, data, setValue)
+    if setValue then
+      subItem:SetText(data.value)
+    else
+      subItem:SetText("")
+    end
+  end
+  modifierList:InsertColumn("", 100, LCCIT_WINDOW, NameColumnLayoutFunc, NameColumnDataSetFunc)
+  modifierList:InsertColumn(GetUIText(MONEY_TEXT, "current"), 185, LCCIT_STRING, nil, DataSetFunc)
+  modifierList:InsertColumn(GetUIText(COMMON_TEXT, "after_refurbishment"), 185, LCCIT_STRING)
+  modifierList:InsertRows(9, false)
+  DrawListCtrlUnderLine(modifierList.listCtrl, nil, false, 5)
+  for i = 1, #modifierList.listCtrl.column do
+    DrawListCtrlColumnSperatorLine(modifierList.listCtrl.column[i], #modifierList.listCtrl.column, i, false)
+  end
+  local info = {
+    leftButtonStr = GetUIText(COMMON_TEXT, "item_scale"),
+    leftButtonLeftClickFunc = function()
+      X2ItemEnchant:Execute()
+    end,
+    rightButtonLeftClickFunc = function()
+      if X2ItemEnchant:IsWorkingEnchant() then
+        X2ItemEnchant:StopEnchanting()
+      else
+        X2ItemEnchant:LeaveItemEnchantMode()
+      end
+    end
+  }
+  CreateWindowDefaultTextButtonSet(tabWindow, info)
+  tabWindow.leftButton:Enable(false)
+end

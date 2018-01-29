@@ -1,0 +1,189 @@
+if X2Util:GetGameProvider() == TRION and X2Locale:GetLocale() == "de" then
+  PREV_ARROW_TEXTURE_OFFSET.Y = -4
+  BUTTON_LOGINSTAGE.GAME_START = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = BIG_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = BIG_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coordsKey = "Start",
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 35,
+        y = -3
+      }
+    }
+  }
+  BUTTON_LOGINSTAGE.CHARACTER_DELETE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coordsKey = "Delete",
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 15,
+        y = -2
+      }
+    }
+  }
+  BUTTON_LOGINSTAGE.CHARACTER_DELETE_CANCEL = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coordsKey = "CancelDeletion",
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 5,
+        y = -2
+      }
+    }
+  }
+  BUTTON_LOGINSTAGE.SERVER_SELECT = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coordsKey = "SelectServer",
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 20,
+        y = 0
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = PREV_ARROW_TEXUTRE_COORDS.NORMAL,
+        over = PREV_ARROW_TEXUTRE_COORDS.OVER,
+        click = PREV_ARROW_TEXUTRE_COORDS.CLICK,
+        disable = PREV_ARROW_TEXUTRE_COORDS.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "BOTTOMLEFT",
+        x = 5,
+        y = PREV_ARROW_TEXTURE_OFFSET.Y
+      },
+      drawableExtent = {
+        width = SMALL_ARROW_TEXTURE_EXTENT.WIDTH,
+        height = SMALL_ARROW_TEXTURE_EXTENT.HEIGHT
+      }
+    }
+  }
+  BUTTON_LOGINSTAGE.UI_ADDON = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coordsKey = "CustomUI",
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 5,
+        y = -2
+      }
+    }
+  }
+  BUTTON_LOGINSTAGE.STAFF = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coordsKey = "Credits",
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 5,
+        y = -2
+      }
+    }
+  }
+  function characterSelectLocale.AdjustLocaleButtonFont(buttonStyles, deleteStyles, createStyle)
+    local fontSize = FONT_SIZE.LARGE
+    for i = 1, #RACE_TYPE do
+      local raceBtnStyle = buttonStyles[RACE_TYPE[i]]
+      for j = 1, #raceBtnStyle do
+        raceBtnStyle[j][1].fontSize = fontSize
+      end
+      local raceDelStyle = deleteStyles[RACE_TYPE[i]]
+      for j = 1, #raceDelStyle do
+        raceDelStyle[j][1].fontSize = fontSize
+      end
+    end
+    createStyle[1].fontSize = fontSize
+  end
+  function characterSelectLocale.GetLaborPowerText(curLabor, maxLabor)
+    return string.format("%s |,%d;/|,%d;", locale.attribute("labor_power"), curLabor, maxLabor)
+  end
+  function characterSelectLocale.CreateStaffButton(bottomPanel)
+    local staffButton = bottomPanel:CreateChildWidget("button", "staffButton", 0, true)
+    staffButton:Show(true)
+    ApplyButtonSkinTable(staffButton, BUTTON_LOGINSTAGE.STAFF)
+    return staffButton
+  end
+end

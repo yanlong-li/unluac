@@ -1,0 +1,29 @@
+FORM_INGAMESHOP_WINDOW = {
+  DRAWABLE_INFO_BY_EVENT_TYPE = {
+    BONUS = {
+      GetTextureInfo(TEXTURE_PATH.INGAME_SHOP, "icon_bonus"):GetCoords()
+    },
+    EVENT = {
+      GetTextureInfo(TEXTURE_PATH.INGAME_SHOP, "icon_event"):GetCoords()
+    },
+    NEW = {
+      GetTextureInfo(TEXTURE_PATH.INGAME_SHOP, "icon_new"):GetCoords()
+    },
+    HOT = {
+      GetTextureInfo(TEXTURE_PATH.INGAME_SHOP, "icon_hot"):GetCoords()
+    },
+    MONTHLY = {
+      GetTextureInfo(TEXTURE_PATH.INGAME_SHOP, "icon_monthly"):GetCoords()
+    },
+    NONE = {
+      0,
+      0,
+      0,
+      0
+    }
+  }
+}
+function GetEventTypeDrawableInfo(eventType)
+  eventType = string.upper(eventType)
+  return FORM_INGAMESHOP_WINDOW.DRAWABLE_INFO_BY_EVENT_TYPE[eventType]
+end

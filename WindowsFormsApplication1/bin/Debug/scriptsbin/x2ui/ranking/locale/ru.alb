@@ -1,0 +1,21 @@
+if X2Util:GetGameProvider() == MAILRU then
+  rankingLocale.columnWidth = {
+    70,
+    55,
+    175,
+    188,
+    125,
+    125
+  }
+  rankingLocale.timeFilter = {
+    periodStart = FORMAT_FILTER.YEAR + FORMAT_FILTER.MONTH + FORMAT_FILTER.DAY + FORMAT_FILTER.HOUR + FORMAT_FILTER.MINUTE,
+    periodEnd = FORMAT_FILTER.YEAR + FORMAT_FILTER.MONTH + FORMAT_FILTER.DAY + FORMAT_FILTER.HOUR + FORMAT_FILTER.MINUTE,
+    reward = FORMAT_FILTER.YEAR + FORMAT_FILTER.MONTH + FORMAT_FILTER.DAY + FORMAT_FILTER.HOUR + FORMAT_FILTER.MINUTE,
+    record = function(timeInfo)
+      return string.format("%02d:%02d:%02d %s", timeInfo.hour, timeInfo.minute, timeInfo.second, baselibLocale:GetDefaultDateString(nil, timeInfo.month, timeInfo.day))
+    end
+  }
+  function rankingLocale:GetStringBySpace(str1, str2)
+    return string.format("%s %s", str1, str2)
+  end
+end

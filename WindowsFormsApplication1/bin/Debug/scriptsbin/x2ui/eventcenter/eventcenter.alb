@@ -1,0 +1,162 @@
+local EVENT_CENTER_WINDOW_WIDTH = 900
+local EVENT_CENTER_WINDOW_HEIGHT = 595
+local sideMargin, titleMargin, _ = GetWindowMargin()
+local bottomMargin = -30
+local featureSet = X2Player:GetFeatureSet()
+local eventCenterTabInfo = {
+  {
+    validationCheckFunc = function()
+      return featureSet.accountAttendance
+    end,
+    title = GetCommonText("attendance"),
+    subWindowConstructor = function(parent)
+      CreateAttendanceWnd(parent)
+    end
+  },
+  {
+    validationCheckFunc = function()
+      return featureSet.todayAssignment
+    end,
+    title = GetCommonText("today_assignment"),
+    subWindowConstructor = function(parent)
+      CreateATodayWnd(parent)
+    end
+  },
+  {
+    validationCheckFunc = function()
+      return true
+    end,
+    title = GetCommonText("event_info"),
+    subWindowConstructor = function(parent)
+      CreateEventInfoWnd(parent)
+    end
+  },
+  {
+    validationCheckFunc = function()
+      return true
+    end,
+    title = GetCommonText("event_center_content_schedule"),
+    subWindowConstructor = function(parent)
+      CreateScheduleWindow(parent)
+    end
+  }
+}
+function CreateEventCenterWnd(id, parent, tabInfo)
+  local wnd = CreateWindow(id, parent, tabInfo)
+  wnd:SetTitle(GetCommonText("event_center"))
+  wnd:SetExtent(EVENT_CENTER_WINDOW_WIDTH, EVENT_CENTER_WINDOW_HEIGHT)
+  wnd:AddAnchor("CENTER", "UIParent", 0, 0)
+  wnd:Show(false)
+  wnd:SetSounds("achievement")
+  local tab = wnd.tab
+  local maxWidth = tab:GetTabButtonMaxWidth()
+  for i = 1, #wnd.tab.window do
+    if wnd.tab.window[i].isAttendanceWnd or wnd.tab.window[i].isTodayAssignmentWnd then
+      local icon = wnd.tab:CreateImageDrawable(TEXTURE_PATH.HUD, "overlay")
+      icon:SetTextureInfo("everyday_n_small")
+      icon:AddAnchor("TOPLEFT", tab, (i - 1) * maxWidth, -3)
+      icon:SetVisible(false)
+      wnd.tab.window[i].alarmIcon = icon
+    end
+  end
+  function tab:OnTabChangedProc(idx)
+    if wnd.tab.window[idx].isTodayAssignmentWnd then
+      wnd.tab.window[idx]:Update()
+    elseif wnd.tab.window[idx].isEventInfoWnd then
+      X2EventCenter:RequestGameEventInfo()
+    end
+  end
+  function wnd:ToggleTodayAssignment(qType)
+    for i = 1, #wnd.tab.window do
+      if wnd.tab.window[i].isTodayAssignmentWnd then
+        wnd.tab:SelectTab(i)
+        wnd.tab.window[i]:ToggleWithQuest(qType)
+      end
+    end
+  end
+  function wnd:SetAlarmIcons()
+    for i = 1, #wnd.tab.window do
+      local icon = wnd.tab.window[i].alarmIcon
+      if icon ~= nil then
+        if wnd.tab.window[i].isAttendanceWnd then
+          icon:SetVisible(AttendanceActived())
+        end
+        if wnd.tab.window[i].isTodayAssignmentWnd then
+          icon:SetVisible(TodayAssignmentActived())
+        end
+      end
+    end
+  end
+  local eventCenterEvents = {
+    ACCOUNT_ATTENDANCE_LOADED = function()
+      wnd:SetAlarmIcons()
+    end,
+    ACCOUNT_ATTENDANCE_ADDED = function()
+      wnd:SetAlarmIcons()
+    end,
+    QUEST_CONTEXT_UPDATED = function(qType, status)
+      if X2Quest:IsTodayQuest(qType) and status == "updated" then
+        wnd:SetAlarmIcons()
+      end
+    end,
+    LEVEL_CHANGED = function()
+      wnd:SetAlarmIcons()
+    end,
+    UPDATE_TODAY_ASSIGNMENT = function()
+      wnd:SetAlarmIcons()
+    end,
+    START_TODAY_ASSIGNMENT = function()
+      wnd:SetAlarmIcons()
+    end
+  }
+  wnd:SetHandler("OnEvent", function(this, event, ...)
+    eventCenterEvents[event](...)
+  end)
+  RegistUIEvent(wnd, eventCenterEvents)
+  return wnd
+end
+local eventCenterWnd
+function ToggleEventCenter(show)
+  if eventCenterWnd == nil then
+    eventCenterWnd = CreateEventCenterWnd("eventCenterWnd", "UIParent", eventCenterTabInfo)
+  end
+  local isShow = show
+  if isShow == nil then
+    isShow = not eventCenterWnd:IsVisible()
+  end
+  eventCenterWnd:Show(isShow)
+  eventCenterWnd:SetAlarmIcons()
+end
+ADDON:RegisterContentTriggerFunc(UIC_EVENT_CENTER, ToggleEventCenter)
+function ToggleAssignmentWithQuest(qType)
+  if not featureSet.todayAssignment then
+    return
+  end
+  local qInfo = X2Quest:GetTodayQuestInfo(qType)
+  if qInfo == nil then
+    return
+  end
+  ToggleEventCenter(true)
+  eventCenterWnd:ToggleTodayAssignment(qType)
+end
+function CheckPopupEventCenterOnceADay()
+  local timeStampKey = "popup_event_center_once_a_day"
+  local stamp = UI:GetCurrentTimeStamp()
+  local savedStamp = UI:GetAccountUITimeStamp(timeStampKey)
+  if stamp ~= savedStamp and featureSet.accountAttendance then
+    ToggleEventCenter(true)
+    UI:SetAccountUITimeStamp(timeStampKey)
+  end
+end
+function RaiseEventCenter()
+  if eventCenterWnd == nil then
+    return
+  end
+  if not eventCenterWnd:IsVisible() then
+    return
+  end
+  eventCenterWnd:Raise()
+end
+if eventcenterLocale.attendancePopup then
+  CheckPopupEventCenterOnceADay()
+end

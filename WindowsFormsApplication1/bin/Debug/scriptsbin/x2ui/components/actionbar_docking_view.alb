@@ -1,0 +1,89 @@
+local SCREEN_DOCKING_BOTTOM_OFFSET = 6
+actionBar_dockingWindow = {}
+docking_manager = {}
+docking_manager.LEFT = {}
+docking_manager.TOP = {}
+docking_manager.BOTTOM = {}
+docking_manager.RIGHT = {}
+docking_direction = {
+  "TOP",
+  "BOTTOM",
+  "LEFT",
+  "RIGHT"
+}
+function GetScreenSize()
+  local lx, rx, ty, by, w, h = 0, 0, 0, 0, 0, 0
+  for j, value in pairs(docking_direction) do
+    for i, child in pairs(docking_manager[value]) do
+      local cw, ch = child:GetEffectiveExtent()
+      if child.direction == "TOP" then
+        ty = ty + ch
+      end
+      if child.direction == "BOTTOM" then
+        by = by + ch
+      end
+      if child.direction == "LEFT" then
+        lx = lx + ch
+      end
+      if child.direction == "RIGHT" then
+        rx = rx + ch
+      end
+    end
+  end
+  local uw = UIParent:GetScreenWidth()
+  local uh = UIParent:GetScreenHeight()
+  h = uh - ty - by
+  w = uw - lx - rx
+  return lx, ty, w, h
+end
+function ActionBar_UpdateDockingWindow(widget, side)
+  local x, y, cx, cy = GetScreenSize()
+  local screenWidth = UIParent:GetScreenWidth()
+  local screenHeight = UIParent:GetScreenHeight()
+  local value = 15
+  if side == "LEFT" then
+    widget:SetExtent(F_LAYOUT:CalcDontApplyUIScale(value), F_LAYOUT:CalcDontApplyUIScale(cy) - SCREEN_DOCKING_BOTTOM_OFFSET)
+    widget.intersectWidget:SetExtent(F_LAYOUT:CalcDontApplyUIScale(value), F_LAYOUT:CalcDontApplyUIScale(cy))
+    widget:AddAnchor("TOPLEFT", "UIParent", "TOPLEFT", F_LAYOUT:CalcDontApplyUIScale(x), F_LAYOUT:CalcDontApplyUIScale(y))
+  elseif side == "RIGHT" then
+    widget:SetExtent(F_LAYOUT:CalcDontApplyUIScale(value), F_LAYOUT:CalcDontApplyUIScale(cy) - SCREEN_DOCKING_BOTTOM_OFFSET)
+    widget.intersectWidget:SetExtent(F_LAYOUT:CalcDontApplyUIScale(value), F_LAYOUT:CalcDontApplyUIScale(cy))
+    widget:AddAnchor("TOPRIGHT", "UIParent", "TOPRIGHT", F_LAYOUT:CalcDontApplyUIScale(cx - screenWidth), F_LAYOUT:CalcDontApplyUIScale(y))
+  elseif side == "TOP" then
+    widget:SetExtent(F_LAYOUT:CalcDontApplyUIScale(cx), F_LAYOUT:CalcDontApplyUIScale(value))
+    widget.intersectWidget:SetExtent(F_LAYOUT:CalcDontApplyUIScale(cx), F_LAYOUT:CalcDontApplyUIScale(value))
+    widget:AddAnchor("TOPLEFT", "UIParent", "TOPLEFT", F_LAYOUT:CalcDontApplyUIScale(x), F_LAYOUT:CalcDontApplyUIScale(y))
+  else
+    widget:SetExtent(F_LAYOUT:CalcDontApplyUIScale(cx), F_LAYOUT:CalcDontApplyUIScale(value))
+    widget.intersectWidget:SetExtent(F_LAYOUT:CalcDontApplyUIScale(cx), F_LAYOUT:CalcDontApplyUIScale(value) + SCREEN_DOCKING_BOTTOM_OFFSET)
+    widget:AddAnchor("BOTTOMLEFT", "UIParent", "BOTTOMLEFT", F_LAYOUT:CalcDontApplyUIScale(x), F_LAYOUT:CalcDontApplyUIScale(y + cy - screenHeight) - SCREEN_DOCKING_BOTTOM_OFFSET)
+  end
+end
+local CreateDockingScreenWindow = function(id, side)
+  local widget = CreateEmptyWindow(id, "UIParent")
+  widget:Show(false)
+  widget.side = side
+  widget.bg = widget:CreateNinePartDrawable(TEXTURE_PATH.HUD, "background")
+  widget.bg:AddAnchor("TOPLEFT", widget, 0, 0)
+  widget.bg:AddAnchor("BOTTOMRIGHT", widget, 0, 0)
+  widget.bg:SetColor(1, 1, 1, 0.5)
+  widget.intersectWidget = widget:CreateChildWidget("emptywidget", "intersectWidget", 0, true)
+  widget.intersectWidget:AddAnchor("TOPLEFT", widget, "TOPLEFT", 0, 0)
+  if side == "TOP" then
+    widget.bg:SetTextureInfo("move_vertical")
+  elseif side == "LEFT" then
+    widget.bg:SetCoords(462, 229, 20, 3)
+    widget.bg:SetInset(0, 1, 0, 1)
+  elseif side == "BOTTOM" then
+    widget.bg:SetTextureInfo("move_vertical_inv")
+  elseif side == "RIGHT" then
+    widget.bg:SetCoords(482, 229, -20, 3)
+    widget.bg:SetInset(0, 1, 0, 1)
+  end
+  ActionBar_UpdateDockingWindow(widget, side)
+  return widget
+end
+actionBar_dockingWindow.TOP = CreateDockingScreenWindow("actionBar_dockingWindow.top", "TOP")
+actionBar_dockingWindow.LEFT = CreateDockingScreenWindow("actionBar_dockingWindow.top", "LEFT")
+actionBar_dockingWindow.BOTTOM = CreateDockingScreenWindow("actionBar_dockingWindow.top", "BOTTOM")
+actionBar_dockingWindow.RIGHT = CreateDockingScreenWindow("actionBar_dockingWindow.top", "RIGHT")

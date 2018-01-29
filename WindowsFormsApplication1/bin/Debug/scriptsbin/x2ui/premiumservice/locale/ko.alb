@@ -1,0 +1,42 @@
+if premiumServiceLocale == nil then
+  premiumServiceLocale = {}
+end
+premiumServiceLocale.useAAPoint = false
+premiumServiceLocale.useCashCharge = true
+premiumServiceLocale.pointRuleButton = true
+premiumServiceLocale.serviceBuyButton = true
+premiumServiceLocale.pointProgressBar = true
+premiumServiceLocale.warringMsg = true
+premiumServiceLocale.premiumWndWidth = 680
+premiumServiceLocale.premiumServeiceWidth = 240
+premiumServiceLocale.defaultWidth = 651
+premiumServiceLocale.firstPremiumServiceBuy = false
+function premiumServiceLocale.GetDateToPremiumServiceFormat(df)
+  local output = string.format("%s : %s-%s-%s %s:%s", X2Locale:LocalizeUiText(PREMIUM_TEXT, "end"), tostring(df.year), tostring(df.month), tostring(df.day), tostring(df.hour), tostring(df.minute))
+  return output
+end
+premiumServiceLocale.showWeb = false
+premiumServiceLocale.progressBarOffsetY = 0
+premiumServiceLocale.tableOffsetY = 0
+premiumServiceLocale.tecentBenefitMenu = {}
+premiumServiceLocale.tecentBenefitValue = {}
+premiumServiceLocale.showPcbangBenefit = true
+premiumServiceLocale.pcbangBenefit = {
+  {
+    title = locale.premium.benefit,
+    width = 0.2,
+    align = ALIGN_CENTER,
+    color = FONT_COLOR.TITLE
+  },
+  {
+    title = GetUIText(COMMON_TEXT, "content"),
+    width = 0.8,
+    align = ALIGN_LEFT,
+    color = FONT_COLOR.DEFAULT
+  }
+}
+premiumServiceLocale.pcbangBenefitRowHeight = 27
+premiumServiceLocale.showPcbangBenefitLabel = false
+if X2Util:GetGameProvider() == XLGAMES then
+  premiumServiceLocale.showPcbangBenefitLabel = true
+end

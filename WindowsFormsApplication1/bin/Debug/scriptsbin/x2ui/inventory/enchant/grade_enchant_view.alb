@@ -1,0 +1,147 @@
+function SetViewOfGradeEnchantWindow(tabWindow)
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local coords, inset, extent, anchor, color, text, height, fontPath, fontSize, tooltip
+  anchor = FORM_ENCHANT_WINDOW.GUIDE_ICON_ANCHOR
+  local guide = CreateGuideIconWidget(tabWindow)
+  guide:AddAnchor("TOPRIGHT", tabWindow, anchor[1], anchor[2])
+  tabWindow.guide = guide
+  coords = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.MAGIC_SQUARE.COORDS
+  extent = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.MAGIC_SQUARE.EXTENT
+  anchor = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.MAGIC_SQUARE.ANCHOR
+  local magicSquare = tabWindow:CreateImageDrawable(TEXTURE_PATH.GRADE_ENCHANT, "background")
+  magicSquare:SetCoords(coords[1], coords[2], coords[3], coords[4])
+  magicSquare:SetExtent(extent[1], extent[2])
+  magicSquare:AddAnchor("TOP", tabWindow, anchor[1], anchor[2])
+  local slotTargetItem = CreateTargetSlot(tabWindow, GetUIText(COMMON_TEXT, "grade_enchant_item"))
+  slotTargetItem:AddAnchor("TOP", magicSquare, 2, -5)
+  tabWindow.slotTargetItem = slotTargetItem
+  extent = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.SLOT_ENCHANT_ITEM.EXTENT
+  anchor = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.SLOT_ENCHANT_ITEM.ANCHOR
+  local slotEnchantItem = CreateItemIconButton("slotEnchantItem", tabWindow)
+  slotEnchantItem:SetExtent(extent[1], extent[2])
+  slotEnchantItem:AddAnchor("BOTTOMLEFT", magicSquare, anchor[1], anchor[2])
+  slotEnchantItem.back:SetVisible(false)
+  tabWindow.slotEnchantItem = slotEnchantItem
+  local bg = tabWindow:CreateImageDrawable(TEXTURE_PATH.GRADE_ENCHANT, "background")
+  bg:SetCoords(256, 98, 105, 83)
+  bg:SetExtent(105, 83)
+  bg:AddAnchor("CENTER", slotEnchantItem, -1, -12)
+  slotEnchantItem.bg = bg
+  function slotEnchantItem:ApplyAlpha(value)
+    self:SetAlpha(value)
+    self.bg:SetColor(1, 1, 1, value)
+  end
+  local label = CreateEnchantSlotLabel(slotEnchantItem, GetUIText(COMMON_TEXT, "grade_enchant_magic_scroll"))
+  ApplyTextColor(label, FONT_COLOR.PURPLE)
+  extent = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.SLOT_SUPPORT_ITEM.EXTENT
+  anchor = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.SLOT_SUPPORT_ITEM.ANCHOR
+  tooltip = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.SLOT_SUPPORT_ITEM.TOOLTIP
+  local slotSupportItem = CreateItemIconButton("slotSupportItem", tabWindow)
+  slotSupportItem:SetExtent(extent[1], extent[2])
+  slotSupportItem:AddAnchor("BOTTOMRIGHT", magicSquare, anchor[1], anchor[2])
+  slotSupportItem.back:SetVisible(false)
+  slotSupportItem.tooltip = tooltip
+  tabWindow.slotSupportItem = slotSupportItem
+  local bg = tabWindow:CreateImageDrawable(TEXTURE_PATH.GRADE_ENCHANT, "background")
+  bg:SetCoords(361, 98, 105, 83)
+  bg:SetExtent(105, 83)
+  bg:AddAnchor("CENTER", slotSupportItem, -1, -11)
+  slotSupportItem.bg = bg
+  function slotSupportItem:ApplyAlpha(value)
+    self:SetAlpha(value)
+    self.bg:SetColor(1, 1, 1, value)
+  end
+  height = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.SLOT_SUPPORT_ITEM_LABEL.HEIGHT
+  fontPath = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.SLOT_SUPPORT_ITEM_LABEL.FONT_PATH
+  fontSize = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.SLOT_SUPPORT_ITEM_LABEL.FONT_SIZE
+  text = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.SLOT_SUPPORT_ITEM_LABEL.TEXT
+  anchor = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.SLOT_SUPPORT_ITEM_LABEL.ANCHOR
+  color = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.SLOT_SUPPORT_ITEM_LABEL.COLOR
+  local label = CreateEnchantSlotLabel(slotSupportItem, GetUIText(COMMON_TEXT, "grade_enchant_support_item"))
+  ApplyTextColor(label, FONT_COLOR.ROLE_NONE)
+  height = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.RESULT_WINDOW.HEIGHT
+  anchor = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.RESULT_WINDOW.ANCHOR
+  local resultWindow = tabWindow:CreateChildWidget("emptywidget", "resultWindow", 0, true)
+  resultWindow:Show(true)
+  resultWindow:SetExtent(tabWindow:GetWidth(), height)
+  resultWindow:AddAnchor("TOPLEFT", tabWindow, anchor[1], anchor[2])
+  local resultBg = CreateContentBackground(resultWindow, "TYPE10")
+  resultBg:AddAnchor("TOPLEFT", resultWindow, 0, 0)
+  resultBg:AddAnchor("BOTTOMRIGHT", resultWindow, 0, 0)
+  height = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.SUCCESS_POSSIBILITY.HEIGHT
+  anchor = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.SUCCESS_POSSIBILITY.ANCHOR
+  color = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.SUCCESS_POSSIBILITY.COLOR
+  text = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.SUCCESS_POSSIBILITY.TEXT
+  local labelWidth = resultWindow:GetWidth() / 3
+  local successPossibility = tabWindow:CreateChildWidget("label", "successPossibility", 0, true)
+  successPossibility:SetExtent(labelWidth, height)
+  successPossibility:SetText(text)
+  successPossibility:AddAnchor("TOPLEFT", resultBg, anchor[1], anchor[2])
+  successPossibility.style:SetAlign(ALIGN_CENTER)
+  ApplyTextColor(successPossibility, color)
+  anchor = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.SUCCESS_POSSIBILITY_RESULT.ANCHOR
+  local result = successPossibility:CreateImageDrawable(TEXTURE_PATH.GRADE_ENCHANT, "background")
+  result:AddAnchor("TOP", successPossibility, "BOTTOM", anchor[1], anchor[2])
+  successPossibility.result = result
+  height = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.DESTROY_POSSIBILITY.HEIGHT
+  anchor = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.DESTROY_POSSIBILITY.ANCHOR
+  color = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.DESTROY_POSSIBILITY.COLOR
+  text = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.DESTROY_POSSIBILITY.TEXT
+  local destroyPossibility = tabWindow:CreateChildWidget("label", "destroyPossibility", 0, true)
+  destroyPossibility:SetExtent(labelWidth, height)
+  destroyPossibility:SetText(text)
+  destroyPossibility:AddAnchor("LEFT", successPossibility, "RIGHT", anchor[1], anchor[2])
+  destroyPossibility.style:SetAlign(ALIGN_CENTER)
+  ApplyTextColor(destroyPossibility, color)
+  anchor = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.DESTROY_POSSIBILITY_RESULT.ANCHOR
+  local result = destroyPossibility:CreateImageDrawable(TEXTURE_PATH.GRADE_ENCHANT, "background")
+  result:AddAnchor("TOP", destroyPossibility, "BOTTOM", anchor[1], anchor[2])
+  destroyPossibility.result = result
+  height = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.DOWNGRADE_POSSIBILITY.HEIGHT
+  anchor = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.DOWNGRADE_POSSIBILITY.ANCHOR
+  color = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.DOWNGRADE_POSSIBILITY.COLOR
+  text = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.DOWNGRADE_POSSIBILITY.TEXT
+  local downGradePossibility = tabWindow:CreateChildWidget("label", "downGradePossibility", 0, true)
+  downGradePossibility:SetExtent(labelWidth, height)
+  downGradePossibility:SetText(text)
+  downGradePossibility:AddAnchor("LEFT", destroyPossibility, "RIGHT", anchor[1], anchor[2])
+  downGradePossibility.style:SetAlign(ALIGN_CENTER)
+  ApplyTextColor(downGradePossibility, color)
+  anchor = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.DOWNGRADE_POSSIBILITY_RESULT.ANCHOR
+  local result = downGradePossibility:CreateImageDrawable(TEXTURE_PATH.GRADE_ENCHANT, "background")
+  result:AddAnchor("TOP", downGradePossibility, "BOTTOM", anchor[1], anchor[2])
+  downGradePossibility.result = result
+  extent = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.RESULT_WINDOW_HORIZON_LINE.EXTENT
+  anchor = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.RESULT_WINDOW_HORIZON_LINE.ANCHOR
+  color = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.RESULT_WINDOW_HORIZON_LINE.COLOR
+  local line = CreateLine(resultWindow, "TYPE1")
+  line:AddAnchor("TOPLEFT", resultWindow, anchor[1], anchor[2])
+  line:SetExtent(extent[1], extent[2])
+  line:SetColor(color[1], color[2], color[3], color[4])
+  local labels = {
+    successPossibility,
+    destroyPossibility,
+    downGradePossibility
+  }
+  for i = 1, 3 do
+    local line = DrawListCtrlColumnSperatorLine(labels[i], #labels, i)
+    if line ~= nil then
+      line:SetColor(ConvertColor(114), ConvertColor(94), ConvertColor(50), 0.5)
+    end
+  end
+  anchor = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.MONEY.ANCHOR
+  text = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.MONEY.TEXT
+  local money = CreateTitleMoneyWindow("money", tabWindow, text, "horizon")
+  money:AddAnchor("TOP", resultWindow, "BOTTOM", anchor[1], anchor[2])
+  tabWindow.money = money
+  color = WINDOW_ENCHANT.GRADE_ENCHANT_TAB.WARNING_TEXT.COLOR
+  local warningText = tabWindow:CreateChildWidget("textbox", "warningText", 0, true)
+  warningText:SetWidth(tabWindow:GetWidth())
+  warningText:SetHeight(FONT_SIZE.MIDDLE)
+  warningText:SetLineSpace(TEXTBOX_LINE_SPACE.SMALL)
+  ApplyTextColor(warningText, color)
+  function tabWindow:SetWarningText(text)
+    warningText:SetText(text)
+    warningText:SetHeight(warningText:GetTextHeight())
+  end
+end

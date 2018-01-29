@@ -1,0 +1,324 @@
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+local function CreateTodayAssignDescWnd(id, parent)
+  local wnd = parent:CreateChildWidget("emptywidget", id, 0, true)
+  local leftBg = wnd:CreateImageDrawable(TEXTURE_PATH.EVENT_CENTER_COMMON, "background")
+  leftBg:SetTextureInfo("image")
+  leftBg:AddAnchor("TOP", wnd, 0, 0)
+  local title = wnd:CreateChildWidget("label", "title", 0, true)
+  title:SetAutoResize(true)
+  title:SetHeight(FONT_SIZE.XLARGE)
+  title.style:SetAlign(ALIGN_CENTER)
+  title.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.XLARGE)
+  ApplyTextColor(title, FONT_COLOR.TITLE)
+  title:SetText(GetCommonText("today_assignment"))
+  title:AddAnchor("TOP", wnd, 0, 30)
+  local desc = wnd:CreateChildWidget("textbox", "desc", 0, true)
+  desc:SetLineSpace(5)
+  desc:SetAutoResize(true)
+  desc:SetWidth(A_CATEGORY_LIST_WIDTH - sideMargin * 2)
+  desc.style:SetAlign(ALIGN_CENTER)
+  ApplyTextColor(desc, FONT_COLOR.BROWN)
+  desc:SetText(GetCommonText("today_assign_update"))
+  desc:AddAnchor("TOP", title, "BOTTOM", 0, 20)
+  local rewardWnd = CreateEventCenterAdditionalRewardWnd("rewardWnd", wnd, 3)
+  rewardWnd:AddAnchor("BOTTOM", wnd, 0, -11)
+  local rewardTitle = rewardWnd:CreateChildWidget("label", "rewardTitle", 0, true)
+  rewardTitle:SetAutoResize(true)
+  rewardTitle:SetHeight(FONT_SIZE.MIDDLE)
+  ApplyTextColor(rewardTitle, FONT_COLOR.DEFAULT)
+  rewardTitle:SetText(GetCommonText("today_assignment_goal_title"))
+  rewardTitle:AddAnchor("BOTTOMLEFT", rewardWnd, "TOPLEFT", 5, -8)
+  function wnd:Update()
+    local goalInfo = X2Achievement:GetTodayAssignmentGoal()
+    if goalInfo == nil or #goalInfo == 0 then
+      rewardWnd:Show(false)
+      return
+    end
+    local rewardInfo = {}
+    for i = 1, #goalInfo do
+      rewardInfo[i] = X2Item:GetItemInfoByType(goalInfo[i].itemType)
+      rewardInfo[i].dayCount = goalInfo[i].goal
+      rewardInfo[i].itemCount = goalInfo[i].itemCount
+    end
+    rewardWnd:SetRewardInfos(rewardInfo)
+    local done, total = X2Achievement:GetTodayAssignmentStatus(false)
+    rewardWnd:CheckTodayAssignmentRewardState(done, total)
+    rewardWnd:Show(true)
+  end
+  return wnd
+end
+local TracingBtnEntered = function(checkBtn)
+  SetTooltip(GetCommonText("trace_today_quest_tooltip"), checkBtn)
+end
+local TracingBtnChecked = function(checkBtn, index)
+  local checked = checkBtn:GetChecked()
+  local info = X2Achievement:GetTodayAssignmentInfo(false, index)
+  if info.questType ~= nil and info.questType ~= 0 then
+    if checked then
+      AddQuestToNotifier(info.questType)
+    else
+      RemoveQuestFromNotifier(info.questType)
+    end
+  end
+end
+local function TodayAssignmentDataSetFunc(subItem, index, setValue)
+  local function CheckFunc(checkBtn)
+    TracingBtnChecked(checkBtn, index)
+  end
+  function subItem:handleClick()
+    return subItem.subjectWnd.checkBtn:IsMouseOver()
+  end
+  local subjectWnd = subItem.subjectWnd
+  if setValue then
+    subjectWnd:SetTodayAssignment(A_SUBJECT_STYLE.TODAY_ASSIGNMENT_LIST, false, index, CheckFunc, TracingBtnEntered)
+  else
+    subjectWnd:SetTodayAssignment()
+  end
+end
+local function CreateTodayAssignmentListWnd(id, parent)
+  local wnd = parent:CreateChildWidget("emptywidget", id, 0, true)
+  local MAX_ASSIGNMENT_LIST = 50
+  local subjectList = CreateASubjectListWnd("subjectList", wnd)
+  subjectList:SetExtent(554, 420)
+  subjectList:AddAnchor("BOTTOM", wnd, 0, -8)
+  subjectList:SetListStyle(6, MAX_ASSIGNMENT_LIST, TodayAssignmentDataSetFunc)
+  subjectList:SetWndStyle(false, GetCommonText("no_achievement"))
+  local title = wnd:CreateChildWidget("label", "title", 0, true)
+  title:SetHeight(FONT_SIZE.LARGE)
+  title:SetAutoResize(true)
+  title.style:SetAlign(ALIGN_LEFT)
+  title.style:SetFontSize(FONT_SIZE.LARGE)
+  title:AddAnchor("BOTTOM", subjectList, "TOP", 0, -10)
+  ApplyTextColor(title, FONT_COLOR.BROWN)
+  local bookImg = wnd:CreateImageDrawable(TEXTURE_PATH.ACHIEVEMENT_TODAY, "background")
+  bookImg:SetTextureInfo("book")
+  bookImg:AddAnchor("RIGHT", title, "LEFT", 0, 0)
+  function wnd:SetListSelectFuc(func)
+    subjectList:SetListSelectFuc(func)
+  end
+  function wnd:Init()
+    local cnt = X2Achievement:GetTodayAssignmentCount(false)
+    local info = {}
+    for index = 1, cnt do
+      info[index] = index
+    end
+    subjectList:SetInfo(info)
+    wnd.info = info
+    UpdateTitle()
+  end
+  function UpdateTitle()
+    local done, total = X2Achievement:GetTodayAssignmentStatus(false)
+    title:SetText(GetCommonText("complete_today_quest", tostring(done), tostring(total)))
+  end
+  function wnd:Update()
+    UpdateTitle()
+    subjectList:Update()
+  end
+  return wnd
+end
+local function CreateDescWnd(id, parent)
+  local wnd = parent:CreateChildWidget("emptywidget", id, 0, true)
+  local prevPageBtn = wnd:CreateChildWidget("button", "prevPageBtn", 0, true)
+  prevPageBtn:AddAnchor("TOPLEFT", wnd, 0, 0)
+  prevPageBtn:SetText(GetCommonText("prev_page"))
+  ApplyButtonSkin(prevPageBtn, BUTTON_CONTENTS.PREV_PAGE)
+  local subjectWnd = CreateASubjectWnd("subjectWnd", wnd)
+  subjectWnd:AddAnchor("TOPLEFT", prevPageBtn, "BOTTOMLEFT", 0, 5)
+  subjectWnd:AddAnchor("BOTTOMRIGHT", wnd, "TOPRIGHT", 0, 105)
+  local categoryLabel = wnd:CreateChildWidget("label", "categoryLabel", 0, true)
+  categoryLabel:SetHeight(FONT_SIZE.MIDDLE)
+  categoryLabel:SetAutoResize(true)
+  categoryLabel.style:SetAlign(ALIGN_RIGHT)
+  categoryLabel:AddAnchor("BOTTOMRIGHT", subjectWnd, "TOPRIGHT", -5, -10)
+  ApplyTextColor(categoryLabel, FONT_COLOR.DEFAULT)
+  local descWnd = CreateAAchievementDescWnd("descWnd", wnd)
+  descWnd:AddAnchor("TOPLEFT", subjectWnd, "BOTTOMLEFT", 0, 5)
+  descWnd:AddAnchor("BOTTOMRIGHT", wnd, "BOTTOMRIGHT", 0, -20)
+  local prevBtn = wnd:CreateChildWidget("button", "prevBtn", 0, true)
+  prevBtn:AddAnchor("RIGHT", wnd, "BOTTOM", -5, 0)
+  ApplyButtonSkin(prevBtn, BUTTON_BASIC.PAGE_PREV)
+  local nextBtn = wnd:CreateChildWidget("button", "nextBtn", 0, true)
+  nextBtn:AddAnchor("LEFT", wnd, "BOTTOM", 5, 0)
+  ApplyButtonSkin(nextBtn, BUTTON_BASIC.PAGE_NEXT)
+  function wnd:SetInfo(index, aList, prevPage)
+    local info = X2Achievement:GetTodayAssignmentInfo(false, index)
+    if info == nil then
+      return
+    elseif info.status == A_TODAY_STATUS.LOCKED then
+      if wnd.lastQuest ~= nil then
+        prevPageBtn:OnClick()
+        return
+      end
+      if info.satisfy then
+        local function DialogUnlockTodayQuestHandler(dlg, infoTable)
+          local stepTitle = string.format("%s[%s]|r", FONT_COLOR_HEX.BLUE, info.title)
+          if info.requireItem ~= nil and info.requireItem ~= 0 and 0 < info.requireItemCount then
+            ApplyDialogStyle(dlg, DIALOG_STYLE.INCLUDE_ITEM_ICON)
+            local itemInfo = X2Item:GetItemInfoByType(info.requireItem)
+            local itemStr = string.format("|c%s[%s]|r", X2Item:GradeColor(itemInfo.itemGrade), itemInfo.name)
+            local content = string.format("%s", X2Locale:LocalizeUiText(MSG_BOX_BODY_TEXT, "unlock_require_item", itemStr))
+            content = string.format([[
+%s
+%s]], content, X2Locale:LocalizeUiText(MSG_BOX_BODY_TEXT, "unlock_today_quest", stepTitle))
+            if info.requireItemCount > 1 then
+              itemStr = string.format("%s X %d", itemStr, info.requireItemCount)
+            end
+            dlg:SetContentEx(content, itemInfo, info.requireItemCount, itemStr)
+          else
+            local content = X2Locale:LocalizeUiText(MSG_BOX_BODY_TEXT, "unlock_today_quest", stepTitle)
+            dlg:SetContent(content)
+          end
+          local title = GetCommonText("today_assignment")
+          dlg:SetTitle(title)
+          function dlg:OkProc()
+            X2Achievement:HandleClickTodayAssignment(false, info.realStep)
+          end
+        end
+        X2DialogManager:RequestDefaultDialog(DialogUnlockTodayQuestHandler, "")
+      end
+      return
+    elseif info.status == A_TODAY_STATUS.READY then
+      if wnd.lastQuest ~= nil then
+        prevPageBtn:OnClick()
+        return
+      end
+      X2Achievement:HandleClickTodayAssignment(false, info.realStep)
+      return
+    end
+    wnd.viewInfo = {
+      index = index,
+      aList = aList,
+      prevPage = prevPage
+    }
+    categoryLabel:SetText(info.title)
+    local function CheckFunc(checkBtn)
+      TracingBtnChecked(checkBtn, index)
+    end
+    subjectWnd:SetTodayAssignment(A_SUBJECT_STYLE.TODAY_ASSIGNMENT_DESC, false, index, CheckFunc, TracingBtnEntered)
+    descWnd:SetTodayAssignmentInfo(info.questType)
+    wnd.lastQuest = info.questType
+    local function RefreshMoveBtn()
+      local cIndex = 1
+      while aList[cIndex] ~= index do
+        cIndex = cIndex + 1
+      end
+      prevBtn:Enable(false)
+      for i = cIndex - 1, 1, -1 do
+        local sInfo = X2Achievement:GetTodayAssignmentInfo(false, aList[i])
+        if sInfo ~= nil and sInfo.status >= A_TODAY_STATUS.PROGRESS then
+          prevBtn.index = aList[i]
+          prevBtn:Enable(true)
+          break
+        end
+      end
+      nextBtn:Enable(false)
+      for i = cIndex + 1, #aList do
+        local sInfo = X2Achievement:GetTodayAssignmentInfo(false, aList[i])
+        if sInfo ~= nil and sInfo.status >= A_TODAY_STATUS.PROGRESS then
+          nextBtn.index = aList[i]
+          nextBtn:Enable(true)
+          break
+        end
+      end
+    end
+    RefreshMoveBtn()
+    if prevPage ~= wnd then
+      prevPage:Show(false)
+      wnd:Show(true)
+    end
+  end
+  function prevPageBtn:OnClick()
+    wnd.lastQuest = nil
+    wnd.viewInfo.prevPage:Update()
+    wnd.viewInfo.prevPage:Show(true)
+    wnd:Show(false)
+    wnd.viewInfo = nil
+  end
+  prevPageBtn:SetHandler("OnClick", prevPageBtn.OnClick)
+  function prevBtn:OnClick()
+    wnd:SetInfo(prevBtn.index, wnd.viewInfo.aList, wnd.viewInfo.prevPage)
+  end
+  prevBtn:SetHandler("OnClick", prevBtn.OnClick)
+  function nextBtn:OnClick()
+    wnd:SetInfo(nextBtn.index, wnd.viewInfo.aList, wnd.viewInfo.prevPage)
+  end
+  nextBtn:SetHandler("OnClick", nextBtn.OnClick)
+  function wnd:Update()
+    if wnd.viewInfo ~= nil then
+      wnd:SetInfo(wnd.viewInfo.index, wnd.viewInfo.aList, wnd.viewInfo.prevPage)
+    end
+  end
+  function wnd:OnHide()
+    wnd.viewInfo = nil
+  end
+  wnd:SetHandler("OnHide", wnd.OnHide)
+  return wnd
+end
+function CreateATodayWnd(parent)
+  parent.isTodayAssignmentWnd = true
+  local assignDesc = CreateTodayAssignDescWnd("assignDesc", parent)
+  assignDesc:SetWidth(286)
+  assignDesc:AddAnchor("TOPLEFT", parent, 0, 16)
+  assignDesc:AddAnchor("BOTTOMLEFT", parent, 0, 0)
+  local listWnd = CreateTodayAssignmentListWnd("listWnd", parent)
+  listWnd:AddAnchor("TOPLEFT", assignDesc, "TOPRIGHT", 20, 0)
+  listWnd:AddAnchor("BOTTOMRIGHT", parent, 0, 0)
+  listWnd:Init()
+  local descWnd = CreateDescWnd("descWnd", parent)
+  descWnd:AddAnchor("TOPLEFT", assignDesc, "TOPRIGHT", 20, 0)
+  descWnd:AddAnchor("BOTTOMRIGHT", parent, 0, 0)
+  descWnd:Show(false)
+  local function ToggleDetailWnd(index, aList)
+    descWnd:SetInfo(index, aList, listWnd)
+  end
+  listWnd:SetListSelectFuc(ToggleDetailWnd)
+  function parent:ToggleWithQuest(qType)
+    local cnt = X2Achievement:GetTodayAssignmentCount(false)
+    local info = {}
+    for index = 1, cnt do
+      info[index] = index
+    end
+    for index = 1, #info do
+      local tInfo = X2Achievement:GetTodayAssignmentInfo(false, info[index])
+      if tInfo ~= nil and tInfo.questType == qType then
+        ToggleDetailWnd(index, info)
+      end
+    end
+  end
+  function parent:Update()
+    if parent:IsVisible() then
+      assignDesc:Update()
+      listWnd:Update()
+      descWnd:Update()
+    end
+  end
+  function parent:OnTabChangedProc()
+    parent:Update()
+  end
+  local todayAssignmentEvents = {
+    UPDATE_TODAY_ASSIGNMENT = function()
+      parent:Update()
+    end,
+    LEVEL_CHANGED = function(_, stringId)
+      if X2Unit:GetUnitId("player") ~= stringId then
+        return
+      end
+      parent:Update()
+    end,
+    QUEST_CONTEXT_UPDATED = function(qType, status)
+      if X2Quest:IsTodayQuest(qType) == true and status == "updated" then
+        parent:Update()
+      end
+    end,
+    ADDED_ITEM = function()
+      parent:Update()
+    end,
+    REMOVED_ITEM = function()
+      parent:Update()
+    end
+  }
+  parent:SetHandler("OnEvent", function(this, event, ...)
+    todayAssignmentEvents[event](...)
+  end)
+  RegistUIEvent(parent, todayAssignmentEvents)
+end

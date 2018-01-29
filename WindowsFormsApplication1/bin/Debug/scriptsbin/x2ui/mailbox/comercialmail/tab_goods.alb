@@ -1,0 +1,228 @@
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+function SetViewOfGoodsMailListFrame(window)
+  local countLabel = window:CreateChildWidget("label", "countLabel", 0, true)
+  countLabel:SetAutoResize(true)
+  countLabel:SetHeight(20)
+  countLabel:AddAnchor("BOTTOMLEFT", window, sideMargin, -sideMargin)
+  ApplyTextColor(countLabel, FONT_COLOR.BLUE)
+  local readWindow = CreateReadGoodsMailWindow(window:GetId() .. ".readWindow", window)
+  readWindow:Show(false)
+  readWindow:AddAnchor("TOPLEFT", window, "TOPRIGHT", 20, -80)
+  window.readWindow = readWindow
+end
+function CreateGoodsMailFrame(window)
+  CreateGoodsMailList(window)
+  SetViewOfGoodsMailListFrame(window)
+  local pageControl = window.pageControl
+  local frame = window.goodMailList
+  local listCtrl = window.goodMailList.listCtrl
+  function frame:SelChangedProc(selDataViewIdx, selDataIdx, selDataKey, doubleClick)
+    if selDataIdx > 0 and doubleClick == true then
+      local data = frame:GetDataByViewIndex(selDataViewIdx, 2)
+      X2GoodsMail:ReadReceivedMailById(data[COMERCIAL_MAIL_COL.MAILID])
+    end
+  end
+  function window:ShowMail(mailId)
+    window.readWindow:Show(true)
+  end
+  function window:UpdateUnreadCount()
+    local str = locale.comercialMail.GetUnconfirmedGoodsText(X2GoodsMail:GetCountUnreadMail(), X2GoodsMail:GetReceivedMailCount())
+    self.countLabel:SetText(str)
+  end
+  function window:FillMailList()
+    frame:DeleteAllDatas()
+    self:UpdateUnreadCount()
+    local mailCount = X2GoodsMail:GetReceivedMailCount()
+    if mailCount == 0 then
+      window:WaitPage(false)
+      return
+    end
+    for i = 1, mailCount do
+      local mailInfo = X2GoodsMail:GetReceivedMailTitleInfo(i)
+      if mailInfo == nil then
+        X2GoodsMail:RequestMailList(MLK_COMMERCIAL, 1, X2GoodsMail:GetReceivedMailCount())
+        return
+      end
+      local bodyInfo = X2GoodsMail:GetCacheBodyInfo(false, i)
+      if bodyInfo == nil then
+        X2GoodsMail:RequestMailList(MLK_COMMERCIAL, 1, X2GoodsMail:GetReceivedMailCount())
+        return
+      end
+      local parseInfo = ParsePipeArgFromBody(bodyInfo)
+      local mailId = mailInfo.mail_id
+      local firColData = {}
+      firColData[COMERCIAL_MAIL_COL.MAIL_TYPE] = mailInfo.mail_type
+      firColData[COMERCIAL_MAIL_COL.GIFT] = parseInfo.gift
+      local secColData = {}
+      secColData[COMERCIAL_MAIL_COL.TITLE] = GetMailText(mailInfo.sender, mailInfo.title)
+      secColData[COMERCIAL_MAIL_COL.MAILID] = mailId
+      secColData[COMERCIAL_MAIL_COL.ISREAD] = mailInfo.is_read
+      local thiColData = {}
+      thiColData[COMERCIAL_MAIL_COL.RECV_DATE] = bodyInfo.recvDate
+      thiColData[COMERCIAL_MAIL_COL.REFUND_LIMIT_FILE_TIME] = parseInfo.limit_file_time
+      thiColData[COMERCIAL_MAIL_COL.REFUND] = parseInfo.refund
+      thiColData[COMERCIAL_MAIL_COL.ISREAD] = mailInfo.is_read
+      thiColData[COMERCIAL_MAIL_COL.MAILID] = mailId
+      local enableFirstSorting = i == mailCount
+      frame:InsertData(mailId, 1, firColData)
+      frame:InsertData(mailId, 2, secColData)
+      frame:InsertData(mailId, 3, thiColData, enableFirstSorting)
+    end
+    frame:UpdatePage(mailCount, PAGE_PER_MAIL_MAX_COUNT)
+    window:WaitPage(false)
+    X2GoodsMail:CompleteMailList()
+  end
+  function window:ShowList(show)
+    if show then
+      window:FillMailList()
+    end
+    window:Show(show)
+  end
+  local goodsMailEvents = {
+    GOODS_MAIL_INBOX_UPDATE = function(read)
+      if window:IsVisible() == false then
+        return
+      end
+      window:FillMailList()
+      if read == false then
+        return
+      end
+      window.readWindow:FillReceivedMailInfo()
+      window.readWindow:Show(true)
+      F_SOUND:PlayUISound("event_mail_read_changed", true)
+    end,
+    GOODS_MAIL_INBOX_ITEM_TAKEN = function(index)
+      if window:IsVisible() == false then
+        return
+      end
+      local wnd = window.readWindow
+      if wnd:IsVisible() == false then
+      else
+        wnd:Show(false)
+      end
+    end
+  }
+  window:SetHandler("OnEvent", function(this, event, ...)
+    goodsMailEvents[event](...)
+  end)
+  RegistUIEvent(window, goodsMailEvents)
+end
+function SetViewOfGoodsMailList(window)
+  local frame = CreatePageListCtrl(window, "goodMailList", 0)
+  frame:AddAnchor("TOPLEFT", window, sideMargin, titleMargin)
+  frame:AddAnchor("BOTTOMRIGHT", window, -sideMargin, bottomMargin + 10)
+  frame:SetUseDoubleClick(true)
+  function frame:CheckProc_DeleteButton()
+    GetMailDeleteButton():Enable(window:GetSelctedCheckBoxs())
+  end
+  local CategoryLayoutFunc = function(frame, rowIndex, colIndex, subItem)
+    local typeDrawable = subItem:CreateImageDrawable(TEXTURE_PATH.COMMERCIAL_MAIL, "background")
+    typeDrawable:SetVisible(false)
+    typeDrawable:AddAnchor("CENTER", subItem, 0, 0)
+    subItem.typeDrawable = typeDrawable
+  end
+  local TitleLayoutFunc = function(frame, rowIndex, colIndex, subItem)
+    local titleLabel = subItem:CreateChildWidget("label", "titleLabel", 0, true)
+    titleLabel:Show(true)
+    titleLabel:AddAnchor("LEFT", subItem, 10, 0)
+    titleLabel:AddAnchor("RIGHT", subItem, -10, 0)
+    titleLabel.style:SetAlign(ALIGN_LEFT)
+    ApplyTextColor(titleLabel, FONT_COLOR.DEFAULT)
+    titleLabel:SetLimitWidth(true)
+  end
+  local DateLayoutFunc = function(frame, rowIndex, colIndex, subItem)
+    subItem.style:SetAlign(ALIGN_CENTER)
+    subItem.style:SetSnap(true)
+    ApplyTextColor(subItem, FONT_COLOR.BLUE)
+  end
+  local CategoryDataFunc = function(subItem, data, setValue)
+    if setValue then
+      subItem.typeDrawable:SetVisible(true)
+      local coords
+      if data[COMERCIAL_MAIL_COL.MAIL_TYPE] == COMERCIAL_MAIL_TYPE.MAIL_CHARGED then
+        if data[COMERCIAL_MAIL_COL.GIFT] then
+          coords = FORM_MAILBOX.COMMERCIAL_MAIL.MAIL_TYPE_COORDS.GIFT
+        else
+          coords = FORM_MAILBOX.COMMERCIAL_MAIL.MAIL_TYPE_COORDS.BUY
+        end
+      elseif data[COMERCIAL_MAIL_COL.MAIL_TYPE] == COMERCIAL_MAIL_TYPE.MAIL_PROMOTION then
+        coords = FORM_MAILBOX.COMMERCIAL_MAIL.MAIL_TYPE_COORDS.EVENT
+      end
+      subItem.typeDrawable:SetCoords(coords[1], coords[2], coords[3], coords[4])
+      subItem.typeDrawable:SetExtent(coords[3], coords[4])
+    else
+      subItem.typeDrawable:SetVisible(false)
+    end
+  end
+  local TitleDataFunc = function(subItem, data, setValue)
+    if setValue then
+      if data[COMERCIAL_MAIL_COL.ISREAD] then
+        ApplyTextColor(subItem.titleLabel, FONT_COLOR.GRAY)
+      else
+        ApplyTextColor(subItem.titleLabel, FONT_COLOR.BLUE)
+      end
+      if data[COMERCIAL_MAIL_COL.TITLE] ~= nil then
+        subItem.titleLabel:SetText(data[COMERCIAL_MAIL_COL.TITLE])
+      end
+    else
+      subItem.titleLabel:SetText("")
+    end
+  end
+  local DateDataFunc = function(subItem, data, setValue, sortMode)
+    mailBoxLocale.comercialMail:DateDataFunc(subItem, data, setValue, sortMode)
+  end
+  local CategoryAscendingSortFunc = function(a, b)
+    local off = ROWDATA_COLUMN_OFFSET + 1
+    return a[off][COMERCIAL_MAIL_COL.MAIL_TYPE] < b[off][COMERCIAL_MAIL_COL.MAIL_TYPE] and true or false
+  end
+  local CategoryDescendingSortFunc = function(a, b)
+    local off = ROWDATA_COLUMN_OFFSET + 1
+    return a[off][COMERCIAL_MAIL_COL.MAIL_TYPE] > b[off][COMERCIAL_MAIL_COL.MAIL_TYPE] and true or false
+  end
+  local TitleAscendingSortFunc = function(a, b)
+    local off = ROWDATA_COLUMN_OFFSET + 2
+    return a[off][COMERCIAL_MAIL_COL.TITLE] < b[off][COMERCIAL_MAIL_COL.TITLE] and true or false
+  end
+  local TitleDescendingSortFunc = function(a, b)
+    local off = ROWDATA_COLUMN_OFFSET + 2
+    return a[off][COMERCIAL_MAIL_COL.TITLE] > b[off][COMERCIAL_MAIL_COL.TITLE] and true or false
+  end
+  local DateAscendingSortFunc = function(a, b)
+    return mailBoxLocale.comercialMail:DateAscendingSortFunc(a, b, RefundOrder)
+  end
+  local DateDescendingSortFunc = function(a, b)
+    return mailBoxLocale.comercialMail:DateDescendingSortFunc(a, b, RefundOrder)
+  end
+  local visibleSortMark = not baselibLocale.visibleRefundInfo or baselibLocale.visibleAddedRefundInfo
+  local colWidth = FORM_MAILBOX.COMMERCIAL_MAIL.COLUMN_WIDTH
+  frame:InsertColumn(locale.comercialMail.goodsCategory, colWidth[1], LCCIT_WINDOW, CategoryDataFunc, CategoryAscendingSortFunc, CategoryDescendingSortFunc, CategoryLayoutFunc)
+  frame:InsertColumn(locale.comercialMail.goodsTitle, colWidth[2], LCCIT_STRING, TitleDataFunc, TitleAscendingSortFunc, TitleDescendingSortFunc, TitleLayoutFunc)
+  frame:InsertColumn(locale.comercialMail.goodsRemain, colWidth[3], LCCIT_STRING, DateDataFunc, DateAscendingSortFunc, DateDescendingSortFunc, DateLayoutFunc, visibleSortMark)
+  frame:ChangeFirstSorting(3, false)
+  frame:InsertRows(PAGE_PER_MAIL_MAX_COUNT, false)
+  DrawListCtrlUnderLine(frame.listCtrl)
+  ListCtrlOverClickTextureSetting(frame.listCtrl)
+  for i = 1, #frame.listCtrl.column do
+    frame.listCtrl.column[i].style:SetAlign(ALIGN_CENTER)
+    DrawListCtrlColumnSperatorLine(frame.listCtrl.column[i], #frame.listCtrl.column, i)
+  end
+  return frame
+end
+function CreateGoodsMailList(window)
+  SetViewOfGoodsMailList(window)
+  local frame = window.goodMailList
+  local listCtrl = frame.listCtrl
+  function window:GetEnabledCheckBoxs()
+    return false
+  end
+  function window:GetVisibleCheckCount()
+    return 0
+  end
+  function window:GetSelctedCheckBoxs()
+    return false
+  end
+  function window:GetSelectedMailIds()
+    local selectedMailIds = {}
+    return selectedMailIds
+  end
+end

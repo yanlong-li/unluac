@@ -1,0 +1,130 @@
+local AddListMethod = function(widget, list)
+  function list:OnSelChanged()
+    widget:SetText(list:GetSelectedText())
+    list:Show(false)
+  end
+  function widget:GetSelectedValue()
+    local value = list:GetSelectedValue()
+    return value
+  end
+  function widget:Select(index)
+    list:Select(index)
+  end
+  function widget:GetSelectedText()
+    local text = list:GetSelectedText()
+    return text
+  end
+  function widget:ClearItem()
+    list:ClearItem()
+  end
+  function widget:SetInset(left, top, right, bottom)
+    list:SetInset(left, top, right, bottom)
+  end
+  function widget:ItemCount()
+    local num = list:ItemCount()
+    return num
+  end
+  function widget:GetSelectedIndex()
+    local index = list:GetSelectedIndex() + 1
+    return index
+  end
+  function widget:SetItem(idx, name, value, r, g, b, a)
+    list:SetItem(idx, name, value, r, g, b, a)
+  end
+  function widget:SetBorder(arg)
+    list:SetBorder(arg)
+  end
+  function widget:SetLineColor(r, g, b, a)
+    list:SetLineColor(r, g, b, a)
+  end
+  function widget:SetTop(arg)
+    list:SetTop(arg)
+  end
+  function widget:GetMaxTop()
+    return list:GetMaxTop()
+  end
+  function widget:SetInset(left, top, right, bottom)
+    list:SetInset(left, top, right, bottom)
+  end
+end
+function CreateList(id, parent)
+  local list = SetViewOfList(id, parent)
+  function list:OnTooltip(text, posX, posY)
+    SetTooltipOnPos(text, self, posX, posY)
+  end
+  list:SetHandler("OnTooltip", list.OnTooltip)
+  return list
+end
+function CreateSliderList(id, parent)
+  local window = SetViewOfSliderList(id, parent)
+  local list = window.list
+  local scroll = window.scroll
+  AddListMethod(window, list)
+  function scroll.upButton:OnClick()
+    list:ScrollUp()
+    scroll.vs:SetValue(list:GetTop(), true)
+  end
+  scroll.upButton:SetHandler("OnClick", scroll.upButton.OnClick)
+  function scroll.downButton:OnClick()
+    list:ScrollDown()
+    scroll.vs:SetValue(list:GetTop(), true)
+  end
+  scroll.downButton:SetHandler("OnClick", scroll.downButton.OnClick)
+  local function OnSliderChanged(self, arg)
+    list:SetTop(arg)
+    if self.ChangeAnchor ~= nil then
+      self:ChangeAnchor()
+    end
+  end
+  scroll.vs:SetHandler("OnSliderChanged", OnSliderChanged)
+  function list:OnSelChanged()
+    scroll.vs:SetMinMaxValues(0, list:GetMaxTop())
+    self:Select(self:GetSelectedIndex())
+    if window.OnSelChanged ~= nil then
+      window:OnSelChanged()
+    end
+    X2Cursor:ClearCursor()
+  end
+  list:SetHandler("OnSelChanged", list.OnSelChanged)
+  function window:AppendItem(v, k, icon)
+    if icon ~= nil then
+      list:AppendItem(v, k, icon)
+    else
+      list:AppendItem(v, k)
+    end
+  end
+  function window:AppendItemWithColor(v, k, color)
+    if color ~= nil then
+      list:AppendItem(v, k, color[1], color[2], color[3], color[4])
+      list:UseConsistentTextColor(false)
+    else
+      list:AppendItem(v, k)
+    end
+    scroll.vs:SetMinMaxValues(0, list:GetMaxTop())
+  end
+  function window:ClearItem()
+    list:ClearItem()
+    scroll.vs:SetMinMaxValues(0, 0)
+  end
+  function window:SetMinMaxValues(smin, smax)
+    scroll.vs:SetMinMaxValues(smin, smax)
+    if smax <= 0 then
+      self.scroll:Show(false)
+    end
+  end
+  function window:SetUseScrollThumb(use)
+    local thumb = scroll.vs:GetThumbButtonWidget()
+    if thumb ~= nil then
+      thumb:RegisterForClicks("LeftButton", not use)
+    end
+  end
+  function list:OnTooltip(text, posX, posY)
+    if not self:IsMouseOver() then
+      HideTooltip()
+      return
+    end
+    SetTooltipOnPos(text, self, posX, posY)
+  end
+  list:SetHandler("OnTooltip", list.OnTooltip)
+  return window
+end

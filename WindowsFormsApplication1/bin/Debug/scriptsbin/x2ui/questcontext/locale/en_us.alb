@@ -1,0 +1,17 @@
+if X2Util:GetGameProvider() == TRION then
+  questLocale.notifier = {
+    gridWidth = 390,
+    titleDefaultWidth = 345,
+    objectWidth = 340
+  }
+  questLocale.guideTipHeight = 5
+  questLocale.guideTipIcon = {
+    coords = {
+      5,
+      2,
+      1,
+      2,
+      2
+    }
+  }
+end

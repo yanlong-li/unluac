@@ -1,0 +1,36 @@
+local inset = GetWindowMargin("popup")
+function CreateRaidOptionFrame(id, parent)
+  local w = SetViewOfRaidOptionFrame(id, parent)
+  function w:OnShow()
+    if X2Team:GetSimpleView() == true then
+      self.modeCheckBoxes[2]:SetChecked(true)
+    else
+      self.modeCheckBoxes[1]:SetChecked(true)
+    end
+    self.partyVisibleToRaidCheckBox:SetChecked(X2Team:GetPartyFrameVisible(), false)
+    self.invisibleRaidFrameCheckBox:SetChecked(X2Team:GetRaidFrameVisible(), false)
+    self.refuseInvitationCheckBox:SetChecked(X2Team:GetRefuseAreaInvitation(), false)
+  end
+  w:SetHandler("OnShow", w.OnShow)
+  local checkBox1 = w.modeCheckBoxes[1]
+  function checkBox1:RadioBtnCheckChangedProc()
+    X2Team:SetSimpleView(false)
+  end
+  local checkBox2 = w.modeCheckBoxes[2]
+  function checkBox2:RadioBtnCheckChangedProc()
+    X2Team:SetSimpleView(true)
+  end
+  function w.partyVisibleToRaidCheckBox:CheckBtnCheckChagnedProc(visible)
+    X2Team:SetPartyFrameVisible(visible)
+  end
+  function w.invisibleRaidFrameCheckBox:CheckBtnCheckChagnedProc(visible)
+    X2Team:SetRaidFrameVisible(visible)
+    if RaidFrame ~= nil and visible then
+      RaidFrame:UpdateAllMembersCombatState()
+    end
+  end
+  function w.refuseInvitationCheckBox:CheckBtnCheckChagnedProc(refuse)
+    X2Team:SetRefuseAreaInvitation(refuse)
+  end
+  return w
+end

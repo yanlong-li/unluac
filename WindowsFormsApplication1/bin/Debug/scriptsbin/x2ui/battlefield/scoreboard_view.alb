@@ -1,0 +1,360 @@
+BATTLEFIELD_COL = {
+  NAME = 1,
+  KILL = 2,
+  DEATH = 3,
+  ASSIST = 3,
+  ACHIEVEMENT = 4,
+  SCORE = 5
+}
+local CreateScoreboardScrollListCtrl = function(id, parent)
+  local widget = CreateScrollListCtrl(parent, id, 0)
+  widget:Show(true)
+  widget:SetExtent(570, 340)
+  widget:SetUseDoubleClick(true)
+  widget:ChangeSortMartTexture_serverSelectPage()
+  widget.mark_yOffset = 2
+  widget.AscendingSortMark:SetColor(1, 1, 1, 0.5)
+  widget.DescendingSortMark:SetColor(1, 1, 1, 0.5)
+  local bg = widget:CreateNinePartDrawable(TEXTURE_PATH.BATTLEFIELD_SCOREBOARD, "background")
+  bg:SetCoords(0, 0, 512, 49)
+  bg:SetInset(0, 26, 0, 22)
+  bg:SetColor(1, 1, 1, 0.7)
+  bg:AddAnchor("TOPLEFT", widget, -MARGIN.WINDOW_SIDE, 0)
+  bg:AddAnchor("BOTTOMRIGHT", widget, MARGIN.WINDOW_SIDE, MARGIN.WINDOW_TITLE)
+  local deco = widget:CreateImageDrawable(TEXTURE_PATH.BATTLEFIELD_SCOREBOARD, "background")
+  deco:SetCoords(0, 100, 355, 245)
+  deco:AddAnchor("TOPLEFT", widget, -MARGIN.WINDOW_SIDE, 0)
+  deco:AddAnchor("BOTTOMRIGHT", widget, MARGIN.WINDOW_SIDE, MARGIN.WINDOW_TITLE + MARGIN.WINDOW_SIDE / 2)
+  widget.deco = deco
+  local upperDeco = widget:CreateImageDrawable(TEXTURE_PATH.BATTLEFIELD_SCOREBOARD, "background")
+  upperDeco:SetCoords(0, 49, 512, 11)
+  upperDeco:SetExtent(560, 11)
+  upperDeco:AddAnchor("TOP", widget, 8, 0)
+  upperDeco:SetColor(1, 1, 1, 0.7)
+  local NameDataSetFunc = function(subItem, data, setValue)
+    if setValue then
+      if data == X2Unit:UnitName("player") then
+        ApplyTextColor(subItem, FONT_COLOR.BATTLEFIELD_YELLOW)
+        subItem:GetParent().playerMarkBg:SetVisible(true)
+      else
+        ApplyTextColor(subItem, FONT_COLOR.WHITE)
+        subItem:GetParent().playerMarkBg:SetVisible(false)
+      end
+      subItem:SetText(data)
+    else
+      subItem:GetParent().playerMarkBg:SetVisible(false)
+    end
+  end
+  local DataSetFunc = function(subItem, data, setValue)
+    if setValue then
+      subItem:SetText(data)
+    end
+  end
+  local AchievementDataSetFunc = function(subItem, data, setValue)
+    if setValue then
+      subItem.iconFrame:SetData(data.victory, data.bravery, data.destroyer, data.immortality, data.defeat)
+    else
+      subItem.iconFrame:Show(false)
+    end
+  end
+  local ScoreDataSetFunc = function(subItem, data, setValue)
+    if setValue == nil then
+      subItem.textbox:SetText("")
+      return
+    end
+    local str = ""
+    if data.bonus == nil then
+      str = tostring(data.default)
+    elseif data.isRating then
+      if data.bonus < 0 then
+        str = string.format("%d %s(%d)|r", data.default, FONT_COLOR_HEX.GREEN, data.bonus)
+      else
+        str = string.format("%d %s(+%d)|r", data.default, FONT_COLOR_HEX.GREEN, data.bonus)
+      end
+    else
+      str = string.format("%d %s(+%d)|r", data.default + data.bonus, FONT_COLOR_HEX.GREEN, data.bonus)
+    end
+    subItem.textbox:SetText(str)
+  end
+  local NameLayoutSetFunc = function(widget, rowIndex, colIndex, subItem)
+    ApplyTextColor(subItem, FONT_COLOR.WHITE)
+    subItem:SetInset(15, 0, 0, 0)
+    subItem.style:SetAlign(ALIGN_LEFT)
+    subItem.style:SetShadow(true)
+  end
+  local KillLayoutSetFunc = function(widget, rowIndex, colIndex, subItem)
+    ApplyTextColor(subItem, FONT_COLOR.BATTLEFIELD_ORANGE)
+    subItem.style:SetAlign(ALIGN_CENTER)
+    subItem.style:SetShadow(true)
+  end
+  local DefaultLayoutSetFunc = function(widget, rowIndex, colIndex, subItem)
+    ApplyTextColor(subItem, FONT_COLOR.WHITE)
+    subItem.style:SetAlign(ALIGN_CENTER)
+    subItem.style:SetShadow(true)
+  end
+  local AchievementLayoutSetFunc = function(widget, rowIndex, colIndex, subItem)
+    local iconFrame = subItem:CreateChildWidget("emptywidget", "iconFrame", 0, true)
+    iconFrame:SetExtent(75, 19)
+    iconFrame:AddAnchor("CENTER", subItem, 0, 0)
+    local victoryIcon = iconFrame:CreateChildWidget("emptywidget", "victoryIcon", 0, true)
+    victoryIcon:Show(false)
+    victoryIcon:SetExtent(18, 19)
+    victoryIcon:AddAnchor("LEFT", iconFrame, 0, 0)
+    local bg = victoryIcon:CreateImageDrawable(TEXTURE_PATH.BATTLEFIELD_SCOREBOARD, "background")
+    bg:SetCoords(453, 76, 18, 19)
+    bg:AddAnchor("TOPLEFT", victoryIcon, 0, 0)
+    bg:AddAnchor("BOTTOMRIGHT", victoryIcon, 0, 0)
+    local OnEnterVictoryIcon = function(self)
+      SetTooltip(locale.instant_game.victory, self)
+    end
+    victoryIcon:SetHandler("OnEnter", OnEnterVictoryIcon)
+    local defeatIcon = iconFrame:CreateChildWidget("emptywidget", "defeatIcon", 0, true)
+    defeatIcon:Show(false)
+    defeatIcon:SetExtent(18, 19)
+    defeatIcon:AddAnchor("LEFT", iconFrame, 0, -2)
+    local bg = defeatIcon:CreateImageDrawable(TEXTURE_PATH.BATTLEFIELD_SCOREBOARD, "background")
+    bg:SetCoords(419, 74, 18, 20)
+    bg:AddAnchor("TOPLEFT", defeatIcon, 0, 0)
+    bg:AddAnchor("BOTTOMRIGHT", defeatIcon, 0, 0)
+    local OnEnterVictoryIcon = function(self)
+      SetTooltip(locale.instant_game.lose, self)
+    end
+    defeatIcon:SetHandler("OnEnter", OnEnterVictoryIcon)
+    local braveryIcon = iconFrame:CreateChildWidget("emptywidget", "braveryIcon", 0, true)
+    braveryIcon:Show(false)
+    braveryIcon:SetExtent(18, 17)
+    braveryIcon:AddAnchor("LEFT", victoryIcon, "RIGHT", -1, -1)
+    local bg = braveryIcon:CreateImageDrawable(TEXTURE_PATH.BATTLEFIELD_SCOREBOARD, "background")
+    bg:SetCoords(355, 86, 18, 17)
+    bg:AddAnchor("TOPLEFT", braveryIcon, 0, 0)
+    bg:AddAnchor("BOTTOMRIGHT", braveryIcon, 0, 0)
+    local OnEnterBraveryIcon = function(self)
+      SetTooltip(locale.instant_game.bravery, self)
+    end
+    braveryIcon:SetHandler("OnEnter", OnEnterBraveryIcon)
+    local destroyerIcon = iconFrame:CreateChildWidget("emptywidget", "destroyerIcon", 0, true)
+    destroyerIcon:Show(false)
+    destroyerIcon:SetExtent(16, 19)
+    destroyerIcon:AddAnchor("LEFT", braveryIcon, "RIGHT", 3, 0)
+    local bg = destroyerIcon:CreateImageDrawable(TEXTURE_PATH.BATTLEFIELD_SCOREBOARD, "background")
+    bg:SetCoords(437, 74, 16, 19)
+    bg:AddAnchor("TOPLEFT", destroyerIcon, 0, 0)
+    bg:AddAnchor("BOTTOMRIGHT", destroyerIcon, 0, 0)
+    local OnEnterDestroyerIcon = function(self)
+      SetTooltip(locale.instant_game.destroyer, self)
+    end
+    destroyerIcon:SetHandler("OnEnter", OnEnterDestroyerIcon)
+    local immortalityIcon = iconFrame:CreateChildWidget("emptywidget", "immortalityIcon", 0, true)
+    immortalityIcon:Show(false)
+    immortalityIcon:SetExtent(19, 16)
+    immortalityIcon:AddAnchor("LEFT", destroyerIcon, "RIGHT", 2, 1)
+    local bg = immortalityIcon:CreateImageDrawable(TEXTURE_PATH.BATTLEFIELD_SCOREBOARD, "background")
+    bg:SetCoords(457, 60, 19, 16)
+    bg:AddAnchor("TOPLEFT", immortalityIcon, 0, 0)
+    bg:AddAnchor("BOTTOMRIGHT", immortalityIcon, 0, 0)
+    local OnEnterImmortalityIcon = function(self)
+      SetTooltip(locale.instant_game.immortality, self)
+    end
+    immortalityIcon:SetHandler("OnEnter", OnEnterImmortalityIcon)
+    local OnLeave = function()
+      HideTooltip()
+    end
+    victoryIcon:SetHandler("OnLeave", OnLeave)
+    braveryIcon:SetHandler("OnLeave", OnLeave)
+    destroyerIcon:SetHandler("OnLeave", OnLeave)
+    immortalityIcon:SetHandler("OnLeave", OnLeave)
+    defeatIcon:SetHandler("OnLeave", OnLeave)
+    function iconFrame:SetData(victory, bravery, destroyer, immortality, defeat)
+      self:Show(true)
+      self.victoryIcon:Show(victory)
+      self.defeatIcon:Show(defeat)
+      self.braveryIcon:Show(bravery)
+      self.destroyerIcon:Show(destroyer)
+      self.immortalityIcon:Show(immortality)
+    end
+  end
+  local ScoreLayoutFunc = function(widget, rowIndex, colIndex, subItem)
+    local textbox = subItem:CreateChildWidget("textbox", "textbox", 0, true)
+    textbox:AddAnchor("TOPLEFT", subItem, 10, 0)
+    textbox:AddAnchor("BOTTOMRIGHT", subItem, -5, 0)
+    textbox.style:SetAlign(ALIGN_LEFT)
+    ApplyTextColor(textbox, FONT_COLOR.WHITE)
+    textbox.style:SetShadow(true)
+  end
+  local NameAscendingSortFunc = function(a, b)
+    local valueA = a[ROWDATA_COLUMN_OFFSET + BATTLEFIELD_COL.NAME]
+    local valueB = b[ROWDATA_COLUMN_OFFSET + BATTLEFIELD_COL.NAME]
+    return valueA < valueA and true or false
+  end
+  local NameDescendingSortFunc = function(a, b)
+    local valueA = a[ROWDATA_COLUMN_OFFSET + BATTLEFIELD_COL.NAME]
+    local valueB = b[ROWDATA_COLUMN_OFFSET + BATTLEFIELD_COL.NAME]
+    return valueA > valueB and true or false
+  end
+  local KillAscendingSortFunc = function(a, b)
+    local valueA = a[ROWDATA_COLUMN_OFFSET + BATTLEFIELD_COL.KILL]
+    local valueB = b[ROWDATA_COLUMN_OFFSET + BATTLEFIELD_COL.KILL]
+    return tonumber(valueA) < tonumber(valueB) and true or false
+  end
+  local KillDescendingSortFunc = function(a, b)
+    local valueA = a[ROWDATA_COLUMN_OFFSET + BATTLEFIELD_COL.KILL]
+    local valueB = b[ROWDATA_COLUMN_OFFSET + BATTLEFIELD_COL.KILL]
+    return tonumber(valueA) > tonumber(valueB) and true or false
+  end
+  local DeathAscendingSortFunc = function(a, b)
+    local valueA = a[ROWDATA_COLUMN_OFFSET + BATTLEFIELD_COL.DEATH]
+    local valueB = b[ROWDATA_COLUMN_OFFSET + BATTLEFIELD_COL.DEATH]
+    return tonumber(valueA) < tonumber(valueB) and true or false
+  end
+  local DeathDescendingSortFunc = function(a, b)
+    local valueA = a[ROWDATA_COLUMN_OFFSET + BATTLEFIELD_COL.DEATH]
+    local valueB = b[ROWDATA_COLUMN_OFFSET + BATTLEFIELD_COL.DEATH]
+    return tonumber(valueA) > tonumber(valueB) and true or false
+  end
+  local AssistAscendingSortFunc = function(a, b)
+    local valueA = a[ROWDATA_COLUMN_OFFSET + BATTLEFIELD_COL.ASSIST]
+    local valueB = b[ROWDATA_COLUMN_OFFSET + BATTLEFIELD_COL.ASSIST]
+    return tonumber(valueA) < tonumber(valueB) and true or false
+  end
+  local AssistDescendingSortFunc = function(a, b)
+    local valueA = a[ROWDATA_COLUMN_OFFSET + BATTLEFIELD_COL.ASSIST]
+    local valueB = b[ROWDATA_COLUMN_OFFSET + BATTLEFIELD_COL.ASSIST]
+    return tonumber(valueA) > tonumber(valueB) and true or false
+  end
+  local ScoreAscendingSortFunc = function(a, b)
+    local scoreA = a[ROWDATA_COLUMN_OFFSET + BATTLEFIELD_COL.SCORE].default
+    local scoreB = b[ROWDATA_COLUMN_OFFSET + BATTLEFIELD_COL.SCORE].default
+    if a[ROWDATA_COLUMN_OFFSET + BATTLEFIELD_COL.SCORE].isRating == false then
+      scoreA = scoreA + a[ROWDATA_COLUMN_OFFSET + BATTLEFIELD_COL.SCORE].bonus
+      scoreB = scoreB + a[ROWDATA_COLUMN_OFFSET + BATTLEFIELD_COL.SCORE].bonus
+    end
+    return tonumber(scoreA) < tonumber(scoreB) and true or false
+  end
+  local ScoreDescendingSortFunc = function(a, b)
+    local scoreA = a[ROWDATA_COLUMN_OFFSET + BATTLEFIELD_COL.SCORE].default
+    local scoreB = b[ROWDATA_COLUMN_OFFSET + BATTLEFIELD_COL.SCORE].default
+    if a[ROWDATA_COLUMN_OFFSET + BATTLEFIELD_COL.SCORE].isRating == false then
+      scoreA = scoreA + a[ROWDATA_COLUMN_OFFSET + BATTLEFIELD_COL.SCORE].bonus
+      scoreB = scoreB + a[ROWDATA_COLUMN_OFFSET + BATTLEFIELD_COL.SCORE].bonus
+    end
+    return tonumber(scoreA) > tonumber(scoreB) and true or false
+  end
+  widget:InsertColumn(locale.faction.name, 160, LCCIT_STRING, NameDataSetFunc, NameAscendingSortFunc, NameDescendingSortFunc, NameLayoutSetFunc)
+  widget:InsertColumn(locale.battlefield.scoreboard.kill, 60, LCCIT_STRING, DataSetFunc, KillAscendingSortFunc, KillDescendingSortFunc, KillLayoutSetFunc)
+  widget:InsertColumn(locale.battlefield.scoreboard.death, 60, LCCIT_STRING, DataSetFunc, DeathAscendingSortFunc, DeathDescendingSortFunc, DefaultLayoutSetFunc)
+  widget:InsertColumn(locale.battlefield.scoreboard.assist, 60, LCCIT_STRING, DataSetFunc, AssistAscendingSortFunc, AssistDescendingSortFunc, DefaultLayoutSetFunc)
+  widget:InsertColumn(locale.battlefield.scoreboard.achievement, 85, LCCIT_WINDOW, AchievementDataSetFunc, nil, nil, AchievementLayoutSetFunc)
+  widget:InsertColumn(locale.battlefield.scoreboard.score, 123, LCCIT_STRING, ScoreDataSetFunc, ScoreAscendingSortFunc, ScoreDescendingSortFunc, ScoreLayoutFunc)
+  widget:InsertRows(10, false)
+  DrawListCtrlUnderLine(widget.listCtrl, nil, true)
+  local SettingListColumn = function(listCtrl, column)
+    listCtrl:SetColumnHeight(LIST_COLUMN_HEIGHT)
+    column.style:SetShadow(false)
+    column.style:SetFontSize(FONT_SIZE.LARGE)
+    SetButtonFontColor(column, GetWhiteButtonFontColor())
+  end
+  for i = 1, #widget.listCtrl.column do
+    SettingListColumn(widget.listCtrl, widget.listCtrl.column[i])
+    DrawListCtrlColumnSperatorLine(widget.listCtrl.column[i], #widget.listCtrl.column, i, true)
+  end
+  for i = 1, #widget.listCtrl.items do
+    local item = widget.listCtrl.items[i]
+    local playerMarkBg = CreateContentBackground(item, "TYPE5")
+    playerMarkBg:SetColor(1, 1, 1, 0.2)
+    playerMarkBg:AddAnchor("TOPLEFT", item, 0, -4)
+    playerMarkBg:AddAnchor("BOTTOMRIGHT", item, 0, 5)
+    item.playerMarkBg = playerMarkBg
+  end
+  widget.listCtrl.column[5]:Enable(false)
+  return widget
+end
+local CreateGaugeFrame = function(id, parent)
+  local guageFrame = CreateScoreBoardGuageSection(id, parent)
+  guageFrame.totalKillScore:SetText(locale.battlefield.scoreboard.totalScore)
+  local stateTexture = guageFrame:CreateImageDrawable(TEXTURE_PATH.BATTLEFIELD_SCOREBOARD, "overlay")
+  stateTexture:SetExtent(158, 53)
+  stateTexture:SetCoords(355, 49, 158, 53)
+  stateTexture:AddAnchor("BOTTOM", guageFrame.totalKillScore, 0, -MARGIN.WINDOW_SIDE * 2)
+  guageFrame.stateTexture = stateTexture
+  local bg = CreateContentBackground(guageFrame, "TYPE8")
+  bg:SetHeight(60)
+  bg:AddAnchor("LEFT", stateTexture, -40, -5)
+  bg:AddAnchor("RIGHT", stateTexture, 40, -5)
+  guageFrame.bg = bg
+  local winConditiontText = guageFrame:CreateChildWidget("label", "winConditiontText", 0, true)
+  winConditiontText:SetAutoResize(true)
+  winConditiontText:SetHeight(FONT_SIZE.MIDDLE)
+  winConditiontText.style:SetFontSize(FONT_SIZE.MIDDLE)
+  winConditiontText.style:SetShadow(true)
+  ApplyTextColor(winConditiontText, FONT_COLOR.WHITE)
+  local icon = winConditiontText:CreateImageDrawable(TEXTURE_PATH.BATTLEFIELD_WIN_CONDITION, "background")
+  icon:AddAnchor("RIGHT", winConditiontText, "LEFT", -2, 1)
+  winConditiontText.icon = icon
+  function guageFrame:SetGameResult(resultStr)
+    if resultStr == nil then
+      self.stateTexture:SetVisible(false)
+      return
+    end
+    local coords
+    if resultStr == "win" then
+      coords = FORM_WAITING_ALARM.GAME_RESULT_COORDS.WIN
+    elseif resultStr == "defeat" then
+      coords = FORM_WAITING_ALARM.GAME_RESULT_COORDS.DEFEAT
+    elseif resultStr == "draw" then
+      coords = FORM_WAITING_ALARM.GAME_RESULT_COORDS.DRAW
+    end
+    if coords == nil then
+      return
+    end
+    self.stateTexture:SetCoords(coords[1], coords[2], coords[3], coords[4])
+    self.stateTexture:SetExtent(coords[3], coords[4])
+    self.stateTexture:SetVisible(true)
+  end
+  function guageFrame:SetWinCondition(info)
+    if info == nil then
+      self.winConditiontText:Show(false)
+    end
+    if info.endReason == BFER_TIMEOVER_COMPARE_KILL_COUNT then
+      self.winConditiontText.icon:SetCoords(31, 0, 13, 13)
+      self.winConditiontText.icon:SetExtent(13, 13)
+      self.winConditiontText:SetText(locale.battlefield.scoreboardEndReason[1])
+    elseif info.endReason == BFER_ACHIEVEMENT_KILL_COUNT then
+      self.winConditiontText.icon:SetCoords(16, 0, 15, 14)
+      self.winConditiontText.icon:SetExtent(15, 14)
+      local winTeamName, count = GetWinTeamName(info)
+      self.winConditiontText:SetText(locale.battlefield.scoreboardEndReason[2](winTeamName, count))
+    elseif info.endReason == BFER_ACHIEVEMENT_KILL_CORPS_HEAD then
+      self.winConditiontText.icon:SetCoords(0, 0, 16, 16)
+      self.winConditiontText.icon:SetExtent(16, 16)
+      local winTeamName = GetWinTeamName(info)
+      self.winConditiontText:SetText(locale.battlefield.scoreboardEndReason[3](winTeamName))
+    end
+    local xOffset = self.winConditiontText.icon:GetWidth()
+    self.winConditiontText:RemoveAllAnchors()
+    self.winConditiontText:AddAnchor("TOP", self.stateTexture, "BOTTOM", 5, 2)
+  end
+  return guageFrame
+end
+function SetViewOfScoreboard(id, parent)
+  local frame = UIParent:CreateWidget("emptywidget", id, parent)
+  frame:SetExtent(1170, 490)
+  frame:AddAnchor("CENTER", parent, 0, 0)
+  local gaugeFrame = CreateGaugeFrame("gaugeFrame", frame)
+  local leftScoreBoard = CreateScoreboardScrollListCtrl("leftScoreBoard", frame)
+  leftScoreBoard:AddAnchor("TOPLEFT", gaugeFrame, "BOTTOMLEFT", MARGIN.WINDOW_SIDE / 2, 0)
+  leftScoreBoard.deco:SetCoords(355, 100, -355, 245)
+  leftScoreBoard.deco:SetColor(ConvertColor(153), ConvertColor(35), ConvertColor(35), 0.5)
+  frame.leftScoreBoard = leftScoreBoard
+  local rightScoreBoard = CreateScoreboardScrollListCtrl("rightScoreBoard", frame)
+  rightScoreBoard:AddAnchor("TOPRIGHT", gaugeFrame, "BOTTOMRIGHT", -MARGIN.WINDOW_SIDE / 2, 0)
+  rightScoreBoard.deco:SetColor(ConvertColor(35), ConvertColor(85), ConvertColor(153), 0.5)
+  frame.rightScoreBoard = rightScoreBoard
+  local timeFrame = CreateTimeFrame(frame, "scoreboard")
+  timeFrame:AddAnchor("BOTTOM", frame, -40, -15)
+  timeFrame.time = 0
+  local askLeaveBtn = frame:CreateChildWidget("button", "askLeaveBtn", 0, true)
+  askLeaveBtn:SetText(locale.battlefield.immediatelyExit)
+  ApplyButtonSkin(askLeaveBtn, BUTTON_BASIC.DEFAULT)
+  askLeaveBtn:AddAnchor("LEFT", frame.timeFrame, "RIGHT", 10, 1)
+  return frame
+end

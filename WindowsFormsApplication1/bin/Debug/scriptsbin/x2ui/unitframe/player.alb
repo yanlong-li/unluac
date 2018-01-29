@@ -1,0 +1,439 @@
+local CreateAlarmUnreadMail = function(id, parent)
+  local width = 27
+  local height = 21
+  local alarmWidget = UIParent:CreateWidget("emptywidget", id, parent)
+  alarmWidget:Show(false)
+  alarmWidget:SetExtent(width, height)
+  local bg = alarmWidget:CreateImageDrawable(TEXTURE_PATH.HUD, "background")
+  bg:SetCoords(705, 181, width, height)
+  bg:AddAnchor("TOPLEFT", alarmWidget, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", alarmWidget, 0, 0)
+  bg:SetVisible(true)
+  local effect_texture = alarmWidget:CreateEffectDrawable(TEXTURE_PATH.HUD, "background")
+  effect_texture:SetVisible(false)
+  effect_texture:SetCoords(705, 159, width, height)
+  effect_texture:AddAnchor("TOPLEFT", alarmWidget, 0, 0)
+  effect_texture:AddAnchor("BOTTOMRIGHT", alarmWidget, 0, 0)
+  effect_texture:SetRepeatCount(5)
+  effect_texture:SetEffectPriority(1, "alpha", 0.6, 0.5)
+  effect_texture:SetEffectInitialColor(1, 1, 1, 1, 0)
+  effect_texture:SetEffectFinalColor(1, 1, 1, 1, 1)
+  effect_texture:SetEffectPriority(2, "alpha", 0.6, 0.5)
+  effect_texture:SetEffectInitialColor(2, 1, 1, 1, 1)
+  effect_texture:SetEffectFinalColor(2, 1, 1, 1, 0)
+  alarmWidget.effect_texture = effect_texture
+  function alarmWidget:OnEnter()
+    local count = X2Mail:GetCountUnreadMail()
+    SetTooltip(locale.mail.GetUnreadMail(count), self)
+  end
+  alarmWidget:SetHandler("OnEnter", alarmWidget.OnEnter)
+  function alarmWidget:OnLeave()
+    HideTooltip()
+  end
+  alarmWidget:SetHandler("OnLeave", alarmWidget.OnLeave)
+  parent.unreadMailcount = 0
+  return alarmWidget
+end
+local CreateSecondPasswordButton = function(id, parent)
+  local button = UIParent:CreateWidget("button", id, parent)
+  ApplyButtonSkin(button, BUTTON_HUD.SECONDPASSWORD_LOCK)
+  function button:SetState()
+    if X2Security:IsSecondPasswordCreated() then
+      ChangeButtonSkin(self, BUTTON_HUD.SECONDPASSWORD_LOCK)
+    else
+      ChangeButtonSkin(self, BUTTON_HUD.SECONDPASSWORD_UNLOCK)
+    end
+  end
+  local ButtonOnLeftClickFunc = function()
+    ToggleSecondPasswordWnd()
+  end
+  ButtonOnClickHandler(button, ButtonOnLeftClickFunc)
+  local OnEnter = function(self)
+    remainDate = X2Security:GetSecondPasswordClearReserveTime()
+    if remainDate == nil then
+      SetTooltip(locale.secondPassword.secondPassword, self)
+    else
+      local msg = locale.time.GetRemainDateToDateFormat(remainDate)
+      SetTooltip(locale.secondPassword.reservedSecondPasswordClear(msg), self)
+    end
+  end
+  button:SetHandler("OnEnter", OnEnter)
+  local OnLeave = function()
+    HideTooltip()
+  end
+  button:SetHandler("OnLeave", OnLeave)
+  button:SetState()
+  return button
+end
+function CreatePlayerFrame(id, parent)
+  local w = CreateUnitFrame(id, parent)
+  local effect_texture = w:CreateEffectDrawable(TEXTURE_PATH.HUD, "artwork")
+  effect_texture:SetInternalDrawType("ninepart")
+  effect_texture:SetCoords(685, 130, 7, 8)
+  effect_texture:SetInset(3, 3, 3, 4)
+  effect_texture:AddAnchor("TOPLEFT", w.hpBar, 0, 0)
+  effect_texture:AddAnchor("BOTTOMRIGHT", w.hpBar, 0, 0)
+  effect_texture:SetRepeatCount(0)
+  effect_texture:SetEffectPriority(1, "alpha", 0.7, 0.5)
+  effect_texture:SetEffectInitialColor(1, 1, 1, 1, 0)
+  effect_texture:SetEffectFinalColor(1, 1, 1, 1, 0.4)
+  effect_texture:SetEffectPriority(2, "alpha", 0.7, 0.5)
+  effect_texture:SetEffectInitialColor(2, 1, 1, 1, 0.4)
+  effect_texture:SetEffectFinalColor(2, 1, 1, 1, 0)
+  w.effect_texture = effect_texture
+  local featureSet = X2Player:GetFeatureSet()
+  if featureSet.secondpass or featureSet.ingameshopSecondpass then
+    local secondPasswordButton = CreateSecondPasswordButton("secondPasswordButton", w)
+    secondPasswordButton:AddAnchor("BOTTOMRIGHT", w.hpBar, "TOPRIGHT", 0, -3)
+    w.secondPasswordButton = secondPasswordButton
+  end
+  local alarmUnreadMail = CreateAlarmUnreadMail(w:GetId() .. "alarmUnreadMail", w)
+  w.alarmUnreadMail = alarmUnreadMail
+  local reporterIcon = w:CreateImageDrawable("ui/hud/reporter.dds", "background")
+  reporterIcon:SetVisible(false)
+  reporterIcon:SetCoords(0, 0, 21, 20)
+  reporterIcon:SetExtent(16.800001, 16)
+  reporterIcon:AddAnchor("BOTTOMRIGHT", w.hpBar, "TOPRIGHT", 0, -4)
+  w.reporterIcon = reporterIcon
+  CreateAbilityIcon("abilityIconFrame", w, "player")
+  w.abilityIconFrame:AddAnchor("BOTTOMRIGHT", reporterIcon, "BOTTOMLEFT", -5, 0)
+  if baselibLocale.useQQTalk then
+    local qqTalkButton = w:CreateChildWidget("button", "qqTalkButton", 0, true)
+    ApplyButtonSkin(qqTalkButton, BUTTON_CONTENTS.NOT_ENTERED_TEAM_TALK_ROOM)
+    qqTalkButton:AddAnchor("LEFT", w.hpBar, "RIGHT", 0, 0)
+    qqTalkButton:Show(false)
+    local QQTalkButtonOnLeftClickFunc = function()
+      local roomInfo = X2QQTalk:GetRoomInfo()
+      if roomInfo.roomType == "empty" then
+        if not X2QQTalk:EnterTeamTalkRoom() and X2Team:IsRaidTeam() then
+          AddMessageToSysMsgWindow(GetCommonText("impossible_enter_raid_talk_room"))
+        end
+      elseif roomInfo.roomType == "team" then
+        X2QQTalk:Show(true)
+      end
+    end
+    ButtonOnClickHandler(qqTalkButton, QQTalkButtonOnLeftClickFunc)
+  end
+  function w:Click(arg)
+    if arg == "RightButton" then
+      ActivatePopupMenu(w, "player")
+    end
+  end
+  if w.buffWindow ~= nil then
+    local buffWnd = w.buffWindow
+    for i = 1, #buffWnd.button do
+      do
+        local button = buffWnd.button[i]
+        function button:OnClickProc(arg)
+          if arg == "RightButton" then
+            X2Ability:CancelPlayerBuff(i)
+          end
+        end
+      end
+    end
+  end
+  function w:ShowReportIcon()
+    self.reporterIcon:SetVisible(X2Unit:IsReporter("player"))
+  end
+  function w:ApplyFrameStyle()
+    self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.L_HP_FRIENDLY)
+    self.mpBar:ApplyBarTexture(STATUSBAR_STYLE.L_MP)
+    self.name:SetAutoResize(true)
+    self.hpBar:SetWidth(300)
+    self.mpBar:SetWidth(300)
+    self.bg:SetCoords(0, 168, 304, 38)
+    self.bg:RemoveAllAnchors()
+    self.bg:AddAnchor("TOPLEFT", self.hpBar, -1, -4)
+    self.bg:AddAnchor("BOTTOMRIGHT", self.mpBar, 4, 4)
+    self.line:SetCoords(0, 207, 302, 8)
+    self.line:RemoveAllAnchors()
+    self.line:AddAnchor("TOPLEFT", self.hpBar, "BOTTOMLEFT", -1, -3)
+    self.line:AddAnchor("TOPRIGHT", self.hpBar, "BOTTOMRIGHT", 1, -3)
+    self.buffWindow:AddAnchor("TOPLEFT", self.mpBar, "BOTTOMLEFT", 0, 4)
+    self.buffWindow:SetLayout(10, 30, 2, 2, false)
+    self.debuffWindow:SetLayout(10, 30, 2, 2, false)
+  end
+  function w:UpdateMarkerAnchor()
+    self.marker:RemoveAllAnchors()
+    if self.leaderMark:IsVisible() then
+      self.marker:AddAnchor("LEFT", self.leaderMark, "RIGHT", -1, -2)
+    else
+      self.marker:AddAnchor("LEFT", self.name, "RIGHT", 0, 0)
+    end
+  end
+  function w:UpdateIconsAnchors()
+    if self.alarmUnreadMail == nil then
+      return
+    end
+    local xOffset = 0
+    local anchorWidget
+    local featureSet = X2Player:GetFeatureSet()
+    if featureSet.secondpass or featureSet.ingameshopSecondpass then
+      if self.alarmUnreadMail:IsVisible() then
+        self.alarmUnreadMail:AddAnchor("BOTTOMRIGHT", self.secondPasswordButton, "BOTTOMLEFT", 1, 2)
+        anchorWidget = self.alarmUnreadMail
+      end
+      if self.reporterIcon:IsVisible() then
+        self.reporterIcon:RemoveAllAnchors()
+        if anchorWidget then
+          self.reporterIcon:AddAnchor("BOTTOMRIGHT", anchorWidget, "BOTTOMLEFT", 1, -3)
+        else
+          self.reporterIcon:AddAnchor("BOTTOMRIGHT", self.secondPasswordButton, "BOTTOMLEFT", -2, 0)
+        end
+        anchorWidget = self.reporterIcon
+      end
+      if self.abilityIconFrame:IsVisible() then
+        self.abilityIconFrame:RemoveAllAnchors()
+        if anchorWidget == self.alarmUnreadMail then
+          self.abilityIconFrame:AddAnchor("BOTTOMRIGHT", anchorWidget, "BOTTOMLEFT", -3, -3)
+        elseif anchorWidget == self.reporterIcon then
+          self.abilityIconFrame:AddAnchor("BOTTOMRIGHT", anchorWidget, "BOTTOMLEFT", -6, 0)
+        else
+          self.abilityIconFrame:AddAnchor("BOTTOMRIGHT", self.secondPasswordButton, "BOTTOMLEFT", -7, -1)
+        end
+      end
+    else
+      if self.alarmUnreadMail:IsVisible() then
+        self.alarmUnreadMail:AddAnchor("BOTTOMRIGHT", self.hpBar, "TOPRIGHT", 5, -2)
+        anchorWidget = self.alarmUnreadMail
+      end
+      if self.reporterIcon:IsVisible() then
+        self.reporterIcon:RemoveAllAnchors()
+        if anchorWidget then
+          self.reporterIcon:AddAnchor("BOTTOMRIGHT", anchorWidget, "BOTTOMLEFT", 0, -3)
+        else
+          self.reporterIcon:AddAnchor("BOTTOMRIGHT", self.hpBar, "TOPRIGHT", 0, -4)
+        end
+        anchorWidget = self.reporterIcon
+      end
+      if self.abilityIconFrame:IsVisible() then
+        self.abilityIconFrame:RemoveAllAnchors()
+        if anchorWidget == self.alarmUnreadMail then
+          self.abilityIconFrame:AddAnchor("BOTTOMRIGHT", anchorWidget, "BOTTOMLEFT", -4, -3)
+        elseif anchorWidget == self.reporterIcon then
+          self.abilityIconFrame:AddAnchor("BOTTOMRIGHT", anchorWidget, "BOTTOMLEFT", -7, 0)
+        else
+          self.abilityIconFrame:AddAnchor("BOTTOMRIGHT", self.hpBar, "TOPRIGHT", -2, -5)
+        end
+      end
+    end
+  end
+  function w:UpdateQQTalk()
+    if self.qqTalkButton == nil then
+      return
+    end
+    local enable = X2Option:GetOptionItemValue(OPTION_ITEM_ENABLE_QQ_TALK)
+    if enable ~= nil and tonumber(enable) == 1 then
+      local roomInfo = X2QQTalk:GetRoomInfo()
+      if roomInfo.roomType ~= "team" then
+        ApplyButtonSkin(self.qqTalkButton, BUTTON_CONTENTS.NOT_ENTERED_TEAM_TALK_ROOM)
+      else
+        ApplyButtonSkin(self.qqTalkButton, BUTTON_CONTENTS.ENTERED_TEAM_TALK_ROOM)
+      end
+      self.qqTalkButton:Show(true)
+      self:UpdateQQTalkAnchor()
+    else
+      self.qqTalkButton:Show(false)
+    end
+  end
+  function w:UpdateQQTalkAnchor()
+    if self.qqTalkButton == nil or not self.qqTalkButton:IsVisible() then
+      return
+    end
+    if self.lootIcon:IsVisible() or self.pvpIcon:IsVisible() then
+      self.qqTalkButton:AddAnchor("LEFT", w.hpBar, "RIGHT", self.pvpIcon:GetWidth(), 5)
+    else
+      self.qqTalkButton:AddAnchor("LEFT", w.hpBar, "RIGHT", 0, 5)
+    end
+  end
+  w:ApplyFrameStyle()
+  w:SetTarget("player")
+  w.unableGageAni = true
+  w:UpdateQQTalk()
+  return w
+end
+local playerFrame = CreatePlayerFrame("playerFrame", playerUnitFrame)
+function playerFrame:MakeOriginWindowPos()
+  if playerFrame == nil then
+    return
+  end
+  playerFrame:RemoveAllAnchors()
+  playerFrame:SetExtent(300, 55)
+  playerFrame:AddAnchor("TOPLEFT", "UIParent", F_LAYOUT:CalcDontApplyUIScale(5), F_LAYOUT:CalcDontApplyUIScale(10))
+end
+playerFrame:MakeOriginWindowPos()
+playerFrame:Show(true)
+playerFrame:UpdateAll()
+ADDON:RegisterContentWidget(UIC_PLAYER_UNITFRAME, playerFrame)
+function PlayerFrameLifeAlertEffect(curHp, maxHp)
+  if playerFrame == nil then
+    return
+  end
+  if playerFrame.use_effect_texture == false then
+    playerFrame.effect_texture:SetStartEffect(false)
+    return
+  end
+  if curHp ~= 0 and curHp < maxHp * 0.3 then
+    if playerFrame.effect_texture:IsVisible() == false then
+      playerFrame.effect_texture:SetStartEffect(true)
+      playerFrame.effect_texture:SetStartEffect(true)
+    end
+  elseif curHp == 0 then
+    playerFrame.effect_texture:SetStartEffect(false)
+    playerFrame.effect_texture:SetStartEffect(false)
+  else
+    playerFrame.effect_texture:SetStartEffect(false)
+    playerFrame.effect_texture:SetStartEffect(false)
+  end
+end
+function PlayerLifeAlertEffectVisibleHandler(visible)
+  if playerFrame == nil then
+    return
+  end
+  playerFrame.use_effect_texture = visible
+end
+local OLD_MAIL_COUNT, FIRST_MAIL_COUNT
+local UpdateAlarmUnreadMail = function(widget, time)
+  local count = X2Mail:GetCountUnreadMail()
+  if count < 0 then
+    widget:Show(false)
+    return
+  end
+  widget:Show(true)
+  widget.effect_texture:SetStartEffect(true)
+  F_SOUND:PlayUISound("event_mail_alarm")
+end
+AddUISaveHandlerByKey("playerFrame", playerFrame)
+playerFrame:ApplyLastWindowOffset()
+local function UpdateMailAlert_notCreateUI()
+  local oldCount = playerFrame.unreadMailcount
+  local count = X2Mail:GetCountUnreadMail()
+  if oldCount < count then
+    UpdateAlarmUnreadMail(playerFrame.alarmUnreadMail)
+  elseif oldCount > count then
+    if count <= 0 then
+      playerFrame.alarmUnreadMail:Show(false)
+    else
+      playerFrame.alarmUnreadMail.effect_texture:SetStartEffect(false)
+    end
+  end
+  playerFrame:UpdateIconsAnchors()
+  playerFrame.unreadMailcount = count
+end
+local playerFrameEvents = {
+  MAIL_INBOX_UPDATE = function()
+    UpdateMailAlert_notCreateUI()
+  end,
+  PLAYER_HEALTH_CHANGED = function(curHp, maxHp)
+    playerFrame:SetHp(curHp, maxHp)
+  end,
+  PLAYER_MANA_CHANGED = function(curMp, maxMp)
+    playerFrame:SetMp(curMp, maxMp)
+  end,
+  LEVEL_CHANGED = function(_, stringId)
+    if X2Unit:GetUnitId("player") ~= stringId then
+      return
+    end
+    playerFrame:UpdateLevel()
+  end,
+  UNIT_COMBAT_STATE_CHANGED = function(arg1, arg2)
+    if arg2 == X2Unit:GetUnitId("player") then
+      playerFrame:ShowCombatIcon(arg1)
+    end
+  end,
+  FORCE_ATTACK_CHANGED = function(stringId, on)
+    playerFrame:ShowPVPIcon(stringId, on)
+  end,
+  ENTERED_WORLD = function(firstEnteredWorld)
+    playerFrame.unableGageAni = true
+    playerFrame:UpdateAll()
+    local count = X2Mail:GetCountUnreadMail()
+    if count > 0 then
+      playerFrame.alarmUnreadMail:Show(true)
+      playerFrame.alarmUnreadMail.effect_texture:SetStartEffect(false)
+    else
+      playerFrame.alarmUnreadMail:Show(false)
+    end
+    playerFrame.unreadMailcount = count
+    playerFrame:ShowReportIcon()
+    playerFrame:ShowCombatIcon(X2Unit:UnitCombatState("player"))
+    playerFrame:SetMarker(X2Unit:GetUnitId("player"), playerFrame:UpdateMarkerAnchor())
+    playerFrame:UpdateIconsAnchors()
+  end,
+  LEFT_LOADING = function()
+    UpdateMailAlert_notCreateUI()
+    playerFrame:ShowCombatIcon(X2Unit:UnitCombatState("player"))
+  end,
+  TEAM_MEMBERS_CHANGED = function(arg1, arg2, arg3, arg4, arg5)
+    if arg1 == "joined_by_self" then
+      playerFrame:UpdateLootIcon()
+      playerFrame:UpdateLeaderMark()
+      playerFrame.marker:SetVisible(false)
+    elseif arg1 == "kicked" then
+      playerFrame:UpdateLootIcon()
+      playerFrame:UpdateLeaderMark()
+    elseif arg1 == "leaved_by_self" then
+      playerFrame:ShowLeaderMark(false)
+      playerFrame:ShowLootIcon(false)
+      playerFrame.marker:SetVisible(false)
+    elseif arg1 == "leaved" then
+      playerFrame:UpdateLootIcon()
+      playerFrame:UpdateLeaderMark()
+    elseif arg1 == "dismissed" or arg1 == "kicked_by_self" then
+      playerFrame:ShowLeaderMark(false)
+      playerFrame:ShowLootIcon(false)
+      playerFrame.marker:SetVisible(false)
+    elseif arg1 == "owner_changed" then
+      local myMemberIndex = X2Team:GetTeamPlayerIndex()
+      if arg4 == myMemberIndex or arg5 == myMemberIndex then
+        playerFrame:UpdateLeaderMark()
+        playerFrame:UpdateMarkerAnchor()
+      end
+    end
+  end,
+  LOOTING_RULE_MASTER_CHANGED = function()
+    playerFrame:UpdateLootIcon()
+  end,
+  LOOTING_RULE_METHOD_CHANGED = function()
+    playerFrame:UpdateLootIcon()
+  end,
+  SET_OVERHEAD_MARK = function(unitId, markerIndex, visible)
+    local playerId = X2Unit:GetUnitId("player")
+    if playerId ~= unitId then
+      return
+    end
+    if not visible then
+      playerFrame.marker:SetVisible(false)
+      return
+    end
+    playerFrame:SetMarker(playerId, playerFrame:UpdateMarkerAnchor())
+  end,
+  ABILITY_CHANGED = function()
+    playerFrame:UpdateTooltip()
+    playerFrame.abilityIconFrame:SetAbility("player")
+  end,
+  ABILITY_SET_CHANGED = function()
+    playerFrame:UpdateTooltip()
+    playerFrame.abilityIconFrame:SetAbility("player")
+  end,
+  SECOND_PASSWORD_CREATION_COMPLETED = function()
+    playerFrame.secondPasswordButton:SetState()
+  end,
+  SECOND_PASSWORD_CLEAR_COMPLETED = function()
+    playerFrame.secondPasswordButton:SetState()
+  end,
+  SECOND_PASSWORD_CHECK_OVER_FAILED = function()
+    playerFrame.secondPasswordButton:SetState()
+  end,
+  UPDATE_QQTALK_ROOM_INFO = function(result)
+    playerFrame:UpdateQQTalk()
+    local roomInfo = X2QQTalk:GetRoomInfo()
+    if roomInfo.roomType == "empty" and result then
+      AddMessageToSysMsgWindow(GetCommonText("exit_talk_room"))
+    end
+  end
+}
+playerFrame:SetHandler("OnEvent", function(this, event, ...)
+  playerFrameEvents[event](...)
+end)
+RegistUIEvent(playerFrame, playerFrameEvents)

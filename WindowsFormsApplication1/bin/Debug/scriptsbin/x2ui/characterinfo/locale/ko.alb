@@ -1,0 +1,13 @@
+if characetInfoLocale == nil then
+  characetInfoLocale = {}
+end
+characetInfoLocale.juryIconCoords = {
+  249,
+  105,
+  40,
+  20
+}
+characetInfoLocale.groupFontSize = FONT_SIZE.XLARGE
+characetInfoLocale.windowWidth = 310
+characetInfoLocale.TabWidth = 91
+characetInfoLocale.option = {wndWidth = 280, comboboxTitleWidth = 40}

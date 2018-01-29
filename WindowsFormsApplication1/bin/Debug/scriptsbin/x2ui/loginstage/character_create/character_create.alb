@@ -1,0 +1,668 @@
+characterCreate.state = "None"
+local narrationSoundName = "login_stage_character_create_narration"
+local abilityNarrationSoundName = "login_stage_character_create_ability_narration"
+local narrationSoundIndex = 0
+local abilityNarrationSoundIndex = 0
+local voiceIndex = 0
+function PlayCharacterVoice(raceIndex, genderIndex)
+  F_SOUND:StopSound(voiceIndex)
+  voiceIndex = F_SOUND:PlayUISound(RACE_GENDER_VOICE_TABLE[raceIndex][genderIndex])
+  UIParent:LogAlways(RACE_GENDER_VOICE_TABLE[raceIndex][genderIndex])
+end
+if X2LoginCharacter:IsRecustomizing() then
+  characterCreate.raceIndex = GetRaceNameIndex(X2LoginCharacter:GetEditUnitRace())
+  characterCreate.genderIndex = GetGenderIndex(X2LoginCharacter:GetEditUnitGender())
+else
+  characterCreate.raceIndex = RACE_NUIAN
+  if X2Util:GetGameProvider() == TENCENT then
+    characterCreate.genderIndex = GENDER_FEMALE
+  else
+    characterCreate.genderIndex = GENDER_MALE
+  end
+end
+characterCreate.race = X2Unit:GetRaceStr(characterCreate.raceIndex)
+characterCreate.gender = X2Unit:GetGenderStr(characterCreate.genderIndex)
+characterCreate.ability = 0
+characterCreate.createRequested = false
+characterCreate.changeCustomize = false
+step1 = characterCreate.step1
+step2 = characterCreate.step2
+step3 = characterCreate.step3
+step1.content:Show(false)
+step2.content:Show(false)
+step3.content:Show(false)
+local changedName = ""
+local isInit = true
+local initialInput = true
+local race_genderIndex = {}
+for i = 1, #RACE_TYPE do
+  race_genderIndex[RACE_TYPE[i]] = 1
+end
+local raceCinemaBtn = step1.content.rightPanel.raceCinemaBtn
+local function SelectRace(index)
+  characterCreate.race = X2Unit:GetRaceStr(index)
+  characterCreate.raceIndex = index
+  local btnIndex
+  for btnIndex = 1, #RACE_TYPE do
+    if RACE_TYPE[btnIndex] == index then
+      local raceButton = step1.content.raceBtn[btnIndex]
+      ChangeRaceButtonOfGender(raceButton, characterCreate.raceIndex, characterCreate.genderIndex)
+    end
+  end
+  X2LoginCharacter:ShowPreviewRaceGender(characterCreate.race, characterCreate.gender)
+  step1.content.continentDescFrame:SetRace(index)
+  local raceTitleInfo = step1.content.rightPanel.raceTitleInfo
+  local raceDetailInfo = step1.content.rightPanel.raceDetailInfo
+  for k = 1, #RACE_TYPE do
+    local race = RACE_TYPE[k]
+    local raceButton = step1.content.raceBtn[k]
+    local button_style_table = RACE_OF_GENDER_BUTTON_STYLE_TABLE[race][characterCreate.genderIndex]
+    local reverse_button_style_table = RACE_OF_GENDER_BUTTON_STYLE_TABLE[race][race_genderIndex[race]]
+    if race == index then
+      raceTitleInfo:Show(true)
+      raceTitleInfo:SetText(locale.characterCreate.raceTitleDesc[race])
+      raceTitleInfo:SetHeight(raceTitleInfo:GetTextHeight())
+      raceDetailInfo:SetText(locale.characterCreate.raceDetailDesc[race])
+      raceDetailInfo:SetHeight(raceDetailInfo:GetTextHeight())
+      ChangeRaceName(race)
+      raceCinemaBtn:RemoveAllAnchors()
+      raceCinemaBtn:AddAnchor("TOPRIGHT", raceDetailInfo, "BOTTOMRIGHT", 0, 0)
+      step1.content.rightPanel.raceBgWindow[k]:Show(true, 1000)
+      SetBGPushed_table(raceButton, true, button_style_table)
+      for i = 1, 2 do
+        step1.content.rightPanel.genderBtn[i]:RemoveAllAnchors()
+        step1.content.rightPanel.genderBtn[i]:AddAnchor("TOPLEFT", step1.content.raceBtn[k], "BOTTOMLEFT", i * 50 - 60, -5)
+      end
+      ShowRaceSkillButtons(step1.content.rightPanel, raceDetailInfo, characterCreate.race, characterCreate.gender)
+    else
+      SetBGPushed_table(raceButton, false, button_style_table)
+      step1.content.rightPanel.raceBgWindow[k]:Show(false, 1000)
+    end
+  end
+  race_genderIndex[characterCreate.raceIndex] = characterCreate.genderIndex
+  UpdateSelectableRace()
+  PlayCharacterVoice(characterCreate.raceIndex, characterCreate.genderIndex)
+  step1.content.rightPanel.genderBtn[GENDER_FEMALE]:Enable(true)
+end
+function raceCinemaBtn:OnClick()
+  X2LoginCharacter:StartRaceIntroMovie()
+end
+raceCinemaBtn:SetHandler("OnClick", raceCinemaBtn.OnClick)
+local function SelectGender(index)
+  characterCreate.gender = X2Unit:GetGenderStr(index)
+  characterCreate.genderIndex = index
+  for k = 1, 2 do
+    local race_button_style_table = RACE_OF_GENDER_BUTTON_STYLE_TABLE[characterCreate.raceIndex][characterCreate.genderIndex]
+    local gender_button_style_table = GENDER_BUTTON_STYLE[k]
+    if k == index then
+      SetBGPushed_table(step1.content.rightPanel.genderBtn[k], true, gender_button_style_table)
+      for i = 1, #RACE_TYPE do
+        local race = RACE_TYPE[i]
+        local raceButton = step1.content.raceBtn[i]
+        ChangeRaceButtonOfGender(raceButton, race, characterCreate.genderIndex)
+      end
+    else
+      SetBGPushed_table(step1.content.rightPanel.genderBtn[k], false, gender_button_style_table)
+    end
+  end
+  race_genderIndex[characterCreate.raceIndex] = characterCreate.genderIndex
+  X2LoginCharacter:ShowPreviewRaceGender(characterCreate.race, characterCreate.gender)
+  UpdateSelectableRace()
+  PlayCharacterVoice(characterCreate.raceIndex, characterCreate.genderIndex)
+end
+for k = 1, #RACE_TYPE do
+  do
+    local btn = step1.content.raceBtn[k]
+    function btn.OnClick()
+      local race = RACE_TYPE[k]
+      if characterCreate.raceIndex ~= race then
+        SelectRace(race)
+      end
+    end
+    btn:SetHandler("OnClick", btn.OnClick)
+  end
+end
+for k = 1, #GENDER_TYPE do
+  do
+    local btn = step1.content.rightPanel.genderBtn[k]
+    function btn.OnClick()
+      local gender = GENDER_TYPE[k]
+      if characterCreate.genderIndex ~= gender then
+        SelectGender(gender)
+      end
+    end
+    btn:SetHandler("OnClick", btn.OnClick)
+  end
+end
+local customizingUnit
+function RefCustomizingUnit()
+  if customizingUnit == nil then
+    customizingUnit = X2LoginCharacter:GetCustomizingUnit()
+    if customizingUnit == nil then
+      UIParent:LogAlways("failed to create customizing unit. race(" .. characterCreate.race .. ") gender(" .. characterCreate.gender .. ")")
+      return
+    end
+  end
+end
+function RemoveCustomizingUnit()
+  if customizingUnit ~= nil then
+    X2LoginCharacter:RemoveUnit(customizingUnit)
+    customizingUnit = nil
+  end
+end
+function GetCustomStyleFromUnit(styleType)
+  if customizingUnit == nil then
+    return
+  end
+  local func = {
+    customizingUnit.GetCustomHair,
+    customizingUnit.GetCustomHairColor,
+    customizingUnit.GetCustomEyebrow,
+    customizingUnit.GetCustomEyebrowColor,
+    customizingUnit.GetCustomPupilColor,
+    customizingUnit.GetCustomMakeUp,
+    customizingUnit.GetCustomLipColor,
+    customizingUnit.GetCustomDeco,
+    customizingUnit.GetCustomDeco,
+    customizingUnit.GetCustomizingDecoColor,
+    customizingUnit.GetCustomFaceDiffuse,
+    customizingUnit.GetCustomSkinColor,
+    customizingUnit.GetCustomFaceNormal,
+    customizingUnit.GetCustomTattoo,
+    customizingUnit.GetCustomScar
+  }
+  return func[styleType](customizingUnit)
+end
+function SetCustomStyleToUnit(typeIndex, itemIndex, r, g, b, weight, infoTable)
+  local func = {
+    customizingUnit.SetCustomizingHair,
+    customizingUnit.SetCustomizingHairColor,
+    customizingUnit.SetCustomizingEyebrow,
+    customizingUnit.SetCustomizingEyebrowColor,
+    customizingUnit.SetCustomizingPupilColor,
+    customizingUnit.SetCustomizingMakeUp,
+    customizingUnit.SetCustomizingLipColor,
+    customizingUnit.SetCustomizingDeco,
+    customizingUnit.SetCustomizingDeco,
+    customizingUnit.SetCustomizingDecoColor,
+    customizingUnit.SetCustomizingFaceDiffuse,
+    customizingUnit.SetCustomizingSkinColor,
+    customizingUnit.SetCustomizingFaceNormal,
+    customizingUnit.SetCustomizingTattoo,
+    customizingUnit.SetCustomizingScar
+  }
+  if customizingUnit ~= nil then
+    if STYLE_WINDOW_TYPE[typeIndex] == STYLE_COMPOUND then
+      func[typeIndex](customizingUnit, itemIndex, 0, 0, 1, 0)
+    elseif STYLE_WINDOW_TYPE[typeIndex] == STYLE_PALLET then
+      func[typeIndex](customizingUnit, r, g, b)
+    elseif STYLE_WINDOW_TYPE[typeIndex] == STYLE_PAGE_USE_SLIDER_DEFAULT_COUNT or STYLE_WINDOW_TYPE[typeIndex] == STYLE_PAGE_USE_SLIDER_NOT_DEFAULT_COUNT then
+      func[typeIndex](customizingUnit, itemIndex, weight or 1)
+    elseif STYLE_WINDOW_TYPE[typeIndex] == STYLE_HAIR_COLOR then
+      func[typeIndex](customizingUnit, infoTable)
+    else
+      func[typeIndex](customizingUnit, itemIndex)
+    end
+  end
+end
+function GetScarStatus()
+  if customizingUnit == nil then
+    return
+  end
+  return customizingUnit:GetScarStatus()
+end
+function SetScarStatus(itemIndex, x, y, scale, rotate)
+  if customizingUnit == nil then
+    return
+  end
+  if itemIndex == nil then
+    itemIndex = 0
+  end
+  customizingUnit.SetCustomizingScar(customizingUnit, itemIndex, x, y, scale, rotate)
+end
+function ModifyFaceTargetValue(index, param)
+  if customizingUnit ~= nil then
+    customizingUnit:ModifyFaceParamValue(index, param)
+  end
+end
+function GetFaceTargetValue(index)
+  if customizingUnit ~= nil then
+    return customizingUnit:GetFaceTargetCurValue(index)
+  end
+  return 0
+end
+function SetCustomItemToParam(part, index, fixed, needUiUpdate)
+  if needUiUpdate == nil then
+    needUiUpdate = true
+  end
+  if part ~= nil then
+    if index == nil then
+      index = 0
+    end
+    customizingUnit:SetCustomizingParam(part - 1, index - 1, fixed, needUiUpdate)
+  end
+end
+function SetCustomSmile(smile)
+  if customizingUnit ~= nil then
+    customizingUnit:SetSmile(smile)
+  end
+end
+function IsCustomSmile()
+  if customizingUnit ~= nil then
+    return customizingUnit:IsSmile()
+  end
+end
+function InitializeCurrentParam(needUiUpdate)
+  if needUiUpdate == nil then
+    needUiUpdate = false
+  end
+  if customizingUnit ~= nil then
+    return customizingUnit:InitCustomizerControl(needUiUpdate)
+  end
+end
+function ClearPlasticSelectedItems()
+  step2.content.rightPanel.bodyWnd:ClearSelectedItem()
+end
+function CreateCharacter(enterIntro)
+  local characterInfo = {
+    name = step3.content.nameWnd.characterName:GetText(),
+    race = characterCreate.race,
+    gender = characterCreate.gender,
+    ability1 = characterCreate.ability,
+    ability2 = 2,
+    ability3 = 3,
+    level = 1
+  }
+  if enterIntro == nil then
+    enterIntro = false
+  end
+  local succeed = X2LoginCharacter:NewCharacterCBT2(customizingUnit, characterInfo, enterIntro)
+  if succeed ~= nil and succeed == true then
+    characterCreate.createRequested = true
+    characterCreate.bgWindow.nextStepBtn:Enable(false)
+  end
+end
+function EditCharacter()
+  local characterInfo = {
+    name = step3.content.nameWnd.characterName:GetText(),
+    race = characterCreate.race,
+    gender = characterCreate.gender,
+    ability1 = characterCreate.ability,
+    ability2 = 2,
+    ability3 = 3,
+    level = 1
+  }
+  local succeed = X2LoginCharacter:EditCharacterPOBT(customizingUnit, characterInfo)
+  if succeed ~= nil and succeed == true then
+    characterCreate.createRequested = true
+    characterCreate.bgWindow.nextStepBtn:Enable(false)
+  end
+end
+function UpdateAbilityDiagram()
+  local tendency
+  if characterCreate.ability ~= 0 then
+    tendency = ABILITY_TENDENCY[characterCreate.ability]
+  end
+  for i = 1, #TENDENCY_TYPE do
+    local point = 0
+    if tendency ~= nil then
+      point = tendency[i]
+    end
+    step3.content.rightPanel.abilityWnd.diagram:SetPointValue(i, point)
+  end
+end
+local ShowAbilityAction = function()
+  X2LoginCharacter:ShowSkillAction(characterCreate.ability)
+end
+function SelectAbility(index)
+  characterCreate.ability = ABILITY_TYPE[index]
+  UpdateAbilityDiagram()
+  ShowAbilityAction()
+  EnableEditBox(false)
+  if initialInput == true then
+    X2Input:SetInputLanguage("Native")
+    initialInput = false
+  end
+end
+function step3.content.nameWnd.characterName:OnClick()
+  if self:IsEnabled() then
+    step3.content.nameWnd.characterNameHelper:Show(false)
+  end
+end
+step3.content.nameWnd.characterName:SetHandler("OnClick", step3.content.nameWnd.characterName.OnClick)
+function UpdateCreateCharacterBtnState()
+  local race = characterCreate.race
+  local gender = characterCreate.gender
+  local abilityValid = characterCreate.ability ~= 0
+  local text = step3.content.nameWnd.characterName:GetText()
+  local convertText = X2Util:CheckAvailableName(text, step3.content.nameWnd.characterName:IsComposingText(), VNT_CHAR)
+  step3.content.nameWnd.characterName:SetText(convertText)
+  local isValidNamePolicy = X2Util:IsValidName(step3.content.nameWnd.characterName:GetText(), VNT_CHAR)
+  local allValid = race ~= "" and gender ~= "" and abilityValid == true and isValidNamePolicy
+  if characterCreate.state == "Step3" then
+    if X2World:IsPreSelectCharacterPeriod() then
+      local remainCreatableCharacterCount, reason = GetRemainCreatableCharacterCount()
+      if X2LoginCharacter:IsRecustomizing() then
+        characterCreate.bgWindow.stepCompleteButton:Enable(true)
+      elseif not X2World:CanPreSelectCharacter() then
+        characterCreate.bgWindow.stepCompleteButton:Enable(false)
+      elseif reason == DISALBE_REASON_CH_COUNT_NOT_MATCH then
+        characterCreate.bgWindow.stepCompleteButton:Enable(false)
+      elseif remainCreatableCharacterCount <= 0 and not X2LoginCharacter:IsRecustomizing() then
+        characterCreate.bgWindow.stepCompleteButton:Enable(false)
+      elseif allValid and not characterCreate.createRequested then
+        characterCreate.bgWindow.stepCompleteButton:Enable(true)
+      else
+        characterCreate.bgWindow.stepCompleteButton:Enable(false)
+      end
+    elseif allValid and not characterCreate.createRequested then
+      characterCreate.bgWindow.stepCompleteButton:Enable(true)
+    else
+      characterCreate.bgWindow.stepCompleteButton:Enable(false)
+    end
+  end
+end
+step3.content.nameWnd.characterName:SetHandler("OnTextChanged", UpdateCreateCharacterBtnState)
+local GetPossibleRaceIndex = function()
+  if not X2LoginCharacter:IsRecustomizing() then
+    for i = 1, #RACE_TYPE do
+      if not IsUnableRaceToCreate(RACE_TYPE[i]) then
+        return RACE_TYPE[i]
+      end
+    end
+  end
+  return characterCreate.raceIndex
+end
+local function SetState(state)
+  UIParent:LogAlways("CurrentState : " .. characterCreate.state)
+  UIParent:LogAlways("SetState : " .. state)
+  characterCreate.bgWindow.prevStepBtn:Raise()
+  characterCreate.bgWindow.nextStepBtn:Raise()
+  characterCreate.bgWindow.stepCompleteButton:Raise()
+  characterCreate.bgWindow.cancelCreateBtn:Raise()
+  characterCreate.bgWindow.prevStepBtn:Enable(true)
+  characterCreate.bgWindow.nextStepBtn:Enable(true)
+  characterCreate.bgWindow.nextStepBtn:Show(true)
+  characterCreate.bgWindow.stepCompleteButton:Enable(true)
+  characterCreate.bgWindow.stepCompleteButton:RemoveAllAnchors()
+  characterCreate.bgWindow.stepCompleteButton:AddAnchor("BOTTOM", characterCreate.bottomPanel, 0, 0)
+  characterCreate.step2.content.guide:Show(false)
+  if characterCreate.state == "Step1" then
+    X2LoginCharacter:HidePreviewCharacterUnits()
+  end
+  characterCreate.ability = 0
+  if state == "Step1" then
+    if characterCreate.state == "None" then
+      characterCreate.raceIndex = GetPossibleRaceIndex()
+      SelectRace(characterCreate.raceIndex)
+      SelectGender(characterCreate.genderIndex)
+    else
+      SelectRace(characterCreate.raceIndex)
+    end
+    characterCreate.state = state
+    RemoveCustomizingUnit()
+    ChangeButtonSkinTable(characterCreate.bgWindow.prevStepBtn, BUTTON_LOGINSTAGE.TO_CHARACTER_SELECT_PAGE)
+    ChangeButtonSkinTable(characterCreate.bgWindow.nextStepBtn, BUTTON_LOGINSTAGE.TO_NEXT_CUSTOMIZE_PAGE)
+    ChangeButtonSkinTable(characterCreate.bgWindow.stepCompleteButton, BUTTON_LOGINSTAGE.COMPLETE_SELECT_RACE)
+    isInit = true
+    characterCreate.changeCustomize = false
+  end
+  if state == "Step2" then
+    characterCreate.state = state
+    RefCustomizingUnit()
+    ChangeButtonSkinTable(characterCreate.bgWindow.prevStepBtn, BUTTON_LOGINSTAGE.TO_SELECT_RACE_PAGE)
+    ChangeButtonSkinTable(characterCreate.bgWindow.nextStepBtn, BUTTON_LOGINSTAGE.TO_NEXT_SELECT_ABILITY_PAGE)
+    ChangeButtonSkinTable(characterCreate.bgWindow.stepCompleteButton, BUTTON_LOGINSTAGE.COMPLETE_CUSTOMIZING)
+    characterCreate.step2.content.guide:Show(true)
+    if isInit == true and step2 ~= nil then
+      step2:SetRaceGender()
+    else
+    end
+    isInit = false
+  end
+  if state == "Step3" then
+    characterCreate.state = state
+    characterCreate.bgWindow.nextStepBtn:Enable(false)
+    characterCreate.bgWindow.nextStepBtn:Show(false)
+    characterCreate.bgWindow.stepCompleteButton:Enable(false)
+    ChangeButtonSkinTable(characterCreate.bgWindow.prevStepBtn, BUTTON_LOGINSTAGE.TO_PREV_CUSTOMIZE_PAGE)
+    if X2LoginCharacter:IsRecustomizing() then
+      ChangeButtonSkinTable(characterCreate.bgWindow.stepCompleteButton, BUTTON_LOGINSTAGE.COMPLETE_RECUSTOMIZING)
+    else
+      ChangeButtonSkinTable(characterCreate.bgWindow.stepCompleteButton, BUTTON_LOGINSTAGE.COMPLETE_CREATE)
+    end
+    characterCreate.bgWindow.stepCompleteButton:RemoveAllAnchors()
+    characterCreate.bgWindow.stepCompleteButton:AddAnchor("BOTTOMRIGHT", characterCreate.bottomPanel, -10, 1)
+  end
+end
+local isBusy = false
+function characterCreate.OnPrevStep()
+  if isBusy then
+    return
+  end
+  isBusy = true
+  if characterCreate.state == "Step1" then
+    X2LoginCharacter:EndCharacterCreate(false)
+  elseif characterCreate.state == "Step2" then
+    SetState("Step1")
+    X2LoginCharacter:EndCharacterCustomize(false)
+  elseif characterCreate.state == "Step3" then
+    SetState("Step2")
+    X2LoginCharacter:EndCharacterAbility(false)
+  end
+end
+characterCreate.bgWindow.prevStepBtn:SetHandler("OnClick", characterCreate.OnPrevStep)
+function characterCreate.OnNextStep()
+  if isBusy then
+    return
+  end
+  isBusy = true
+  if characterCreate.state == "Step1" then
+    SetState("Step2")
+    X2LoginCharacter:EndCharacterCreate(true)
+  elseif characterCreate.state == "Step2" then
+    SetState("Step3")
+    X2LoginCharacter:EndCharacterCustomize(true)
+  elseif characterCreate.state == "Step3" then
+    ShowCreateConfirmPopup()
+    isBusy = false
+  end
+end
+characterCreate.bgWindow.nextStepBtn:SetHandler("OnClick", characterCreate.OnNextStep)
+function characterCreate.OnCompleteCurrentStep()
+  if isBusy then
+    return
+  end
+  isBusy = true
+  if characterCreate.state == "Step1" then
+    SetState("Step2")
+    X2LoginCharacter:EndCharacterCreate(true)
+  elseif characterCreate.state == "Step2" then
+    SetState("Step3")
+    X2LoginCharacter:EndCharacterCustomize(true)
+  elseif characterCreate.state == "Step3" then
+    ShowCreateConfirmPopup()
+    isBusy = false
+  end
+end
+characterCreate.bgWindow.stepCompleteButton:SetHandler("OnClick", characterCreate.OnCompleteCurrentStep)
+function characterCreate:CancelCreate()
+  if isBusy then
+    return
+  end
+  isBusy = true
+  X2LoginCharacter:GotoCharacterSelect()
+end
+characterCreate.bgWindow.cancelCreateBtn:SetHandler("OnClick", characterCreate.CancelCreate)
+function characterCreate.bgWindow.prevStepBtn:OnEnter()
+  if characterCreate.state == "Step1" then
+    if self:IsEnabled() == false then
+      SetExpTooltip(locale.characterCreate.disableSelectCharacter, self)
+    else
+      SetExpTooltip(locale.characterCreate.toSelectCharacterTip, self)
+    end
+  elseif characterCreate.state == "Step2" then
+    SetExpTooltip(locale.characterCreate.selectRaceGenderTip, self)
+  elseif characterCreate.state == "Step3" then
+    SetExpTooltip(locale.characterCreate.toCustomizeLookTip, self)
+  end
+end
+characterCreate.bgWindow.prevStepBtn:SetHandler("OnEnter", characterCreate.bgWindow.prevStepBtn.OnEnter)
+function characterCreate.bgWindow.prevStepBtn:OnLeave()
+  HideTooltip()
+end
+characterCreate.bgWindow.prevStepBtn:SetHandler("OnLeave", characterCreate.bgWindow.prevStepBtn.OnLeave)
+function characterCreate.bgWindow.nextStepBtn:OnEnter()
+  if characterCreate.state == "Step1" then
+    if self:IsEnabled() == false then
+      local raceName = locale.raceText[characterCreate.raceIndex]
+      local tooltipText = locale.loginCrowded.GetUnableRaceTooltipText(raceName)
+      SetExpTooltip(tooltipText, self)
+    else
+      SetExpTooltip(locale.characterCreate.toCustomizeLookTip, self)
+    end
+  elseif characterCreate.state == "Step2" then
+    SetExpTooltip(locale.characterCreate.toSelectAbilityTip, self)
+  elseif characterCreate.state == "Step3" then
+    if self:IsEnabled() == false then
+      SetExpTooltip(locale.characterCreate.toCompleteCreationDisableTip, self)
+    else
+      SetExpTooltip(locale.characterCreate.toCompleteCreationTip, self)
+    end
+  end
+end
+characterCreate.bgWindow.nextStepBtn:SetHandler("OnEnter", characterCreate.bgWindow.nextStepBtn.OnEnter)
+function characterCreate.bgWindow.nextStepBtn:OnLeave()
+  HideTooltip()
+end
+characterCreate.bgWindow.nextStepBtn:SetHandler("OnLeave", characterCreate.bgWindow.nextStepBtn.OnLeave)
+SetState("Step1")
+local CheckWorldEntranceQueue = function()
+  local waitingLength = X2LoginCharacter:GetWorldQueuePosition()
+  if waitingLength > 0 then
+    return
+  end
+  local DialogHandler = function(wnd)
+    wnd:SetTitle(X2Locale:LocalizeUiText(MSG_BOX_TITLE_TEXT, "error_message"))
+    wnd:SetContent(X2Locale:LocalizeUiText(MSG_BOX_BODY_TEXT, "end_world_queue"))
+  end
+  X2DialogManager:RequestNoticeDialog(DialogHandler, characterCreate.bgWindow:GetId())
+end
+local characterCreateEvents = {
+  CREATE_CHARACTER_FAILED = function(msg)
+    local function DialogNoticeHandler(wnd)
+      local data = locale.messageBox[msg]
+      wnd:SetTitle(data.title)
+      local strBody = data.body
+      if type(data.body) == "function" then
+        local namePolicyInfo = X2Util:GetNamePolicyInfo(VNT_CHAR)
+        strBody = data.body(namePolicyInfo)
+      end
+      wnd:SetContent(strBody)
+    end
+    X2DialogManager:RequestNoticeDialog(DialogNoticeHandler, characterCreate.bgWindow:GetId())
+    characterCreate.createRequested = false
+  end,
+  FADE_INOUT_DONE = function(param)
+    if param == "RACE_CHANGE_IN_CREATE" then
+    elseif param == "BACK_TO_SELECT" then
+    end
+  end,
+  OPEN_WORLD_QUEUE = function()
+    CheckWorldEntranceQueue()
+  end,
+  REFRESH_WORLD_QUEUE = function()
+    CheckWorldEntranceQueue()
+  end
+}
+characterCreate.bgWindow:SetHandler("OnEvent", function(this, event, ...)
+  characterCreateEvents[event](...)
+end)
+characterCreate.bgWindow:RegisterEvent("CREATE_CHARACTER_FAILED")
+characterCreate.bgWindow:RegisterEvent("FADE_INOUT_DONE")
+characterCreate.bgWindow:RegisterEvent("OPEN_WORLD_QUEUE")
+characterCreate.bgWindow:RegisterEvent("REFRESH_WORLD_QUEUE")
+local eventWnd = CreateEmptyWindow("fd", "UIParent")
+eventWnd:SetExtent(0, 0)
+eventWnd:AddAnchor("TOPLEFT", "UIParent", 0, 0)
+eventWnd:Show(true)
+function ShowBottomPanel(visible, fadingDuration)
+  characterCreate.bgWindow.prevStepBtn:Show(visible, fadingDuration)
+  characterCreate.bgWindow.nextStepBtn:Show(visible, fadingDuration)
+  characterCreate.bottomPanel.cancelCreateBtn:Show(visible, fadingDuration)
+  characterCreate.bottomPanel:Show(visible, fadingDuration)
+end
+local eventHandler = {
+  SHOW_CHARACTER_CREATE_WINDOW = function(show)
+    step1.content:Show(show, 1000)
+    for i = 1, #RACE_TYPE do
+      if RACE_TYPE[i] == characterCreate.raceIndex then
+        step1.content.rightPanel.raceBgWindow[i]:Show(show, 1000)
+      end
+    end
+    if show then
+      isBusy = false
+      narrationSoundIndex = F_SOUND:PlayUISound(narrationSoundName)
+    else
+      F_SOUND:StopSound(narrationSoundIndex)
+      narrationSoundIndex = 0
+    end
+  end,
+  SHOW_CHARACTER_CUSTOMIZE_WINDOW = function(show)
+    step2.content:Show(show, 1000)
+    for i = 1, #RACE_TYPE do
+      if RACE_TYPE[i] == characterCreate.raceIndex then
+        step2.content.rightPanel.raceBgWindow[i]:Show(show, 1000)
+      end
+    end
+    if show then
+      isBusy = false
+    end
+  end,
+  SHOW_CHARACTER_ABILITY_WINDOW = function(show)
+    step3.content:Show(show, 500)
+    for i = 1, #RACE_TYPE do
+      if RACE_TYPE[i] == characterCreate.raceIndex then
+        step3.content.rightPanel.raceBgWindow[i]:Show(show, 1000)
+      end
+    end
+    if show then
+      isBusy = false
+      abilityNarrationSoundIndex = F_SOUND:PlayUISound(abilityNarrationSoundName)
+    else
+      F_SOUND:StopSound(abilityNarrationSoundIndex)
+      abilityNarrationSoundIndex = 0
+    end
+  end,
+  UI_RELOADED = function()
+    step1.content:Show(true, 2000)
+    step2.content:Show(false, 2000)
+    step3.content:Show(false, 2000)
+    characterCreate.bgWindow.cancelCreateBtn:Show(true, 1000)
+  end,
+  USE_ALL_ASSETS = function()
+    if characterCreate.state == "Step2" then
+      step2:SetRaceGender()
+    end
+  end
+}
+eventWnd:SetHandler("OnEvent", function(this, event, ...)
+  eventHandler[event](...)
+end)
+eventWnd:RegisterEvent("SHOW_CHARACTER_CREATE_WINDOW")
+eventWnd:RegisterEvent("SHOW_CHARACTER_CUSTOMIZE_WINDOW")
+eventWnd:RegisterEvent("SHOW_CHARACTER_ABILITY_WINDOW")
+eventWnd:RegisterEvent("UI_RELOADED")
+eventWnd:RegisterEvent("USE_ALL_ASSETS")
+function characterCreate.bgWindow:OnWheelDown()
+  if characterCreate.state == "Step2" and customizingUnit ~= nil then
+    customizingUnit:ZoomOutCustomizeCamera()
+  end
+end
+characterCreate.bgWindow:SetHandler("OnWheelDown", characterCreate.bgWindow.OnWheelDown)
+function characterCreate.bgWindow:OnWheelUp()
+  if characterCreate.state == "Step2" and customizingUnit ~= nil then
+    customizingUnit:ZoomInCustomizeCamera()
+  end
+end
+characterCreate.bgWindow:SetHandler("OnWheelUp", characterCreate.bgWindow.OnWheelUp)

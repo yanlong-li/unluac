@@ -1,0 +1,227 @@
+local repairNotiferValues
+local function InitRepairNotifierValues()
+  repairNotiferValues = X2:GetCharacterUiData("repairNotiferValues")
+  if repairNotiferValues == nil then
+    repairNotiferValues = {}
+  end
+  if repairNotiferValues.confirm == nil then
+    repairNotiferValues.confirm = false
+  end
+end
+InitRepairNotifierValues()
+local SafeNumToStr = function(a)
+  if type(a) == "number" then
+    return X2Util:NumberToString(a)
+  end
+  return a
+end
+local function SubNum(left, right)
+  left = SafeNumToStr(left)
+  right = SafeNumToStr(right)
+  return X2Util:StrNumericSub(left, right)
+end
+local npcInteractionEvents = {
+  NPC_INTERACTION_END = function(widget)
+    widget:Final()
+  end,
+  BAG_UPDATE = function(widget)
+    widget:Update()
+  end,
+  UNIT_EQUIPMENT_CHANGED = function(widget)
+    widget:Update()
+  end
+}
+repairWindow = nil
+function CreateRepairWindow(interactioinNum)
+  local window = SetViewOfRepairWindow()
+  window.init = false
+  window.interactioinNum = interactioinNum
+  function window:Init()
+    ADDON:ShowContent(UIC_BAG, true)
+    ADDON:ShowContent(UIC_CHARACTER_INFO, true)
+    self:Update()
+    window.init = true
+  end
+  function window:Final()
+    if window.init ~= true then
+      return
+    end
+    window.init = false
+    ADDON:ShowContent(UIC_BAG, false)
+    self:Show(false)
+  end
+  function window:Update()
+    self.totalRepairFrame.repairCost:Update(X2Item:RepairAllCost())
+    local leftMoney = SubNum(X2Util:GetMyMoneyString(), X2Item:RepairAllCost())
+    self.totalRepairFrame.leftMoney:Update(leftMoney)
+  end
+  function window:ShowProc()
+    self:Init()
+  end
+  local function OnHide()
+    ADDON:ShowContent(UIC_CHARACTER_INFO, false)
+    X2Item:LeaveRepairMode()
+    if window.interactioinNum ~= nil then
+      interactionWindows[window.interactioinNum].window = nil
+    end
+    repairWindow = nil
+    window:ReleaseHandler("OnEvent")
+  end
+  window:SetHandler("OnHide", OnHide)
+  local SelectionRepairBtnLeftClickFunc = function()
+    if X2Item:IsInRepairMode() then
+      X2Item:LeaveRepairMode()
+    else
+      X2Item:EnterRepairMode()
+    end
+  end
+  ButtonOnClickHandler(window.selectionRepairFrame.button, SelectionRepairBtnLeftClickFunc)
+  local AllRepairBtnLeftClickFunc = function()
+    X2Item:RepairAll()
+    X2Item:LeaveRepairMode()
+  end
+  ButtonOnClickHandler(window.totalRepairFrame.button, AllRepairBtnLeftClickFunc)
+  window:SetHandler("OnEvent", function(this, event, ...)
+    npcInteractionEvents[event](this, ...)
+  end)
+  RegistUIEvent(window, npcInteractionEvents)
+  return window
+end
+function ToggleRepairWindow(isShow, interactioinNum)
+  if isShow == nil then
+    if repairWindow == nil then
+      isShow = true
+    else
+      isShow = not repairWindow:IsVisible()
+    end
+  end
+  if isShow and IsActivatedItemEnchant() then
+    X2ItemEnchant:LeaveItemEnchantMode()
+  end
+  if isShow == true and repairWindow == nil then
+    repairWindow = CreateRepairWindow(interactioinNum)
+    if interactioinNum ~= nil then
+      interactionWindows[interactioinNum].window = repairWindow
+    end
+  end
+  if repairWindow ~= nil then
+    repairWindow:Show(isShow)
+  end
+end
+local function CreateRepairNotifier(id, parent)
+  local widget = SetViewOfRepairNotifier(id, parent)
+  local function SaveRepairNotifierValues()
+    X2:SetCharacterUiData("repairNotiferValues", repairNotiferValues)
+  end
+  function widget:Confirm()
+    self:Show(false)
+    repairNotiferValues.confirm = true
+    SaveRepairNotifierValues()
+  end
+  function widget:OnClick()
+    self:Confirm()
+    ADDON:ShowContent(UIC_CHARACTER_INFO, true)
+  end
+  widget:SetHandler("OnClick", widget.OnClick)
+  function widget.closeButton:OnClick()
+    widget:Confirm()
+  end
+  widget.closeButton:SetHandler("OnClick", widget.closeButton.OnClick)
+  function widget:Clear()
+    for i = 1, #self.iconBtns do
+      self.iconBtns[i]:Init()
+      self.iconBtns[i]:Show(false)
+      self.iconBtns[i]:RemoveAllAnchors()
+    end
+  end
+  local GetDurabilityInfo = function(slot, info)
+    local info = {}
+    local durability = X2Equipment:ItemDurability(slot, false)
+    if durability == nil then
+      info.durability = 1
+      info.maxDurability = 1
+    else
+      info.durability = durability.current
+      info.maxDurability = durability.max
+    end
+  end
+  function widget:Update()
+    local itemTypes, itemGrades, itemSlots = X2Equipment:DameagedItems(#self.iconBtns, false)
+    local height = 75
+    local width = 12
+    local labelHeight = widget.damageLabel:GetHeight()
+    if itemTypes == nil or #itemTypes == 0 then
+      self:Show(false)
+      return
+    end
+    self:Clear()
+    local xOffset = 12
+    for i = 1, #itemTypes do
+      local itemType = itemTypes[i]
+      local itemGrade = itemGrades[i]
+      self.iconBtns[i]:Show(true)
+      local info = X2Equipment:GetEquippedItemTooltipInfo(itemSlots[i])
+      GetDurabilityInfo(itemSlots[i], info)
+      self.iconBtns[i]:SetItemInfo(info)
+      self.iconBtns[i]:RemoveAllAnchors()
+      self.iconBtns[i]:AddAnchor("BOTTOMLEFT", self, xOffset, -19)
+      xOffset = xOffset + 35
+      self.iconBtns[i].equipSlot = itemSlots[i]
+    end
+    if #itemTypes < 3 then
+      self.damageLabel:Show(false)
+      width = width + xOffset
+    else
+      self.damageLabel:Show(true)
+      width = xOffset + 7
+    end
+    self:SetExtent(width, height)
+    self:Show(true)
+  end
+  local AddDameagedEquipmentTooltipFunc = function(widget)
+    function widget:OnEnter()
+      if widget.equipSlot == nil then
+        return
+      end
+      local info = X2Equipment:GetEquippedItemTooltipInfo(widget.equipSlot)
+      if info == nil then
+        return
+      end
+      ShowTooltip(info, widget, 1, true)
+    end
+    widget:SetHandler("OnEnter", widget.OnEnter)
+    function widget:OnLeave()
+      HideTooltip()
+    end
+    widget:SetHandler("OnLeave", widget.OnLeave)
+  end
+  for i = 1, #widget.iconBtns do
+    AddDameagedEquipmentTooltipFunc(widget.iconBtns[i])
+  end
+  local durabilityEvents = {
+    UPDATE_DURABILITY_STATUS = function(widget, added, removed)
+      if repairNotiferValues.confirm == true and removed then
+        return
+      end
+      if added then
+        repairNotiferValues.confirm = false
+        SaveRepairNotifierValues()
+      end
+      widget:Update(added, removed)
+    end,
+    UNIT_EQUIPMENT_CHANGED = function(widget)
+      widget:Update()
+    end
+  }
+  widget:SetHandler("OnEvent", function(this, event, ...)
+    durabilityEvents[event](this, ...)
+  end)
+  widget:RegisterEvent("UPDATE_DURABILITY_STATUS")
+  widget:RegisterEvent("UNIT_EQUIPMENT_CHANGED")
+  return widget
+end
+local notifier = CreateRepairNotifier("durabilityNotifier", "UIParent")
+notifier:AddAnchor("BOTTOMLEFT", GetMainMenuBarButton(MAIN_MENU_IDX.CHARACTER), "TOPLEFT", 0, 2)
+if repairNotiferValues.confirm == false then
+  notifier:Update()
+end

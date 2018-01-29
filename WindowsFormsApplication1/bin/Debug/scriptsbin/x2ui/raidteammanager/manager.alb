@@ -1,0 +1,212 @@
+local MAX_RAID_MEMBERS = X2Team:GetMaxMembers()
+local MAX_RAID_PARTIES = X2Team:GetMaxParties()
+local MAX_RAID_PARTY_MEMBERS = X2Team:GetMaxPartyMembers()
+local enableAreaInvitation = true
+function GetPartyAndSlotIndex(memberIndex)
+  if memberIndex == nil then
+    return
+  end
+  memberIndex = memberIndex - 1
+  if memberIndex < 0 then
+    LuaAssert("memberIndex is invalid")
+    return
+  end
+  local maxPartyMember = X2Team:GetMaxPartyMembers()
+  local party = math.floor(memberIndex / maxPartyMember) + 1
+  local slot = math.floor(memberIndex % maxPartyMember) + 1
+  return party, slot
+end
+function CreateRaidTeamManagerFrame(id, parent)
+  local w = SetViewOfRaidTeamManagerFrame(id, parent)
+  local self_texture = w:CreateImageDrawable(TEXTURE_PATH.RAID, "artwork")
+  self_texture:SetCoords(0, 151, 103, 30)
+  self_texture:SetVisible(false)
+  w.self_texture = self_texture
+  local OnEnter = function(self)
+    SetTooltip(GetUIText(TEAM_TEXT, "excute_area_invite"), self, false)
+  end
+  w.rangeInviteBtn:SetHandler("OnEnter", OnEnter)
+  function w:ShowProc()
+    self:Refresh()
+    w.raidOptionFrame:Show(false)
+    w.raidRoleFrame:Show(false)
+  end
+  function w:CheckAuthority()
+    local isPartyTeam = X2Team:IsPartyTeam()
+    local isRaidTeam = X2Team:IsRaidTeam()
+    local myIndex = X2Team:GetTeamPlayerIndex()
+    local memberCount = X2Team:CountTeamMembers()
+    if not isPartyTeam and not isRaidTeam then
+      w.changeToRaidBtn:Show(true)
+      w.changeToRaidBtn:Enable(false)
+      w.rangeInviteBtn:Enable(enableAreaInvitation)
+      w.dismissRaidBtn:Show(false)
+      w.raidRoleBtn:Enable(false)
+    elseif X2Team:IsTeamOwner(myIndex) == true then
+      w.changeToRaidBtn:Show(not isRaidTeam)
+      w.changeToRaidBtn:Enable(not isRaidTeam)
+      if memberCount < MAX_RAID_MEMBERS and isRaidTeam then
+        w.rangeInviteBtn:Enable(enableAreaInvitation)
+      else
+        w.rangeInviteBtn:Enable(false)
+      end
+      if isRaidTeam == true then
+        w.dismissRaidBtn:Show(true)
+        w.dismissRaidBtn:SetText(locale.team.dismiss())
+        w.dismissRaidBtn:Enable(X2Team:IsRaidTeam())
+        w.raidRoleBtn:Enable(true)
+      else
+        w.dismissRaidBtn:Show(false)
+      end
+    elseif X2Team:IsTeamOwner(myIndex) == false then
+      w.changeToRaidBtn:Show(not isRaidTeam)
+      w.changeToRaidBtn:Enable(false)
+      w.rangeInviteBtn:Enable(false)
+      if isRaidTeam == true then
+        w.dismissRaidBtn:Show(true)
+        w.dismissRaidBtn:SetText(locale.team.leave())
+        w.dismissRaidBtn:Enable(true)
+        w.raidRoleBtn:Enable(true)
+      else
+        w.dismissRaidBtn:Show(false)
+      end
+    else
+      w.changeToRaidBtn:Enable(false)
+      w.rangeInviteBtn:Enable(false)
+      w.dismissRaidBtn:Show(false)
+      w.raidRoleBtn:Enable(false)
+    end
+  end
+  function w:Refresh(memberIndex)
+    local MY_PARTY_IN_TEAM = X2Team:GetTeamPlayerParty()
+    local MY_SLOT_IN_PARTY = X2Team:GetTeamPlayerSlot()
+    local TEAM_COUNT = X2Team:CountTeamMembers()
+    local party, slot = GetPartyAndSlotIndex(memberIndex)
+    self:CheckAuthority()
+    if party ~= nil then
+      if slot ~= nil then
+        w.party[party].member[slot]:Refresh()
+      else
+        w.party[party]:Refresh()
+      end
+    else
+      for i = 1, MAX_RAID_PARTIES do
+        w.party[i]:Refresh()
+      end
+    end
+  end
+  function w.changeToRaidBtn:OnClick()
+    X2Team:ConvertToRaidTeam()
+  end
+  w.changeToRaidBtn:SetHandler("OnClick", w.changeToRaidBtn.OnClick)
+  function w.rangeInviteBtn:OnClick()
+    X2Team:InviteArea()
+  end
+  w.rangeInviteBtn:SetHandler("OnClick", w.rangeInviteBtn.OnClick)
+  function w.dismissRaidBtn:OnClick()
+    local myIndex = X2Team:GetTeamPlayerIndex()
+    if X2Team:IsTeamOwner(myIndex) == true then
+      X2Team:DismissTeam()
+    else
+      X2Team:LeaveTeam(false)
+    end
+  end
+  w.dismissRaidBtn:SetHandler("OnClick", w.dismissRaidBtn.OnClick)
+  function w.raidOptionBtn:OnClick()
+    w.raidOptionFrame:Show(not w.raidOptionFrame:IsVisible())
+  end
+  w.raidOptionBtn:SetHandler("OnClick", w.raidOptionBtn.OnClick)
+  function w.raidRoleBtn:OnClick()
+    w.raidRoleFrame:Show(not w.raidRoleFrame:IsVisible())
+  end
+  w.raidRoleBtn:SetHandler("OnClick", w.raidRoleBtn.OnClick)
+  function w:ResetAllPartyVisible()
+    local MAX_RAID_PARTIES = X2Team:GetMaxParties()
+    for i = 1, MAX_RAID_PARTIES do
+      w.party[i].visiblePartyBtn:SetChecked(true, true)
+      w.party[i].bg:SetVisible(true)
+    end
+  end
+  function w:InvisibleSelfTexture()
+    if RaidTeamManager.self_texture ~= nil then
+      RaidTeamManager.self_texture:SetVisible(false)
+    end
+  end
+  return w
+end
+RaidTeamManager = CreateRaidTeamManagerFrame("raidTeamManager", "UIParent")
+function ToggleRaidManager(show)
+  if show == nil then
+    show = not RaidTeamManager:IsVisible()
+  end
+  RaidTeamManager:Show(show)
+end
+ADDON:RegisterContentTriggerFunc(UIC_RAID_TEAM_MANAGER, ToggleRaidManager)
+local raidFrameEvents = {
+  CONVERT_TO_RAID_TEAM = function()
+    RaidTeamManager:Refresh()
+    RaidTeamManager:ResetAllPartyVisible()
+  end,
+  LEFT_LOADING = function()
+    RaidTeamManager:Refresh()
+  end,
+  TEAM_MEMBERS_CHANGED = function(arg1, arg2, arg3, arg4, arg5)
+    if arg1 == "joined" and arg2 == false or arg1 == "leaved" and arg2 == false then
+      RaidTeamManager:Refresh(arg4)
+    elseif arg1 == "joined_by_self" then
+      if arg2 == false then
+        RaidTeamManager:ResetAllPartyVisible()
+      end
+      RaidTeamManager:Refresh()
+    elseif arg1 == "leaved_by_self" and arg2 == false or arg1 == "kicked_by_self" or arg1 == "dismissed" and arg2 == false then
+      RaidTeamManager:Refresh()
+      RaidTeamManager:InvisibleSelfTexture()
+    elseif arg1 == "moved" then
+      RaidTeamManager:Refresh(arg3)
+      RaidTeamManager:Refresh(arg4)
+    else
+      RaidTeamManager:Refresh()
+    end
+  end,
+  TEAM_ROLE_CHANGED = function(memberIndex, role)
+    local party, slot = GetPartyAndSlotIndex(memberIndex)
+    RaidTeamManager.party[party].member[slot]:SetRole(role)
+    RaidTeamManager.party[party].member[slot]:UpdateRoleColor(role)
+    if X2Team:GetTeamPlayerParty() == party and X2Team:GetTeamPlayerSlot() == slot then
+      RaidTeamManager.party[party].member[slot]:UpdateMyRoleBGTexture(role)
+    end
+  end,
+  LOOTING_RULE_MASTER_CHANGED = function()
+    local maxPartyMembers = X2Team:GetMaxPartyMembers()
+    local maxParties = X2Team:GetMaxParties()
+    for i = 1, maxParties do
+      for j = 1, maxPartyMembers do
+        RaidTeamManager.party[i].member[j]:UpdateLeaderMark()
+      end
+    end
+  end,
+  LOOTING_RULE_METHOD_CHANGED = function()
+    local maxPartyMembers = X2Team:GetMaxPartyMembers()
+    local maxParties = X2Team:GetMaxParties()
+    for i = 1, maxParties do
+      for j = 1, maxPartyMembers do
+        RaidTeamManager.party[i].member[j]:UpdateLeaderMark()
+      end
+    end
+  end,
+  ENABLE_TEAM_AREA_INVITATION = function(enable)
+    enableAreaInvitation = enable
+    RaidTeamManager.rangeInviteBtn:Enable(enable)
+    local message = ""
+    if enable == true then
+      message = GetUIText(TEAM_TEXT, "enable_area_invite")
+    else
+      message = GetUIText(TEAM_TEXT, "excute_area_invite")
+    end
+    X2Chat:DispatchChatMessage(CMF_PARTY_AND_RAID_INFO, message)
+  end
+}
+RaidTeamManager:SetHandler("OnEvent", function(this, event, ...)
+  raidFrameEvents[event](...)
+end)
+RegistUIEvent(RaidTeamManager, raidFrameEvents)

@@ -1,0 +1,90 @@
+AIBehaviour.hold_position = {
+  Name = "hold_position",
+  alertness = AIALERTNESS_IDLE,
+  Constructor = function(self, entity)
+    entity:ClearAICombat()
+    X2AI:AttackReservedTarget(entity)
+    AI.SetRefPointPosition(entity.id, entity.AI.idlePos)
+    AI.SetRefPointDirection(entity.id, entity.AI.idleDir)
+    entity.unit:SetDefaultSoState(true)
+    if AI.IsSimilarRefPointDirection(entity.id) then
+      self:UpdateHoldPosition(entity)
+    end
+    AI.BeginGoalPipe("holdPosition_Base")
+    AI.PushGoal("bodypos", 1, BODYPOS_RELAX)
+    AI.PushGoal("run", 1, 0)
+    AI.PushGoal("lookat", 1, "refpointdir")
+    AI.PushGoal("useskill", 1, USF_AUTO_STICK)
+    AI.PushGoal("signal", 1, AISIGNAL_INCLUDE_DISABLED, "UpdateHoldPosition", SIGNALFILTER_SENDER)
+    AI.EndGoalPipe()
+    entity:SelectPipe(AIGOALPIPE_DONT_RESET_AG, "holdPosition_Base")
+    if entity.AI.param.returnSpawnPos == nil or entity.AI.param.returnSpawnPos == true then
+      entity.unit:NpcSetCheckPosContext(AICPC_HOLD_POSITION)
+    end
+  end,
+  Destructor = function(self, entity)
+    entity.unit:NpcSetCheckPosContext(AICPC_NONE)
+    entity.unit:SetDefaultPosture(false)
+    entity.unit:SetDefaultSoState(false)
+  end,
+  UpdateHoldPosition = function(self, entity, sender, data)
+    entity:SelectPipe(AIGOALPIPE_DONT_RESET_AG, "_first_")
+    local isGroupMember, leaderEntity = X2AI:IsGroupMember(entity)
+    if isGroupMember then
+      if leaderEntity == nil or AI.IsMoving(leaderEntity.id, 0) ~= 0 then
+        entity.unit:SetDefaultPosture(false)
+        entity.unit:SetDefaultSoState(false)
+        PipeManager:Create_formation_GoToOnPoint(entity)
+        entity:SelectPipe(AIGOALPIPE_DONT_RESET_AG, "formation_GoToOnPoint")
+        return
+      end
+      entity.unit:SetDefaultPosture(true)
+      entity:SelectPipe(AIGOALPIPE_DONT_RESET_AG, "common_WaitASec")
+      return
+    end
+    entity.unit:SetDefaultPosture(true)
+    local pos = entity.AI.idlePos
+    local returnThresholdDist = 3
+    AI.BeginGoalPipe("holdPosition_HoldPosition")
+    if entity.AI.param.returnSpawnPos == nil or entity.AI.param.returnSpawnPos == true then
+      AI.PushGoal("branch", 1, "SKIP_RETURN_TO_IDLE_POS", NOT + IF_CAN_MOVE)
+      AI.PushGoal("branch", 1, "SKIP_RETURN_TO_IDLE_POS", IF_POSITION_DIST_LESS, returnThresholdDist, pos.x, pos.y, pos.z)
+      AI.PushGoal("signal", 1, AISIGNAL_INCLUDE_DISABLED, "ReturnToIdlePos", SIGNALFILTER_SENDER)
+      AI.PushLabel("SKIP_RETURN_TO_IDLE_POS")
+    end
+    AI.PushGoal("timeout", 1, 2)
+    AI.PushGoal("signal", 1, AISIGNAL_INCLUDE_DISABLED, "UpdateHoldPositionEnd", SIGNALFILTER_SENDER)
+    AI.EndGoalPipe()
+    entity:SelectPipe(AIGOALPIPE_DONT_RESET_AG, "holdPosition_HoldPosition")
+  end,
+  UpdateHoldPositionEnd = function(self, entity, sender, data)
+    entity:SelectPipe(AIGOALPIPE_DONT_RESET_AG, "holdPosition_Base")
+  end,
+  OnASecPassed = function(self, entity, sender, data)
+    self:UpdateHoldPositionEnd(entity, sender, data)
+  end,
+  OnRequestSkillInfo = function(self, entity)
+    entity.unit:NpcSetSkillList(entity.AI.skills.idle)
+  end,
+  OnArrivedOnFormationPoint = function(self, entity, sender, data)
+    self:UpdateHoldPosition(entity, sender, data)
+  end,
+  OnAlertTargetChanged = function(self, entity, sender, data)
+    local isGroupMember, leaderEntity = X2AI:IsGroupMember(entity)
+    if isGroupMember then
+      entity.AI.idlePos = leaderEntity:GetPos()
+      entity.AI.idlePos.z = entity.AI.idlePos.z + 0.5
+    end
+    AIBehaviour.DEFAULT:OnAlertTargetChanged(entity, sender, data)
+  end,
+  OnAggroTargetChanged = function(self, entity, sender, data)
+    if X2AI:IsGroupMember(entity) then
+      entity.AI.idlePos = entity:GetPos()
+      AI.SetRefPointPosition(entity.id, entity.AI.idlePos)
+    end
+    AI.SetAttentionTargetOf(entity.id, data.id, AITARGETREASON_ATTACK)
+  end,
+  OnPostureChanged = function(self, entity)
+    self:UpdateHoldPosition(entity)
+  end
+}

@@ -1,0 +1,4 @@
+if loginstageLocale == nil then
+  loginstageLocale = {}
+end
+loginstageLocale.guideContentExtent = {185, 50}

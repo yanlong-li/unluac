@@ -1,0 +1,8 @@
+if X2Util:GetGameProvider() == MAILRU then
+  craftingLocale.abilityGroup = {
+    btnFontSize = FONT_SIZE.MIDDLE,
+    btnStartOffset = 5,
+    btnOffsetX = 52
+  }
+  craftingLocale.windowWidth = 800
+end

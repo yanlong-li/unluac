@@ -1,0 +1,529 @@
+function CreateUnitFrame(id, parent)
+  parent = parent or "UIParent"
+  local w = SetViewOfUnitFrame(id, parent)
+  w.initialized = false
+  local event = w.eventWindow
+  local dist = false
+  local hpBar = w.hpBar
+  local mpBar = w.mpBar
+  hpBar.statusBar:SetMinMaxValues(0, 1000)
+  mpBar.statusBar:SetMinMaxValues(0, 1000)
+  w.target = nil
+  w.party = false
+  w.unableGageAni = true
+  w.drag = false
+  function w:UpdateAll()
+    if self.target == nil then
+      return
+    end
+    self:UpdateLevel()
+    self:UpdateName()
+    self:UpdateHpMp()
+    self:UpdateBuffDebuff()
+    self:UpdateTooltip()
+    self:UpdateLeaderMark()
+    self:UpdateLootIcon()
+    self:UpdatePVPIcon()
+  end
+  function w:SetTarget(target)
+    w.target = target
+    w.initialized = false
+    if w.ChangedTarget ~= nil then
+      w:ChangedTarget()
+    end
+    if target ~= nil then
+      self:UpdateAll()
+      self:SetHandler("OnUpdate", self.OnUpdate)
+    else
+      self:ReleaseHandler("OnUpdate")
+    end
+  end
+  function w:ChangeHpBarTexture_forNpc(grade, factionInfo)
+    if factionInfo == "hostile" then
+      if grade == "weak" then
+        self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.S_HP_HOSTILE)
+        self.mpBar:ApplyBarTexture(STATUSBAR_STYLE.S_MP)
+      else
+        self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.L_HP_HOSTILE)
+        self.mpBar:ApplyBarTexture(STATUSBAR_STYLE.L_MP)
+      end
+    elseif factionInfo == "neutral" or factionInfo == 0 then
+      if grade == "weak" then
+        self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.S_HP_NEUTRAL)
+        self.mpBar:ApplyBarTexture(STATUSBAR_STYLE.S_MP)
+      else
+        self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.L_HP_NEUTRAL)
+        self.mpBar:ApplyBarTexture(STATUSBAR_STYLE.L_MP)
+      end
+    elseif factionInfo == "friendly" then
+      if grade == "weak" then
+        self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.S_HP_FRIENDLY)
+        self.mpBar:ApplyBarTexture(STATUSBAR_STYLE.S_MP)
+      else
+        self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.L_HP_FRIENDLY)
+        self.mpBar:ApplyBarTexture(STATUSBAR_STYLE.L_MP)
+      end
+    end
+  end
+  function w:ChangeHpBarTexture_forPc(factionInfo)
+    if factionInfo == "hostile" then
+      self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.L_HP_HOSTILE)
+      self.mpBar:ApplyBarTexture(STATUSBAR_STYLE.L_MP)
+    elseif factionInfo == "neutral" then
+      self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.L_HP_NEUTRAL)
+      self.mpBar:ApplyBarTexture(STATUSBAR_STYLE.L_MP)
+    elseif factionInfo == "friendly" then
+      self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.L_HP_FRIENDLY)
+      self.mpBar:ApplyBarTexture(STATUSBAR_STYLE.L_MP)
+    end
+  end
+  function w:UpdateHpBarTexture_FirstHitByMe(grade, combatState)
+    if combatState and X2Unit:IsFirstHitByMeOrMyTeam("target") == false then
+      if grade == "weak" then
+        self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.S_HP_PREEMTIVE_STRIKE)
+      else
+        self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.L_HP_PREEMTIVE_STRIKE)
+      end
+    end
+  end
+  function w:SetVisibleHealthText(visible)
+    self.hpBar.hpLabel:Show(visible)
+  end
+  function w:SetVisibleBuffDebuffText(visible)
+    self.buffWindow:ShowLifeTime(visible)
+    self.debuffWindow:ShowLifeTime(visible)
+  end
+  function w:SetLevel(text)
+    self.level:ChangedLevel(tostring(text))
+  end
+  function w:SetHp(curHp, maxHp)
+    maxHp = maxHp or 0
+    local statusBarAni = false
+    local aniTime = 0
+    self.hpBar.statusBar:SetMinMaxValues(0, maxHp)
+    if curHp > self.hpBar.statusBar:GetValue() then
+      statusBarAni = true
+      aniTime = 0.2
+      self.hpBar:ChangeAfterImageColor(true)
+    end
+    if self.unableGageAni or self.target ~= "player" and self.target ~= "target" then
+      statusBarAni = false
+    end
+    self.hpBar.statusBar:SetValue(curHp or 0, statusBarAni, aniTime)
+    statusBarAni = false
+    aniTime = 0
+    self.hpBar.statusBarAfterImage:SetMinMaxValues(0, maxHp)
+    if curHp < self.hpBar.statusBarAfterImage:GetValue() then
+      statusBarAni = true
+      aniTime = 0.3
+      self.hpBar:ChangeAfterImageColor(false)
+    end
+    if self.unableGageAni or self.target ~= "player" and self.target ~= "target" then
+      statusBarAni = false
+    end
+    self.hpBar.statusBarAfterImage:SetValue(curHp or 0, statusBarAni, aniTime)
+    self.unableGageAni = false
+    local show = GetOptionItemValue("ShowHeatlthNumber") == 1
+    self.hpBar.hpLabel:Show(show)
+    local hpStr = string.format("%d", curHp)
+    self.hpBar.hpLabel:SetText(hpStr)
+  end
+  function w:SetMp(curMp, maxMp)
+    self.mpBar.statusBar:SetMinMaxValues(0, maxMp or 0)
+    self.mpBar.statusBar:SetValue(curMp or 0)
+    local show = GetOptionItemValue("ShowMagicPointNumber") == 1
+    self.mpBar.mpLabel:Show(show)
+    local hpStr = string.format("%d", curMp)
+    self.mpBar.mpLabel:SetText(hpStr)
+  end
+  function w:ShowLeaderMark(show)
+    show = show or false
+    self.leaderMark:Show(show)
+  end
+  function w:ShowPVPIcon(stringId, on)
+    local stringUnitId = X2Unit:GetUnitId(self.target)
+    if stringUnitId == nil then
+      return
+    end
+    if stringUnitId ~= stringId then
+      return
+    end
+    self.pvpIcon:Show(on)
+    if self.UpdateQQTalkAnchor ~= nil then
+      self:UpdateQQTalkAnchor()
+    end
+  end
+  function w:ShowLootIcon(show)
+    show = show or false
+    self.lootIcon:Show(show)
+    if self.UpdateQQTalkAnchor ~= nil then
+      self:UpdateQQTalkAnchor()
+    end
+  end
+  function w:ShowCombatIcon(show)
+    show = show or false
+    self.combatIcon:SetVisible(show)
+  end
+  function w:UpdateLevel()
+    if self.target == nil then
+      return
+    end
+    local level = X2Unit:UnitLevel(self.target) or 0
+    self:SetLevel(level)
+  end
+  function w:UpdateName()
+    if self.target == nil then
+      return
+    end
+    local name = X2Unit:UnitName(self.target) or ""
+    self.name:SetText(name)
+  end
+  function w:UpdateHpMp()
+    if self.target == nil then
+      return
+    end
+    local curHp = X2Unit:UnitHealth(self.target)
+    local maxHp = X2Unit:UnitMaxHealth(self.target)
+    if self.target == "player" then
+      LifeAlertEffect(curHp, maxHp)
+      if PlayerFrameLifeAlertEffect ~= nil then
+        PlayerFrameLifeAlertEffect(curHp, maxHp)
+      end
+    end
+    if curHp ~= nil and maxHp ~= nil then
+      w.initialized = true
+      self:SetHp(curHp, maxHp)
+    end
+    local curMp = X2Unit:UnitMana(self.target) or 0
+    local maxMp = X2Unit:UnitMaxMana(self.target) or 0
+    self:SetMp(curMp, maxMp)
+  end
+  function w:UpdateBuffDebuff()
+    if self.target == nil then
+      return
+    end
+    w.buffWindow:BuffUpdate(self.target)
+    w.debuffWindow:BuffUpdate(self.target)
+  end
+  local SetMarkerTexture = function(markerTexture, markerIndex)
+    local markerCoords = {
+      {
+        384,
+        48,
+        24,
+        24
+      },
+      {
+        408,
+        48,
+        24,
+        24
+      },
+      {
+        432,
+        48,
+        24,
+        24
+      },
+      {
+        456,
+        48,
+        24,
+        24
+      },
+      {
+        480,
+        48,
+        24,
+        24
+      },
+      {
+        312,
+        72,
+        24,
+        24
+      },
+      {
+        336,
+        72,
+        24,
+        24
+      },
+      {
+        360,
+        72,
+        24,
+        24
+      },
+      {
+        384,
+        72,
+        24,
+        24
+      },
+      {
+        408,
+        72,
+        24,
+        24
+      },
+      {
+        432,
+        72,
+        24,
+        24
+      },
+      {
+        456,
+        72,
+        24,
+        24
+      }
+    }
+    markerTexture:SetCoords(markerCoords[markerIndex][1], markerCoords[markerIndex][2], markerCoords[markerIndex][3], markerCoords[markerIndex][4])
+  end
+  function w:SetMarker(targetId, anchorFunc)
+    if targetId == nil then
+      return
+    end
+    if self.marker == nil then
+      return
+    end
+    for i = 1, 12 do
+      local markerUnitId = X2Unit:GetOverHeadMarkerUnitId(i)
+      if markerUnitId == targetId then
+        self.marker:SetVisible(true)
+        SetMarkerTexture(self.marker, i)
+        if anchorFunc ~= nil then
+          anchorFunc()
+        end
+        return
+      end
+    end
+  end
+  function w:UpdateTooltip()
+    if self.target == nil then
+      return
+    end
+    local unit_type = X2Unit:GetUnitType(self.target)
+    self.tooltipText = ""
+    self.gradeText = ""
+    if unit_type == "transfer" then
+      self.tooltipText = string.format([[
+%s
+%s]], locale.unitFrame.transfer, UFT_NAME)
+    elseif unit_type == "npc" then
+      local str = ""
+      local npcTypeString = X2Unit:GetNpcInfo(self.target)
+      if npcTypeString ~= nil then
+        str = npcTypeString
+      else
+        local kind = X2Unit:GetTargetKindType(self.target)
+        if kind ~= nil then
+          str = locale.kindName[kind]
+        end
+      end
+      local grade = tostring(GetUnitGrade(self.target))
+      if unitframeLocale.tooltipForceLeft then
+        if str ~= "" then
+          str = string.format([[
+%s
+%s%s|r]], str, GetUnitGradeColor(grade), X2Locale:LocalizeUiText(UNIT_GRADE_TEXT, grade))
+        else
+          str = string.format("%s%s", GetUnitGradeColor(grade), X2Locale:LocalizeUiText(UNIT_GRADE_TEXT, grade))
+        end
+      else
+        self.gradeText = string.format("%s%s", GetUnitGradeColor(grade), X2Locale:LocalizeUiText(UNIT_GRADE_TEXT, grade))
+      end
+      if str ~= "" then
+        str = string.format([[
+%s
+%s: %s / %s (%s%%)
+%s: %s / %s (%s%%)]], str, locale.tooltip.hp, UFT_CURHP, UFT_MAXHP, UFT_PERHP, locale.tooltip.mp, UFT_CURMP, UFT_MAXMP, UFT_PERMP)
+      else
+        str = string.format([[
+%s: %s / %s (%s%%)
+%s: %s / %s (%s%%)]], locale.tooltip.hp, UFT_CURHP, UFT_MAXHP, UFT_PERHP, locale.tooltip.mp, UFT_CURMP, UFT_MAXMP, UFT_PERMP)
+      end
+      self.tooltipText = str
+    elseif unit_type == "housing" or unit_type == "slave" or unit_type == "shipyard" then
+      local unitId = X2Unit:GetUnitId(self.target)
+      local unitInfo = X2Unit:GetUnitInfoById(unitId)
+      if unitInfo.owner_name == nil then
+        self.tooltipText = string.format("%s: %s / %s (%s%%)", locale.tooltip.hp, UFT_CURHP, UFT_MAXHP, UFT_PERHP)
+      else
+        self.tooltipText = string.format([[
+%s: %s
+%s : %s / %s (%s%%)]], locale.tooltip.owner, unitInfo.owner_name, locale.tooltip.hp, UFT_CURHP, UFT_MAXHP, UFT_PERHP)
+      end
+    elseif unit_type == "mate" then
+      local unitId = X2Unit:GetUnitId(self.target)
+      local unitInfo = X2Unit:GetUnitInfoById(unitId)
+      self.tooltipText = string.format([[
+%s: %s
+%s: %s / %s (%s%%)
+%s: %s / %s (%s%%)]], locale.tooltip.owner, unitInfo.owner_name or "none", locale.tooltip.hp, UFT_CURHP, UFT_MAXHP, UFT_PERHP, locale.tooltip.mp, UFT_CURMP, UFT_MAXMP, UFT_PERMP)
+    elseif unit_type == "portal" then
+      self.tooltipText = locale.unitFrame.portal
+    else
+      local templates = X2Unit:GetTargetAbilityTemplates(self.target)
+      if templates == nil then
+        return
+      end
+      local abilityNames = ""
+      local abilityIndex = {}
+      for index = 1, #templates do
+        local ability = templates[index]
+        abilityIndex[index] = ability.index
+        if ability.name ~= "invalid ability" then
+          if abilityNames == "" then
+            abilityNames = locale.common.abilityCategory[ability.name]
+          else
+            abilityNames = string.format("%s, %s", abilityNames, locale.common.abilityCategory[ability.name])
+          end
+        end
+      end
+      local featureSet = X2Player:GetFeatureSet()
+      if featureSet.hero then
+        self.tooltipText = string.format([[
+%s%s: %s (%s)
+%s%s: %s / %s (%s%%)
+%s%s: %s / %s (%s%%)
+%s%s: %s
+%s%s: %s
+%s%s: %s
+%s : %s]], FONT_COLOR_HEX.SOFT_BROWN, locale.community.job, GetCombinedAbilityName(abilityIndex[1], abilityIndex[2], abilityIndex[3]), abilityNames, FONT_COLOR_HEX.BRIGHT_GREEN, locale.tooltip.hp, UFT_CURHP, UFT_MAXHP, UFT_PERHP, FONT_COLOR_HEX.BRIGHT_GREEN, locale.tooltip.mp, UFT_CURMP, UFT_MAXMP, UFT_PERMP, FONT_COLOR_HEX.BRIGHT_BULE, GetUIText(COMMON_TEXT, "gear_score"), UFT_GEARSCORE, FONT_COLOR_HEX.SOFT_BROWN, locale.tooltip.leadership, UFT_PERIOD_LEADERSHIP, FONT_COLOR_HEX.SOFT_BROWN, locale.unitFrame.pvp_honor_point, UFT_PVPHONOR, locale.unitFrame.pvp_kill_point, UFT_PVPKILL)
+      else
+        self.tooltipText = string.format([[
+%s%s: %s (%s)
+%s%s: %s / %s (%s%%)
+%s%s: %s / %s (%s%%)
+%s%s: %s
+%s%s: %s
+%s : %s]], FONT_COLOR_HEX.SOFT_BROWN, locale.community.job, GetCombinedAbilityName(abilityIndex[1], abilityIndex[2], abilityIndex[3]), abilityNames, FONT_COLOR_HEX.BRIGHT_GREEN, locale.tooltip.hp, UFT_CURHP, UFT_MAXHP, UFT_PERHP, FONT_COLOR_HEX.BRIGHT_GREEN, locale.tooltip.mp, UFT_CURMP, UFT_MAXMP, UFT_PERMP, FONT_COLOR_HEX.BRIGHT_BULE, GetUIText(COMMON_TEXT, "gear_score"), UFT_GEARSCORE, FONT_COLOR_HEX.SOFT_BROWN, locale.unitFrame.pvp_honor_point, UFT_PVPHONOR, locale.unitFrame.pvp_kill_point, UFT_PVPKILL)
+      end
+    end
+  end
+  function w:UpdateLeaderMark()
+    if self.target == nil then
+      return
+    end
+    local authority = X2Unit:UnitTeamAuthority(self.target)
+    if authority ~= nil then
+      self:ShowLeaderMark(true)
+      self.leaderMark:SetMark(authority, true)
+    else
+      self:ShowLeaderMark(false)
+    end
+  end
+  function w:UpdateLootIcon()
+    if self.target == nil then
+      return
+    end
+    local targetName = X2Unit:UnitName(self.target)
+    local name = X2Team:GetTeamDistributorName()
+    if name == targetName then
+      self:ShowLootIcon(true)
+    else
+      self:ShowLootIcon(false)
+    end
+  end
+  function w:UpdatePVPIcon()
+    if self.target == nil then
+      return
+    end
+    local stringId = X2Unit:GetUnitId(self.target)
+    local forceAttack = X2Unit:UnitIsForceAttack(self.target)
+    self:ShowPVPIcon(stringId, forceAttack)
+  end
+  local timeCheck = 0
+  function w:OnUpdate(dt)
+    timeCheck = timeCheck + dt
+    if timeCheck < 100 then
+      return
+    end
+    timeCheck = dt
+    if self.target == nil then
+      return
+    end
+    if w.Update ~= nil and w:Update(dt) == false then
+      return
+    end
+    if self.drag then
+      local shift = X2Input:IsShiftKeyDown()
+      if not shift then
+        event:OnDragStop()
+      end
+    end
+    if self.initialized == false then
+      self:UpdateAll()
+      return
+    end
+    if X2Unit:UnitIsOffline(self.target) == true then
+      return
+    end
+    self:UpdateHpMp()
+    self.buffWindow:BuffUpdate(self.target)
+    self.debuffWindow:BuffUpdate(self.target)
+  end
+  function event:OnClick(arg)
+    RaiseUnitFrameTooltip()
+    if w.Click ~= nil and w:Click(arg) ~= nil then
+      return
+    end
+    if arg == "LeftButton" and w.target ~= nil then
+      X2Unit:TargetUnit(w.target)
+    end
+  end
+  event:SetHandler("OnClick", event.OnClick)
+  function event:OnMouseUp(arg)
+  end
+  event:SetHandler("OnMouseUp", event.OnMouseUp)
+  function event:OnEnter()
+    if w.Enter ~= nil and w:Enter() ~= nil then
+      return
+    end
+    w.tooltipText = w.tooltipText or ""
+    w.gradeText = w.gradeText or ""
+    if w.tooltipText ~= "" then
+      ShowUnitFrameTooltip(w.target, w.tooltipText, w.gradeText, w.eventWindow, w.hpBar)
+    end
+  end
+  event:SetHandler("OnEnter", event.OnEnter)
+  function event:OnLeave()
+    if w.Leave ~= nil and w:Leave() ~= nil then
+      return
+    end
+    HideUnitFrameTooltip()
+  end
+  event:SetHandler("OnLeave", event.OnLeave)
+  function event:OnDragStart(arg)
+    HideTooltip()
+    local shift = X2Input:IsShiftKeyDown()
+    if w.DragStart ~= nil then
+      local result = w:DragStart(arg, shift)
+      if result ~= nil then
+        return
+      end
+    end
+    if arg == "LeftButton" and shift then
+      w:StartMoving()
+      X2Cursor:SetCursorImage(CURSOR_PATH.MOVE, 0, 0)
+      w.drag = true
+    end
+  end
+  event:SetHandler("OnDragStart", event.OnDragStart)
+  function event:OnDragStop()
+    if w.DragStop ~= nil then
+      local result = w:DragStop()
+      if result ~= nil then
+        return
+      end
+    end
+    w.drag = false
+    w:StopMovingOrSizing()
+    X2Cursor:ClearCursor()
+  end
+  event:SetHandler("OnDragStop", event.OnDragStop)
+  return w
+end

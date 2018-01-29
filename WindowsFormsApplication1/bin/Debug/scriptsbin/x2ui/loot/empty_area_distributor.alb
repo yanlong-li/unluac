@@ -1,0 +1,42 @@
+local AREA_CENTER = 1
+local AREA_TOP = 2
+local AREA_BOTTOM = 3
+local areaState = {
+  [AREA_CENTER] = nil,
+  [AREA_TOP] = nil,
+  [AREA_BOTTOM] = nil
+}
+local MakeOffset = function(offX, offY)
+  return {x = offX, y = offY}
+end
+local areaOffset = {
+  [AREA_CENTER] = MakeOffset(-285, 0),
+  [AREA_TOP] = MakeOffset(-285, -180),
+  [AREA_BOTTOM] = MakeOffset(-285, 180)
+}
+function PlaceWidgetToEmptyArea(widget)
+  local orders = {
+    AREA_CENTER,
+    AREA_TOP,
+    AREA_BOTTOM
+  }
+  for i = 1, #orders do
+    local cur = orders[i]
+    if areaState[cur] == nil then
+      areaState[cur] = widget
+      local offset = areaOffset[cur]
+      widget:RemoveAllAnchors()
+      widget:AddAnchor("RIGHT", offset.x, offset.y)
+      return
+    end
+  end
+  LuaAssert("loot dice place error!!")
+end
+function ReleaseWidgetFromPlacedArea(widget)
+  for key, value in pairs(areaState) do
+    if value == widget then
+      areaState[key] = nil
+      return
+    end
+  end
+end

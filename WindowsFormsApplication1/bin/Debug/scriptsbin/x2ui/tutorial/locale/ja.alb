@@ -1,0 +1,3 @@
+if X2Util:GetGameProvider() == GAMEON then
+  tutorialLocale.lineSpace = 0
+end

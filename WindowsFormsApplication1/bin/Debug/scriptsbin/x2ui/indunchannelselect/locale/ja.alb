@@ -1,0 +1,28 @@
+if X2Util:GetGameProvider() == GAMEON then
+  WINDOW_INDUN_CHANNEL_SELECT.CHANNEL_STATE_COORDS = {
+    {
+      0,
+      22,
+      56,
+      21
+    },
+    {
+      0,
+      43,
+      56,
+      21
+    },
+    {
+      0,
+      64,
+      56,
+      21
+    },
+    {
+      0,
+      85,
+      56,
+      21
+    }
+  }
+end

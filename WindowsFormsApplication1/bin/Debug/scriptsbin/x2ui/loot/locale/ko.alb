@@ -1,0 +1,14 @@
+if lootLocale == nil then
+  lootLocale = {}
+end
+function lootLocale:GetItemName(itemName)
+  if itemName == "" then
+    return itemName
+  end
+  local name = X2Util:UTF8StringLimit(itemName, 34, "...")
+  return name
+end
+lootLocale.lootDice = {
+  buttonWidth = BUTTON_SIZE.DEFAULT_SMALL.WIDTH,
+  buttonOffsetX = BUTTON_COMMON_INSET.TWO_BUTTON_BETEEN
+}

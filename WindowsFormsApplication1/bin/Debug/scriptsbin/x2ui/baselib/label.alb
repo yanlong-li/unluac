@@ -1,0 +1,44 @@
+function CreateLabel(id, parent)
+  parent = parent or "UIParent"
+  local label = UIParent:CreateWidget("label", id, parent)
+  label.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE)
+  label.style:SetAlign(ALIGN_LEFT)
+  label.style:SetSnap(true)
+  ApplyTextColor(label, FONT_COLOR.DEFAULT)
+  return label
+end
+function CreateLevelLabel(id, parent, useLevelTexture)
+  parent = parent or "UIParent"
+  local frame = parent:CreateChildWidget("emptywidget", "frame", 0, false)
+  frame:SetHeight(FONT_SIZE.XLARGE)
+  frame.useLevelTexture = useLevelTexture
+  local levelTexture = frame:CreateImageDrawable(TEXTURE_PATH.IMAGE_TEXT, "background")
+  levelTexture:SetTextureInfo("Level")
+  levelTexture:AddAnchor("TOPLEFT", frame, 0, 0)
+  frame.levelTexture = levelTexture
+  local label = frame:CreateChildWidget("label", "label", 0, true)
+  label:SetAutoResize(true)
+  label:AddAnchor("RIGHT", frame, 0, 0)
+  label.style:SetAlign(ALIGN_RIGHT)
+  label.style:SetShadow(true)
+  label.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.XXLARGE)
+  function frame:SettingUseForInfoWindow()
+    self:SetHeight(37)
+    self.label:SetHeight(37)
+    self.label.style:SetFont("characterInfo", 37)
+  end
+  function frame:ChangedLevel(arg)
+    local width
+    if self.useLevelTexture then
+      self.label:SetText(tostring(arg))
+      self.levelTexture:SetVisible(true)
+      width = self.label:GetWidth() + self.levelTexture:GetWidth() + 3
+    else
+      self.label:SetText(tostring(arg))
+      self.levelTexture:SetVisible(false)
+      width = self.label:GetWidth()
+    end
+    self:SetWidth(width)
+  end
+  return frame
+end

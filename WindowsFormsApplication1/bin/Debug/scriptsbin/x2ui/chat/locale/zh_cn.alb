@@ -1,0 +1,3 @@
+if X2Util:GetGameProvider() == TENCENT then
+  chatLocale.maxTextLength = 80
+end

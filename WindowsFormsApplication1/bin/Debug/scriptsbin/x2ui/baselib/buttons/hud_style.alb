@@ -1,0 +1,1058 @@
+local GetExtentByKey = function(path, key, valueStr)
+  local coords = UIParent:GetTextureData(path, key).coords
+  if coords == nil then
+    UIParent:Warning(string.format("can't find img info..(%s / %s)", path, key))
+    return 0
+  end
+  if valueStr == "width" then
+    return coords[3]
+  elseif valueStr == "height" then
+    return coords[4]
+  elseif valueStr == nil then
+    return coords[3], coords[4]
+  end
+end
+BUTTON_HUD = {
+  IME_KOREA = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coords = {
+      normal = {
+        870,
+        0,
+        22,
+        25
+      },
+      over = {
+        870,
+        26,
+        22,
+        25
+      },
+      click = {
+        870,
+        52,
+        22,
+        25
+      },
+      disable = {
+        870,
+        78,
+        22,
+        25
+      }
+    },
+    width = 22,
+    height = 25
+  },
+  IME_ENGLISH = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coords = {
+      normal = {
+        870,
+        104,
+        22,
+        25
+      },
+      over = {
+        870,
+        130,
+        22,
+        25
+      },
+      click = {
+        870,
+        156,
+        22,
+        25
+      },
+      disable = {
+        870,
+        182,
+        22,
+        25
+      }
+    },
+    width = 22,
+    height = 25
+  },
+  ACTIONBAR_ROTATE = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coordsKey = "action_rotate"
+  },
+  ACTIONBAR_LOCK = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coordsKey = "action_lock"
+  },
+  ACTIONBAR_UNLOCK = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coordsKey = "action_unlock"
+  },
+  ACTIONBAR_PAGE_UP = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coordsKey = "action_page_up"
+  },
+  ACTIONBAR_PAGE_DOWN = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coordsKey = "action_page_down"
+  },
+  CHAT_SCROLL_DOWN_BOTTOM = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coords = {
+      normal = {
+        754,
+        175,
+        28,
+        26
+      },
+      over = {
+        783,
+        175,
+        28,
+        26
+      },
+      click = {
+        812,
+        175,
+        28,
+        26
+      },
+      disable = {
+        841,
+        175,
+        28,
+        26
+      }
+    },
+    width = 22.4,
+    height = 20.800001
+  },
+  CHAT_ADD_TAB = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coords = {
+      normal = {
+        870,
+        208,
+        22,
+        23
+      },
+      over = {
+        870,
+        234,
+        22,
+        23
+      },
+      click = {
+        870,
+        260,
+        22,
+        23
+      },
+      disable = {
+        870,
+        286,
+        22,
+        23
+      }
+    },
+    width = 22,
+    height = 23
+  },
+  ROAD_MAP_OPTION = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coords = {
+      normal = {
+        624,
+        215,
+        22,
+        22
+      },
+      over = {
+        646,
+        215,
+        22,
+        22
+      },
+      click = {
+        624,
+        237,
+        22,
+        22
+      },
+      disable = {
+        646,
+        237,
+        22,
+        22
+      }
+    },
+    width = 22,
+    height = 22
+  },
+  ROAD_SIZE_OPTION = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coords = {
+      normal = {
+        480,
+        432,
+        30,
+        22
+      },
+      over = {
+        480,
+        454,
+        30,
+        22
+      },
+      click = {
+        480,
+        476,
+        30,
+        22
+      },
+      disable = {
+        510,
+        432,
+        30,
+        22
+      }
+    },
+    width = 30,
+    height = 22,
+    fontColor = GetRoadMapSizeButtonFontColor()
+  },
+  TUTORIAL = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.DEFAULT,
+    coords = {
+      normal = {
+        361,
+        581,
+        39,
+        41
+      },
+      over = {
+        361,
+        624,
+        39,
+        41
+      },
+      click = {
+        401,
+        581,
+        39,
+        41
+      },
+      disable = {
+        401,
+        623,
+        39,
+        41
+      }
+    },
+    width = 39,
+    height = 41
+  },
+  QUEST_TASK_MARKER = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.QUEST_LIST,
+    coords = {
+      normal = {
+        0,
+        474,
+        37,
+        27
+      },
+      over = {
+        38,
+        474,
+        37,
+        27
+      },
+      click = {
+        76,
+        473,
+        37,
+        27
+      },
+      disable = {
+        114,
+        474,
+        37,
+        27
+      }
+    },
+    width = 31,
+    height = 21
+  },
+  CHAT_TAB_SELECTED = {
+    drawableType = "ninePart",
+    path = TEXTURE_PATH.HUD,
+    coordsKey = "tab_chat_select",
+    fontInset = {
+      left = 0,
+      top = 3,
+      right = 0,
+      bottom = 0
+    },
+    fontColor = {
+      normal = FONT_COLOR.WHITE,
+      highlight = FONT_COLOR.WHITE,
+      pushed = FONT_COLOR.WHITE,
+      disabled = {
+        0.6,
+        0.6,
+        0.6,
+        1
+      }
+    },
+    disuseExtent = true
+  },
+  CHAT_TAB_UNSELECTED = {
+    drawableType = "ninePart",
+    path = TEXTURE_PATH.HUD,
+    coordsKey = "tab_chat",
+    fontInset = {
+      left = 0,
+      top = 10,
+      right = 0,
+      bottom = 0
+    },
+    fontColor = {
+      normal = {
+        ConvertColor(120),
+        ConvertColor(120),
+        ConvertColor(120),
+        1
+      },
+      highlight = {
+        ConvertColor(200),
+        ConvertColor(200),
+        ConvertColor(200),
+        1
+      },
+      pushed = FONT_COLOR.WHITE,
+      disabled = {
+        ConvertColor(63),
+        ConvertColor(63),
+        ConvertColor(63),
+        1
+      }
+    },
+    disuseExtent = true
+  },
+  MAIN_MENU_BAR_SUB_MENU = {
+    drawableType = "ninePart",
+    path = TEXTURE_PATH.HUD,
+    width = 115,
+    height = 16,
+    inset = {
+      3,
+      2,
+      3,
+      1
+    },
+    coords = {
+      normal = {
+        0,
+        0,
+        0,
+        0
+      },
+      over = {
+        0,
+        215,
+        3,
+        3
+      },
+      click = {
+        0,
+        215,
+        3,
+        3
+      },
+      disable = {
+        0,
+        0,
+        0,
+        0
+      }
+    },
+    drawableColor = {
+      normal = {
+        0,
+        0,
+        0,
+        0
+      },
+      over = {
+        ConvertColor(184),
+        ConvertColor(217),
+        ConvertColor(226),
+        0.5
+      },
+      click = {
+        ConvertColor(184),
+        ConvertColor(217),
+        ConvertColor(236),
+        0.3
+      },
+      disable = {
+        0,
+        0,
+        0,
+        0
+      }
+    },
+    fontAlign = ALIGN_LEFT,
+    fontInset = {
+      left = 5,
+      top = 0,
+      right = 5,
+      bottom = 1
+    },
+    fontColor = {
+      normal = {
+        1,
+        0.98,
+        0.62,
+        1
+      },
+      highlight = {
+        ConvertColor(232),
+        ConvertColor(206),
+        ConvertColor(116),
+        1
+      },
+      pushed = {
+        0.72,
+        0.72,
+        0.48,
+        1
+      },
+      disabled = {
+        0.3,
+        0.3,
+        0.3,
+        1
+      }
+    }
+  },
+  MAIN_MENU_CHARACTER_INFO = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coords = {
+      normal = {
+        893,
+        0,
+        32,
+        32
+      },
+      over = {
+        926,
+        0,
+        32,
+        32
+      },
+      click = {
+        959,
+        0,
+        32,
+        32
+      },
+      disable = {
+        992,
+        0,
+        32,
+        32
+      }
+    },
+    width = 32,
+    height = 32
+  },
+  MAIN_MENU_BAG = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coords = {
+      normal = {
+        893,
+        99,
+        32,
+        32
+      },
+      over = {
+        926,
+        99,
+        32,
+        32
+      },
+      click = {
+        959,
+        99,
+        32,
+        32
+      },
+      disable = {
+        992,
+        99,
+        32,
+        32
+      }
+    },
+    width = 32,
+    height = 32
+  },
+  MAIN_MENU_QUEST_LIST = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coords = {
+      normal = {
+        893,
+        66,
+        32,
+        32
+      },
+      over = {
+        926,
+        66,
+        32,
+        32
+      },
+      click = {
+        959,
+        66,
+        32,
+        32
+      },
+      disable = {
+        992,
+        66,
+        32,
+        32
+      }
+    },
+    width = 32,
+    height = 32
+  },
+  MAIN_MENU_ACHIEVEMENT = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coordsKey = "result"
+  },
+  MAIN_MENU_SKILL = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coords = {
+      normal = {
+        893,
+        33,
+        32,
+        32
+      },
+      over = {
+        926,
+        33,
+        32,
+        32
+      },
+      click = {
+        959,
+        33,
+        32,
+        32
+      },
+      disable = {
+        992,
+        33,
+        32,
+        32
+      }
+    },
+    width = 32,
+    height = 32
+  },
+  MAIN_MENU_MAP = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coords = {
+      normal = {
+        893,
+        231,
+        32,
+        32
+      },
+      over = {
+        926,
+        231,
+        32,
+        32
+      },
+      click = {
+        959,
+        231,
+        32,
+        32
+      },
+      disable = {
+        992,
+        231,
+        32,
+        32
+      }
+    },
+    width = 32,
+    height = 32
+  },
+  MAIN_MENU_PRODUCTION = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coords = {
+      normal = {
+        892,
+        297,
+        32,
+        32
+      },
+      over = {
+        925,
+        297,
+        32,
+        32
+      },
+      click = {
+        958,
+        297,
+        32,
+        32
+      },
+      disable = {
+        991,
+        297,
+        32,
+        32
+      }
+    },
+    width = 28,
+    height = 28
+  },
+  MAIN_MENU_COMMUNITY = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coords = {
+      normal = {
+        893,
+        198,
+        32,
+        32
+      },
+      over = {
+        926,
+        198,
+        32,
+        32
+      },
+      click = {
+        959,
+        198,
+        32,
+        32
+      },
+      disable = {
+        992,
+        198,
+        32,
+        32
+      }
+    },
+    width = 32,
+    height = 32
+  },
+  MAIN_MENU_RANKING = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coords = {
+      normal = {
+        893,
+        264,
+        32,
+        32
+      },
+      over = {
+        926,
+        264,
+        32,
+        32
+      },
+      click = {
+        959,
+        264,
+        32,
+        32
+      },
+      disable = {
+        992,
+        264,
+        32,
+        32
+      }
+    },
+    width = 32,
+    height = 32
+  },
+  MAIN_MENU_ADDITONAL = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.ADDITIONAL_MAIN_MENU,
+    coordsKey = "house"
+  },
+  MAIN_MENU_SYSTEM = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coords = {
+      normal = {
+        893,
+        165,
+        32,
+        32
+      },
+      over = {
+        926,
+        165,
+        32,
+        32
+      },
+      click = {
+        959,
+        165,
+        32,
+        32
+      },
+      disable = {
+        992,
+        165,
+        32,
+        32
+      }
+    },
+    width = 32,
+    height = 32
+  },
+  QUEST_CLOSE = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coords = {
+      normal = {
+        754,
+        121,
+        28,
+        26
+      },
+      over = {
+        783,
+        121,
+        28,
+        26
+      },
+      click = {
+        812,
+        121,
+        28,
+        26
+      },
+      disable = {
+        841,
+        121,
+        28,
+        26
+      }
+    },
+    width = 28,
+    height = 26
+  },
+  QUEST_OPEN = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coords = {
+      normal = {
+        754,
+        94,
+        28,
+        26
+      },
+      over = {
+        783,
+        94,
+        28,
+        26
+      },
+      click = {
+        812,
+        94,
+        28,
+        26
+      },
+      disable = {
+        841,
+        94,
+        28,
+        26
+      }
+    },
+    width = 28,
+    height = 26
+  },
+  TUTORIAL_CLOSE = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.TUTORIAL,
+    coordsKey = "close"
+  },
+  SECONDPASSWORD_LOCK = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coords = {
+      normal = {
+        668,
+        215,
+        17,
+        23
+      },
+      over = {
+        668,
+        238,
+        17,
+        23
+      },
+      click = {
+        658,
+        261,
+        17,
+        23
+      },
+      disable = {
+        675,
+        261,
+        17,
+        23
+      }
+    },
+    width = 17,
+    height = 23
+  },
+  SECONDPASSWORD_UNLOCK = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coordsKey = "2nd_pw_pink"
+  },
+  DAY_EVENT = {
+    drawableType = "drawable",
+    path = BUTTON_TEXTURE_PATH.DAY_EVENT,
+    coords = {
+      normal = {
+        0,
+        0,
+        68,
+        37
+      },
+      over = {
+        0,
+        37,
+        68,
+        37
+      },
+      click = {
+        0,
+        74,
+        68,
+        37
+      },
+      disable = {
+        0,
+        0,
+        68,
+        37
+      }
+    },
+    width = 68,
+    height = 37
+  },
+  TIMER = {
+    drawableType = "drawable",
+    layer = "overlay",
+    path = TEXTURE_PATH.TIMER,
+    coords = {
+      normal = {
+        0,
+        248,
+        8,
+        9
+      },
+      over = {
+        0,
+        122,
+        61,
+        61
+      },
+      click = {
+        61,
+        122,
+        61,
+        61
+      },
+      disable = {
+        0,
+        248,
+        8,
+        9
+      }
+    },
+    width = 61,
+    height = 61
+  },
+  ARCHE_MALL_OUT = {
+    drawableType = "drawable",
+    layer = "overlay",
+    path = BUTTON_TEXTURE_PATH.ARCHE_MALL_OUT,
+    coords = {
+      normal = {
+        0,
+        0,
+        36,
+        32
+      },
+      over = {
+        36,
+        0,
+        36,
+        32
+      },
+      click = {
+        0,
+        32,
+        36,
+        32
+      },
+      disable = {
+        36,
+        32,
+        36,
+        32
+      }
+    },
+    width = 36,
+    height = 32
+  },
+  CLIENT_DRIVEN_OUT = {
+    drawableType = "drawable",
+    layer = "overlay",
+    path = BUTTON_TEXTURE_PATH.ARCHE_MALL_OUT,
+    coords = {
+      normal = {
+        0,
+        0,
+        36,
+        32
+      },
+      over = {
+        36,
+        0,
+        36,
+        32
+      },
+      click = {
+        0,
+        32,
+        36,
+        32
+      },
+      disable = {
+        36,
+        32,
+        36,
+        32
+      }
+    },
+    width = 36,
+    height = 32
+  },
+  TOGGLE_NO_PREMIUM_SERVICE = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coordsKey = "btn_arche_off"
+  },
+  TOGGLE_PREMIUM_SERVICE = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coordsKey = "btn_arche_on"
+  },
+  TOGGLE_CHAR_SELECT_REPRESENT_CHAR = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.PREMIUM_CHAR_SELECT_REPRESENT_CHAR_BTN,
+    coordsKey = "representative"
+  },
+  TOGGLE_INGAMESHOP = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coordsKey = "btn_shop"
+  },
+  TOGGLE_EVENT_CENTER = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coordsKey = "btn_eventcenter"
+  },
+  TOGGLE_CONVENIENCE = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coordsKey = "btn_main"
+  },
+  TOGGLE_COMMERCIAL_MAIL = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coordsKey = "btn_sendbox"
+  },
+  TOGGLE_AUCTION = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coordsKey = "btn_auction"
+  },
+  TOGGLE_MAIL = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coordsKey = "btn_mailbox"
+  },
+  TOGGLE_REQUEST_BATTLE_FIELD = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coordsKey = "btn_battlefield"
+  },
+  RISK_ALARM_CLOSE = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.RISK_ALARM,
+    coords = {
+      normal = UIParent:GetTextureData(TEXTURE_PATH.RISK_ALARM, "close_df").coords,
+      over = UIParent:GetTextureData(TEXTURE_PATH.RISK_ALARM, "close_ov").coords,
+      click = UIParent:GetTextureData(TEXTURE_PATH.RISK_ALARM, "close_on").coords,
+      disable = UIParent:GetTextureData(TEXTURE_PATH.RISK_ALARM, "close_dis").coords
+    },
+    width = GetExtentByKey(TEXTURE_PATH.RISK_ALARM, "close_df", "width"),
+    height = GetExtentByKey(TEXTURE_PATH.RISK_ALARM, "close_df", "height")
+  },
+  REPUTATION = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coordsKey = "btn_hero"
+  },
+  ROAD_MAP_DRAWING = {
+    drawableType = "drawable",
+    path = TEXTURE_PATH.HUD,
+    coordsKey = "btn_drawing"
+  }
+}

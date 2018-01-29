@@ -1,0 +1,3 @@
+if X2Util:GetGameProvider() == TENCENT then
+  FORM_COMPOSITION_METHOD = {DINGBET_OFFSET = 3}
+end

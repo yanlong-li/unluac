@@ -1,0 +1,12 @@
+if characterSelectLocale == nil then
+  characterSelectLocale = {}
+end
+function characterSelectLocale.AdjustLocaleButtonFont(buttonStyles, deleteStyles, createStyle)
+end
+function characterSelectLocale.GetLaborPowerText(curLabor, maxLabor)
+  return string.format("\194\183 %s |,%d;/|,%d;", locale.attribute("labor_power"), curLabor, maxLabor)
+end
+characterSelectLocale.showReturnServer = true
+function characterSelectLocale.CreateStaffButton(bottomPanel)
+  return nil
+end

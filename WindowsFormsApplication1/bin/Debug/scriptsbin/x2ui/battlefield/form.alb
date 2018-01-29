@@ -1,0 +1,58 @@
+FORM_WAITING_ALARM = {
+  BATTLEFIELD_STATE_COORDS = {
+    START = {
+      GetTextureInfo(TEXTURE_PATH.COUNT_DOWN, "start"):GetCoords()
+    },
+    END = {
+      GetTextureInfo(TEXTURE_PATH.BATTLEFIELD_ALARM_READY, "ended"):GetCoords()
+    },
+    IN_PROGRESS = {
+      GetTextureInfo(TEXTURE_PATH.BATTLEFIELD_ALARM_IN_PROGRESS, "in"):GetCoords()
+    },
+    PEOPLE_WAITING = {
+      GetTextureInfo(TEXTURE_PATH.BATTLEFIELD_ALARM_READY, "standby"):GetCoords()
+    }
+  },
+  GAME_RESULT_COORDS = {
+    WIN = {
+      GetTextureInfo(TEXTURE_PATH.BATTLEFIELD_SCOREBOARD, "victory"):GetCoords()
+    },
+    DEFEAT = {
+      GetTextureInfo(TEXTURE_PATH.BATTLEFIELD_SCOREBOARD, "defeat"):GetCoords()
+    },
+    DRAW = {
+      GetTextureInfo(TEXTURE_PATH.BATTLEFIELD_SCOREBOARD, "draw"):GetCoords()
+    }
+  },
+  GAME_ROUND_RESULT = {
+    ROUND = {
+      GetTextureInfo(TEXTURE_PATH.BATTLEFIELD_ROUND, "round"):GetCoords()
+    },
+    WIN = {
+      GetTextureInfo(TEXTURE_PATH.BATTLEFIELD_ROUND_WIN, "win"):GetCoords()
+    },
+    LOSE = {
+      GetTextureInfo(TEXTURE_PATH.BATTLEFIELD_ROUND_LOSE, "lose"):GetCoords()
+    },
+    DRAW = {
+      GetTextureInfo(TEXTURE_PATH.BATTLEFIELD_ROUND_DRAW, "draw"):GetCoords()
+    }
+  },
+  COUNT_DOWN = {
+    fiveCoord = {
+      GetTextureInfo(TEXTURE_PATH.COUNT_DOWN, "5"):GetCoords()
+    },
+    fourCoord = {
+      GetTextureInfo(TEXTURE_PATH.COUNT_DOWN, "4"):GetCoords()
+    },
+    threeCoord = {
+      GetTextureInfo(TEXTURE_PATH.COUNT_DOWN, "3"):GetCoords()
+    },
+    twoCoord = {
+      GetTextureInfo(TEXTURE_PATH.COUNT_DOWN, "2"):GetCoords()
+    },
+    oneCoord = {
+      GetTextureInfo(TEXTURE_PATH.COUNT_DOWN, "1"):GetCoords()
+    }
+  }
+}

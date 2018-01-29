@@ -1,0 +1,58 @@
+function InitCustomizingParam(needUiUpdate)
+  InitializeCurrentParam(needUiUpdate)
+end
+function IsBeautyShop()
+  return false
+end
+function GetCurrentCosmeticItem(type)
+  return GetCustomStyleFromUnit(type)
+end
+function SelectPresetItem(type, index, needUiUpdate)
+  local isFixed = X2Customizer:IsCosmeticFix()
+  SetCustomItemToParam(type, index, isFixed, false)
+  InitCustomizingParam(needUiUpdate)
+end
+function SelectCosmeticItem(type, index, r, g, b, weight, infoTable)
+  SetCustomStyleToUnit(type, index, r, g, b, weight, infoTable)
+  InitCustomizingParam()
+end
+function SelctCosmeticScarItem(index, x, y, scale, rotate)
+  SetScarStatus(index, x, y, scale, rotate)
+  InitCustomizingParam()
+end
+function GetCosmeticScarInfo()
+  return GetScarStatus()
+end
+function MixWithPresetItem(type, index, value, isRandom)
+  local isFixed = X2Customizer:IsCosmeticFix()
+  X2Customizer:SetMixedParam((index - 1) % MAX_VIEW_PRESET_COUNT + 1)
+  X2Customizer:MixParam(type, value, isRandom, isFixed)
+  SetCustomItemToParam(FACE, nil, isFixed)
+end
+function GetFaceTargetCurValue(index)
+  return GetFaceTargetValue(index)
+end
+function CancelToMix()
+  X2Customizer:LoadSavedParam(0)
+  SetCustomItemToParam(FACE, nil, false)
+end
+function ConfirmToMix()
+end
+function ReadyToModifyDetail()
+  InitCustomizingParam()
+end
+function CancelToModifyDetail()
+  SetCustomItemToParam(FACE, nil, false, false)
+end
+function ConfirmToModifyDetail()
+  InitCustomizingParam()
+end
+function ModifyFaceDetail(index, value)
+  ModifyFaceTargetValue(index, value)
+end
+function DoSmile(arg)
+  SetCustomSmile(arg)
+end
+function ClearPlasticWnd()
+  ClearPlasticSelectedItems()
+end

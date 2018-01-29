@@ -1,0 +1,9 @@
+if X2Util:GetGameProvider() == GAMEON then
+  characetInfoLocale.juryIconCoords = {
+    249,
+    105,
+    40,
+    20
+  }
+  characetInfoLocale.groupFontSize = FONT_SIZE.LARGE
+end

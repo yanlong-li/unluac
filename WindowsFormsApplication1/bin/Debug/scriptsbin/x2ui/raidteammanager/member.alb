@@ -1,0 +1,240 @@
+local MAX_RAID_PARTY_MEMBERS = X2Team:GetMaxPartyMembers()
+function CreateRaidTeamManagerMember(id, parent, party, slot)
+  local w = SetViewOfRaidTeamManagerMember(id, parent, slot)
+  w.memberIndex = (party - 1) * MAX_RAID_PARTY_MEMBERS + (slot - 1) + 1
+  w.party = party
+  w.slot = slot
+  w.target = string.format("team%d", w.memberIndex)
+  function w:UpdateName()
+    local name = X2Unit:UnitName(w.target)
+    if name ~= nil then
+      self.nameLabel:SetText(name)
+    end
+    if RaidTeamManager.self_texture ~= nil and X2Unit:UnitName("player") == name then
+      RaidTeamManager.self_texture:SetVisible(true)
+      RaidTeamManager.self_texture:RemoveAllAnchors()
+      RaidTeamManager.self_texture:AddAnchor("TOPLEFT", w, -5, -6)
+      RaidTeamManager.self_texture:AddAnchor("BOTTOMRIGHT", w, 0, 8)
+    end
+  end
+  function w:UpdateLevel()
+    local level = X2Unit:UnitLevel(w.target)
+    if level ~= nil then
+      self.levelLabel:SetText(tostring(level))
+    end
+  end
+  function w:UpdateAbility()
+    local templates = X2Unit:GetTargetAbilityTemplates(w.target)
+    if templates == nil then
+      return
+    end
+    local abilityIndex = {}
+    for index = 1, #templates do
+      local ability = templates[index]
+      abilityIndex[index] = X2Ability:FindAbilityIndexForStr(ability.name)
+    end
+    local ability
+    if GetCombinedAbilityName ~= nil then
+      ability = GetCombinedAbilityName(abilityIndex[1], abilityIndex[2], abilityIndex[3])
+    end
+    if ability ~= nil then
+      self.abilityLabel:SetText(ability)
+    end
+  end
+  function w:UpdateLeaderMark()
+    local authority = X2Unit:UnitTeamAuthority(self.target)
+    local targetName = X2Unit:UnitName(self.target)
+    local distributorName = X2Team:GetTeamDistributorName()
+    if distributorName == targetName or authority ~= nil then
+      self.nameLabel:RemoveAllAnchors()
+      self.nameLabel:AddAnchor("LEFT", self.leaderMark, "RIGHT", 2, 0)
+      self.nameLabel:AddAnchor("RIGHT", self.levelLabel, -13, 0)
+      if authority == "leader" or authority == "subleader" and distributorName ~= targetName then
+        self.lootIcon:Show(false)
+        self.leaderMark:SetMark(authority, true)
+      elseif distributorName == targetName then
+        self.lootIcon:Show(true)
+        self.leaderMark:Show(false)
+      end
+    else
+      self.lootIcon:Show(false)
+      self.leaderMark:Show(false)
+      self.nameLabel:RemoveAllAnchors()
+      self.nameLabel:AddAnchor("LEFT", self.roleMark, "RIGHT", 2, 0)
+      self.nameLabel:AddAnchor("RIGHT", self.levelLabel, -15, 0)
+    end
+  end
+  function w:UpdateOffline()
+    local isOffline = X2Unit:UnitIsOffline(self.target)
+    if isOffline then
+      ApplyTextColor(self.nameLabel, FONT_COLOR.GRAY)
+      ApplyTextColor(self.levelLabel, FONT_COLOR.GRAY)
+    else
+      ApplyTextColor(self.levelLabel, FONT_COLOR.BLACK)
+    end
+  end
+  function w:UpdateRoleColor(role)
+    if role == 1 then
+      ApplyTextColor(self.nameLabel, FONT_COLOR.ROLE_TANKER)
+    elseif role == 2 then
+      ApplyTextColor(self.nameLabel, FONT_COLOR.ROLE_HEALER)
+    elseif role == 3 then
+      ApplyTextColor(self.nameLabel, FONT_COLOR.ROLE_DEALER)
+    elseif role == 0 then
+      ApplyTextColor(self.nameLabel, FONT_COLOR.ROLE_NONE)
+    end
+  end
+  function w:UpdateMyRoleBGTexture(role)
+    if RaidTeamManager.self_texture == nil then
+      return
+    end
+    if role == 1 then
+      RaidTeamManager.self_texture:SetColor(FONT_COLOR.ROLE_TANKER[1], FONT_COLOR.ROLE_TANKER[2], FONT_COLOR.ROLE_TANKER[3], 0.5)
+    elseif role == 2 then
+      RaidTeamManager.self_texture:SetColor(FONT_COLOR.ROLE_HEALER[1], FONT_COLOR.ROLE_HEALER[2], FONT_COLOR.ROLE_HEALER[3], 0.5)
+    elseif role == 3 then
+      RaidTeamManager.self_texture:SetColor(FONT_COLOR.ROLE_DEALER[1], FONT_COLOR.ROLE_DEALER[2], FONT_COLOR.ROLE_DEALER[3], 0.5)
+    elseif role == 0 then
+      RaidTeamManager.self_texture:SetColor(FONT_COLOR.ROLE_NONE[1], FONT_COLOR.ROLE_NONE[2], FONT_COLOR.ROLE_NONE[3], 0.5)
+    end
+  end
+  function w:UpdateRoleMark()
+    local role = X2Team:GetRole(self.memberIndex)
+    local myMemberIndex = X2Team:GetTeamPlayerIndex()
+    if role == TMROLE_NONE and myMemberIndex ~= self.memberIndex then
+      self.roleMark:Show(false)
+    else
+      if myMemberIndex == self.memberIndex then
+        self:UpdateMyRoleBGTexture(role)
+      end
+      self:SetRole(role)
+    end
+    self:UpdateRoleColor(role)
+  end
+  function w:Refresh()
+    if X2Team:IsRaidTeam() == true and X2Unit:UnitIsTeamMember(w.target) == true then
+      self:Show(true)
+      self:UpdateName()
+      self:UpdateLevel()
+      self:UpdateLeaderMark()
+      self:UpdateRoleMark()
+      self:UpdateOffline()
+      return true
+    else
+      self:Show(false)
+    end
+    return false
+  end
+  function w:SetRole(role)
+    if role ~= nil then
+      self.roleMark:Show(true)
+      self.roleMark:SetMark(role)
+    else
+      self.roleMark:Show(false)
+    end
+  end
+  local event = w.eventWindow
+  event:RegisterForDrag("LeftButton")
+  function event:OnClick(arg)
+    if w.Click ~= nil then
+      local result = w:Click(arg)
+      if result ~= nil then
+        return
+      end
+    end
+    if arg == "LeftButton" and w.target ~= nil then
+      X2Unit:TargetUnit(w.target)
+    end
+  end
+  event:SetHandler("OnClick", event.OnClick)
+  function event:OnShow()
+    self.bg:SetVisible(false)
+  end
+  event:SetHandler("OnShow", event.OnShow)
+  function event:OnHide()
+    self.bg:SetVisible(false)
+  end
+  event:SetHandler("OnHide", event.OnHide)
+  function event:OnEnter()
+    local myMemberIndex = X2Team:GetTeamPlayerIndex()
+    if raidteam_moving_member_index == nil then
+      local name = X2Unit:UnitName(w.target)
+      local level = X2Unit:UnitLevel(w.target)
+      local abilityTemplates = X2Unit:GetTargetAbilityTemplates(w.target)
+      if abilityTemplates == nil then
+        return
+      end
+      local tooltipText = name .. "    " .. level
+      if abilityTemplates[1].index < ABILITY_MAX then
+        tooltipText = tooltipText .. "    " .. locale.common.abilityCategory[abilityTemplates[1].name]
+      end
+      if abilityTemplates[2].index < ABILITY_MAX then
+        tooltipText = tooltipText .. "/" .. locale.common.abilityCategory[abilityTemplates[2].name]
+      end
+      if abilityTemplates[3].index < ABILITY_MAX then
+        tooltipText = tooltipText .. "/" .. locale.common.abilityCategory[abilityTemplates[3].name]
+      end
+      SetTooltip(tooltipText, self)
+    end
+    if X2Team:IsTeamOwner(myMemberIndex) then
+      self.bg:SetVisible(true)
+    end
+  end
+  event:SetHandler("OnEnter", event.OnEnter)
+  function event:OnLeave()
+    HideTooltip()
+    local myMemberIndex = X2Team:GetTeamPlayerIndex()
+    if (raidteam_moving_member_index == nil or raidteam_moving_member_index ~= w.memberIndex) and X2Team:IsTeamOwner(myMemberIndex) then
+      self.bg:SetVisible(false)
+    end
+  end
+  event:SetHandler("OnLeave", event.OnLeave)
+  function event:OnDragStart(arg)
+    local myMemberIndex = X2Team:GetTeamPlayerIndex()
+    if X2Team:IsTeamOwner(myMemberIndex) then
+      raidteam_moving_member_party = w.party
+      raidteam_moving_member_index = w.memberIndex
+    end
+  end
+  event:SetHandler("OnDragStart", event.OnDragStart)
+  function event:OnDragReceive(arg)
+    self.bg:SetVisible(false)
+    local myMemberIndex = X2Team:GetTeamPlayerIndex()
+    if X2Team:IsTeamOwner(myMemberIndex) and raidteam_moving_member_index ~= nil then
+      X2Team:MoveTeamMember(raidteam_moving_member_index, w.memberIndex)
+    end
+  end
+  event:SetHandler("OnDragReceive", event.OnDragReceive)
+  function event:OnDragStop(arg)
+    self.bg:SetVisible(false)
+    local myMemberIndex = X2Team:GetTeamPlayerIndex()
+    if X2Team:IsTeamOwner(myMemberIndex) then
+      raidteam_moving_member_party = nil
+      raidteam_moving_member_index = nil
+    end
+  end
+  event:SetHandler("OnDragStop", event.OnDragStop)
+  function event:OnEvent(event, ...)
+    if event == "TEAM_MEMBERS_CHANGED" then
+      if arg[1] == "owner_changed" and (arg[4] == w.memberIndex or arg[5] == w.memberIndex) then
+        w:UpdateLeaderMark()
+      end
+    elseif event == "TEAM_MEMBER_DISCONNECTED" and arg[1] == true then
+      w:UpdateOffline()
+    end
+  end
+  event:SetHandler("OnEvent", event.OnEvent)
+  event:RegisterEvent("TEAM_MEMBERS_CHANGED")
+  event:RegisterEvent("TEAM_MEMBER_DISCONNECTED")
+  function w:Click(arg)
+    local myMemberIndex = X2Team:GetTeamPlayerIndex()
+    if arg == "RightButton" then
+      if w.memberIndex == myMemberIndex then
+        ActivatePopupMenu(w, "player")
+      else
+        ActivatePopupMenu(w, "team", w.memberIndex)
+      end
+    end
+  end
+  return w
+end

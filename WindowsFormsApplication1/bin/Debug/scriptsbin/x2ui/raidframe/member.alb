@@ -1,0 +1,423 @@
+local MAX_RAID_PARTY_MEMBERS = X2Team:GetMaxPartyMembers()
+function CreateRaidMember(parent, ownId, party, slot)
+  local w = SetViewOfRaidMember(parent, ownId, slot)
+  w:Show(false)
+  w.memberIndex = (party - 1) * MAX_RAID_PARTY_MEMBERS + (slot - 1) + 1
+  w.party = party
+  w.slot = slot
+  w.target = string.format("team%d", w.memberIndex)
+  function w:ShowCombatIcon(arg1, arg2)
+    if X2Unit:GetUnitId(w.target) == arg2 then
+      self.combatIcon:SetVisible(arg1)
+    end
+  end
+  function w:SetName(name)
+    if name ~= nil then
+      w.nameLabel:SetText(name)
+    end
+  end
+  function w:SetMaxHp(maxHp)
+    if maxHp ~= nil then
+      w.hpBar.statusBar:SetMinMaxValues(0, maxHp or 0)
+    end
+  end
+  function w:SetHp(hp)
+    if hp ~= nil then
+      w.hpBar.statusBar:SetValue(hp or 0)
+    end
+  end
+  function w:SetMaxMp(maxMp)
+    if maxMp ~= nil then
+      w.mpBar.statusBar:SetMinMaxValues(0, maxMp or 0)
+    end
+  end
+  function w:SetMp(mp)
+    if mp ~= nil then
+      w.mpBar.statusBar:SetValue(mp or 0)
+    end
+  end
+  function w:UpdateName()
+    local name = X2Unit:UnitName(w.target)
+    local myName = X2Unit:UnitName("player")
+    if name == myName then
+      self.nameLabel.style:SetColor(ConvertColor(252), ConvertColor(219), ConvertColor(39), 1)
+    else
+      self.nameLabel.style:SetColor(1, 1, 1, 1)
+    end
+    self:SetName(name)
+  end
+  function w:UpdateMaxHp()
+    local maxHp = X2Unit:UnitMaxHealth(w.target)
+    self:SetMaxHp(maxHp)
+  end
+  function w:UpdateHp()
+    local hp = X2Unit:UnitHealth(w.target)
+    self:SetHp(hp)
+  end
+  function w:UpdateMaxMp()
+    local maxMp = X2Unit:UnitMaxMana(w.target)
+    self:SetMaxMp(maxMp)
+  end
+  function w:UpdateMp()
+    local mp = X2Unit:UnitMana(w.target)
+    self:SetMp(mp)
+  end
+  function w:UpdateBuff()
+    w.buffWindow:BuffUpdate(w.target)
+  end
+  function w:UpdateCombatIcon()
+    if self:IsVisible() and self.target ~= nil then
+      self.combatIcon:SetVisible(X2Unit:UnitCombatState(self.target))
+    end
+  end
+  function w:ChangeHpBarTexture_role(simpleMode, role)
+    if simpleMode then
+      if role == TMROLE_TANKER then
+        self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.S_HP_RAID_TANKER)
+      elseif role == TMROLE_HEALER then
+        self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.S_HP_RAID_HEALER)
+      elseif role == TMROLE_DEALER then
+        self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.S_HP_RAID_DEALER)
+      else
+        self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.S_HP_RAID)
+      end
+    elseif role == TMROLE_TANKER then
+      self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.HP_RAID_TANKER)
+    elseif role == TMROLE_HEALER then
+      self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.HP_RAID_HEALER)
+    elseif role == TMROLE_DEALER then
+      self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.HP_RAID_DEALER)
+    else
+      self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.HP_RAID)
+    end
+  end
+  function w:UpdateRoleOfHpBarTexture()
+    local role = X2Team:GetRole(self.memberIndex)
+    local myMemberIndex = X2Team:GetTeamPlayerIndex()
+    local isOffline = X2Unit:UnitIsOffline(self.target)
+    if isOffline then
+      if self.simple then
+        self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.S_HP_RAID_OFFLINE)
+      else
+        self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.HP_RAID_OFFLINE)
+      end
+    else
+      self:ChangeHpBarTexture_role(self.simple, role)
+      if self.simple then
+        self.mpBar:ApplyBarTexture(STATUSBAR_STYLE.S_MP_RAID)
+      else
+        self.mpBar:ApplyBarTexture(STATUSBAR_STYLE.MP_RAID)
+      end
+    end
+  end
+  function w:UpdateNameLabelWidth()
+    local width = self.hpBar:GetWidth()
+    if self.marker:IsVisible() then
+      width = width - self.marker:GetWidth()
+      if self.lootIcon:IsVisible() then
+        width = width - self.lootIcon:GetWidth()
+      elseif self.leaderMark:IsVisible() then
+        width = width - self.leaderMark:GetWidth()
+      end
+    else
+      width = width - 5
+      if self.lootIcon:IsVisible() and self.leaderMark:IsVisible() then
+        width = width - self.lootIcon:GetWidth() - self.leaderMark:GetWidth()
+      elseif self.lootIcon:IsVisible() then
+        width = width - self.lootIcon:GetWidth()
+      elseif self.leaderMark:IsVisible() then
+        width = width - self.leaderMark:GetWidth()
+      end
+    end
+    self.nameLabel:SetWidth(width)
+  end
+  function w:UpdateLeaderMark()
+    local authority = X2Unit:UnitTeamAuthority(self.target)
+    local targetName = X2Unit:UnitName(self.target)
+    local distributorName = X2Team:GetTeamDistributorName()
+    self.leaderMark:Show(false)
+    self.lootIcon:Show(false)
+    if authority == "leader" or authority == "subleader" then
+      self.leaderMark:Show(true)
+      self.leaderMark:SetMark(authority, true)
+    end
+    if distributorName == targetName then
+      self.lootIcon:Show(true)
+      self.lootIcon:RemoveAllAnchors()
+      if self.leaderMark:IsVisible() then
+        self.lootIcon:AddAnchor("TOPLEFT", self.leaderMark, "TOPRIGHT", 1, -2)
+      else
+        self.lootIcon:AddAnchor("TOPLEFT", self.leaderMark, 0, -2)
+      end
+    end
+    self:UpdateNameLabelWidth()
+    if self.lootIcon:IsVisible() then
+      self.nameLabel:RemoveAllAnchors()
+      self.nameLabel:AddAnchor("TOPLEFT", self.lootIcon, "TOPRIGHT", 1, 1)
+    elseif self.leaderMark:IsVisible() then
+      self.nameLabel:RemoveAllAnchors()
+      self.nameLabel:AddAnchor("TOPLEFT", self.leaderMark, "TOPRIGHT", 2, -1)
+    else
+      self.nameLabel:RemoveAllAnchors()
+      self.nameLabel:AddAnchor("TOPLEFT", self.hpBar, 3, 2)
+    end
+    if not self.simple then
+      self.offlineLabel:RemoveAllAnchors()
+      self.offlineLabel:AddAnchor("TOPLEFT", self.nameLabel, "BOTTOMLEFT", 0, -1)
+    end
+  end
+  local GetTeamInPlayer = function()
+    local myMemberIndex = X2Team:GetTeamPlayerIndex()
+    return string.format("team%d", myMemberIndex)
+  end
+  function w:UpdateOffline()
+    if self.target == GetTeamInPlayer() then
+      return
+    end
+    local isOffline = X2Unit:UnitIsOffline(self.target)
+    if isOffline then
+      self:TranslucenceFrame(false)
+      if self.simple then
+        self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.S_HP_RAID_OFFLINE)
+        self.mpBar:ApplyBarTexture(STATUSBAR_STYLE.S_MP_RAID_OFFLINE)
+      else
+        self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.HP_RAID_OFFLINE)
+        self.mpBar:ApplyBarTexture(STATUSBAR_STYLE.MP_RAID_OFFLINE)
+      end
+      ApplyTextColor(self.nameLabel, FONT_COLOR.DARK_GRAY)
+      self.offlineLabel:Show(not self.simple)
+    else
+      self.offlineLabel:Show(false)
+      if self.simple then
+        self.mpBar:ApplyBarTexture(STATUSBAR_STYLE.S_MP_RAID)
+      else
+        self.mpBar:ApplyBarTexture(STATUSBAR_STYLE.MP_RAID)
+      end
+    end
+  end
+  function w:UpdateDistance()
+    if self.target == nil then
+      return
+    end
+    local distance = X2Unit:UnitDistance(self.target)
+    if distance == nil then
+      return
+    end
+    if distance >= UNIT_VISIBLE_MAX_DISTANCE then
+      self:TranslucenceFrame(true)
+    else
+      self:TranslucenceFrame(false)
+    end
+  end
+  function w:UpdateQQTalk()
+    if self.qqTalkIcon == nil or self.target == nil then
+      return
+    end
+    local roomInfo = X2QQTalk:GetRoomInfo()
+    if self.simple or roomInfo.roomType ~= "team" then
+      self.qqTalkIcon:SetVisible(false)
+      return
+    end
+    if X2QQTalk:IsEnteredTeamTalkRoom(self.memberIndex) then
+      self.qqTalkIcon:SetVisible(true)
+    else
+      self.qqTalkIcon:SetVisible(false)
+    end
+  end
+  function w:Refresh()
+    if X2Team:IsRaidTeam() == true and X2Unit:UnitIsTeamMember(self.target) == true then
+      self:Show(true)
+      self:UpdateRoleOfHpBarTexture()
+      self:UpdateName()
+      self:UpdateMaxHp()
+      self:UpdateHp()
+      self:UpdateMaxMp()
+      self:UpdateMp()
+      self:UpdateBuff()
+      self:UpdateLeaderMark()
+      self:UpdateCombatIcon()
+      self:UpdateDistance()
+      self:UpdateOffline()
+      self:UpdateQQTalk()
+      return true
+    else
+      self:Show(false)
+    end
+    return false
+  end
+  function w:OnUpdate()
+    if X2Unit:UnitIsTeamMember(self.target) == true then
+      self:Show(true)
+      self:UpdateMaxHp()
+      self:UpdateHp()
+      self:UpdateMaxMp()
+      self:UpdateMp()
+      self:UpdateBuff()
+      self:UpdateCombatIcon()
+      if X2Unit:UnitIsOffline(self.target) then
+        self:UpdateOffline()
+      else
+        self:UpdateDistance()
+      end
+      return true
+    end
+    return false
+  end
+  w:SetHandler("OnUpdate", w.OnUpdate)
+  local event = w.eventWindow
+  function event:OnClick(arg)
+    if self:IsVisible() == false then
+      return
+    end
+    local myMemberIndex = X2Team:GetTeamPlayerIndex()
+    local targetName = X2Unit:UnitName(w.target)
+    local myName = X2Unit:UnitName("player")
+    if RaidFrame ~= nil and arg == "RightButton" then
+      if myName == targetName then
+        ActivatePopupMenu(w, "player")
+      else
+        ActivatePopupMenu(w, "team", w.memberIndex)
+      end
+    end
+    if arg == "LeftButton" and w.target ~= nil then
+      X2Unit:TargetUnit(w.target)
+    end
+  end
+  event:SetHandler("OnClick", event.OnClick)
+  local SetMarkerTexture = function(markerTexture, markerIndex)
+    local markerCoords = {
+      {
+        384,
+        48,
+        24,
+        24
+      },
+      {
+        408,
+        48,
+        24,
+        24
+      },
+      {
+        432,
+        48,
+        24,
+        24
+      },
+      {
+        456,
+        48,
+        24,
+        24
+      },
+      {
+        480,
+        48,
+        24,
+        24
+      },
+      {
+        312,
+        72,
+        24,
+        24
+      },
+      {
+        336,
+        72,
+        24,
+        24
+      },
+      {
+        360,
+        72,
+        24,
+        24
+      },
+      {
+        384,
+        72,
+        24,
+        24
+      },
+      {
+        408,
+        72,
+        24,
+        24
+      },
+      {
+        432,
+        72,
+        24,
+        24
+      },
+      {
+        456,
+        72,
+        24,
+        24
+      }
+    }
+    markerTexture:SetCoords(markerCoords[markerIndex][1], markerCoords[markerIndex][2], markerCoords[markerIndex][3], markerCoords[markerIndex][4])
+  end
+  function w:SetMarker(memberId)
+    if memberId == nil then
+      return
+    end
+    if self.marker == nil then
+      return
+    end
+    for i = 1, 12 do
+      local markerUnitId = X2Unit:GetOverHeadMarkerUnitId(i)
+      if markerUnitId == memberId then
+        self.marker:SetVisible(true)
+        SetMarkerTexture(self.marker, i)
+        return
+      end
+    end
+  end
+  function event:OnEvent(event, ...)
+    if event == "TEAM_MEMBERS_CHANGED" then
+      if arg[1] == "owner_changed" and (arg[4] == w.memberIndex or arg[5] == w.memberIndex) then
+        w:UpdateLeaderMark()
+      end
+      local func = locale.team.msgFunc[arg1]
+      if func ~= nil then
+        local notifyMsg = func(arg2, arg3)
+        if notifyMsg ~= nil then
+          X2Chat:DispatchChatMessage(CMF_PARTY_AND_RAID_INFO, notifyMsg)
+        else
+          LuaAssert(string.format("error - arg2 = %s, arg3 = %s", tostring(arg2), tostring(arg3)))
+        end
+      end
+    elseif event == "TEAM_MEMBER_DISCONNECTED" then
+      if arg[1] == true then
+        w:UpdateOffline()
+      end
+    elseif event == "SET_OVERHEAD_MARK" then
+      local memberId = X2Unit:GetUnitId(w.target)
+      if arg[1] ~= memberId then
+        return
+      end
+      if not arg[3] then
+        w.marker:SetVisible(false)
+        w:UpdateNameLabelWidth()
+        return
+      end
+      w:SetMarker(memberId)
+      w:UpdateNameLabelWidth()
+    elseif event == "ENTERED_WORLD" then
+      local memberId = X2Unit:GetUnitId(w.target)
+      w.marker:SetVisible(false)
+      w:SetMarker(memberId)
+      w:UpdateNameLabelWidth()
+    end
+  end
+  event:SetHandler("OnEvent", event.OnEvent)
+  event:RegisterEvent("TEAM_MEMBERS_CHANGED")
+  event:RegisterEvent("TEAM_MEMBER_DISCONNECTED")
+  event:RegisterEvent("SET_OVERHEAD_MARK")
+  event:RegisterEvent("ENTERED_WORLD")
+  return w
+end

@@ -1,0 +1,53 @@
+local MAX_RAID_PARTY_MEMBERS = X2Team:GetMaxPartyMembers()
+function SetViewOfRaidParty(parent, ownId, party)
+  local w = parent:CreateChildWidget("emptywidget", ownId, party, true)
+  w:Show(false)
+  local numberLabel = CreateLabel(w:GetId() .. ".numberLabel", w)
+  numberLabel:Show(true)
+  numberLabel:SetText(tostring(party))
+  numberLabel:SetInset(20, 4, 0, 0)
+  numberLabel:SetExtent(RAID_FRAME_PARTY_LABEL_WIDTH, RAID_FRAME_PARTY_LABEL_HEIGHT)
+  numberLabel.style:SetShadow(true)
+  numberLabel.style:SetAlign(ALIGN_CENTER)
+  ApplyTextColor(numberLabel, FONT_COLOR.WHITE)
+  w.numberLabel = numberLabel
+  local bg = numberLabel:CreateImageDrawable(TEXTURE_PATH.RAID, "background")
+  bg:SetCoords(0, 123, 32, 28)
+  bg:SetExtent(32, 28)
+  bg:AddAnchor("TOPLEFT", numberLabel, 10, 2)
+  bg:SetColor(1, 1, 1, 0.7)
+  local members = {}
+  for i = 1, MAX_RAID_PARTY_MEMBERS do
+    members[i] = CreateRaidMember(w, "members", party, i)
+    members[i]:Show(false)
+  end
+  function w:UpdateMemberAnchor(vertical)
+    self.numberLabel:AddAnchor("TOPRIGHT", self, 0, 0)
+    for i = 1, MAX_RAID_PARTY_MEMBERS do
+      if i == 1 then
+        members[i]:RemoveAllAnchors()
+        members[i]:AddAnchor("TOP", self, 0, RAID_FRAME_PARTY_LABEL_HEIGHT)
+      else
+        members[i]:RemoveAllAnchors()
+        members[i]:AddAnchor("TOPLEFT", members[i - 1], "BOTTOMLEFT", 0, MEMBER_FRAME_AMONG_INSET_VERTICAL)
+      end
+    end
+  end
+  w.member = member
+  function w:OnBoundChanged()
+    local width, height = self:GetExtent()
+    local memberWidth = width - PARTY_FRAME_AMONG_INSET_HORIZON
+    local memberHeight = (height - RAID_FRAME_PARTY_LABEL_HEIGHT) / 5
+    for i = 1, MAX_RAID_PARTY_MEMBERS do
+      self.members[i]:SetExtent(memberWidth, memberHeight)
+    end
+  end
+  w:SetHandler("OnBoundChanged", w.OnBoundChanged)
+  function w:SetSimpleMode(simple)
+    self.simple = simple
+    for i = 1, MAX_RAID_PARTY_MEMBERS do
+      self.members[i]:SetSimpleMode(simple)
+    end
+  end
+  return w
+end

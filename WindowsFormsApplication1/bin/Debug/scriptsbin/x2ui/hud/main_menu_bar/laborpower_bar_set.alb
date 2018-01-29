@@ -1,0 +1,152 @@
+local GetLaborPowerTexts = function()
+  local payMethod = X2Player:GetPayMethod()
+  local payLocation = X2Player:GetPayLocation()
+  local featureSet = X2Player:GetFeatureSet()
+  local str = string.format("%s: |,%d; / |,%d;\n", locale.attribute("labor_power"), X2Player:GetLaborPower(), X2Player:GetMaxLaborPower())
+  if payLocation == "person" then
+    if payMethod == "person" then
+      if featureSet.premium then
+        local onlineLp = X2Player:GetPremiumServiceOnlineLaborPower()
+        local offlineLp = X2Player:GetPremiumServiceOfflineLaborPower()
+        str = string.format("%s%s", str, GetUIText(INFOBAR_MENU_TIP_TEXT, "labor_power_person_pcbang_tip", tostring(onlineLp), tostring(offlineLp)))
+      else
+        local ticValue = X2Player:GetDefaultLaborPowerTic()
+        str = string.format("%s%s", str, GetUIText(INFOBAR_MENU_TIP_TEXT, "labor_power_pcbang_pcbang_tip", tostring(ticValue)))
+      end
+    elseif payMethod == "pcbang" or payMethod == "sleep" and featureSet.freeLpRaise then
+      local ticValue = 0
+      if featureSet.premium then
+        ticValue = X2Player:GetPremiumServiceOnlineLaborPower()
+      else
+        ticValue = X2Player:GetDefaultLaborPowerTic()
+      end
+      str = string.format("%s%s", str, GetUIText(INFOBAR_MENU_TIP_TEXT, "labor_power_pcbang_pcbang_tip", tostring(ticValue)))
+    end
+  elseif payLocation == "pcbang" then
+    if payMethod == "person" then
+      local ticValue = X2Player:GetPcbangLaborPowerTic()
+      if featureSet.premium then
+        local onlineLp = X2Player:GetPremiumServiceOnlineLaborPower()
+        local offlineLp = X2Player:GetPremiumServiceOfflineLaborPower()
+        str = string.format("%s%s", str, GetUIText(INFOBAR_MENU_TIP_TEXT, "labor_power_person_pcbang_tip", tostring(onlineLp + ticValue), tostring(offlineLp)))
+      else
+        local defaultLp = X2Player:GetDefaultLaborPowerTic()
+        str = string.format("%s%s", str, GetUIText(INFOBAR_MENU_TIP_TEXT, "labor_power_pcbang_pcbang_tip", tostring(ticValue + defaultLp)))
+      end
+    elseif payMethod == "pcbang" or payMethod == "sleep" and featureSet.freeLpRaise then
+      local ticValue = X2Player:GetPcbangLaborPowerTic()
+      str = string.format("%s%s", str, GetUIText(INFOBAR_MENU_TIP_TEXT, "labor_power_pcbang_pcbang_tip", tostring(ticValue)))
+    end
+  end
+  return str
+end
+local CreateMileageTextbox = function(id, parent)
+  local textbox = parent:CreateChildWidget("textbox", id, 0, true)
+  textbox.style:SetAlign(ALIGN_LEFT)
+  textbox:SetHeight(FONT_SIZE.MIDDLE)
+  textbox.style:SetShadow(true)
+  ApplyTextColor(textbox, FONT_COLOR.MILEAGE)
+  function textbox:SetMileage()
+    local str = string.format("%s |b%s;", locale.bmmileage.bmmileage, X2Player:GetBmPoint())
+    textbox:SetWidth(800)
+    textbox:SetText(str)
+    textbox:SetWidth(textbox:GetLongestLineWidth() + 10)
+  end
+  textbox:SetMileage()
+  local OnEnter = function(self)
+    SetTargetAnchorTooltip(locale.main_menu_bar.bmmileage_tip, "BOTTOMLEFT", self, "TOPLEFT", -1, -1)
+  end
+  textbox:SetHandler("OnEnter", OnEnter)
+  local OnLeave = function()
+    HideTooltip()
+  end
+  textbox:SetHandler("OnLeave", OnLeave)
+end
+local function CreateLaborPowerTextbox(id, parent, anchorInfos)
+  local textbox = parent:CreateChildWidget("textbox", id, 0, true)
+  textbox:SetHeight(FONT_SIZE.MIDDLE)
+  textbox.style:SetAlign(ALIGN_LEFT)
+  textbox.style:SetShadow(true)
+  ApplyTextColor(textbox, FONT_COLOR.LABORPOWER_YELLOW)
+  function textbox:SetLaborPower()
+    local str = string.format("%s |,%d;", locale.attribute("labor_power"), X2Player:GetLaborPower())
+    textbox:SetWidth(800)
+    textbox:SetText(str)
+    textbox:SetWidth(textbox:GetLongestLineWidth() + 10)
+  end
+  textbox:SetLaborPower()
+  local function OnEnter(self)
+    SetTargetAnchorTooltip(GetLaborPowerTexts(), "BOTTOMLEFT", self, "TOPLEFT", -1, -1)
+  end
+  textbox:SetHandler("OnEnter", OnEnter)
+  local OnLeave = function()
+    HideTooltip()
+  end
+  textbox:SetHandler("OnLeave", OnLeave)
+end
+function SetViewOfLaborPowerBarSet(id, parent)
+  local frame = UIParent:CreateWidget("emptywidget", id, parent)
+  frame:Show(true)
+  frame:SetExtent(400, 5)
+  CreateLaborPowerTextbox("laborPowerText", frame)
+  frame.laborPowerText:AddAnchor("BOTTOMLEFT", frame, "TOPLEFT", 0, -5)
+  local laborpower_bar = CreateLaborPowerBar(frame:GetId() .. ".laborpower_bar", frame)
+  laborpower_bar:AddAnchor("TOPLEFT", frame, 0, 0)
+  frame.laborpower_bar = laborpower_bar
+  local laborpower_bar_left_round_deco = laborpower_bar:CreateImageDrawable(TEXTURE_PATH.HUD, "overlay")
+  laborpower_bar_left_round_deco:SetCoords(749, 160, 3, 5)
+  laborpower_bar_left_round_deco:SetExtent(3, 5)
+  laborpower_bar_left_round_deco:AddAnchor("LEFT", laborpower_bar, 0, 0)
+  local laborpower_bar_right_round_deco = laborpower_bar:CreateImageDrawable(TEXTURE_PATH.HUD, "overlay")
+  laborpower_bar_right_round_deco:SetCoords(752, 160, -3, 5)
+  laborpower_bar_right_round_deco:SetExtent(3, 5)
+  laborpower_bar_right_round_deco:AddAnchor("RIGHT", laborpower_bar, 0, 0)
+  if baselibLocale.useMileage then
+    CreateMileageTextbox("bmMileageText", frame)
+    frame.bmMileageText:AddAnchor("LEFT", frame.laborPowerText, "RIGHT", 0, 0)
+  end
+  return frame
+end
+function CreateLaborPowerBarSet(id, parent)
+  local frame = SetViewOfLaborPowerBarSet(id, parent)
+  frame.laborpower_bar:SetMinMaxValues(0, X2Player:GetMaxLaborPower())
+  frame.laborpower_bar:SetValue(X2Player:GetLaborPower())
+  local function OnEnter()
+    SetTargetAnchorTooltip(GetLaborPowerTexts(), "BOTTOMLEFT", frame.laborPowerText, "TOPLEFT", -1, -1)
+  end
+  frame.laborpower_bar:SetHandler("OnEnter", OnEnter)
+  local OnLeave = function()
+    HideTooltip()
+  end
+  frame.laborpower_bar:SetHandler("OnLeave", OnLeave)
+  local events = {
+    LABORPOWER_CHANGED = function(diff, laborPower)
+      frame.laborPowerText:SetLaborPower()
+      frame.laborpower_bar:SetValue(laborPower)
+      frame.laborpower_bar:SetMinMaxValues(0, X2Player:GetMaxLaborPower())
+    end,
+    PLAYER_BM_POINT = function(oldBmPoint)
+      local nowBmPoint = X2Player:GetBmPoint()
+      local subtract = tonumber(X2Util:StrNumericSub(nowBmPoint, oldBmPoint))
+      if subtract > 0 then
+        X2Chat:DispatchChatMessage(CMF_SYSTEM, locale.chatSystem.GetGainBmMileage(subtract, nowBmPoint))
+      elseif subtract < 0 then
+        X2Chat:DispatchChatMessage(CMF_SYSTEM, locale.chatSystem.GetUseBmMileage(subtract * -1, nowBmPoint))
+      end
+      if frame.bmMileageText ~= nil then
+        frame.bmMileageText:SetMileage()
+      end
+    end,
+    PREMIUM_GRADE_CHANGE = function(prevPremiumGrade, presentPremiumGrade)
+      frame.laborpower_bar:SetMinMaxValues(0, X2Player:GetMaxLaborPower())
+    end,
+    CHANGE_PAY_METHOD = function(payMethod)
+      frame.laborpower_bar:SetMinMaxValues(0, X2Player:GetMaxLaborPower())
+    end
+  }
+  frame:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(frame, events)
+  return frame
+end

@@ -1,0 +1,74 @@
+if X2Util:GetGameProvider() == GAMEON then
+  centerMessageLocale.killEffect = {
+    killEffectCoords = {
+      {
+        0,
+        220,
+        125,
+        36
+      },
+      {
+        297,
+        0,
+        162,
+        37
+      },
+      {
+        297,
+        37,
+        184,
+        37
+      },
+      {
+        297,
+        74,
+        185,
+        37
+      },
+      {
+        120,
+        89,
+        184,
+        37
+      },
+      {
+        0,
+        156,
+        157,
+        36
+      }
+    },
+    firstKilBloodlHelmetCoords = {
+      0,
+      108,
+      100,
+      108
+    },
+    deco = {
+      296,
+      100,
+      134,
+      100
+    }
+  }
+  FORM_CENTER_MESSAGE = {
+    NATION_INDEPENDENCE_COORDS = {
+      FLAG = {
+        0,
+        51,
+        67,
+        77
+      },
+      DECLARE = {
+        0,
+        0,
+        91,
+        51
+      }
+    },
+    ACHIEVEMENT_IMG_EXTENT = {
+      LOW_COMPLETE_TEXT = {124, 36},
+      LOW_RANK_LEFT_DECO = {80, 36}
+    }
+  }
+end

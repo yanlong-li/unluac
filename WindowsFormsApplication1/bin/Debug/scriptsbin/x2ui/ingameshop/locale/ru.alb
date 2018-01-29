@@ -1,0 +1,41 @@
+if X2Util:GetGameProvider() == MAILRU then
+  ingameshopLocale.maxItemName = {
+    list = 22,
+    cart = 22,
+    result = 33,
+    confirmTitle = 41,
+    confirmDetail = 20,
+    confirmPackage = 20
+  }
+  ingameshopLocale.eventIconFixedExtent = true
+  BUTTON_BASIC.TOGGLE_BEAUTYSHOP = {
+    drawableType = "threePart",
+    path = TEXTURE_PATH.INGAME_SHOP,
+    coordsKey = "beautyshop",
+    fontInset = {
+      left = 40,
+      top = 0,
+      right = 13,
+      bottom = 0
+    },
+    autoResize = true,
+    fontAlign = ALIGN_LEFT,
+    fontColor = GetWhiteCheckButtonFontColor(),
+    fontSize = FONT_SIZE.SMALL
+  }
+  BUTTON_BASIC.TOGGLE_GENDER_TRANSFER = {
+    drawableType = "threePart",
+    path = TEXTURE_PATH.INGAME_SHOP,
+    coordsKey = "gender_transfer",
+    fontInset = {
+      left = 40,
+      top = 0,
+      right = 13,
+      bottom = 0
+    },
+    autoResize = true,
+    fontAlign = ALIGN_LEFT,
+    fontColor = GetWhiteCheckButtonFontColor(),
+    fontSize = FONT_SIZE.SMALL
+  }
+end

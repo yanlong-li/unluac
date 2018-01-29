@@ -1,0 +1,1163 @@
+local MAX_POPUP_MENU_COUNT = 13
+local offsetX = 0
+local iconInfo = {}
+local targetPopup = {
+  inviteRaidTeam = GetUIText(MSG_BOX_TITLE_TEXT, "ask_raidteam_invite"),
+  inviteParty = GetUIText(TARGET_POPUP_TEXT, "inviteParty"),
+  requestTrade = GetUIText(TARGET_POPUP_TEXT, "requestTrade"),
+  whisper = GetUIText(CHAT_CHANNEL_TEXT, "whisper"),
+  requestPlayDiary = GetUIText(COMMUNITY_TEXT, "play_journal"),
+  requestMessenger = GetUIText(EXPEDITION_TEXT, "send_message"),
+  follow = GetUIText(TARGET_POPUP_TEXT, "follow"),
+  reportBadUser = GetUIText(COMMON_TEXT, "report_bad_user")
+}
+iconInfo.overHeadMarker = {}
+for i = 1, MAX_POPUP_MENU_COUNT - 1 do
+  iconInfo.overHeadMarker[i] = {}
+  iconInfo.overHeadMarker[i].path = TEXTURE_PATH.OVERHEAD_MARK
+  iconInfo.overHeadMarker[i].x = offsetX
+  iconInfo.overHeadMarker[i].y = 225
+  iconInfo.overHeadMarker[i].width = 20
+  iconInfo.overHeadMarker[i].height = 20
+  offsetX = offsetX + iconInfo.overHeadMarker[i].width
+end
+iconInfo.roleMaker = {}
+iconInfo.roleMaker[1] = {}
+iconInfo.roleMaker[1].path = TEXTURE_PATH.RAID
+iconInfo.roleMaker[1].x = 54
+iconInfo.roleMaker[1].y = 123
+iconInfo.roleMaker[1].width = 18
+iconInfo.roleMaker[1].height = 18
+iconInfo.roleMaker[2] = {}
+iconInfo.roleMaker[2].path = TEXTURE_PATH.RAID
+iconInfo.roleMaker[2].x = 103
+iconInfo.roleMaker[2].y = 123
+iconInfo.roleMaker[2].width = 21
+iconInfo.roleMaker[2].height = 14
+iconInfo.roleMaker[3] = {}
+iconInfo.roleMaker[3].path = TEXTURE_PATH.RAID
+iconInfo.roleMaker[3].x = 35
+iconInfo.roleMaker[3].y = 123
+iconInfo.roleMaker[3].width = 18
+iconInfo.roleMaker[3].height = 17
+local GetLootingMethod = function()
+  local method, _, _, _ = X2Team:GetLootingRule()
+  return method
+end
+local GetLootingMinDice = function()
+  local _, _, minGrade, _ = X2Team:GetLootingRule()
+  return minGrade
+end
+local GetLootingRollForBinOnPickup = function()
+  local _, _, _, rollForBop = X2Team:GetLootingRule()
+  return rollForBop
+end
+local SetLootingMethod = function(method, name)
+  local _, _, minGrade, rollForBop = X2Team:GetLootingRule()
+  X2Team:ChangeLootingRule(method, name, minGrade, rollForBop)
+end
+local NotUseDiceRule = function()
+  local normalItemGrade = NORMAL_ITEM_GRADE
+  local method, name, _, rollForBop = X2Team:GetLootingRule()
+  X2Team:ChangeLootingRule(method, name, normalItemGrade, rollForBop)
+end
+local SetDiceRule = function(minGrade)
+  local method, name, _, rollForBop = X2Team:GetLootingRule()
+  X2Team:ChangeLootingRule(method, name, minGrade, rollForBop)
+end
+local SetRollForBindOnPickup = function(rollForBop)
+  local method, name, minGrade, _ = X2Team:GetLootingRule()
+  X2Team:ChangeLootingRule(method, name, minGrade, rollForBop)
+end
+local GetKickMemberText = function()
+  if X2Team:IsPartyTeam() == true then
+    return GetUIText(CHAT_CHANNEL_TEXT, "party") .. " " .. GetUIText(COMMUNITY_TEXT, "kick")
+  else
+    return GetUIText(CHAT_CHANNEL_TEXT, "raid") .. " " .. GetUIText(COMMUNITY_TEXT, "kick")
+  end
+end
+local GetOwnerChangeText = function()
+  if X2Team:IsPartyTeam() == true then
+    return GetUIText(TEAM_TEXT, "team_owner") .. " " .. GetUIText(PARTY_TEXT, "leader_popup_member_delegate")
+  else
+    return GetUIText(RAID_TEXT, "raid_owner") .. " " .. GetUIText(PARTY_TEXT, "leader_popup_member_delegate")
+  end
+end
+local IsMyPetTaret = function(target)
+  return "playerpet" == string.sub(target, 1, 9)
+end
+local popupProc_InviteFamily = function(target, arg)
+  if arg == nil then
+    arg = X2Unit:UnitName(target)
+  end
+  ActiveInviteFamily(arg)
+end
+local popupProc_ReportSpammer = function(target, arg)
+  if arg == nil or arg.messageTimeStamp == nil or arg.stickTo == nil or arg.unitName == nil or arg.unitName == "" or arg.stickTo.GetMessageByTimeStamp == nil then
+    return
+  end
+  local message, chatType = arg.stickTo:GetMessageByTimeStamp(arg.messageTimeStamp)
+  if message ~= nil and message ~= "" then
+    X2Chat:ReportSpammer(arg.unitName, message, chatType)
+  end
+end
+local popupProc_KickMemberByName = function(target)
+  local myMemberIndex = X2Team:GetTeamPlayerIndex()
+  if X2Team:IsTeamOwner(myMemberIndex) then
+    X2Team:KickTeamMemberByName(target, X2Team:IsPartyTeam())
+  end
+end
+local popupProc_KickMember = function(target)
+  local myMemberIndex = X2Team:GetTeamPlayerIndex()
+  if X2Team:IsTeamOwner(myMemberIndex) then
+    X2Team:KickTeamMember(target, X2Team:IsPartyTeam())
+  end
+end
+local popupProc_MakeOwner = function(target)
+  local myMemberIndex = X2Team:GetTeamPlayerIndex()
+  if X2Team:IsTeamOwner(myMemberIndex) then
+    X2Team:MakeTeamOwner(target)
+  end
+end
+local popupProc_LeaveTeam = function()
+  local isInTeam = X2Team:IsPartyTeam() or X2Team:IsRaidTeam()
+  if isInTeam == false then
+    X2Chat:DispatchChatMessage(CMF_SYSTEM, locale.team.leaveTeamError)
+    return
+  end
+  X2Team:LeaveTeam(X2Team:IsPartyTeam())
+end
+local function popupProc_ChangeLootRule(target, arg)
+  local name = X2Unit:UnitName(target)
+  SetLootingMethod(arg, name)
+end
+local popupProc_ChangeRole = function(target, arg)
+  X2Team:SetRole(arg)
+end
+local popupProc_RequestTrade = function()
+  X2Trade:RequestTrade()
+end
+local popupProc_Whisper = function(target, arg)
+  if arg == nil then
+    arg = X2Unit:UnitName(target)
+  end
+  X2Chat:ActivateWhisperChatInput(arg)
+end
+local popupProc_InviteTeam = function(target, arg)
+  if arg == nil then
+    arg = X2Unit:UnitName(target)
+  end
+  if not X2Team:IsTargetMyTeam() then
+    X2Team:InviteToTeam(arg, true)
+  end
+end
+local popupProc_InviteRaid = function(target, arg)
+  if arg == nil then
+    arg = X2Unit:UnitName(target)
+  end
+  X2Team:InviteToTeam(arg, false)
+end
+local popupProc_InviteExpedition = function(target, arg)
+  if arg == nil then
+    arg = X2Unit:UnitName(target)
+  end
+  if X2Faction:GetMyExpeditionId() ~= nil and not X2Faction:IsMyExpeditionMember(arg) then
+    X2Faction:InviteToExpedition(arg)
+  end
+end
+local popupProc_AddFriend = function(target, arg)
+  if arg == nil then
+    arg = X2Unit:UnitName(target)
+  end
+  if not X2Friend:IsMyFriend(arg) then
+    X2Friend:AddFriend(arg)
+  end
+end
+local popupProc_DeleteFriend = function(target, arg)
+  if arg == nil then
+    arg = X2Unit:UnitName(target)
+  end
+  if X2Friend:IsMyFriend(arg) then
+    X2Friend:DeleteFriend(arg)
+  end
+end
+local popupProc_WebPlayDairy = function(target, arg)
+  if arg == nil then
+    OnToggleWebDiary(true)
+  else
+    OnToggleWebDiary(arg)
+  end
+end
+local popupProc_WebMessenger = function(target, arg)
+  if arg == nil then
+    OnToggleWebMessenger(true)
+  else
+    OnToggleWebMessenger(arg)
+  end
+end
+local popupProc_SetBountyMoney = function(target, arg)
+  if arg == nil then
+    arg = X2Unit:UnitName(target)
+  end
+  X2Trial:RequestSetBountyMoney(arg)
+end
+local function popupProc_SetLootOfficer(target)
+  if GetLootingMethod() == TEAM_LOOT_MASTER_LOOTER then
+    local name = X2Unit:UnitName(target)
+    if name ~= nil and name ~= "" then
+      SetLootingMethod(TEAM_LOOT_MASTER_LOOTER, name)
+    end
+  end
+end
+local popupProc_AddIgnore = function(target, arg)
+  if arg == nil then
+    arg = X2Unit:UnitName(target)
+  end
+  X2Friend:BlockUser(arg)
+end
+local popupProc_UnBlock = function(target, arg)
+  if arg == nil then
+    arg = X2Unit:UnitName(target)
+  end
+  X2Friend:UnblockUser(arg)
+end
+local popupProc_ChallengeTargetToDuel = function()
+  X2Unit:ChallengeTargetToDuel()
+end
+local popupProc_SetOverheadMarker = function(target, arg)
+  X2Unit:SetOverHeadMarker(target, arg)
+end
+local popupProc_RemoveAllOverheadMarker = function()
+  X2Unit:RemoveAllOverHeadMarker()
+end
+local popupProc_Follow = function()
+  X2Unit:Follow("target")
+end
+local popupProc_KickFromExpedition = function(_, arg)
+  local function KickExpeditioinMember(wnd, infoTable)
+    local name = arg
+    ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_VALUE_TEXT)
+    wnd.textbox.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.LARGE)
+    wnd.valueTextBox.bg:Show(false)
+    wnd.valueTextBox:AddAnchor("TOP", wnd.textbox, "BOTTOM", 0, 20)
+    wnd.valueTextBox.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE)
+    wnd:SetTitle(GetUIText(EXPEDITION_TEXT, "expel"))
+    wnd:SetContent(GetCommonText("kick_expd_member_name", name))
+    wnd:SetValueText(GetCommonText("kick_expd_member_warning"))
+    function wnd:OkProc()
+      X2Faction:KickFromExpedition(name)
+    end
+  end
+  X2DialogManager:RequestDefaultDialog(KickExpeditioinMember, "")
+end
+local popupProc_ChangeExpeditionRole = function(_, arg)
+  X2Faction:ChangeExpeditionMemberRole(arg.name, arg.index)
+end
+local popupProc_ChangeFamilyOwner = function(_, arg)
+  X2Family:ChangeOwner(arg)
+end
+local popupProc_KickFamily = function(target, arg)
+  if arg == nil then
+    arg = X2Unit:UnitName(target)
+  end
+  X2Family:Kick(arg)
+end
+local popupProc_LeaveFamily = function()
+  X2Family:Leave()
+end
+local popupProc_ChangeTitleFamilyMember = function(_, arg)
+  ShowChageTitleFamilyMember(arg[1], arg[2])
+end
+local function popupProc_ActivateLootRulePopupMenu(target, arg, stickTo)
+  local popupInfo = GetDefaultPopupInfoTable()
+  popupInfo.target = target
+  for i = 1, #locale.party.lootRule.popups do
+    popupInfo:AddInfo(locale.party.lootRule.popups[i], popupProc_ChangeLootRule, i - 1)
+    popupInfo:AddRadioBtn(i == arg)
+  end
+  ShowPopUpMenu("popupMenu", stickTo, popupInfo, true, "TOPLEFT", "TOPRIGHT", 0, 0)
+end
+local function popupProc_NotUseDiceRule(_, arg)
+  NotUseDiceRule()
+end
+local function popupProc_UseDiceRule(_, arg)
+  SetDiceRule(arg)
+end
+local IsAllowedGrade = function(grade)
+  local UNCOMMON_GRADE = 2
+  local UNIQUE_GRADE = 6
+  if grade >= UNCOMMON_GRADE and grade <= UNIQUE_GRADE then
+    return true
+  else
+    return false
+  end
+end
+local function popupProc_ActivateDiceRulePopupMenu(target, arg, stickTo)
+  local popupInfo = GetDefaultPopupInfoTable()
+  popupInfo.target = target
+  popupInfo:AddInfo(locale.lootPopupText.notUseDiceRule, popupProc_NotUseDiceRule)
+  popupInfo:AddRadioBtn(arg == NORMAL_ITEM_GRADE)
+  local grades = X2Item:AllGradeTypes()
+  for i = 1, #grades do
+    local grade = grades[i]
+    if IsAllowedGrade(grade) then
+      local gradeText = locale.lootPopupText.GetMoreThenGrade(X2Item:GradeName(grade))
+      popupInfo:AddInfo(gradeText, popupProc_UseDiceRule, grade)
+      popupInfo:AddTextButtonColor(X2Item:GradeColor(grade))
+      popupInfo:AddRadioBtn(grade == arg)
+    end
+  end
+  ShowPopUpMenu("popupMenu", stickTo, popupInfo, true, "TOPLEFT", "TOPRIGHT", 0, 0)
+end
+local function popupProc_NotUseBindOnPickupRule(_, arg)
+  SetRollForBindOnPickup(false)
+end
+local function popupProc_UseBindOnPickupRule()
+  SetRollForBindOnPickup(true)
+end
+local function popupProc_ActivateBindOnAcqRule(target, arg, stickTo)
+  local popupInfo = GetDefaultPopupInfoTable()
+  popupInfo.target = target
+  useBindOnPickup = arg
+  popupInfo:AddInfo(locale.lootPopupText.notUseDiceRule, popupProc_NotUseBindOnPickupRule)
+  popupInfo:AddRadioBtn(not useBindOnPickup)
+  popupInfo:AddInfo(locale.lootPopupText.useBindOnPickup_Dice, popupProc_UseBindOnPickupRule)
+  popupInfo:AddRadioBtn(useBindOnPickup)
+  ShowPopUpMenu("popupMenu", stickTo, popupInfo, true, "TOPLEFT", "TOPRIGHT", 0, 0)
+end
+local popupProc_InviteTeamTalkRoom = function(target, memberIndex)
+  local result = X2QQTalk:InviteTeamTalkRoom(false, memberIndex)
+  if result then
+    AddMessageToSysMsgWindow(GetCommonText("completed_invite_talk_room"))
+  else
+    AddMessageToSysMsgWindow(GetCommonText("already_entered_talk_room"))
+  end
+end
+local function popupProc_ActivateOverHeadMarkerPopupMenu(target, arg, stickTo)
+  local popupInfo = GetDefaultPopupInfoTable()
+  popupInfo.target = target
+  local targetId = X2Unit:GetUnitId(target)
+  for i = 1, MAX_POPUP_MENU_COUNT do
+    local markerUnitId = X2Unit:GetOverHeadMarkerUnitId(i)
+    if i == MAX_POPUP_MENU_COUNT then
+      popupInfo:AddInfo(locale.unitFrame.removeAll, popupProc_RemoveAllOverheadMarker)
+    else
+      popupInfo:AddInfo(locale.unitFrame.overHeadMarker, popupProc_SetOverheadMarker, i)
+      popupInfo:AddCheckBtn(markerUnitId ~= nil, markerUnitId == targetId)
+      popupInfo:AddImage(iconInfo.overHeadMarker[i])
+    end
+  end
+  ShowPopUpMenu("popupMenu", stickTo, popupInfo, true, "TOPLEFT", "TOPRIGHT", componentsLocale.popupMenu.offsetX, 15)
+end
+local popupProc_AddWatchTarget = function(_, unitId)
+  X2Unit:SetWatchTarget(unitId)
+end
+local popupProc_ReleaseWatchTarget = function()
+  X2Unit:ReleaseWatchTarget()
+end
+local function MakeTeamRolePopupMenu(popupInfo, role)
+  local anchorInfo = {}
+  anchorInfo.myAnchor = "LEFT"
+  anchorInfo.targetAnchor = "LEFT"
+  anchorInfo.anchorX = 17
+  anchorInfo.anchorY = 0
+  local text_inset = {}
+  text_inset.left = 18
+  text_inset.right = 0
+  popupInfo:AddInfo(locale.role.tanker, popupProc_ChangeRole, TMROLE_TANKER)
+  popupInfo:AddRadioBtn(role == 1)
+  popupInfo:AddImageAnchorInfo(anchorInfo)
+  popupInfo:AddImage(iconInfo.roleMaker[1])
+  popupInfo:AddLayoutInfo(text_inset)
+  popupInfo:AddTextButtonColor(FONT_COLOR.ROLE_TANKER)
+  local anchorInfo = {}
+  anchorInfo.myAnchor = "LEFT"
+  anchorInfo.targetAnchor = "LEFT"
+  anchorInfo.anchorX = 18
+  anchorInfo.anchorY = 0
+  popupInfo:AddInfo(locale.role.healer, popupProc_ChangeRole, TMROLE_HEALER)
+  popupInfo:AddRadioBtn(role == 2)
+  popupInfo:AddImageAnchorInfo(anchorInfo)
+  popupInfo:AddImage(iconInfo.roleMaker[2])
+  popupInfo:AddLayoutInfo(text_inset)
+  popupInfo:AddTextButtonColor(FONT_COLOR.ROLE_HEALER)
+  local anchorInfo = {}
+  anchorInfo.myAnchor = "LEFT"
+  anchorInfo.targetAnchor = "LEFT"
+  anchorInfo.anchorX = 19
+  anchorInfo.anchorY = 0
+  popupInfo:AddInfo(locale.role.dealer, popupProc_ChangeRole, TMROLE_DEALER)
+  popupInfo:AddRadioBtn(role == 3)
+  popupInfo:AddImageAnchorInfo(anchorInfo)
+  popupInfo:AddImage(iconInfo.roleMaker[3])
+  popupInfo:AddLayoutInfo(text_inset)
+  popupInfo:AddTextButtonColor(FONT_COLOR.ROLE_DEALER)
+  local anchorInfo = {}
+  anchorInfo.myAnchor = "LEFT"
+  anchorInfo.targetAnchor = "LEFT"
+  anchorInfo.anchorX = 0
+  anchorInfo.anchorY = 0
+  popupInfo:AddInfo(locale.role.norole, popupProc_ChangeRole, 0)
+  popupInfo:AddRadioBtn(role == 0)
+  popupInfo:AddTextButtonColor(FONT_COLOR.ROLE_NONE)
+end
+local function popupProc_ActivateTeamRolePopupMenu(target, arg, stickTo)
+  local popupInfo = GetDefaultPopupInfoTable()
+  local myIndex = X2Team:GetTeamPlayerIndex()
+  local role = X2Team:GetRole(myIndex)
+  MakeTeamRolePopupMenu(popupInfo, role)
+  ShowPopUpMenu("popupMenu", stickTo, popupInfo, true, "TOPLEFT", "TOPRIGHT", 0, 0)
+end
+local popupProc_ShowTargetEquipment = function()
+  ShowTargetEquipment()
+end
+local popupProc_ToggleForceAttack = function()
+  X2Player:ToggleForceAttack()
+end
+local popupProc_ReportBadUser = function(target, arg)
+  if arg == nil then
+    arg = X2Unit:UnitName(target)
+  end
+  X2Trial:StartReportBadUserUI(arg)
+end
+local popupProc_RequestRankerEquipItemInfo = function(_, popupData)
+  X2Rank:RequestRankerAppearance(popupData.worldID, popupData.charID, popupData.charName)
+end
+local function AddLootingRulePopupMenu(popupInfo, teamOwner)
+  local hasChild = teamOwner
+  local disableMenu = teamOwner == false
+  local lootingMethod = GetLootingMethod() + 1
+  local title = locale.lootPopupText.GetDoubleTitle(locale.party.leaderPopupLeaders[2], locale.party.lootRule.popups[lootingMethod])
+  popupInfo:AddInfo(title, popupProc_ActivateLootRulePopupMenu, lootingMethod, hasChild)
+  if disableMenu then
+    popupInfo:AddDisableStatus(true)
+  end
+  local minGrade = GetLootingMinDice()
+  if minGrade == NORMAL_ITEM_GRADE then
+    title = locale.lootPopupText.GetDoubleTitle(locale.lootPopupText.diceDistribute, locale.lootPopupText.notUseDiceRule)
+  else
+    title = locale.lootPopupText.GetDoubleTitle(locale.lootPopupText.diceDistribute, locale.lootPopupText.GetMoreThenGrade(X2Item:GradeName(minGrade)))
+  end
+  popupInfo:AddInfo(title, popupProc_ActivateDiceRulePopupMenu, minGrade, hasChild)
+  if disableMenu then
+    popupInfo:AddDisableStatus(true)
+  end
+  local useBindOnPickup = GetLootingRollForBinOnPickup()
+  if useBindOnPickup then
+    title = locale.lootPopupText.GetDoubleTitle(locale.lootPopupText.bindOnPickup, locale.lootPopupText.useBindOnPickup_Dice)
+  else
+    title = locale.lootPopupText.GetDoubleTitle(locale.lootPopupText.bindOnPickup, locale.lootPopupText.notUseBindOnPickup)
+  end
+  popupInfo:AddInfo(title, popupProc_ActivateBindOnAcqRule, useBindOnPickup, hasChild)
+  if disableMenu then
+    popupInfo:AddDisableStatus(true)
+  end
+  if GetLootingMethod() == TEAM_LOOT_MASTER_LOOTER then
+    popupInfo:AddInfo(locale.team.setlootingOfficer, popupProc_SetLootOfficer)
+    if disableMenu then
+      popupInfo:AddDisableStatus(true)
+    end
+  end
+end
+local function AddWatchTargetMenu(popupInfo, selectUnitId)
+  local watchTargetUnitId = X2Unit:GetUnitId("watchtarget")
+  if watchTargetUnitId and watchTargetUnitId == selectUnitId then
+    popupInfo:AddInfo(GetUIText(UNIT_FRAME_TEXT, "watch_target_release"), popupProc_ReleaseWatchTarget)
+  else
+    popupInfo:AddInfo(GetUIText(UNIT_FRAME_TEXT, "watch_target_set"), popupProc_AddWatchTarget, selectUnitId)
+  end
+end
+local function AddShowTargetEquipInfoMenu(popupInfo)
+  if X2Player:GetFeatureSet().targetEquipmentWnd then
+    if X2Team:IsTargetMe() == true then
+      return
+    end
+    local isShowable = X2Unit:ShowableEquipInfo(popupInfo.target)
+    if isShowable == true then
+      popupInfo:AddInfo(GetCommonText("show_target_equipment"), popupProc_ShowTargetEquipment)
+    elseif isShowable == false then
+      popupInfo:AddInfo(GetCommonText("close_target_equipment"), popupProc_ShowTargetEquipment)
+      popupInfo:AddDisableStatus(true)
+    end
+  end
+end
+local AddExpeditionWarMenu = function(popupInfo)
+  local popupProc_DeclareExpeditionWar = function()
+    X2Faction:RequestDeclarationMoney()
+  end
+  if X2Faction:CanDeclareExpeditionWar() ~= true then
+    return
+  end
+  popupInfo:AddInfo(GetCommonText("declare_expedition_war"), popupProc_DeclareExpeditionWar)
+end
+local function AddForceAttackMenu(popupInfo)
+  local bindKeyText = string.upper(X2Hotkey:GetBinding("toggle_force_attack", 1))
+  local tooltipText = GetUIText(TOOLTIP_TEXT, "builtin_toggle_force_attack_tooltip")
+  if bindKeyText ~= "" then
+    tooltipText = string.format([[
+%s%s
+|r%s]], FONT_COLOR_HEX.POPUP_MENU_BINDING_KEY, bindKeyText, tooltipText)
+  end
+  local tooltipData = {
+    text = tooltipText,
+    myAnchor = "TOPLEFT",
+    targetAnchor = "BOTTOMRIGHT",
+    offsetX = -20,
+    offsetY = 0
+  }
+  local menuText
+  if X2Unit:UnitIsForceAttack(popupInfo.target) then
+    menuText = GetUIText(PLAYER_POPUP_TEXT, "force_attack_off")
+  else
+    menuText = GetUIText(PLAYER_POPUP_TEXT, "force_attack_on")
+  end
+  popupInfo:AddInfo(menuText, popupProc_ToggleForceAttack, nil, false, tooltipData)
+end
+local function AddFollowMenu(popupInfo)
+  popupInfo:AddInfo(targetPopup.follow, popupProc_Follow)
+  if X2Player:GetFeatureSet().restrictFollow and X2Player:IsBoundSlave() then
+    popupInfo:AddDisableStatus(true)
+  end
+end
+local popupProc_AllInviteTeamTalkRoom = function()
+  local result = X2QQTalk:InviteTeamTalkRoom(true, 0)
+  if result then
+    AddMessageToSysMsgWindow(GetCommonText("completed_invite_talk_room"))
+  else
+    AddMessageToSysMsgWindow(GetCommonText("already_all_entered_team_talk_room"))
+  end
+end
+local function PlayerPopup(stickTo)
+  local popupInfo = GetDefaultPopupInfoTable()
+  local myMemberIndex = X2Team:GetTeamPlayerIndex()
+  local isPartyTeam = X2Team:IsPartyTeam()
+  local isRaidTeam = X2Team:IsRaidTeam()
+  local isInTeam = isPartyTeam or isRaidTeam
+  local isOwner = X2Team:IsTeamOwner(myMemberIndex)
+  popupInfo.target = "player"
+  if isOwner then
+    AddLootingRulePopupMenu(popupInfo, true)
+  elseif isInTeam then
+    AddLootingRulePopupMenu(popupInfo, false)
+  end
+  local talkRoomInfo = X2QQTalk:GetRoomInfo()
+  if talkRoomInfo.roomType == "team" and (isOwner or isPartyTeam) then
+    popupInfo:AddInfo(GetCommonText("all_invite_team_talk_room"), popupProc_AllInviteTeamTalkRoom)
+  end
+  if isInTeam then
+    if isRaidTeam then
+      popupInfo:AddInfo(locale.raid.setMyRole, popupProc_ActivateTeamRolePopupMenu, nil, true)
+    end
+    popupInfo:AddInfo(locale.team.leave(), popupProc_LeaveTeam)
+  end
+  AddForceAttackMenu(popupInfo)
+  if myMemberIndex == 0 or not X2Team:IsRaidTeam() or X2Team:IsTeamOfficer(myMemberIndex) then
+    popupInfo:AddInfo(locale.unitFrame.overHeadMarker, popupProc_ActivateOverHeadMarkerPopupMenu, nil, true)
+  end
+  ShowPopUpMenu("popupMenu", stickTo, popupInfo, nil, "TOPLEFT", "BOTTOMRIGHT", componentsLocale.popupMenu.offsetX, -20)
+end
+local function TeamPopup(stickTo, memberIndex)
+  local popupInfo = GetDefaultPopupInfoTable()
+  local myMemberIndex = X2Team:GetTeamPlayerIndex()
+  local isOwner = X2Team:IsTeamOwner(myMemberIndex)
+  popupInfo.target = "team" .. memberIndex
+  if isOwner then
+    if GetLootingMethod() == TEAM_LOOT_MASTER_LOOTER then
+      popupInfo:AddInfo(locale.team.setlootingOfficer, popupProc_SetLootOfficer)
+    end
+    if myMemberIndex ~= memberIndex then
+      popupInfo:AddInfo(GetKickMemberText(), popupProc_KickMember)
+      if X2Unit:UnitIsOffline(popupInfo.target) == false then
+        popupInfo:AddInfo(GetOwnerChangeText(), popupProc_MakeOwner)
+      end
+    end
+  elseif myMemberIndex == memberIndex then
+    popupInfo:AddInfo(locale.team.leave(), popupProc_LeaveTeam)
+  end
+  local talkRoomInfo = X2QQTalk:GetRoomInfo()
+  if not X2QQTalk:IsEnteredTeamTalkRoom(memberIndex) and talkRoomInfo.roomType == "team" and (isOwner or X2Team:IsPartyTeam()) then
+    popupInfo:AddInfo(GetCommonText("invite_talk_room"), popupProc_InviteTeamTalkRoom, memberIndex)
+  end
+  if not X2Team:IsRaidTeam() or X2Team:IsTeamOfficer(myMemberIndex) then
+    popupInfo:AddInfo(locale.unitFrame.overHeadMarker, popupProc_ActivateOverHeadMarkerPopupMenu, nil, true)
+  end
+  AddFollowMenu(popupInfo)
+  local targetId = X2Unit:GetUnitId(popupInfo.target)
+  AddWatchTargetMenu(popupInfo, targetId)
+  ShowPopUpMenu("popupMenu", stickTo, popupInfo, nil, "TOPLEFT", "BOTTOMRIGHT", componentsLocale.popupMenu.offsetX, -20)
+end
+local GetNewReportBadUser = function()
+  local featureSet = X2Player:GetFeatureSet()
+  if not featureSet.newReportBaduser then
+    return false
+  else
+    return true
+  end
+end
+local function TargetPopup(stickTo, target)
+  local popupInfo = GetDefaultPopupInfoTable()
+  local unitType = GetUnitType("target")
+  local targetUnitName = X2Unit:UnitName("target")
+  local myMemberIndex = X2Team:GetTeamPlayerIndex()
+  popupInfo.target = "target"
+  if X2:GetTargetFactionRelationship() ~= 1 and (unitType == "player" or unitType == "character") and X2Team:IsTargetMe() == false then
+    popupInfo:AddInfo(targetPopup.requestTrade, popupProc_RequestTrade)
+    if X2Team:IsTargetMyTeam() and X2Unit:UnitTeamAuthority("target") == "leader" then
+      AddLootingRulePopupMenu(popupInfo, false)
+    end
+    if X2Team:IsTargetMyTeam() == true and X2Team:IsTeamOwner(X2Team:GetTeamPlayerIndex()) then
+      popupInfo:AddInfo(GetKickMemberText(), popupProc_KickMember)
+      popupInfo:AddInfo(locale.party.leaderPopupMembers[2], popupProc_MakeOwner)
+      if GetLootingMethod() == TEAM_LOOT_MASTER_LOOTER then
+        popupInfo:AddInfo(locale.team.setlootingOfficer, popupProc_SetLootOfficer)
+      end
+    else
+      if X2Team:IsPartyTeam() and X2Team:IsTeamOwner(X2Team:GetTeamPlayerIndex()) then
+        popupInfo:AddInfo(targetPopup.inviteParty, popupProc_InviteTeam)
+      end
+      if X2Team:IsRaidTeam() and X2Team:IsTeamOwner(X2Team:GetTeamPlayerIndex()) then
+        popupInfo:AddInfo(targetPopup.inviteRaidTeam, popupProc_InviteRaid)
+      end
+      if X2Team:IsPartyTeam() == false and X2Team:IsRaidTeam() == false then
+        popupInfo:AddInfo(targetPopup.inviteParty, popupProc_InviteTeam)
+        popupInfo:AddInfo(targetPopup.inviteRaidTeam, popupProc_InviteRaid)
+      end
+    end
+    if X2Faction:IsExpedInfoLoaded() == true and X2Faction:GetMyExpeditionId() ~= 0 and X2Faction:IsMyExpeditionMember(targetUnitName) == false and expedMgmt:CanInviteExpedition() then
+      popupInfo:AddInfo(locale.expedition.invite, popupProc_InviteExpedition)
+    end
+    if X2Family:IsFamily() == false then
+      popupInfo:AddInfo(locale.family.add_family, popupProc_InviteFamily, targetUnitName)
+    elseif X2Family:IsOwner() and X2Family:IsMyFamily(targetUnitName) == false then
+      popupInfo:AddInfo(locale.family.add_family, popupProc_InviteFamily, targetUnitName)
+    end
+    if X2Friend:IsMyFriend(targetUnitName) == false then
+      popupInfo:AddInfo(locale.friend.addFriend, popupProc_AddFriend)
+    else
+      popupInfo:AddInfo(locale.friend.deleteFriend, popupProc_DeleteFriend)
+    end
+    if unitType == "character" and GetNewReportBadUser() == true then
+      popupInfo:AddInfo(targetPopup.reportBadUser, popupProc_ReportBadUser)
+    end
+    if X2Friend:IsBlockedUser(targetUnitName) then
+      popupInfo:AddInfo(locale.community.unblock, popupProc_UnBlock)
+    else
+      popupInfo:AddInfo(locale.block.add, popupProc_AddIgnore)
+    end
+    if baselibLocale.useWebDiary then
+      popupInfo:AddInfo(targetPopup.requestPlayDiary, popupProc_WebPlayDairy)
+    end
+    if baselibLocale.useWebMessenger then
+      popupInfo:AddInfo(targetPopup.requestMessenger, popupProc_WebMessenger)
+    end
+    popupInfo:AddInfo(targetPopup.whisper, popupProc_Whisper)
+    if not X2BattleField:IsInInstantGame() and X2Unit:CanChallengeTargetToDuel() then
+      popupInfo:AddInfo(locale.duel.challenge, popupProc_ChallengeTargetToDuel)
+    end
+    if X2Team:IsTargetMyTeam() then
+      AddFollowMenu(popupInfo)
+    end
+  end
+  if unitType == "player" or unitType == "character" then
+    AddExpeditionWarMenu(popupInfo)
+  end
+  AddShowTargetEquipInfoMenu(popupInfo)
+  local targetId = X2Unit:GetUnitId("target")
+  AddWatchTargetMenu(popupInfo, targetId)
+  if not X2Team:IsRaidTeam() or X2Team:IsTeamOfficer(myMemberIndex) then
+    popupInfo:AddInfo(locale.unitFrame.overHeadMarker, popupProc_ActivateOverHeadMarkerPopupMenu, nil, true)
+  end
+  if target == "slave" and X2SiegeWeapon:IsTargetMySiegeWeapon() then
+    popupInfo:AddInfo(locale.common.changeName, ShowChangeSlaveName, stickTo)
+  end
+  ShowPopUpMenu("popupMenu", stickTo, popupInfo, nil, "TOPLEFT", "BOTTOMRIGHT", componentsLocale.popupMenu.offsetX, -20)
+end
+local function MatePopup(stickTo, target)
+  local popupInfo = GetDefaultPopupInfoTable()
+  local unitId
+  if target == "mate" then
+    popupInfo.target = "target"
+    unitId = X2Unit:GetUnitId("target")
+  elseif IsMyPetTaret(target) then
+    popupInfo.target = target
+    unitId = X2Unit:GetUnitId(target)
+  end
+  AddWatchTargetMenu(popupInfo, unitId)
+  local myMemberIndex = X2Team:GetTeamPlayerIndex()
+  if not X2Team:IsRaidTeam() or X2Team:IsTeamOfficer(myMemberIndex) then
+    popupInfo:AddInfo(locale.unitFrame.overHeadMarker, popupProc_ActivateOverHeadMarkerPopupMenu, nil, true)
+  end
+  if IsMyPetTaret(target) then
+    popupInfo:AddInfo(locale.common.changeName, ShowChangeMateName, stickTo)
+  end
+  ShowPopUpMenu("popupMenu", stickTo, popupInfo, nil, "TOPLEFT", "BOTTOMRIGHT", componentsLocale.popupMenu.offsetX, -20)
+end
+local function UnitPopup(stickTo, target, data)
+  local MakeConditions = function(unitName)
+    local conditions = {
+      self = {
+        isTeamOwner = X2Team:IsTeamOwner(X2Team:GetTeamPlayerIndex()),
+        isInTeam = X2Team:IsPartyTeam() or X2Team:IsRaidTeam(),
+        isPartyTeam = X2Team:IsPartyTeam(),
+        isRaidTeam = X2Team:IsRaidTeam(),
+        canInviteExped = X2Faction:IsExpedInfoLoaded() and X2Faction:CanInviteExpedition()
+      },
+      target = {
+        isMyTeam = X2Team:GetMemberIndexByName(unitName) ~= nil,
+        isMyFriend = X2Friend:IsMyFriend(unitName),
+        isMyExpedMember = X2Faction:IsExpedInfoLoaded() and X2Faction:GetMyExpeditionId() ~= 0 and X2Faction:IsMyExpeditionMember(unitName),
+        isBlocked = X2Friend:IsBlockedUser(unitName)
+      }
+    }
+    return conditions
+  end
+  if X2Unit:UnitName("player") == target then
+    return
+  end
+  local function MenuWhisper(conditions)
+    if data.isHostile then
+      return false
+    end
+    return true, targetPopup.whisper, popupProc_Whisper, nil
+  end
+  local function MenuWebMessenger(conditions)
+    if not baselibLocale.useWebMessenger then
+      return false
+    end
+    if data.isHostile then
+      return false
+    end
+    return true, targetPopup.requestMessenger, popupProc_WebMessenger, nil
+  end
+  local function MenuKickMember(conditions)
+    if not conditions.self.isTeamOwner or not conditions.target.isMyTeam then
+      return false
+    end
+    return true, GetKickMemberText(), popupProc_KickMemberByName, nil
+  end
+  local function MenuInviteTeam(conditions)
+    if data.isHostile then
+      return false
+    end
+    if conditions.target.isMyTeam then
+      return false
+    end
+    if conditions.self.isInTeam and not conditions.self.isTeamOwner then
+      return false
+    end
+    if conditions.self.isRaidTeam then
+      return false
+    end
+    return true, targetPopup.inviteParty, popupProc_InviteTeam, nil
+  end
+  local function MenuInviteRaid(conditions)
+    if data.isHostile then
+      return false
+    end
+    if conditions.target.isMyTeam then
+      return false
+    end
+    if conditions.self.isInTeam and not conditions.self.isTeamOwner then
+      return false
+    end
+    if conditions.self.isPartyTeam then
+      return false
+    end
+    return true, targetPopup.inviteRaidTeam, popupProc_InviteRaid, nil
+  end
+  local function MenuInviteExpedition(conditions)
+    if data.isHostile then
+      return false
+    end
+    if conditions.target.isMyExpedMember or not conditions.self.canInviteExped then
+      return false
+    end
+    return true, locale.expedition.invite, popupProc_InviteExpedition, nil
+  end
+  local function MenuAddFriend(conditions)
+    if conditions.target.isMyFriend then
+      return false
+    end
+    return true, locale.friend.addFriend, popupProc_AddFriend, nil
+  end
+  local function MenuDeleteFriend(conditions)
+    if not conditions.target.isMyFriend then
+      return false
+    end
+    return true, locale.friend.deleteFriend, popupProc_DeleteFriend, nil
+  end
+  local function MenuUnblockUser(conditions)
+    if not conditions.target.isBlocked then
+      return false
+    end
+    return true, locale.community.unblock, popupProc_UnBlock, nil
+  end
+  local function MenuAddIgnore(conditions)
+    if conditions.target.isBlocked then
+      return false
+    end
+    return true, locale.block.add, popupProc_AddIgnore, nil
+  end
+  local function MenuWebPlayDairy(conditions)
+    if not baselibLocale.useWebDiary then
+      return false
+    end
+    return true, targetPopup.requestPlayDiary, popupProc_WebPlayDairy, nil
+  end
+  local function MenuInviteFamily(conditions)
+    if data.isHostile then
+      return false
+    end
+    return true, locale.family.add_family, popupProc_InviteFamily, nil
+  end
+  local function MenuReportSpammer(conditions)
+    if data.messageTimeStamp == nil or X2Player:GetFeatureSet().reportSpammer == false then
+      return false
+    end
+    arg = {
+      messageTimeStamp = data.messageTimeStamp,
+      stickTo = stickTo
+    }
+    return true, GetUIText(COMMON_TEXT, "report_spammer"), popupProc_ReportSpammer, arg
+  end
+  local function MenuReportBadUser(conditions)
+    if GetNewReportBadUser() == false or componentsLocale.useMenuReportBadUser == false then
+      return false
+    end
+    return true, targetPopup.reportBadUser, popupProc_ReportBadUser, nil
+  end
+  local menuList = {
+    MenuKickMember,
+    MenuInviteTeam,
+    MenuInviteRaid,
+    MenuInviteExpedition,
+    MenuInviteFamily,
+    MenuAddFriend,
+    MenuDeleteFriend,
+    MenuUnblockUser,
+    MenuAddIgnore,
+    MenuReportBadUser,
+    MenuWebPlayDairy,
+    MenuWebMessenger,
+    MenuWhisper,
+    MenuReportSpammer
+  }
+  local popupInfo = GetDefaultPopupInfoTable()
+  popupInfo.target = target
+  local unitName = target
+  local conditions = MakeConditions(unitName)
+  for i = 1, #menuList do
+    local func = menuList[i]
+    local use, menuTitle, menuProc, arg = func(conditions)
+    if use then
+      if arg == nil then
+        arg = unitName
+      else
+        arg.unitName = unitName
+      end
+      popupInfo:AddInfo(menuTitle, menuProc, arg)
+    end
+  end
+  ShowPopUpMenu("popupMenu", stickTo, popupInfo, nil, nil, "BOTTOMLEFT", componentsLocale.popupMenu.offsetX, -140)
+end
+local function WatchTargetPopup(stickTo, target)
+  local popupInfo = GetDefaultPopupInfoTable()
+  popupInfo.target = "watchtarget"
+  popupInfo:AddInfo(GetUIText(UNIT_FRAME_TEXT, "watch_target_release"), popupProc_ReleaseWatchTarget)
+  local myMemberIndex = X2Team:GetTeamPlayerIndex()
+  if not X2Team:IsRaidTeam() or X2Team:IsTeamOfficer(myMemberIndex) then
+    popupInfo:AddInfo(locale.unitFrame.overHeadMarker, popupProc_ActivateOverHeadMarkerPopupMenu, nil, true)
+  end
+  ShowPopUpMenu("popupMenu", stickTo, popupInfo, nil, "TOPLEFT", "BOTTOMRIGHT", componentsLocale.popupMenu.offsetX, -20)
+end
+function ActivatePopupMenu(stickTo, target, memberIndex)
+  if target == "player" then
+    PlayerPopup(stickTo)
+  elseif target == "team" then
+    TeamPopup(stickTo, memberIndex)
+  elseif target == "target" or target == "slave" then
+    TargetPopup(stickTo, target)
+  elseif IsMyPetTaret(target) or target == "mate" then
+    MatePopup(stickTo, target)
+  elseif target == "watchtarget" then
+    WatchTargetPopup(stickTo)
+  else
+    UnitPopup(stickTo, target, memberIndex)
+  end
+end
+function ActivateFriendMemberPopupMenu(stickTo, name, isInTeam, isOnline)
+  if name == nil then
+    return
+  end
+  local popupInfo = GetDefaultPopupInfoTable()
+  if X2Unit:UnitName("player") ~= name then
+    if isOnline then
+      if isInTeam == false then
+        if X2Team:IsPartyTeam() == true then
+          if X2Team:IsTeamOwner(X2Team:GetTeamPlayerIndex()) == true then
+            popupInfo:AddInfo(targetPopup.inviteParty, popupProc_InviteTeam, name)
+          end
+        elseif X2Team:IsRaidTeam() == true then
+          if X2Team:IsTeamOwner(X2Team:GetTeamPlayerIndex()) == true or X2Team:IsTeamOfficer(X2Team:GetTeamPlayerIndex()) == true then
+            popupInfo:AddInfo(targetPopup.inviteRaidTeam, popupProc_InviteRaid, name)
+          end
+        else
+          popupInfo:AddInfo(targetPopup.inviteParty, popupProc_InviteTeam, name)
+          popupInfo:AddInfo(targetPopup.inviteRaidTeam, popupProc_InviteRaid, name)
+        end
+      end
+      if X2Faction:IsExpedInfoLoaded() == true and X2Faction:GetMyExpeditionId() ~= 0 and X2Faction:IsMyExpeditionMember(name) == false and expedMgmt:CanInviteExpedition() then
+        popupInfo:AddInfo(locale.expedition.invite, popupProc_InviteExpedition, name)
+      end
+      if X2Family:IsFamily() == false then
+        popupInfo:AddInfo(locale.family.add_family, popupProc_InviteFamily, name)
+      elseif X2Family:IsOwner() and X2Family:IsMyFamily(name) == false then
+        popupInfo:AddInfo(locale.family.add_family, popupProc_InviteFamily, name)
+      end
+      popupInfo:AddInfo(locale.friend.deleteFriend, popupProc_DeleteFriend, name)
+      if X2Friend:IsBlockedUser(name) then
+        popupInfo:AddInfo(locale.community.unblock, popupProc_UnBlock, name)
+      else
+        popupInfo:AddInfo(locale.block.add, popupProc_AddIgnore, name)
+      end
+      if baselibLocale.useWebDiary then
+        popupInfo:AddInfo(locale.friend.playJournal, popupProc_WebPlayDairy, name)
+      end
+      popupInfo:AddInfo(locale.chatChannel.whisper, popupProc_Whisper, name)
+      if baselibLocale.useWebMessenger then
+        popupInfo:AddInfo(locale.expedition.sendMessage, popupProc_WebMessenger, name)
+      end
+    else
+      popupInfo:AddInfo(locale.friend.deleteFriend, popupProc_DeleteFriend, name)
+      if X2Friend:IsBlockedUser(name) then
+        popupInfo:AddInfo(locale.community.unblock, popupProc_UnBlock, name)
+      else
+        popupInfo:AddInfo(locale.block.add, popupProc_AddIgnore, name)
+      end
+      if baselibLocale.useWebDiary then
+        popupInfo:AddInfo(locale.friend.playJournal, popupProc_WebPlayDairy, name)
+      end
+      if baselibLocale.useWebMessenger then
+        popupInfo:AddInfo(locale.expedition.sendMessage, popupProc_WebMessenger, name)
+      end
+    end
+  end
+  ShowPopUpMenu("popupMenu", stickTo, popupInfo)
+end
+function ActivateBlockMemberPopupMenu(stickTo, name)
+  if name == nil then
+    return
+  end
+  local popupInfo = GetDefaultPopupInfoTable()
+  popupInfo:AddInfo(locale.community.unblock, popupProc_UnBlock, name)
+  ShowPopUpMenu("popupMenu", stickTo, popupInfo)
+end
+function ActivateFamilyMemberPopupMenu(ownerWnd, stickTo, name, title)
+  if name == nil then
+    return
+  end
+  local popupInfo = GetDefaultPopupInfoTable()
+  if X2Unit:UnitName("player") ~= name then
+    if isInTeam == false then
+      if X2Team:IsPartyTeam() == true then
+        if X2Team:IsTeamOwner(X2Team:GetTeamPlayerIndex()) == true then
+          popupInfo:AddInfo(targetPopup.inviteParty, popupProc_InviteTeam, name)
+        end
+      elseif X2Team:IsRaidTeam() == true then
+        if X2Team:IsTeamOwner(X2Team:GetTeamPlayerIndex()) == true or X2Team:IsTeamOfficer(X2Team:GetTeamPlayerIndex()) == true then
+          popupInfo:AddInfo(targetPopup.inviteRaidTeam, popupProc_InviteRaid, name)
+        end
+      else
+        popupInfo:AddInfo(targetPopup.inviteParty, popupProc_InviteTeam, name)
+        popupInfo:AddInfo(targetPopup.inviteRaidTeam, popupProc_InviteRaid, name)
+      end
+    end
+    if X2Friend:IsMyFriend(name) == false then
+      popupInfo:AddInfo(locale.friend.addFriend, popupProc_AddFriend, name)
+    end
+    if X2Family:IsOwner() then
+      local argTable = {
+        ownerWnd,
+        name,
+        title
+      }
+      popupInfo:AddInfo(locale.family.change_owner, popupProc_ChangeFamilyOwner, name)
+      popupInfo:AddInfo(locale.family.changeTitle, ShowChangeFamilyAppellation, argTable)
+      popupInfo:AddInfo(locale.family.kick_member, popupProc_KickFamily, name)
+    end
+    if baselibLocale.useWebMessenger then
+      popupInfo:AddInfo(locale.expedition.sendMessage, popupProc_WebMessenger, name)
+    end
+    popupInfo:AddInfo(locale.chatChannel.whisper, popupProc_Whisper, name)
+  else
+    if baselibLocale.useWebDiary then
+      popupInfo:AddInfo(locale.friend.playJournal, popupProc_WebPlayDairy, name)
+    end
+    if X2Family:IsOwner() then
+      local argTable = {
+        ownerWnd,
+        name,
+        title
+      }
+      popupInfo:AddInfo(locale.family.changeTitle, ShowChangeFamilyAppellation, argTable)
+    end
+    popupInfo:AddInfo(locale.family.leave_family, popupProc_LeaveFamily)
+  end
+  ShowPopUpMenu("popupMenu", stickTo, popupInfo)
+end
+function ActivateExpeditionMemberPopupMenu(stickTo, name, isInTeam, isOnline, expellable)
+  if name == nil then
+    return
+  end
+  local popupInfo = GetDefaultPopupInfoTable()
+  if X2Unit:UnitName("player") ~= name then
+    if isOnline then
+      if isInTeam == false then
+        if X2Team:IsPartyTeam() == true then
+          if X2Team:IsTeamOwner(X2Team:GetTeamPlayerIndex()) == true then
+            popupInfo:AddInfo(targetPopup.inviteParty, popupProc_InviteTeam, name)
+          end
+        elseif X2Team:IsRaidTeam() == true then
+          if X2Team:IsTeamOwner(X2Team:GetTeamPlayerIndex()) == true or X2Team:IsTeamOfficer(X2Team:GetTeamPlayerIndex()) == true then
+            popupInfo:AddInfo(targetPopup.inviteRaidTeam, popupProc_InviteRaid, name)
+          end
+        else
+          popupInfo:AddInfo(targetPopup.inviteParty, popupProc_InviteTeam, name)
+          popupInfo:AddInfo(targetPopup.inviteRaidTeam, popupProc_InviteRaid, name)
+        end
+      end
+      if expellable == true then
+        popupInfo:AddInfo(componentsLocale:GetExpeditionExpelText(), popupProc_KickFromExpedition, name)
+      end
+      if X2Family:IsFamily() == false then
+        popupInfo:AddInfo(locale.family.add_family, popupProc_InviteFamily, name)
+      elseif X2Family:IsOwner() and X2Family:IsMyFamily(name) == false then
+        popupInfo:AddInfo(locale.family.add_family, popupProc_InviteFamily, name)
+      end
+      if X2Friend:IsMyFriend(name) == false then
+        popupInfo:AddInfo(locale.friend.addFriend, popupProc_AddFriend, name)
+      else
+        popupInfo:AddInfo(locale.friend.deleteFriend, popupProc_DeleteFriend, name)
+      end
+      if X2Friend:IsBlockedUser(name) then
+        popupInfo:AddInfo(locale.community.unblock, popupProc_UnBlock, name)
+      else
+        popupInfo:AddInfo(locale.block.add, popupProc_AddIgnore, name)
+      end
+      if baselibLocale.useWebDiary then
+        popupInfo:AddInfo(locale.friend.playJournal, popupProc_WebPlayDairy, name)
+      end
+      if baselibLocale.useWebMessenger then
+        popupInfo:AddInfo(locale.expedition.sendMessage, popupProc_WebMessenger, name)
+      end
+      popupInfo:AddInfo(locale.chatChannel.whisper, popupProc_Whisper, name)
+    else
+      if expellable == true then
+        popupInfo:AddInfo(componentsLocale:GetExpeditionExpelText(), popupProc_KickFromExpedition, name)
+      end
+      if X2Friend:IsMyFriend(name) == false then
+        popupInfo:AddInfo(locale.friend.addFriend, popupProc_AddFriend)
+      else
+        popupInfo:AddInfo(locale.friend.deleteFriend, popupProc_DeleteFriend)
+      end
+      if X2Friend:IsBlockedUser(name) then
+        popupInfo:AddInfo(locale.community.unblock, popupProc_UnBlock, name)
+      else
+        popupInfo:AddInfo(locale.block.add, popupProc_AddIgnore, name)
+      end
+      if baselibLocale.useWebDiary then
+        popupInfo:AddInfo(locale.friend.playJournal, popupProc_WebPlayDairy, name)
+      end
+      if baselibLocale.useWebMessenger then
+        popupInfo:AddInfo(locale.expedition.sendMessage, popupProc_WebMessenger, name)
+      end
+    end
+  elseif baselibLocale.useWebDiary then
+    popupInfo:AddInfo(locale.friend.playJournal, popupProc_WebPlayDairy, name)
+  end
+  ShowPopUpMenu("popupMenu", stickTo, popupInfo)
+end
+function ActivateNationMemberPopupMenu(stickTo, name, isOnline)
+  if name == nil then
+    return
+  end
+  local popupInfo = GetDefaultPopupInfoTable()
+  if X2Unit:UnitName("player") ~= name then
+    if isOnline then
+      if X2Team:IsPartyTeam() == true then
+        if X2Team:IsTeamOwner(X2Team:GetTeamPlayerIndex()) == true then
+          popupInfo:AddInfo(targetPopup.inviteParty, popupProc_InviteTeam, name)
+        end
+      elseif X2Team:IsRaidTeam() == true then
+        if X2Team:IsTeamOwner(X2Team:GetTeamPlayerIndex()) == true or X2Team:IsTeamOfficer(X2Team:GetTeamPlayerIndex()) == true then
+          popupInfo:AddInfo(targetPopup.inviteRaidTeam, popupProc_InviteRaid, name)
+        end
+      else
+        popupInfo:AddInfo(targetPopup.inviteParty, popupProc_InviteTeam, name)
+        popupInfo:AddInfo(targetPopup.inviteRaidTeam, popupProc_InviteRaid, name)
+      end
+      if X2Family:IsFamily() == false then
+        popupInfo:AddInfo(locale.family.add_family, popupProc_InviteFamily, name)
+      elseif X2Family:IsOwner() and X2Family:IsMyFamily(name) == false then
+        popupInfo:AddInfo(locale.family.add_family, popupProc_InviteFamily, name)
+      end
+      if X2Friend:IsMyFriend(name) == false then
+        popupInfo:AddInfo(locale.friend.addFriend, popupProc_AddFriend, name)
+      else
+        popupInfo:AddInfo(locale.friend.deleteFriend, popupProc_DeleteFriend, name)
+      end
+      if X2Friend:IsBlockedUser(name) then
+        popupInfo:AddInfo(locale.community.unblock, popupProc_UnBlock, name)
+      else
+        popupInfo:AddInfo(locale.block.add, popupProc_AddIgnore, name)
+      end
+      if baselibLocale.useWebDiary then
+        popupInfo:AddInfo(locale.friend.playJournal, popupProc_WebPlayDairy, name)
+      end
+      if baselibLocale.useWebMessenger then
+        popupInfo:AddInfo(locale.expedition.sendMessage, popupProc_WebMessenger, name)
+      end
+      popupInfo:AddInfo(locale.chatChannel.whisper, popupProc_Whisper, name)
+    else
+      if X2Friend:IsMyFriend(name) == false then
+        popupInfo:AddInfo(locale.friend.addFriend, popupProc_AddFriend)
+      else
+        popupInfo:AddInfo(locale.friend.deleteFriend, popupProc_DeleteFriend)
+      end
+      if X2Friend:IsBlockedUser(name) then
+        popupInfo:AddInfo(locale.community.unblock, popupProc_UnBlock, name)
+      else
+        popupInfo:AddInfo(locale.block.add, popupProc_AddIgnore, name)
+      end
+      if baselibLocale.useWebDiary then
+        popupInfo:AddInfo(locale.friend.playJournal, popupProc_WebPlayDairy, name)
+      end
+      if baselibLocale.useWebMessenger then
+        popupInfo:AddInfo(locale.expedition.sendMessage, popupProc_WebMessenger, name)
+      end
+    end
+  elseif baselibLocale.useWebDiary then
+    popupInfo:AddInfo(locale.friend.playJournal, popupProc_WebPlayDairy, name)
+  end
+  ShowPopUpMenu("popupMenu", stickTo, popupInfo)
+end
+function ActivateExpeditionRolePopupMenu(stickTo, name, roles, checkedIndex)
+  local popupInfo = GetDefaultPopupInfoTable()
+  for i = 1, #roles do
+    local arg = {}
+    arg.name = name
+    arg.index = roles[i].role
+    popupInfo:AddInfo(roles[i].name, popupProc_ChangeExpeditionRole, arg)
+    popupInfo:AddRadioBtn(i == checkedIndex)
+  end
+  ShowPopUpMenu("popupMenu", stickTo, popupInfo)
+end
+function ActivateRankerPopupMenu(stickTo, worldID, charID, charName)
+  local popupInfo = GetDefaultPopupInfoTable()
+  local popupData = {}
+  popupData.worldID = worldID
+  popupData.charID = charID
+  popupData.charName = charName
+  popupInfo:AddInfo(GetUIText(COMMON_TEXT, "show_target_equipment"), popupProc_RequestRankerEquipItemInfo, popupData)
+  ShowPopUpMenu("popupMenu", stickTo, popupInfo)
+end

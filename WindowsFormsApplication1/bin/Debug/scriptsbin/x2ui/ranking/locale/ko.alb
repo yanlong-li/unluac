@@ -1,0 +1,57 @@
+if rankingLocale == nil then
+  rankingLocale = {}
+end
+rankingLocale.columnWidth = {
+  60,
+  55,
+  180,
+  193,
+  125,
+  125
+}
+rankingLocale.battlefieldRankColumnWidth = {
+  60,
+  55,
+  180,
+  70,
+  70,
+  70,
+  70,
+  125
+}
+rankingLocale.gearRankColumnWidth = {
+  60,
+  55,
+  180,
+  150,
+  150,
+  125
+}
+rankingLocale.itemRankColumnWidth = {
+  60,
+  55,
+  170,
+  180,
+  150,
+  120
+}
+rankingLocale.expeditionRankColumnWidth = {
+  60,
+  60,
+  60,
+  220,
+  120,
+  80,
+  120
+}
+rankingLocale.timeFilter = {
+  periodStart = FORMAT_FILTER.YEAR + FORMAT_FILTER.MONTH + FORMAT_FILTER.DAY + FORMAT_FILTER.HOUR,
+  periodEnd = FORMAT_FILTER.MONTH + FORMAT_FILTER.DAY + FORMAT_FILTER.HOUR,
+  reward = FORMAT_FILTER.YEAR + FORMAT_FILTER.MONTH + FORMAT_FILTER.DAY + FORMAT_FILTER.HOUR,
+  record = function(timeInfo)
+    return string.format("%s %02d:%02d:%02d", baselibLocale:GetDefaultDateString(nil, timeInfo.month, timeInfo.day), timeInfo.hour, timeInfo.minute, timeInfo.second)
+  end
+}
+function rankingLocale:GetStringBySpace(str1, str2)
+  return string.format("%s%s", str1, str2)
+end

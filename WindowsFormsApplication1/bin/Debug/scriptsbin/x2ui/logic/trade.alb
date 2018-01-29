@@ -1,0 +1,14 @@
+function PutupTradeItem(bagItemIdx, amount)
+  if trade.window ~= nil and trade.window:IsVisible() and X2Trade:IsTradeLocked() == false then
+    if amount ~= nil then
+      X2Trade:PutupTradeItem(bagItemIdx, amount)
+    else
+      X2Trade:PutupTradeItem(bagItemIdx, 0)
+    end
+    return true
+  end
+  return false
+end
+function PutupTradeMoney(gold, silver, copper)
+  return X2Trade:PutupTradeMoneyByStr(gold, silver, copper)
+end

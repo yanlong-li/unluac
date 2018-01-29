@@ -1,0 +1,3 @@
+if X2Util:GetGameProvider() == TENCENT then
+  inventoryLocale.guideLineSpace = 17
+end

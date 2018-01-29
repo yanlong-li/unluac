@@ -1,0 +1,8 @@
+if X2Util:GetGameProvider() == TRION and X2Locale:GetLocale() == "fr" then
+  ROUND_RESULT_STRING_ORDER = {
+    COUNT = 2,
+    ROUND = 1,
+    RESULT = 3
+  }
+  ENTER_BUTTON_ENABLE_ALWAYS = false
+end

@@ -1,0 +1,8 @@
+if X2Util:GetGameProvider() == TRION then
+  componentsLocale.popupMenu = {offsetX = 5}
+  componentsLocale.noticePriceFontSize = FONT_SIZE.MIDDLE
+  componentsLocale.cashBuy.useEmbededWebBrowser = true
+  componentsLocale.cashBuy.embededWebBrowserExtent = {w = 980, h = 640}
+  componentsLocale.cashBuy.embededWebBrowserOffset = {x = 0, y = 0}
+  componentsLocale.useMenuReportBadUser = false
+end

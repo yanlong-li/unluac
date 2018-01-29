@@ -1,0 +1,21 @@
+locale = {}
+locale.loading = {
+  notice = X2Locale:LocalizeUiText(LOADING_TEXT, "notice"),
+  tipOfDay = X2Locale:LocalizeUiText(LOADING_TEXT, "tip_of_day"),
+  tipsOfDay = {},
+  MakeTipsOfDay = function()
+    local found = true
+    local index = 0
+    while found do
+      local str = X2Locale:LocalizeUiText(LOADING_TEXT, string.format("tips_of_day_%d", index))
+      if str == string.format("%d ?? tips_of_day_%d", LOADING_TEXT, index) then
+        found = false
+        break
+      end
+      if str ~= "ignore" and str ~= "IGNORE" then
+        table.insert(locale.loading.tipsOfDay, str)
+      end
+      index = index + 1
+    end
+  end
+}

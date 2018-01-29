@@ -1,0 +1,134 @@
+function CreateFamilyTabWindow(window)
+  SetViewOfFamilyTabWindow(window)
+  local MAX_COUNT = 10
+  local frame = window.frame
+  local listCtrl = window.frame.listCtrl
+  local showOffMember = window.showOffMember
+  local inputName = window.inputName
+  local inputTitle = window.inputTitle
+  local addFamilyButton = window.addFamilyButton
+  function addFamilyButton:OnTextChanged()
+    local name = inputName:GetText()
+    local name2 = X2Util:CheckAvailableName(name, inputName:IsComposingText(), VNT_CHAR)
+    if name ~= name2 then
+      inputName:SetText(name2)
+    end
+    if string.len(name2) >= 1 then
+      inputName.guideText:Show(false)
+    end
+    local title = inputTitle:GetText()
+    if relationshipLocale.familyTab.inputTitle.checkAvailableName then
+      local title2 = X2Util:CheckAvailableName(title, inputTitle:IsComposingText(), VNT_FAMILY_TITLE)
+      if title ~= title2 then
+        inputTitle:SetText(title2)
+        title = title2
+      end
+    end
+    if string.len(title) >= 1 then
+      inputTitle.guideText:Show(false)
+    end
+    if string.len(name2) >= 1 and string.len(title) >= 1 then
+      addFamilyButton:Enable(true)
+    else
+      addFamilyButton:Enable(false)
+    end
+  end
+  inputName:SetHandler("OnTextChanged", addFamilyButton.OnTextChanged)
+  inputTitle:SetHandler("OnTextChanged", addFamilyButton.OnTextChanged)
+  function addFamilyButton:OnClick()
+    local name = inputName:GetText()
+    local title = inputTitle:GetText()
+    if name == "" then
+      X2Chat:DispatchChatMessage(CMF_FAMILY_INFO, "no add friend pc name")
+    else
+      X2Family:Invite(name, title)
+      inputName:SetText("")
+      inputTitle:SetText("")
+    end
+  end
+  addFamilyButton:SetHandler("OnClick", addFamilyButton.OnClick)
+  function window:OnShow()
+    inputName:SetText("")
+    inputName.guideText:Show(true)
+    inputTitle:SetText("")
+    inputTitle.guideText:Show(true)
+    addFamilyButton:Enable(false)
+  end
+  window:SetHandler("OnShow", window.OnShow)
+  function frame:CheckRole(item, itemIndex, role)
+    if role == 0 then
+      return
+    end
+    self:InsertData(itemIndex, 3, locale.family.family_leader)
+  end
+  local pageControl = window.pageControl
+  function window:FillMemberData(pageIndex)
+    frame:DeleteAllDatas()
+    local membersTable = X2Family:GetMembers(self.showOffMember:GetChecked())
+    if membersTable == nil then
+      return
+    end
+    local onlineMembers, totalMembers = X2Family:GetMemberCount()
+    for i = 1, #membersTable do
+      frame:InsertData(i, 1, membersTable[i])
+      frame:InsertData(i, 2, membersTable[i])
+      if i == #membersTable then
+        frame:InsertData(i, 3, membersTable[i], true)
+      else
+        frame:InsertData(i, 3, membersTable[i], false)
+      end
+    end
+    local str = string.format("%s %s%d/%d", locale.family.onlineMember, FONT_COLOR_HEX.BLUE, onlineMembers, totalMembers)
+    window.numOfonlineMember:SetText(str)
+  end
+  for i = 1, MAX_COUNT do
+    do
+      local item = listCtrl.items[i]
+      function item:OnClick(arg)
+        if arg == "RightButton" then
+          local data = frame:GetDataByViewIndex(i, 1)
+          ActivateFamilyMemberPopupMenu(window, self, data[FAMILY_COL.NAME], data[FAMILY_COL.TITLE])
+        end
+      end
+      item:SetHandler("OnClick", item.OnClick)
+    end
+  end
+  window:FillMemberData()
+  function showOffMember:OnCheckChanged()
+    window:FillMemberData()
+  end
+  showOffMember:SetHandler("OnCheckChanged", showOffMember.OnCheckChanged)
+  local familyEvents = {
+    FAMILY_MEMBER_ADDED = function()
+      window:FillMemberData()
+    end,
+    FAMILY_MEMBER_LEFT = function()
+      window:FillMemberData()
+    end,
+    FAMILY_MEMBER_KICKED = function()
+      window:FillMemberData()
+    end,
+    FAMILY_OWNER_CHANGED = function()
+      window:FillMemberData()
+    end,
+    FAMILY_REMOVED = function()
+      window:FillMemberData()
+    end,
+    FAMILY_MEMBER_ONLINE = function(charName, online)
+      window:FillMemberData()
+    end,
+    FAMILY_REFRESH = function()
+      window:FillMemberData()
+    end
+  }
+  window:SetHandler("OnEvent", function(this, event, ...)
+    familyEvents[event](...)
+  end)
+  window:RegisterEvent("FAMILY_MEMBER_ADDED")
+  window:RegisterEvent("FAMILY_MEMBER_LEFT")
+  window:RegisterEvent("FAMILY_MEMBER_KICKED")
+  window:RegisterEvent("FAMILY_OWNER_CHANGED")
+  window:RegisterEvent("FAMILY_REMOVED")
+  window:RegisterEvent("FAMILY_MEMBER_ONLINE")
+  window:RegisterEvent("FAMILY_REFRESH")
+end

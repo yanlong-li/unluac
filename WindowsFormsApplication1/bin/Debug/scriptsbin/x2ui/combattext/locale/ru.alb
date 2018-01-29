@@ -1,0 +1,5 @@
+if X2Util:GetGameProvider() == MAILRU then
+  combatTextLocale.drawableAnchor = {x = 3, y = -9}
+  combatTextLocale.fontSize = 38
+  combatTextLocale.fontPath = "ui/font/yoon_firedgothic_b.ttf"
+end

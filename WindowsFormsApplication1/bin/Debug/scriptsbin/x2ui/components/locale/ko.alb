@@ -1,0 +1,37 @@
+if componentsLocale == nil then
+  componentsLocale = {}
+end
+componentsLocale.popupMenu = {offsetX = -10}
+componentsLocale.nameDrawable = {
+  x = 762,
+  y = 158,
+  w = 112,
+  h = 38
+}
+componentsLocale.bonus1Drawable = {
+  x = 705,
+  y = 159,
+  w = 56,
+  h = 21
+}
+componentsLocale.bonus2Drawable = {
+  x = 705,
+  y = 182,
+  w = 56,
+  h = 21
+}
+componentsLocale.noticePriceFontSize = FONT_SIZE.LARGE
+componentsLocale.pointBuy = {
+  noticePriceFontSize = FONT_SIZE.LARGE
+}
+function componentsLocale:GetExpeditionExpelText()
+  return GetUIText(EXPEDITION_TEXT, "expel")
+end
+componentsLocale.cashBuy = {
+  useEmbededWebBrowser = false,
+  webBrowserAnchor = "TOP",
+  webBrowserTitle = "",
+  embededWebBrowserExtent = {w = 604, h = 400},
+  embededWebBrowserOffset = {x = 0, y = 45}
+}
+componentsLocale.useMenuReportBadUser = true

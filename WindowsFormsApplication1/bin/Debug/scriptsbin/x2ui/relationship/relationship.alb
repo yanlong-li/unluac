@@ -1,0 +1,43 @@
+function CreateRelationshipFrame(id, parent)
+  local window = SetViewOfRelationshipFrame(id, parent)
+  function window.tab:OnTabChanged(selected)
+    ReAnhorTabLine(self, selected)
+    if selected == 1 then
+      self.window[1]:ShowFreindTab()
+    end
+  end
+  window.tab:SetHandler("OnTabChanged", window.tab.OnTabChanged)
+  window.tab:OnTabChanged(1)
+  function window:OnHide()
+    HideEditDialog(self.tab.window[3])
+  end
+  window:SetHandler("OnHide", window.OnHide)
+  return window
+end
+relationshipFrame = CreateRelationshipFrame("relationshipFrame", "UIParent")
+function ToggleRelationshipUI(show)
+  if show == nil then
+    show = not relationshipFrame:IsVisible()
+  end
+  relationshipFrame:Show(show)
+  if show then
+    local idx = expedMgmt.tab:GetSelectedTab()
+    relationshipFrame.tab:OnTabChanged(idx)
+  end
+end
+ADDON:RegisterContentTriggerFunc(UIC_FRIEND, ToggleRelationshipUI)
+function ShowChageTitleFamilyMember(memberName, title)
+  if relationshipFrame:IsVisible() == false then
+    return
+  end
+  local titleEditWindow = relationshipFrame.tab.window[3].titleEditWindow
+  titleEditWindow:Show(true)
+  titleEditWindow.edit:SetText(title)
+  titleEditWindow.memberName = memberName
+end
+function ActiveInviteFamily(characterName)
+  ToggleRelationshipUI(true)
+  relationshipFrame.tab:SelectTab(relationshipFrame.tab.familyTabIdx)
+  relationshipFrame.tab.window[relationshipFrame.tab.familyTabIdx].inputName:SetText(characterName)
+  relationshipFrame.tab.window[relationshipFrame.tab.familyTabIdx].inputTitle:SetFocus(true)
+end

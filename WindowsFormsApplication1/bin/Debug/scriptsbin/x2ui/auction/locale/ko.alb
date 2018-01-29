@@ -1,0 +1,611 @@
+if auctionLocale == nil then
+  auctionLocale = {}
+end
+auctionLocale.icon = {
+  currentCoords = {
+    0,
+    42,
+    32,
+    21
+  },
+  directCoords = {
+    0,
+    21,
+    32,
+    21
+  }
+}
+auctionLocale.width = {
+  window = 800,
+  category = 160,
+  bidListCtrl = 590,
+  putupListCtrl = 550,
+  bidHistoryListCtrl = 760,
+  bidStateCol = 95,
+  itemlevelCol = 55,
+  itemConditionCol = 70,
+  gradeCombobox = 65,
+  timeCol = 75
+}
+auctionLocale.nameColWidth = {
+  bidTab = 175,
+  putupTab = 175,
+  bidHistoryTab = 240
+}
+auctionLocale.nameColLimitLen = {
+  bidTab = 22,
+  putupTab = 22,
+  bidHistoryTab = 32
+}
+auctionLocale.leftTimeColInset = 12
+auctionLocale.categoryTooltip = false
+auctionLocale.viewMatchWordBox = true
+function auctionLocale:CreateDirectBundlePriceLabel(id, parent, anchorTarget)
+  local directBundlePriceLabel = parent:CreateChildWidget("label", id, 0, true)
+  directBundlePriceLabel:SetExtent(190, FONT_SIZE.MIDDLE)
+  directBundlePriceLabel:AddAnchor("TOPLEFT", anchorTarget, "BOTTOMLEFT", 0, 10)
+  directBundlePriceLabel:SetText(string.format("%s(%s)", locale.auction.bundlePrice, locale.auction.putupPrice))
+  directBundlePriceLabel.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(directBundlePriceLabel, FONT_COLOR.BROWN)
+  return directBundlePriceLabel
+end
+function auctionLocale:SetLayoutDirectBundleAmountLabel(label, target)
+  label:AddAnchor("TOPRIGHT", target, 0, 0)
+  label.style:SetAlign(ALIGN_RIGHT)
+end
+function auctionLocale:AnchorDirectBundlePrice(widget, target)
+  widget:AddAnchor("TOPRIGHT", target, "BOTTOMRIGHT", 0, 3)
+  widget.style:SetAlign(ALIGN_RIGHT)
+end
+local GetBodyItems = function(startId)
+  local bodyItems = {
+    {
+      id = startId,
+      name = GetUIText(AUCTION_TEXT, "item_category_head")
+    },
+    {
+      id = startId + 1,
+      name = GetUIText(AUCTION_TEXT, "item_category_chest")
+    },
+    {
+      id = startId + 2,
+      name = GetUIText(AUCTION_TEXT, "item_category_waist")
+    },
+    {
+      id = startId + 3,
+      name = GetUIText(AUCTION_TEXT, "item_category_arms")
+    },
+    {
+      id = startId + 4,
+      name = GetUIText(AUCTION_TEXT, "item_category_hands")
+    },
+    {
+      id = startId + 5,
+      name = GetUIText(AUCTION_TEXT, "item_category_legs")
+    },
+    {
+      id = startId + 6,
+      name = GetUIText(AUCTION_TEXT, "item_category_feet")
+    }
+  }
+  return bodyItems
+end
+auctionLocale.auctionCategories = {
+  {
+    id = 1,
+    name = GetUIText(AUCTION_TEXT, "item_group_weapon"),
+    child = {
+      {
+        id = 1,
+        name = GetUIText(AUCTION_TEXT, "item_category_one_hand"),
+        child = {
+          {
+            id = 1,
+            name = GetUIText(AUCTION_TEXT, "item_category_dagger")
+          },
+          {
+            id = 2,
+            name = GetUIText(AUCTION_TEXT, "item_category_sword")
+          },
+          {
+            id = 3,
+            name = GetUIText(AUCTION_TEXT, "item_category_blade")
+          },
+          {
+            id = 4,
+            name = GetUIText(AUCTION_TEXT, "item_category_spear")
+          },
+          {
+            id = 5,
+            name = GetUIText(AUCTION_TEXT, "item_category_axe")
+          },
+          {
+            id = 6,
+            name = GetUIText(AUCTION_TEXT, "item_category_mace")
+          },
+          {
+            id = 7,
+            name = GetUIText(AUCTION_TEXT, "item_category_staff")
+          }
+        }
+      },
+      {
+        id = 2,
+        name = GetUIText(AUCTION_TEXT, "item_category_two_hand"),
+        child = {
+          {
+            id = 8,
+            name = GetUIText(AUCTION_TEXT, "item_category_twohand_sword")
+          },
+          {
+            id = 9,
+            name = GetUIText(AUCTION_TEXT, "item_category_twohand_blade")
+          },
+          {
+            id = 10,
+            name = GetUIText(AUCTION_TEXT, "item_category_twohand_spear")
+          },
+          {
+            id = 11,
+            name = GetUIText(AUCTION_TEXT, "item_category_twohand_axe")
+          },
+          {
+            id = 12,
+            name = GetUIText(AUCTION_TEXT, "item_category_twohand_mace")
+          },
+          {
+            id = 13,
+            name = GetUIText(AUCTION_TEXT, "item_category_twohand_staff")
+          }
+        }
+      },
+      {
+        id = 3,
+        name = GetUIText(AUCTION_TEXT, "item_category_ranged"),
+        child = {
+          {
+            id = 14,
+            name = GetUIText(AUCTION_TEXT, "item_category_bow")
+          }
+        }
+      },
+      {
+        id = 7,
+        name = GetUIText(AUCTION_TEXT, "item_category_shield")
+      }
+    }
+  },
+  {
+    id = 2,
+    name = GetUIText(AUCTION_TEXT, "item_group_armor"),
+    child = {
+      {
+        id = 4,
+        name = GetUIText(AUCTION_TEXT, "item_category_light_armor"),
+        child = GetBodyItems(15)
+      },
+      {
+        id = 5,
+        name = GetUIText(AUCTION_TEXT, "item_category_normal_armor"),
+        child = GetBodyItems(22)
+      },
+      {
+        id = 6,
+        name = GetUIText(AUCTION_TEXT, "item_category_heavy_armor"),
+        child = GetBodyItems(29)
+      },
+      {
+        id = 8,
+        name = GetUIText(AUCTION_TEXT, "item_category_cloak")
+      }
+    }
+  },
+  {
+    id = 3,
+    name = GetUIText(AUCTION_TEXT, "item_group_accessory"),
+    child = {
+      {
+        id = 9,
+        name = GetUIText(AUCTION_TEXT, "item_category_earring")
+      },
+      {
+        id = 10,
+        name = GetUIText(AUCTION_TEXT, "item_category_necklace")
+      },
+      {
+        id = 11,
+        name = GetUIText(AUCTION_TEXT, "item_category_ring")
+      }
+    }
+  },
+  {
+    id = 4,
+    name = GetUIText(AUCTION_TEXT, "item_category_instrument"),
+    child = {
+      {
+        id = 12,
+        name = GetUIText(AUCTION_TEXT, "item_category_tube_inst")
+      },
+      {
+        id = 13,
+        name = GetUIText(AUCTION_TEXT, "item_category_string_inst")
+      }
+    }
+  },
+  {
+    id = 5,
+    name = GetUIText(AUCTION_TEXT, "item_category_armor")
+  },
+  {
+    id = 6,
+    name = GetUIText(AUCTION_TEXT, "item_group_consume"),
+    child = {
+      {
+        id = 15,
+        name = GetUIText(AUCTION_TEXT, "item_category_potion")
+      },
+      {
+        id = 16,
+        name = GetUIText(AUCTION_TEXT, "item_category_food")
+      },
+      {
+        id = 17,
+        name = GetUIText(AUCTION_TEXT, "item_category_drink")
+      },
+      {
+        id = 18,
+        name = GetUIText(AUCTION_TEXT, "item_category_tool")
+      },
+      {
+        id = 19,
+        name = GetUIText(AUCTION_TEXT, "item_category_throw")
+      },
+      {
+        id = 21,
+        name = GetUIText(AUCTION_TEXT, "item_category_recipe")
+      },
+      {
+        id = 22,
+        name = GetUIText(AUCTION_TEXT, "item_category_magical_product")
+      }
+    }
+  },
+  {
+    id = 7,
+    name = GetUIText(AUCTION_TEXT, "item_group_craft"),
+    child = {
+      {
+        id = 23,
+        name = GetUIText(AUCTION_TEXT, "item_group_archium")
+      },
+      {
+        id = 24,
+        name = GetUIText(AUCTION_TEXT, "item_group_raw_material"),
+        child = {
+          {
+            id = 36,
+            name = GetUIText(AUCTION_TEXT, "item_category_ore")
+          },
+          {
+            id = 37,
+            name = GetUIText(AUCTION_TEXT, "item_category_raw_lumber")
+          },
+          {
+            id = 38,
+            name = GetUIText(AUCTION_TEXT, "item_category_rock")
+          },
+          {
+            id = 39,
+            name = GetUIText(AUCTION_TEXT, "item_category_rawhide")
+          },
+          {
+            id = 40,
+            name = GetUIText(AUCTION_TEXT, "item_category_fiber")
+          },
+          {
+            id = 41,
+            name = GetUIText(AUCTION_TEXT, "item_category_parts")
+          },
+          {
+            id = 42,
+            name = GetUIText(AUCTION_TEXT, "item_category_meat")
+          },
+          {
+            id = 43,
+            name = GetUIText(AUCTION_TEXT, "item_category_marine_product")
+          },
+          {
+            id = 44,
+            name = GetUIText(AUCTION_TEXT, "item_category_grain")
+          },
+          {
+            id = 45,
+            name = GetUIText(AUCTION_TEXT, "item_category_vegetables")
+          },
+          {
+            id = 46,
+            name = GetUIText(AUCTION_TEXT, "item_category_fruit")
+          },
+          {
+            id = 47,
+            name = GetUIText(AUCTION_TEXT, "item_category_spice")
+          },
+          {
+            id = 48,
+            name = GetUIText(AUCTION_TEXT, "item_category_drug_material")
+          },
+          {
+            id = 49,
+            name = GetUIText(AUCTION_TEXT, "item_category_flower")
+          },
+          {
+            id = 50,
+            name = GetUIText(AUCTION_TEXT, "item_category_soil")
+          },
+          {
+            id = 51,
+            name = GetUIText(AUCTION_TEXT, "item_category_jewel")
+          }
+        }
+      },
+      {
+        id = 25,
+        name = GetUIText(AUCTION_TEXT, "item_group_material"),
+        child = {
+          {
+            id = 52,
+            name = GetUIText(AUCTION_TEXT, "item_category_paper")
+          },
+          {
+            id = 53,
+            name = GetUIText(AUCTION_TEXT, "item_category_metal")
+          },
+          {
+            id = 54,
+            name = GetUIText(AUCTION_TEXT, "item_category_wood")
+          },
+          {
+            id = 55,
+            name = GetUIText(AUCTION_TEXT, "item_category_stone")
+          },
+          {
+            id = 56,
+            name = GetUIText(AUCTION_TEXT, "item_category_leather")
+          },
+          {
+            id = 57,
+            name = GetUIText(AUCTION_TEXT, "item_category_cloth")
+          },
+          {
+            id = 58,
+            name = GetUIText(AUCTION_TEXT, "item_category_machine")
+          },
+          {
+            id = 59,
+            name = GetUIText(AUCTION_TEXT, "item_category_glass")
+          },
+          {
+            id = 60,
+            name = GetUIText(AUCTION_TEXT, "item_category_rubber")
+          },
+          {
+            id = 61,
+            name = GetUIText(AUCTION_TEXT, "item_category_noble_metal")
+          },
+          {
+            id = 62,
+            name = GetUIText(AUCTION_TEXT, "item_category_alchemy_material")
+          },
+          {
+            id = 63,
+            name = GetUIText(AUCTION_TEXT, "item_category_craft_material")
+          },
+          {
+            id = 70,
+            name = GetUIText(AUCTION_TEXT, "item_category_dye")
+          },
+          {
+            id = 71,
+            name = GetUIText(AUCTION_TEXT, "item_category_cooking_oil")
+          },
+          {
+            id = 72,
+            name = GetUIText(AUCTION_TEXT, "item_category_seasoning")
+          }
+        }
+      },
+      {
+        id = 26,
+        name = GetUIText(AUCTION_TEXT, "item_group_animal"),
+        child = {
+          {
+            id = 64,
+            name = GetUIText(AUCTION_TEXT, "item_category_animal")
+          }
+        }
+      },
+      {
+        id = 27,
+        name = GetUIText(AUCTION_TEXT, "item_group_plant"),
+        child = {
+          {
+            id = 65,
+            name = GetUIText(AUCTION_TEXT, "item_category_young_plant")
+          },
+          {
+            id = 66,
+            name = GetUIText(AUCTION_TEXT, "item_category_seed")
+          }
+        }
+      },
+      {
+        id = 28,
+        name = GetUIText(AUCTION_TEXT, "item_group_inner_design"),
+        child = {
+          {
+            id = 67,
+            name = GetUIText(AUCTION_TEXT, "item_category_furniture")
+          }
+        }
+      },
+      {
+        id = 29,
+        name = GetUIText(AUCTION_TEXT, "item_group_book")
+      }
+    }
+  },
+  {
+    id = 8,
+    name = GetUIText(AUCTION_TEXT, "item_category_machine"),
+    child = {
+      {
+        id = 30,
+        name = GetUIText(AUCTION_TEXT, "item_category_vehicle")
+      },
+      {
+        id = 31,
+        name = GetUIText(AUCTION_TEXT, "item_category_ship")
+      },
+      {
+        id = 32,
+        name = GetUIText(AUCTION_TEXT, "item_category_glider")
+      },
+      {
+        id = 33,
+        name = GetUIText(AUCTION_TEXT, "item_category_siege")
+      }
+    }
+  },
+  {
+    id = 9,
+    name = GetUIText(AUCTION_TEXT, "item_group_vehicle"),
+    child = {
+      {
+        id = 34,
+        name = GetUIText(AUCTION_TEXT, "item_group_vehicle")
+      },
+      {
+        id = 35,
+        name = GetUIText(AUCTION_TEXT, "item_group_vehicleinfo")
+      }
+    }
+  },
+  {
+    id = 10,
+    name = GetUIText(AUCTION_TEXT, "item_group_etc"),
+    child = {
+      {
+        id = 36,
+        name = GetUIText(AUCTION_TEXT, "item_group_quest"),
+        child = {
+          {
+            id = 68,
+            name = GetUIText(AUCTION_TEXT, "item_category_adventure")
+          }
+        }
+      },
+      {
+        id = 37,
+        name = GetUIText(AUCTION_TEXT, "item_group_miscellaneous"),
+        child = {
+          {
+            id = 69,
+            name = GetUIText(AUCTION_TEXT, "item_category_toy")
+          }
+        }
+      },
+      {
+        id = 38,
+        name = GetUIText(AUCTION_TEXT, "item_category_coin")
+      }
+    }
+  },
+  {
+    id = 11,
+    name = GetUIText(AUCTION_TEXT, "item_group_camp")
+  },
+  {
+    id = 12,
+    name = GetUIText(AUCTION_TEXT, "item_category_crescent_stone"),
+    child = {
+      {
+        id = 40,
+        name = GetUIText(AUCTION_TEXT, "item_category_crescent_stone_red")
+      },
+      {
+        id = 41,
+        name = GetUIText(AUCTION_TEXT, "item_category_crescent_stone_yellow")
+      },
+      {
+        id = 42,
+        name = GetUIText(AUCTION_TEXT, "item_category_crescent_stone_green")
+      },
+      {
+        id = 43,
+        name = GetUIText(AUCTION_TEXT, "item_category_crescent_stone_blue")
+      },
+      {
+        id = 44,
+        name = GetUIText(AUCTION_TEXT, "item_category_crescent_stone_ability1")
+      },
+      {
+        id = 45,
+        name = GetUIText(AUCTION_TEXT, "item_category_crescent_stone_ability2")
+      },
+      {
+        id = 46,
+        name = GetUIText(AUCTION_TEXT, "item_category_crescent_stone_etc")
+      }
+    }
+  },
+  {
+    id = 13,
+    name = GetUIText(AUCTION_TEXT, "item_category_moon_stone"),
+    child = {
+      {
+        id = 47,
+        name = GetUIText(AUCTION_TEXT, "item_category_moon_stone_scale"),
+        child = {
+          {
+            id = 73,
+            name = GetUIText(AUCTION_TEXT, "item_category_moon_stone_scale_red")
+          },
+          {
+            id = 74,
+            name = GetUIText(AUCTION_TEXT, "item_category_moon_stone_scale_yellow")
+          },
+          {
+            id = 75,
+            name = GetUIText(AUCTION_TEXT, "item_category_moon_stone_scale_green")
+          },
+          {
+            id = 76,
+            name = GetUIText(AUCTION_TEXT, "item_category_moon_stone_scale_blue")
+          },
+          {
+            id = 77,
+            name = GetUIText(AUCTION_TEXT, "item_category_moon_stone_scale_purple")
+          }
+        }
+      },
+      {
+        id = 48,
+        name = GetUIText(AUCTION_TEXT, "item_category_moon_stone_shadow"),
+        child = {
+          {
+            id = 78,
+            name = GetUIText(AUCTION_TEXT, "item_category_moon_stone_shadow_craft")
+          },
+          {
+            id = 79,
+            name = GetUIText(AUCTION_TEXT, "item_category_moon_stone_shadow_honor")
+          }
+        }
+      },
+      {
+        id = 49,
+        name = GetUIText(AUCTION_TEXT, "item_category_moon_stone_etc")
+      }
+    }
+  }
+}

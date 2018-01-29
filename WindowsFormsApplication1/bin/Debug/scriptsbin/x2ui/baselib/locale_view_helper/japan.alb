@@ -1,0 +1,36 @@
+if X2Util:GetGameProvider() == GAMEON then
+  localeView.useWebContent = true
+  localeView.groupMaker = {yOffsetValue = 25, xOffsetAgmenter = 100}
+  localeView.actionPointUpgrateButton = -26
+  localeView.actionPointDownGradeButton = -5
+  localeView.fpsInfoAnchor = {-295, 6}
+  localeView.lineSpace = {
+    toolTipCategory = -2,
+    toolTipSkillDesc = 3,
+    questContext = -1,
+    raceTitleInfo = 0,
+    raceDetailInfo = 0,
+    abilityDesc = 0
+  }
+  localeView.payIcon = {
+    person = {
+      186,
+      263,
+      93,
+      23
+    },
+    pcbang = {
+      93,
+      263,
+      93,
+      23
+    },
+    trial = {
+      0,
+      263,
+      93,
+      23
+    },
+    extent = {93, 23}
+  }
+end

@@ -1,0 +1,44 @@
+local buttonExtent = 28
+local leftMenuCount = #locale.infobar.leftMenu
+local rightMenuCount = #locale.infobar.rightMenu
+function CreateMainMenuBar(id, parent)
+  local window = CreateEmptyWindow(id, parent)
+  window:Show(true)
+  window:SetExtent(UIParent:GetScreenWidth(), 5)
+  window:AddAnchor("BOTTOM", "UIParent", 0, 0)
+  local left_bg = window:CreateImageDrawable(TEXTURE_PATH.HUD, "background")
+  left_bg:SetColor(1, 1, 1, 0.9)
+  left_bg:SetCoords(0, 219, 506, 9)
+  left_bg:SetExtent(UIParent:GetScreenWidth() / 2, 12)
+  left_bg:AddAnchor("BOTTOMLEFT", window, 0, 0)
+  window.left_bg = left_bg
+  local left_deco = window:CreateImageDrawable(TEXTURE_PATH.HUD, "background")
+  left_deco:SetCoords(452, 51, 294, 42)
+  left_deco:SetExtent(294, 55)
+  left_deco:AddAnchor("BOTTOMLEFT", left_bg, "TOPLEFT", 0, 5)
+  local right_bg = window:CreateImageDrawable(TEXTURE_PATH.HUD, "background")
+  right_bg:SetColor(1, 1, 1, 0.9)
+  right_bg:SetCoords(506, 219, -506, 9)
+  right_bg:SetExtent(UIParent:GetScreenWidth() / 2, 12)
+  right_bg:AddAnchor("BOTTOMLEFT", left_bg, "BOTTOMRIGHT", 0, 0)
+  window.right_bg = right_bg
+  local laborpower_bar_bg = window:CreateImageDrawable(TEXTURE_PATH.HUD, "background")
+  laborpower_bar_bg:SetCoords(0, 229, 424, 8)
+  local right_deco = window:CreateImageDrawable(TEXTURE_PATH.HUD, "background")
+  right_deco:SetCoords(746, 51, -294, 42)
+  right_deco:SetExtent(485, 55)
+  right_deco:AddAnchor("BOTTOMRIGHT", right_bg, "TOPRIGHT", 0, 5)
+  local exp_bar_set = CreateExpBarSet(window:GetId() .. ".exp_bar_set", window)
+  exp_bar_set:AddAnchor("BOTTOM", window, 0, -1)
+  window.exp_bar_set = exp_bar_set
+  local laborpower_bar_set = CreateLaborPowerBarSet(window:GetId() .. ".laborpower_bar_set", window)
+  laborpower_bar_set:AddAnchor("BOTTOMLEFT", exp_bar_set.exp_percent, "BOTTOMRIGHT", 5, 1)
+  window.laborpower_bar_set = laborpower_bar_set
+  laborpower_bar_bg:AddAnchor("TOPLEFT", laborpower_bar_set, 0, -9)
+  laborpower_bar_bg:AddAnchor("BOTTOMRIGHT", laborpower_bar_set, 8, 0)
+  local right_menu = CreateMainMenuBarRenewal(window:GetId() .. ".right_menu", window)
+  right_menu:Show(true)
+  right_menu:AddAnchor("BOTTOMRIGHT", window, -5, -10)
+  window.right_menu = right_menu
+  return window
+end

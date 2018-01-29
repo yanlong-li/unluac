@@ -1,0 +1,59 @@
+if optionLocale == nil then
+  optionLocale = {}
+end
+function optionLocale:CreatTitleWidget(parent)
+  local label = CreateLabel(parent:GetId() .. ".titleLabel", parent)
+  return label
+end
+function optionLocale:CreateCheckButton(parent, text, leftInset)
+  local checkButton = CreateCheckButton(parent:GetId() .. ".checkBox", parent, text)
+  return checkButton
+end
+function optionLocale:SetTitleExtent(controlType, titleWidget, width, leftInset)
+  titleWidget:SetExtent(170, 13)
+end
+function optionLocale:SetRadioButtonHHeight(titleWidget, frameWidget, width)
+  frameWidget:SetExtent(width, 49)
+end
+function optionLocale:UpdateSystemConfigLayout(frame, buttons, offsetY)
+  local totalWidth = 0
+  local visibleCnt = 0
+  for i = 1, #buttons do
+    if buttons[i]:IsVisible() then
+      local width = buttons[i]:GetWidth()
+      totalWidth = totalWidth + width
+      visibleCnt = visibleCnt + 1
+    end
+  end
+  local space = 0
+  if totalWidth < POPUP_WINDOW_WIDTH then
+    local val = POPUP_WINDOW_WIDTH - totalWidth
+    space = val / (visibleCnt + 1)
+  end
+  local offsetX = 0
+  for k = 1, #buttons do
+    if buttons[k]:IsVisible() then
+      local preBtnWidth = 0
+      if k > 1 and buttons[k - 1]:IsVisible() then
+        preBtnWidth = buttons[k - 1]:GetWidth()
+      end
+      offsetX = offsetX + preBtnWidth + space
+      buttons[k]:AddAnchor("TOPLEFT", frame, offsetX, offsetY)
+    end
+  end
+  if buttons[1]:IsVisible() then
+    local line = buttons[1]:CreateImageDrawable(TEXTURE_PATH.DEFAULT, "overlay")
+    line:SetCoords(1120, 693, 3, 100)
+    line:SetExtent(3, 100)
+    line:AddAnchor("LEFT", buttons[1], "RIGHT", space / 2, -5)
+  end
+end
+optionLocale.useAutoResize = false
+optionLocale.systemConfig = {
+  buttonOffsetX = {
+    -100,
+    0,
+    100
+  }
+}
+optionLocale.useSlashOpenChat = false

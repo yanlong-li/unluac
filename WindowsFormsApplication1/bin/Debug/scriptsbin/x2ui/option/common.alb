@@ -1,0 +1,511 @@
+OPTION_PARTITION_LINE = "OptionPartitionLine"
+MAX_COMBOBOX_LIMIT_COUNT = 10
+function SetOptionItemValue(optionId, value)
+  if type(optionId) == "string" then
+    if type(value) == "string" then
+      X2Option:SetItemStringValueByName(optionId, value)
+    elseif type(value) == "number" then
+      X2Option:SetItemFloatValueByName(optionId, value)
+    end
+  elseif type(optionId) == "number" then
+    if type(value) == "string" then
+      X2Option:SetItemStringValue(optionId, value)
+    elseif type(value) == "number" then
+      X2Option:SetItemFloatValue(optionId, value)
+    end
+  end
+end
+function GetOptionItemValue(optionId)
+  if type(optionId) == "string" then
+    return X2Option:GetOptionItemValueByName(optionId)
+  elseif type(optionId) == "number" then
+    return X2Option:GetOptionItemValue(optionId)
+  end
+end
+function RegisterOptionItem(optionTable)
+  for i = 1, #optionTable do
+    local itemValue
+    if type(optionTable[i].id) == "string" then
+      itemValue = X2Option:GetOptionItemValueByName(optionTable[i].id)
+    elseif type(optionId) == "number" then
+      itemValue = X2Option:GetOptionItemValue(optionTable[i].id)
+    end
+    if itemValue ~= nil then
+      if type(optionTable[i].id) == "string" then
+        if type(optionTable[i].default) == "string" then
+          X2Option:SetItemDefaultStringValueByName(optionTable[i].id, optionTable[i].default)
+        elseif type(optionTable[i].default) == "number" then
+          X2Option:SetItemDefaultFloatValueByName(optionTable[i].id, optionTable[i].default)
+        end
+      elseif type(optionId) == "number" then
+        if type(optionTable[i].default) == "string" then
+          X2Option:SetItemDefaultStringValue(optionTable[i].id, optionTable[i].default)
+        elseif type(optionTable[i].default) == "number" then
+          X2Option:SetItemDefaultFloatValue(optionTable[i].id, optionTable[i].default)
+        end
+      end
+    elseif type(optionTable[i].id) == "string" then
+      if optionTable[i].funcDefaultValue ~= nil then
+        optionTable[i].default = optionTable[i].funcDefaultValue()
+      end
+      if type(optionTable[i].default) == "string" then
+        X2Option:CreateOptionItemString(optionTable[i].id, optionTable[i].default, optionTable[i].saveLevel)
+      elseif type(optionTable[i].default) == "number" then
+        X2Option:CreateOptionItemFloat(optionTable[i].id, optionTable[i].default, optionTable[i].saveLevel)
+      end
+      itemValue = optionTable[i].default
+    end
+    if optionTable[i].funcOnChanged ~= nil then
+      optionTable[i].funcOnChanged(itemValue)
+    end
+  end
+end
+local CreateOptionCheckbox = function(parent, controlArg, optionId, leftInset)
+  local checkbox = optionLocale:CreateCheckButton(parent, controlArg, leftInset)
+  checkbox.controlType = "checkbox"
+  parent.checkbox = checkbox
+  function checkbox:Init()
+    if optionId ~= nil then
+      local val = GetOptionItemValue(optionId)
+      if val ~= nil then
+        self.originalValue = val
+        self:SetChecked(self.originalValue, false)
+      end
+    end
+  end
+  function checkbox:Save()
+    if optionId ~= nil then
+      local isChecked = self:GetChecked()
+      if isChecked then
+        SetOptionItemValue(optionId, 1)
+      else
+        SetOptionItemValue(optionId, 0)
+      end
+      if parent.changeHandler ~= nil then
+        parent.changeHandler(isChecked)
+      end
+    end
+  end
+  return checkbox
+end
+local CreateOptionCombobox = function(parent, controlArg, optionId, limitItemCount)
+  local combobox = CreateComboBox(parent)
+  combobox.controlType = "combobox"
+  combobox:SetExtent(175, 24)
+  parent.combobox = combobox
+  combobox.dropdownItem = controlArg
+  if limitItemCount ~= nil then
+    combobox.limitItemCount = limitItemCount
+  else
+    combobox.limitItemCount = MAX_COMBOBOX_LIMIT_COUNT
+  end
+  function combobox:Init()
+    if optionId ~= nil then
+      self.originalValue = GetOptionItemValue(optionId)
+      self:Select(self.originalValue)
+    end
+  end
+  function combobox:Save()
+    if optionId ~= nil then
+      local value = self:GetSelectedIndex()
+      SetOptionItemValue(optionId, value)
+      if parent.changeHandler ~= nil then
+        parent:changeHandler(value)
+      end
+    end
+  end
+  return combobox
+end
+local CreateOptionSliderBar = function(parent, controlArg, optionId, sliderValue)
+  local sliderbar = CreateSlider(parent:GetId() .. ".sliderbar", parent)
+  sliderbar.controlType = "sliderbar"
+  local titleBarWidth = 0
+  if parent.optionTitle ~= nil then
+    sliderbar:AddAnchor("LEFT", parent, 0, 0)
+    titleBarWidth = parent.optionTitle:GetExtent()
+  else
+    sliderbar:AddAnchor("TOPLEFT", parent, 15, 0)
+  end
+  if sliderValue ~= nil then
+    sliderbar:AddAnchor("RIGHT", parent, -40, 0)
+  else
+    sliderbar:AddAnchor("RIGHT", parent, -15, 0)
+  end
+  parent.sliderbar = sliderbar
+  if controlArg ~= nil and type(controlArg) == "table" then
+    sliderbar.label = {}
+    for i = 1, #controlArg do
+      local label = CreateLabel(sliderbar:GetId() .. ".label[" .. i .. "]", sliderbar)
+      label:SetHeight(15)
+      label:SetAutoResize(true)
+      label.style:SetFontSize(FONT_SIZE.SMALL)
+      label:SetText(controlArg[i])
+      sliderbar.label[i] = label
+    end
+    if sliderValue == nil then
+      local insetTable = {
+        {123, 240},
+        {
+          90,
+          183,
+          273
+        },
+        {
+          73,
+          147,
+          217,
+          292
+        }
+      }
+      sliderbar.marking = {}
+      for i = 1, #controlArg do
+        local marking = sliderbar:CreateImageDrawable(TEXTURE_PATH.OPTION, "background")
+        marking:SetCoords(0, 24, 9, 14)
+        marking:SetExtent(9, 14)
+        if i == 1 then
+          marking:AddAnchor("LEFT", sliderbar, 0, 0)
+        elseif i == #controlArg then
+          marking:AddAnchor("RIGHT", sliderbar, -2, 0)
+        else
+          marking:AddAnchor("LEFT", sliderbar, insetTable[#controlArg - 3][i - 1], 0)
+        end
+        sliderbar.marking[i] = marking
+      end
+    end
+  end
+  function sliderbar:Init()
+    if optionId ~= nil then
+      self.originalValue = GetOptionItemValue(optionId)
+      self:SetValue(self.originalValue, false)
+    end
+  end
+  function sliderbar:Save()
+    if optionId ~= nil then
+      local value = math.floor(self:GetValue())
+      SetOptionItemValue(optionId, value)
+      if parent.changeHandler ~= nil then
+        parent.changeHandler(value)
+      end
+    end
+  end
+  return sliderbar
+end
+local CreateOptionRadioButton = function(parent, controlArg, optionId, direction)
+  local firstOffset = {}
+  firstOffset.x = 10
+  firstOffset.y = 7
+  local radioButtons = CreateRadioButton(parent:GetId() .. ".radioButtons", parent, #controlArg, direction, firstOffset, 70, controlArg)
+  if direction == "vertical" then
+    radioButtons.controlType = "radiobuttonV"
+  else
+    radioButtons.controlType = "radiobuttonH"
+  end
+  parent.radioButtons = radioButtons
+  function radioButtons:Init()
+    if optionId ~= nil then
+      local value = GetOptionItemValue(optionId)
+      self:Check(value, false)
+    end
+  end
+  function radioButtons:Save()
+    if optionId ~= nil then
+      local value = self:GetChecked()
+      SetOptionItemValue(optionId, value)
+      if parent.changeHandler ~= nil then
+        parent.changeHandler(value)
+      end
+    end
+  end
+  return radioButtons
+end
+local CreateOptionKeyBindingControl = function(parent, controlArg, optionId)
+  local primaryKeyEdit = parent:CreateChildWidget("button", "primaryKeyEdit", 0, true)
+  primaryKeyEdit:AddAnchor("LEFT", parent, "RIGHT", 0, 0)
+  ApplyButtonSkin(primaryKeyEdit, BUTTON_CONTENTS.OPTION_KEY)
+  local secondaryKeyEdit = parent:CreateChildWidget("button", "secondaryKeyEdit", 0, true)
+  secondaryKeyEdit:AddAnchor("LEFT", primaryKeyEdit, "RIGHT", 5, 0)
+  ApplyButtonSkin(secondaryKeyEdit, BUTTON_CONTENTS.OPTION_KEY)
+  function primaryKeyEdit:Init()
+  end
+  function primaryKeyEdit:Save()
+  end
+  return primaryKeyEdit
+end
+local CreatePartitionImage = function(frame, optionFrame, lastOptionFrame)
+  local line = CreateLine(optionFrame, "TYPE1")
+  line:SetHeight(5)
+  line:AddAnchor("TOP", lastOptionFrame, "BOTTOM", 0, 5)
+  line:AddAnchor("LEFT", frame, 0, 0)
+  line:AddAnchor("RIGHT", frame, 0, 0)
+  frame.insetHeight = 15
+end
+OPTION_ITEM_TARGET_ANCHOR_BOTTOM = 1
+OPTION_ITEM_TARGET_ANCHOR_LEFT = 2
+function CreateOptionSubFrame(parent, index)
+  local frame = CreateScrollWindow(parent, "subFrame", index)
+  frame:Show(false)
+  frame:AddAnchor("TOPLEFT", parent.titleLabel, "BOTTOMLEFT", 0, 0)
+  frame:AddAnchor("BOTTOMRIGHT", parent, 0, 0)
+  frame.totalHeight = 0
+  frame.insetHeight = 0
+  frame.content.optionFrames = {}
+  function frame:InsertNewOption(controlType, textInfo, insertable, optionId, changeHandler, controlArg2, indentation, targetAnchorType)
+    if insertable == false then
+      return
+    end
+    local tip = ""
+    local titleText = ""
+    local controlArg
+    if textInfo ~= nil then
+      titleText = textInfo.titleStr
+      tip = textInfo.tooltipStr
+      controlArg = textInfo.controlStr
+    end
+    if type(optionId) == "string" then
+      if X2Option:GetOptionItemValueByName(optionId) == nil then
+        return
+      end
+    elseif titleText ~= nil and optionId ~= nil and X2Option:IsRestartOption(optionId) then
+      titleText = string.format("%s*", titleText)
+    end
+    local index = #self.content.optionFrames + 1
+    local optionFrame = self.content:CreateChildWidget("window", "optionFrames", index, true)
+    optionFrame:Show(true)
+    optionFrame.changeHandler = changeHandler
+    optionFrame.controlType = controlType
+    local width = self.content:GetExtent()
+    if index == 1 then
+      optionFrame:AddAnchor("TOPLEFT", self.content, 0, 0)
+    elseif self.content.optionFrames[index - 1] ~= nil then
+      optionFrame.targetAnchorType = targetAnchorType or OPTION_ITEM_TARGET_ANCHOR_BOTTOM
+      local targetAnchor, offsetX
+      if optionFrame.targetAnchorType == OPTION_ITEM_TARGET_ANCHOR_LEFT then
+        targetAnchor = "TOPLEFT"
+        if self.content.optionFrames[index - 1].targetAnchorType == OPTION_ITEM_TARGET_ANCHOR_LEFT then
+          offsetX = 0
+        else
+          offsetX = width / 2
+        end
+      else
+        targetAnchor = "BOTTOMLEFT"
+        if self.content.optionFrames[index - 1].targetAnchorType == OPTION_ITEM_TARGET_ANCHOR_LEFT then
+          offsetX = -width / 2
+        else
+          offsetX = 0
+        end
+      end
+      optionFrame:AddAnchor("TOPLEFT", self.content.optionFrames[index - 1], targetAnchor, offsetX, 0)
+      if controlType == OPTION_PARTITION_LINE then
+        CreatePartitionImage(frame, optionFrame, self.content.optionFrames[index - 1])
+        optionFrame:AddAnchor("TOPLEFT", self.content.optionFrames[index - 1], targetAnchor, offsetX, self.insetHeight)
+        self.totalHeight = self.totalHeight + self.insetHeight
+        return optionFrame
+      end
+    end
+    indentation = indentation or 0
+    local leftInset = 10 + indentation
+    local optionTitle
+    local optionContent = {}
+    local tooltipTarget = optionFrame
+    if titleText ~= nil and titleText ~= "" then
+      optionTitle = optionLocale:CreatTitleWidget(optionFrame)
+      optionTitle:Show(true)
+      optionTitle:AddAnchor("LEFT", optionFrame, leftInset, 0)
+      optionLocale:SetTitleExtent(controlType, optionTitle, width, leftInset)
+      optionTitle.style:SetAlign(ALIGN_LEFT)
+      optionTitle:SetText(titleText)
+      ApplyTextColor(optionTitle, FONT_COLOR.MIDDLE_TITLE)
+      if controlType == "subBigTitle" then
+        optionTitle.style:SetFontSize(FONT_SIZE.LARGE)
+        optionTitle.style:SetAlign(ALIGN_LEFT)
+      end
+      optionFrame.optionTitle = optionTitle
+      tooltipTarget = optionTitle
+    end
+    if controlType == "textAndButton" and textInfo ~= nil and textInfo.contentStr ~= nil then
+      for i, contentStr in next, textInfo.contentStr, nil do
+        optionContent[i] = optionFrame:CreateChildWidget("textbox", "optionContent" .. tostring(i), 0, true)
+        optionContent[i]:SetAutoResize(true)
+        optionContent[i]:SetHeight(FONT_SIZE.MIDDLE)
+        optionContent[i]:SetWidth(width)
+        optionContent[i]:SetLineSpace(5)
+        optionContent[i].style:SetFontSize(FONT_SIZE.MIDDLE)
+        optionContent[i].style:SetAlign(ALIGN_LEFT)
+        ApplyTextColor(optionContent[i], FONT_COLOR.DEFAULT)
+        optionContent[i]:SetText(contentStr)
+      end
+    end
+    if controlType == "sliderbar" then
+      if optionTitle ~= nil then
+        optionFrame:SetExtent(width, 80)
+        optionTitle:RemoveAllAnchors()
+        optionTitle:AddAnchor("TOPLEFT", optionFrame, leftInset, 10)
+      else
+        optionFrame:SetExtent(width, 60)
+      end
+    elseif controlType == "radiobuttonH" then
+      optionLocale:SetRadioButtonHHeight(optionTitle, optionFrame, width)
+      if optionTitle ~= nil then
+        optionTitle:RemoveAllAnchors()
+        optionTitle:AddAnchor("TOPLEFT", optionFrame, leftInset, 8)
+      else
+        optionFrame:SetExtent(width, 30)
+      end
+    elseif controlType == "radiobuttonV" then
+      optionFrame:SetExtent(width, 4 + #controlArg * 25 + 25)
+      if optionTitle ~= nil then
+        optionTitle:RemoveAllAnchors()
+        optionTitle:AddAnchor("TOPLEFT", optionFrame, leftInset, 8)
+      else
+        optionFrame:SetExtent(width, 4 + #controlArg * 25)
+      end
+    elseif controlType == "textAndButton" then
+      local contentHeight = 0
+      for _, content in next, optionContent, nil do
+        if contentHeight > 0 then
+          contentHeight = contentHeight + 12
+        end
+        contentHeight = contentHeight + content:GetHeight()
+      end
+      if optionTitle ~= nil then
+        optionTitle:RemoveAllAnchors()
+        optionTitle:AddAnchor("TOPLEFT", optionFrame, leftInset, 8)
+        optionFrame:SetExtent(width, 94 + contentHeight)
+      else
+        optionFrame:SetExtent(width, 64 + contentHeight)
+      end
+    else
+      optionFrame:SetExtent(width, 30)
+    end
+    local optionControl
+    if controlType == "checkbox" then
+      optionControl = CreateOptionCheckbox(optionFrame, controlArg, optionId, leftInset)
+      if titleText == nil then
+        tooltipTarget = optionControl.textButton
+      end
+    elseif controlType == "combobox" then
+      optionControl = CreateOptionCombobox(optionFrame, controlArg, optionId, controlArg2)
+    elseif controlType == "sliderbar" then
+      optionControl = CreateOptionSliderBar(optionFrame, controlArg, optionId, controlArg2)
+    elseif controlType == "radiobuttonH" then
+      optionControl = CreateOptionRadioButton(optionFrame, controlArg, optionId, "horizen")
+    elseif controlType == "radiobuttonV" then
+      optionControl = CreateOptionRadioButton(optionFrame, controlArg, optionId, "vertical")
+    elseif controlType == "keybindingcontrol" then
+      optionControl = CreateOptionKeyBindingControl(optionFrame, controlArg, optionId)
+    elseif controlType == "textAndButton" then
+      optionControl = optionFrame:CreateChildWidget("button", "textAndButton", 0, true)
+      optionControl.controlType = "textAndButton"
+      optionControl:SetText(controlArg)
+      ApplyButtonSkin(optionControl, BUTTON_BASIC.DEFAULT)
+    else
+      self.totalHeight = self.totalHeight + optionFrame:GetHeight()
+      return optionFrame
+    end
+    tooltipTarget.tip = tip
+    if optionControl ~= nil then
+      optionControl.title = optionTitle
+      function optionControl:Cancel()
+        if self.originalValue ~= nil then
+          SetOptionItemValue(optionId, self.originalValue)
+        end
+      end
+      if optionTitle ~= nil then
+        if controlType == "sliderbar" then
+          optionControl:AddAnchor("TOPLEFT", optionTitle, "BOTTOMLEFT", 0, 5)
+          local controlWidth = optionControl:GetWidth()
+          for i = 1, #optionControl.label do
+            local label = optionControl.label[i]
+            if i == 1 then
+              label:AddAnchor("TOPLEFT", optionControl, "BOTTOMLEFT", 0, 3)
+            elseif i == #controlArg then
+              label:AddAnchor("TOPRIGHT", optionControl, "BOTTOMRIGHT", 0, 3)
+            else
+              local labelWidth = label:GetWidth()
+              label:AddAnchor("TOPLEFT", optionControl, "BOTTOMLEFT", controlWidth / (#optionControl.label - 1) * (i - 1) - labelWidth / 2, 3)
+            end
+          end
+        elseif controlType == "radiobuttonH" then
+          optionControl:SetOffset(optionTitle, 0, optionTitle:GetHeight() + 5, 180)
+        elseif controlType == "radiobuttonV" then
+          optionControl:SetOffset(optionTitle, 0, optionTitle:GetHeight() + 5, 8)
+        elseif controlType == "textAndButton" then
+          local prevControl = optionTitle
+          local height = 15
+          for _, content in next, optionContent, nil do
+            content:AddAnchor("TOPLEFT", prevControl, "BOTTOMLEFT", 0, height)
+            prevControl = content
+            height = 12
+          end
+          optionControl:AddAnchor("TOPLEFT", prevControl, "BOTTOMLEFT", 0, 15)
+        else
+          optionControl:AddAnchor("LEFT", optionTitle, "RIGHT", 0, 0)
+        end
+      elseif controlType == "radiobuttonH" then
+        optionControl:SetOffset(optionFrame, leftInset, 8, 180)
+      elseif controlType == "radiobuttonV" then
+        optionControl:SetOffset(optionFrame, leftInset, 8, 8)
+      else
+        optionControl:AddAnchor("LEFT", optionFrame, leftInset, 0)
+      end
+      optionFrame.optionControl = optionControl
+      function optionFrame:Init()
+        optionFrame.Init()
+      end
+      function optionFrame:Save()
+        optionFrame.Save()
+      end
+      function optionFrame:Cancel()
+        optionFrame.Cancel()
+      end
+      function optionFrame:Enable(enable)
+        if controlType == "radiobuttonH" then
+          optionControl:Enable(enable)
+        elseif controlType == "radiobuttonV" then
+          optionControl:Enable(enable)
+        end
+      end
+      if tooltipTarget.tip ~= nil and tooltipTarget.tip ~= "" then
+        local OnEnter = function(self)
+          SetHorizonTooltip(self.tip, self, 5)
+        end
+        tooltipTarget:SetHandler("OnEnter", OnEnter)
+        local OnLeave = function()
+          HideTooltip()
+        end
+        tooltipTarget:SetHandler("OnLeave", OnLeave)
+      end
+    end
+    self.totalHeight = self.totalHeight + optionFrame:GetHeight()
+    return optionControl
+  end
+  function frame:Init()
+    for i = 1, #self.content.optionFrames do
+      if self.content.optionFrames[i].optionControl ~= nil then
+        self.content.optionFrames[i].optionControl:Init()
+      end
+    end
+  end
+  function frame:Save()
+    for i = 1, #self.content.optionFrames do
+      if self.content.optionFrames[i].optionControl ~= nil then
+        self.content.optionFrames[i].optionControl:Save()
+        if self.content.optionFrames[i].optionControl.Applyfunc ~= nil then
+          self.content.optionFrames[i].optionControl:Applyfunc()
+        end
+      end
+    end
+  end
+  function frame:Cancel()
+    for i = 1, #self.content.optionFrames do
+      if self.content.optionFrames[i].optionControl ~= nil then
+        self.content.optionFrames[i].optionControl:Cancel()
+      end
+    end
+  end
+  function frame:OnShow()
+    ResetScroll(frame, frame.totalHeight)
+  end
+  frame:SetHandler("OnShow", frame.OnShow)
+  return frame
+end

@@ -1,0 +1,116 @@
+local CreateDayEventAlarmButton = function(id, parent)
+  local button = parent:CreateChildWidget("button", id, 0, true)
+  ApplyButtonSkin(button, BUTTON_HUD.DAY_EVENT)
+  local ButtonLeftClickFunc = function(self)
+    ToggleDayEventAlarmWindow()
+  end
+  ButtonOnClickHandler(button, ButtonLeftClickFunc)
+end
+function SetViewOfExpBarSet(id, parent)
+  local frame = UIParent:CreateWidget("emptywidget", id, parent)
+  frame:Show(true)
+  frame:SetExtent(UIParent:GetScreenWidth(), 5)
+  local exp_percent = frame:CreateChildWidget("label", "exp_percent", 0, true)
+  exp_percent:AddAnchor("BOTTOMLEFT", frame, "TOPLEFT", 3, -3)
+  exp_percent:SetExtent(85, FONT_SIZE.XXLARGE)
+  exp_percent.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.XXLARGE)
+  exp_percent.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(exp_percent, FONT_COLOR.EXP_ORANGE)
+  local exp_bar = CreateExpBar(frame:GetId() .. ".exp_bar", frame)
+  exp_bar:AddAnchor("TOPLEFT", frame, 0, 0)
+  frame.exp_bar = exp_bar
+  local recoverable_exp = exp_bar:CreateThreePartDrawable(TEXTURE_PATH.HUD, "background")
+  recoverable_exp:SetHeight(4)
+  recoverable_exp:SetCoords(0, 215, 3, 4)
+  recoverable_exp:SetInset(1, 0, 1, 0)
+  recoverable_exp:SetColor(ConvertColor(123), ConvertColor(89), ConvertColor(56), 1)
+  recoverable_exp:AddAnchor("LEFT", exp_bar, 0, 0)
+  recoverable_exp:SetVisible(true)
+  exp_bar.recoverable_exp = recoverable_exp
+  local exp_bar_left_round_deco = exp_bar:CreateImageDrawable(TEXTURE_PATH.HUD, "overlay")
+  exp_bar_left_round_deco:SetCoords(749, 160, 3, 5)
+  exp_bar_left_round_deco:SetExtent(3, 5)
+  exp_bar_left_round_deco:AddAnchor("LEFT", exp_bar, 0, 0)
+  local exp_bar_right_round_deco = exp_bar:CreateImageDrawable(TEXTURE_PATH.HUD, "overlay")
+  exp_bar_right_round_deco:SetCoords(752, 160, -3, 5)
+  exp_bar_right_round_deco:SetExtent(3, 5)
+  exp_bar_right_round_deco:AddAnchor("RIGHT", exp_bar, 0, 0)
+  local timerEventWnd = CreateTimerEventWnd("timerEventWnd", frame)
+  timerEventWnd:Show(true)
+  timerEventWnd:SetHeight(80)
+  timerEventWnd:AddAnchor("BOTTOMLEFT", exp_percent, "TOPLEFT", 0, -5)
+  timerEventWnd:FillData()
+  frame.timerEventWnd = timerEventWnd
+  return frame
+end
+function CreateExpBarSet(id, parent)
+  local frame = SetViewOfExpBarSet(id, parent)
+  function frame:SettingExpTooltip(widget)
+    function widget:OnEnter()
+      local expPercent, currentLevelExpStr, forLevelupExpStr = X2Player:GetExpInfo()
+      local percentTooltip = string.format("%.1f%%", expPercent)
+      local tooltip = string.format("%s: |,%s; / |,%s; (%.2f%%)", GetUIText(COMMON_TEXT, "exp"), currentLevelExpStr, forLevelupExpStr, expPercent)
+      SetExpTooltip(tooltip, frame.exp_bar)
+    end
+    widget:SetHandler("OnEnter", widget.OnEnter)
+    function widget:OnLeave()
+      HideTooltip()
+    end
+    widget:SetHandler("OnLeave", widget.OnLeave)
+  end
+  frame:SettingExpTooltip(frame.exp_bar)
+  frame:SettingExpTooltip(frame.exp_percent)
+  function frame:UpdateExpSet()
+    local expPercent = X2Player:GetExpInfo()
+    local exp_str
+    exp_str = string.format("%.2f%%", expPercent)
+    if exp_str == "100.00%" then
+      exp_str = "99.99%"
+    end
+    self.exp_percent:SetText(exp_str)
+    local recoverableExpStr, recoverableExpPercent = X2Player:GetRecoverableExp()
+    local exp_barWidth = self.exp_bar:GetWidth()
+    local width = (expPercent + recoverableExpPercent) * 0.01 * exp_barWidth
+    self.exp_bar.recoverable_exp:SetWidth(width)
+    self.exp_bar:SetMinMaxValues(0, 10000)
+    self.exp_bar:SetValue(expPercent * 100)
+  end
+  frame:UpdateExpSet()
+  local exp_set_event = {
+    EXP_CHANGED = function(stringId, expNum, expStr)
+      if X2Unit:GetUnitId("player") == stringId then
+        frame:UpdateExpSet()
+      end
+    end,
+    LEVEL_CHANGED = function(_, stringId)
+      if X2Unit:GetUnitId("player") ~= stringId then
+        return
+      end
+      frame:UpdateExpSet()
+    end,
+    RECOVERABLE_EXP = function(stringId, expNum)
+      if X2Unit:GetUnitId("player") ~= stringId then
+        return
+      end
+      frame:UpdateExpSet()
+    end,
+    RECOVERED_EXP = function(stringId, expNum)
+      if X2Unit:GetUnitId("player") ~= stringId then
+        return
+      end
+      local message = locale.util.GetRecoveredExpString(tostring(expNum))
+      X2Chat:DispatchChatMessage(CMF_SELF_STATUS_INFO, message)
+    end,
+    SCHEDULE_ITEM_UPDATED = function()
+      frame.timerEventWnd:FillData()
+    end,
+    SCHEDULE_ITEM_SENT = function()
+      frame.timerEventWnd:FillData()
+    end
+  }
+  frame:SetHandler("OnEvent", function(this, event, ...)
+    exp_set_event[event](...)
+  end)
+  RegistUIEvent(frame, exp_set_event)
+  return frame
+end

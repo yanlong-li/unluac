@@ -1,0 +1,177 @@
+local optionInfo
+function SetRoadmapUpdate()
+  X2:SetRoadmapOptionUiData(optionInfo)
+end
+function roadmapOptionButton:RoadmapOptionSetHandler()
+  function self:OnClick()
+    local show = not self.wnd:IsVisible()
+    self.wnd:Show(show)
+    if show then
+      ToggleOptionFrame(false)
+    end
+  end
+  self:SetHandler("OnClick", self.OnClick)
+  local chk1 = self.wnd.chk1
+  local function OnCheckChanged()
+    local checked = chk1:GetChecked()
+    roadmapWindow:Show(checked)
+    roadmapWindow:Lower()
+    roadmapSizeButton:Enable(checked)
+    optionInfo.visible = checked
+    SetRoadmapUpdate()
+  end
+  chk1:SetHandler("OnCheckChanged", OnCheckChanged)
+  local chk2 = self.wnd.chk2
+  local function OnCheckChanged2()
+    local checked = chk2:GetChecked()
+    roadmap:SetRoadMapNpc(checked)
+    optionInfo.npcShow = checked
+    SetRoadmapUpdate()
+  end
+  chk2:SetHandler("OnCheckChanged", OnCheckChanged2)
+  local chk3 = self.wnd.chk3
+  local function OnCheckChanged3()
+    local checked = chk3:GetChecked()
+    ToggleSextantWindow(checked)
+    optionInfo.sextantShow = sextantShow
+    SetRoadmapUpdate()
+  end
+  chk3:SetHandler("OnCheckChanged", OnCheckChanged3)
+  local function OnEnterCheck3()
+    SetTooltip(GetCommonText("tooltip_invalid_sextant_zone"), chk3)
+  end
+  chk3:SetHandler("OnEnter", OnEnterCheck3)
+  local OnLeaveCheck3 = function()
+    HideTooltip()
+  end
+  chk3:SetHandler("OnLeave", OnLeaveCheck3)
+  parentWnd = self:GetParent()
+  function parentWnd:OnScale()
+    self:RemoveAllAnchors()
+    self:AddAnchor("TOPRIGHT", "UIParent", ROADMAP_OPTION_OFFSET_X, ROADMAP_OPTION_OFFSET_Y)
+  end
+  parentWnd:SetHandler("OnScale", parentWnd.OnScale)
+end
+function roadmapPingButton:RoadmapDrawSetHandler()
+  parentWnd = self:GetParent()
+  function parentWnd:OnScale()
+    self:RemoveAllAnchors()
+    self:AddAnchor("RIGHT", roadmapOptionButton, "LEFT", 0, 0)
+  end
+  parentWnd:SetHandler("OnScale", parentWnd.OnScale)
+  function self:OnClick()
+    local show = not self.wnd:IsVisible()
+    self.wnd:Show(show)
+    if show then
+      ToggleOptionFrame(false)
+    end
+  end
+  self:SetHandler("OnClick", self.OnClick)
+  function self.wnd:OnHide()
+    ResetPingBtn()
+  end
+  self.wnd:SetHandler("OnHide", self.wnd.OnHide)
+  local pintBtn = self.wnd.btn[PING_TYPE_PING]
+  function pintBtn:OnClick()
+    if M_EXPAND_CLICKED then
+      SetExpansion(false, true)
+    end
+    DrawBtnClick(PING_TYPE_PING)
+  end
+  pintBtn:SetHandler("OnClick", pintBtn.OnClick)
+  local enemyBtn = self.wnd.btn[PING_TYPE_ENEMY]
+  function enemyBtn:OnClick()
+    DrawBtnClick(PING_TYPE_ENEMY)
+  end
+  enemyBtn:SetHandler("OnClick", enemyBtn.OnClick)
+  local attackBtn = self.wnd.btn[PING_TYPE_ATTACK]
+  function attackBtn:OnClick()
+    DrawBtnClick(PING_TYPE_ATTACK)
+  end
+  attackBtn:SetHandler("OnClick", attackBtn.OnClick)
+  local lineBtn = self.wnd.btn[PING_TYPE_LINE]
+  function lineBtn:OnClick()
+    DrawBtnClick(PING_TYPE_LINE)
+  end
+  lineBtn:SetHandler("OnClick", lineBtn.OnClick)
+  local eraserBtn = self.wnd.btn[PING_TYPE_ERASER]
+  function eraserBtn:OnClick()
+    RemovePingAll()
+  end
+  eraserBtn:SetHandler("OnClick", eraserBtn.OnClick)
+end
+function roadmapSizeButton:RoadmapSizeSetHandler()
+  local index = 2
+  local size = {
+    50,
+    70,
+    100
+  }
+  function roadmapSizeButton:SetValue(value)
+    if value > #size or value < 1 then
+    else
+      index = math.floor(value)
+    end
+    roadmapSizeButton:SetText(locale.clock.road_map_size[index])
+    roadmap:Resize(index)
+    optionInfo.size = index
+  end
+  function roadmapSizeButton:Init()
+    optionInfo = X2:GetRoadmapOptionUiData()
+    if optionInfo == nil then
+      optionInfo = {}
+    end
+    if optionInfo.size == nil then
+      optionInfo.size = 2
+    end
+    if optionInfo.visible == nil then
+      optionInfo.visible = true
+    end
+    if optionInfo.npcShow == nil then
+      optionInfo.npcShow = false
+    end
+    if optionInfo.sextantShow == nil then
+      optionInfo.sextantShow = true
+    end
+    if optionInfo.leaderPing == nil then
+      optionInfo.leaderPing = true
+    end
+    roadmapSizeButton:SetValue(optionInfo.size)
+    roadmapOptionButton.wnd.chk1:SetChecked(optionInfo.visible, true)
+    roadmapOptionButton.wnd.chk2:SetChecked(optionInfo.npcShow, true)
+    roadmapOptionButton.wnd.chk3:SetChecked(optionInfo.sextantShow, true)
+  end
+  local function OnClick(self, arg)
+    if arg ~= "LeftButton" then
+      return
+    end
+    index = index + 1
+    if index > #size then
+      index = 1
+    end
+    self:SetValue(index)
+    SetRoadmapUpdate()
+  end
+  roadmapSizeButton:SetHandler("OnClick", OnClick)
+  local roadMapEvents = {
+    CHANGE_ROADMAP_SIZE = function()
+      OnClick(roadmapSizeButton, "LeftButton")
+    end
+  }
+  roadmapSizeButton:SetHandler("OnEvent", function(this, event, ...)
+    roadMapEvents[event](...)
+  end)
+  RegistUIEvent(roadmapSizeButton, roadMapEvents)
+  function roadmapSizeButton:OnEnter()
+    SetTargetAnchorTooltip(locale.clock.roadmapSize_tooltip, "RIGHT", self, "LEFT", 0, 0)
+  end
+  roadmapSizeButton:SetHandler("OnEnter", roadmapSizeButton.OnEnter)
+  function roadmapSizeButton:OnLeave()
+    HideTooltip()
+  end
+  roadmapSizeButton:SetHandler("OnLeave", roadmapSizeButton.OnLeave)
+end
+roadmapOptionButton:RoadmapOptionSetHandler()
+roadmapPingButton:RoadmapDrawSetHandler()
+roadmapSizeButton:RoadmapSizeSetHandler()
+roadmapSizeButton:Init()

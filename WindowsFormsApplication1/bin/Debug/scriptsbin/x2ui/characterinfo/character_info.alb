@@ -1,0 +1,971 @@
+local charInfoStat, charInfoModifierStat
+ADDON:RegisterContentWidget(UIC_CHARACTER_INFO, characterInfo.mainWindow)
+characterInfo.mainWindow:SetCloseOnEscape(true)
+local GetHexColorByValue = function(value)
+  if value ~= 0 then
+    if value > 0 then
+      return FONT_COLOR_HEX.GREEN
+    elseif value < 0 then
+      return FONT_COLOR_HEX.RED
+    end
+  end
+  return FONT_COLOR_HEX.DEFAULT
+end
+local function GetTribeOfDownDamage(leftAttr, rightAttr)
+  local leftVal = charInfoStat[leftAttr]
+  if leftVal ~= 0 then
+    leftVal = -leftVal
+  end
+  local leftColor = GetHexColorByValue(charInfoModifierStat[leftAttr])
+  local rightVal = charInfoStat[rightAttr]
+  if rightVal ~= 0 then
+    rightVal = -rightVal
+  end
+  local rightStr = ""
+  if rightVal ~= 0 then
+    local rightColor = GetHexColorByValue(charInfoModifierStat[rightAttr])
+    rightStr = string.format("%s(%d)", rightColor, math.abs(rightVal))
+  end
+  return string.format("%s%.1f %%%s", leftColor, math.abs(leftVal), rightStr)
+end
+local function GetMeleeDps()
+  return string.format("%.2f", charInfoStat.melee_dps)
+end
+local function GetRangedDps()
+  return string.format("%.2f", charInfoStat.ranged_dps)
+end
+local function GetSpellDps()
+  local spellDps = string.format("%.2f", charInfoStat.spell_dps)
+  if spellDps == "" or spellDps == nil then
+    visibilitys[16] = false
+    return ""
+  end
+  return spellDps
+end
+local function GetHealDps()
+  return string.format("%.2f", charInfoStat.heal_dps)
+end
+local function GetArmor()
+  return string.format("%d (%.2f%%)", charInfoStat.armor, charInfoStat.armor_percentage)
+end
+local function GetSpellResist()
+  return string.format("%d (%.2f%%)", charInfoStat.magic_resist, charInfoStat.magic_resist_percentage)
+end
+local function GetStr()
+  return string.format("%d", charInfoStat.str)
+end
+local function GetInt()
+  return string.format("%d", charInfoStat.int)
+end
+local function GetDex()
+  return string.format("%d", charInfoStat.dex)
+end
+local function GetSpi()
+  return string.format("%d", charInfoStat.spi)
+end
+local function GetSta()
+  return string.format("%d", charInfoStat.sta)
+end
+local function GetMoveSpeed()
+  return string.format("%.1f %s", charInfoStat.move_speed, locale.util.speed_unit)
+end
+local function GetCastingTime()
+  return string.format("%.1f %%", charInfoStat.casting_time)
+end
+local function GetCooldownSpeed()
+  return string.format("%.1f %%", charInfoStat.global_cooldown_mul)
+end
+local function GetMeleeSpeed()
+  local strSec = X2Locale:LocalizeUiText(TOOLTIP_TEXT, "second")
+  return string.format("%.1f %s(%.1f %s)", charInfoStat.mainhand_melee_speed, strSec, charInfoStat.offhand_melee_speed, strSec)
+end
+local function GetMeleeSuccessRate()
+  return string.format("%.1f %%", charInfoStat.melee_success_rate)
+end
+local function GetMeleeCriticalRate()
+  return string.format("%.1f %%", charInfoStat.melee_critical_rate)
+end
+local function GetMeleeCriticalBonus()
+  return string.format("%.1f %%", charInfoStat.melee_critical_bonus)
+end
+local function GetRangedSpeed()
+  local strSec = X2Locale:LocalizeUiText(TOOLTIP_TEXT, "second")
+  return string.format("%.1f %s", charInfoStat.ranged_speed, strSec)
+end
+local function GetRangedSuccessRate()
+  return string.format("%.1f %%", charInfoStat.ranged_success_rate)
+end
+local function GetRangedCriticalRate()
+  return string.format("%.1f %%", charInfoStat.ranged_critical_rate)
+end
+local function GetRangedCriticalBonus()
+  return string.format("%.1f %%", charInfoStat.ranged_critical_bonus)
+end
+local function GetBullsEyeRate()
+  return string.format("%d", charInfoStat.bulls_eye)
+end
+local function GetSpellSuccessRate()
+  return string.format("%.1f %%", charInfoStat.spell_success_rate)
+end
+local function GetSpellCriticalRate()
+  return string.format("%.1f %%", charInfoStat.spell_critical_rate)
+end
+local function GetSpellCriticalBonus()
+  return string.format("%.1f %%", charInfoStat.spell_critical_bonus)
+end
+local function GetHealCriticalRate()
+  return string.format("%.1f %%", charInfoStat.heal_critical_rate)
+end
+local function GetHealCriticalBonus()
+  return string.format("%.1f %%", charInfoStat.heal_critical_bonus)
+end
+local function GetBackAttackMeleeDamage()
+  return string.format("%.1f %%", charInfoStat.backattack_melee_damage_mul)
+end
+local function GetMeleeDamageMulAntiNpc()
+  return string.format("%.1f %%", charInfoStat.melee_damage_mul_anti_npc)
+end
+local function GetBackAttackRangedDamage()
+  return string.format("%.1f %%", charInfoStat.backattack_ranged_damage_mul)
+end
+local function GetRangedDamageMulAntiNpc()
+  return string.format("%.1f %%", charInfoStat.ranged_damage_mul_anti_npc)
+end
+local function GetBackAttackSpelldDamage()
+  return string.format("%.1f %%", charInfoStat.backattack_spell_damage_mul)
+end
+local function GetSpellDamageMulAntiNpc()
+  return string.format("%.1f %%", charInfoStat.spell_damage_mul_anti_npc)
+end
+local function GetIgnoreShieldChance()
+  return string.format("%.1f %%", charInfoStat.ignore_shield_chance)
+end
+local function GetIgnoreShieldBonus()
+  return string.format("%.1f %%(%d)", charInfoStat.ignore_shield_bonus_mul, charInfoStat.ignore_shield_bonus)
+end
+local function GetIgnoreArmor()
+  return string.format("%d", charInfoStat.ignore_armor)
+end
+local function GetMagicPenetration()
+  return string.format("%d", charInfoStat.magic_penetration)
+end
+local function GetMeleeParryRate()
+  return string.format("%.1f %%", charInfoStat.melee_parry_rate)
+end
+local function GetBlockRate()
+  return string.format("%.1f %%", charInfoStat.block_rate)
+end
+local function GetDodgeRate()
+  return string.format("%.1f %%", charInfoStat.dodge_rate)
+end
+local function GetFlexibility()
+  return string.format("%d", charInfoStat.flexibility)
+end
+local function GetBattleResist()
+  return string.format("%d", charInfoStat.battle_resist)
+end
+local function GetHealthRegen()
+  return string.format("%d", charInfoStat.health_regen)
+end
+local function GetPersistentHealthRegen()
+  return string.format("%d", charInfoStat.persistent_health_regen)
+end
+local function GetManaRegen()
+  return string.format("%d", charInfoStat.mana_regen)
+end
+local function GetPersistentManaRegen()
+  return string.format("%d", charInfoStat.persistent_mana_regen)
+end
+local function GetHealMulRate()
+  return string.format("%.1f %%", charInfoStat.heal_mul)
+end
+local function GetIncomingHealMul()
+  return string.format("%.1f %%", charInfoStat.incoming_heal_mul)
+end
+local function GetExpMul()
+  return string.format("%d %%", charInfoStat.exp_mul)
+end
+local function GetDropRageMul()
+  return string.format("%d %%", charInfoStat.drop_rate_mul)
+end
+local function GetDetectStealthRangeMul()
+  return string.format("%d %%", math.abs(charInfoStat.detect_stealth_range_mul))
+end
+local function GetGiveMeleeExtraDamage()
+  return string.format("%.1f %%", charInfoStat.melee_damage_mul)
+end
+local function GetGiveRangedExtraDamage()
+  return string.format("%.1f %%", charInfoStat.ranged_damage_mul)
+end
+local function GetGiveSpellExtraDamage()
+  return string.format("%.1f %%", charInfoStat.spell_damage_mul)
+end
+local function GetIncomeMeleeExtraDamage()
+  return string.format("%.1f %%", math.abs(charInfoStat.incoming_melee_damage_mul))
+end
+local function GetIncomeRangedExtraDamage()
+  return string.format("%.1f %%", math.abs(charInfoStat.incoming_ranged_damage_mul))
+end
+local function GetIncomeSpellExtraDamage()
+  return string.format("%.1f %%", math.abs(charInfoStat.incoming_spell_damage_mul))
+end
+local function GetIncomeSiegeExtraDamage()
+  return GetTribeOfDownDamage("incoming_siege_damage_mul", "incoming_siege_damage_val")
+end
+local function GetIncomeMeleeExtraDamageAdd()
+  return string.format("%d", math.abs(charInfoStat.incoming_melee_damage_val))
+end
+local function GetIncomeMeleeDamageAddAntiNpc()
+  return string.format("%d", math.abs(charInfoStat.incoming_melee_damage_add_anti_npc))
+end
+local function GetIncomeRangedExtraDamageAdd()
+  return string.format("%d", math.abs(charInfoStat.incoming_ranged_damage_val))
+end
+local function GetIncomeRangedDamageAddAntiNpc()
+  return string.format("%d", math.abs(charInfoStat.incoming_ranged_damage_add_anti_npc))
+end
+local function GetIncomeSpellExtraDamageAdd()
+  return string.format("%d", math.abs(charInfoStat.incoming_spell_damage_val))
+end
+local function GetIncomeSpellDamageAddAntiNpc()
+  return string.format("%d", math.abs(charInfoStat.incoming_spell_damage_add_anti_npc))
+end
+local function GetIncomingDamageMulAntiNpc()
+  return string.format("%.1f %%", math.abs(charInfoStat.incoming_damage_mul_anti_npc))
+end
+local baseInfoTable = {
+  {
+    func = GetMeleeDps,
+    affect = {"melee_dps", "str"},
+    affectRate = {1, 0.2},
+    defaultColor = FONT_COLOR.BLUE
+  },
+  {
+    func = GetRangedDps,
+    affect = {"ranged_dps", "dex"},
+    affectRate = {1, 0.2},
+    defaultColor = FONT_COLOR.BLUE
+  },
+  {
+    func = GetSpellDps,
+    affect = {"spell_dps", "int"},
+    affectRate = {1, 0.2},
+    defaultColor = FONT_COLOR.BLUE
+  },
+  {
+    func = GetHealDps,
+    affect = {"heal_dps", "spi"},
+    affectRate = {1, 0.2},
+    defaultColor = FONT_COLOR.BLUE
+  },
+  {
+    func = GetArmor,
+    affect = {"armor"},
+    defaultColor = FONT_COLOR.BLUE
+  },
+  {
+    func = GetSpellResist,
+    affect = {
+      "magic_resist",
+      "spi"
+    },
+    affectRate = {1, 1},
+    defaultColor = FONT_COLOR.BLUE
+  },
+  {
+    func = GetStr,
+    affect = {"str"}
+  },
+  {
+    func = GetInt,
+    affect = {"int"}
+  },
+  {
+    func = GetDex,
+    affect = {"dex"}
+  },
+  {
+    func = GetSpi,
+    affect = {"spi"}
+  },
+  {
+    func = GetSta,
+    affect = {"sta"}
+  },
+  {
+    func = GetMoveSpeed,
+    affect = {"move_speed"}
+  },
+  {
+    func = GetCastingTime,
+    affect = {
+      "casting_time"
+    }
+  },
+  {
+    func = GetCooldownSpeed,
+    affect = {
+      "global_cooldown_mul"
+    }
+  }
+}
+local detailInfoTable = {
+  [INDEX_ATTACK] = {
+    {
+      func = GetMeleeSpeed,
+      affect = {
+        "mainhand_melee_speed",
+        "offhand_melee_speed",
+        "melee_attack_speed_mul"
+      }
+    },
+    {
+      func = GetMeleeSuccessRate,
+      affect = {
+        "melee_success_rate",
+        "str",
+        "spi"
+      }
+    },
+    {
+      func = GetMeleeCriticalRate,
+      affect = {
+        "melee_critical_rate",
+        "dex",
+        "melee_critical_mul"
+      }
+    },
+    {
+      func = GetMeleeCriticalBonus,
+      affect = {
+        "melee_critical_bonus"
+      }
+    },
+    {
+      func = GetBackAttackMeleeDamage,
+      affect = {
+        "backattack_melee_damage_mul"
+      }
+    },
+    {
+      func = GetGiveMeleeExtraDamage,
+      affect = {
+        "melee_damage_mul"
+      }
+    },
+    {
+      func = GetMeleeDamageMulAntiNpc,
+      affect = {
+        "melee_damage_mul_anti_npc"
+      }
+    },
+    {
+      func = GetRangedSuccessRate,
+      affect = {
+        "ranged_success_rate",
+        "dex",
+        "spi"
+      }
+    },
+    {
+      func = GetRangedCriticalRate,
+      affect = {
+        "ranged_critical_rate",
+        "int",
+        "dex",
+        "ranged_critical_mul"
+      }
+    },
+    {
+      func = GetRangedCriticalBonus,
+      affect = {
+        "ranged_critical_bonus"
+      }
+    },
+    {
+      func = GetBackAttackRangedDamage,
+      affect = {
+        "backattack_ranged_damage_mul"
+      }
+    },
+    {
+      func = GetGiveRangedExtraDamage,
+      affect = {
+        "ranged_damage_mul"
+      }
+    },
+    {
+      func = GetRangedDamageMulAntiNpc,
+      affect = {
+        "ranged_damage_mul_anti_npc"
+      }
+    },
+    {
+      func = GetSpellSuccessRate,
+      affect = {
+        "spell_success_rate",
+        "int",
+        "spi"
+      }
+    },
+    {
+      func = GetSpellCriticalRate,
+      affect = {
+        "spell_critical_rate",
+        "int",
+        "spell_damage_critical_mul",
+        "spell_critical_mul"
+      }
+    },
+    {
+      func = GetSpellCriticalBonus,
+      affect = {
+        "spell_damage_critical_bonus",
+        "spell_critical_bonus"
+      }
+    },
+    {
+      func = GetBackAttackSpelldDamage,
+      affect = {
+        "backattack_spell_damage_mul"
+      }
+    },
+    {
+      func = GetGiveSpellExtraDamage,
+      affect = {
+        "spell_damage_mul"
+      }
+    },
+    {
+      func = GetSpellDamageMulAntiNpc,
+      affect = {
+        "spell_damage_mul_anti_npc"
+      }
+    },
+    {
+      func = GetBullsEyeRate,
+      affect = {"bulls_eye"}
+    },
+    {
+      func = GetIgnoreShieldChance,
+      affect = {
+        "ignore_shield_chance"
+      }
+    },
+    {
+      func = GetIgnoreShieldBonus,
+      affect = {
+        "ignore_shield_bonus",
+        "ignore_shield_bonus_mul"
+      }
+    },
+    {
+      func = GetIgnoreArmor,
+      affect = {
+        "ignore_armor"
+      }
+    },
+    {
+      func = GetMagicPenetration,
+      affect = {
+        "magic_penetration"
+      }
+    },
+    {
+      func = GetHealCriticalRate,
+      affect = {
+        "heal_critical_rate",
+        "heal_critical_mul"
+      }
+    },
+    {
+      func = GetHealCriticalBonus,
+      affect = {
+        "heal_critical_bonus"
+      }
+    },
+    {
+      func = GetHealMulRate,
+      affect = {"heal_mul"}
+    }
+  },
+  [INDEX_DEFFENCE] = {
+    {
+      func = GetMeleeParryRate,
+      affect = {
+        "melee_parry_rate",
+        "str",
+        "sta",
+        "melee_parry_mul"
+      }
+    },
+    {
+      func = GetBlockRate,
+      affect = {"block_rate", "block_mul"}
+    },
+    {
+      func = GetDodgeRate,
+      affect = {"dodge_rate", "dodge_mul"}
+    },
+    {
+      func = GetFlexibility,
+      affect = {
+        "flexibility"
+      }
+    },
+    {
+      func = GetBattleResist,
+      affect = {
+        "battle_resist"
+      }
+    },
+    {
+      func = GetIncomeSiegeExtraDamage,
+      affect = {
+        "incoming_siege_damage_mul"
+      }
+    },
+    {
+      func = GetIncomingDamageMulAntiNpc,
+      affect = {
+        "incoming_damage_mul_anti_npc"
+      }
+    },
+    {
+      func = GetIncomeMeleeExtraDamage,
+      affect = {
+        "incoming_melee_damage_mul"
+      }
+    },
+    {
+      func = GetIncomeMeleeExtraDamageAdd,
+      affect = {
+        "incoming_melee_damage_val"
+      }
+    },
+    {
+      func = GetIncomeMeleeDamageAddAntiNpc,
+      affect = {
+        "incoming_melee_damage_add_anti_npc"
+      }
+    },
+    {
+      func = GetIncomeRangedExtraDamage,
+      affect = {
+        "incoming_ranged_damage_mul"
+      }
+    },
+    {
+      func = GetIncomeRangedExtraDamageAdd,
+      affect = {
+        "incoming_ranged_damage_val"
+      }
+    },
+    {
+      func = GetIncomeRangedDamageAddAntiNpc,
+      affect = {
+        "incoming_ranged_damage_add_anti_npc"
+      }
+    },
+    {
+      func = GetIncomeSpellExtraDamage,
+      affect = {
+        "incoming_spell_damage_mul"
+      }
+    },
+    {
+      func = GetIncomeSpellExtraDamageAdd,
+      affect = {
+        "incoming_spell_damage_val"
+      }
+    },
+    {
+      func = GetIncomeSpellDamageAddAntiNpc,
+      affect = {
+        "incoming_spell_damage_add_anti_npc"
+      }
+    }
+  },
+  [INDEX_REGEN] = {
+    {
+      func = GetHealthRegen,
+      affect = {
+        "health_regen",
+        "spi",
+        "persistent_health_regen"
+      }
+    },
+    {
+      func = GetPersistentHealthRegen,
+      affect = {
+        "persistent_health_regen",
+        "spi"
+      }
+    },
+    {
+      func = GetManaRegen,
+      affect = {
+        "mana_regen",
+        "spi",
+        "persistent_mana_regen"
+      }
+    },
+    {
+      func = GetPersistentManaRegen,
+      affect = {
+        "persistent_mana_regen",
+        "spi"
+      }
+    },
+    {
+      func = GetIncomingHealMul,
+      affect = {
+        "incoming_heal_mul"
+      }
+    },
+    {
+      func = GetExpMul,
+      affect = {"exp_mul"}
+    },
+    {
+      func = GetDropRageMul,
+      affect = {
+        "drop_rate_mul"
+      }
+    },
+    {
+      func = GetDetectStealthRangeMul,
+      affect = {
+        "detect_stealth_range_mul"
+      }
+    }
+  }
+}
+function ReleaseTooltipHandlers(widgets)
+  for i = 1, #widgets do
+    widgets[i]:ReleaseHandler("OnEnter")
+    widgets[i]:ReleaseHandler("OnLeave")
+  end
+end
+function characterInfo.mainWindow:UpdateHud(show)
+  characterInfo.mainWindow:ReleaseHandlers()
+  characterInfo.mainWindow:EnableWindowPick(show)
+  if show then
+    equippedItem:Begin(true)
+    characterInfo.popupBtn:Show(true)
+    SetTooltipHandlers(characterInfo.subtitle)
+    SetTooltipHandlers(characterInfo.popupSubtitle)
+  else
+    equippedItem:Begin(false)
+    characterInfo.popupBtn:Show(false)
+    characterInfo.popupWindow:Show(false)
+    HideTooltip()
+    ReleaseTooltipHandlers(characterInfo.subtitle)
+    ReleaseTooltipHandlers(characterInfo.popupSubtitle)
+  end
+end
+local GetModifierColorByValue = function(value, defaultColor)
+  if value > -0.009 and value < 0.001 then
+    value = 0
+  end
+  if value > 0 then
+    return FONT_COLOR.GREEN
+  elseif value < 0 then
+    return FONT_COLOR.RED
+  end
+  return defaultColor ~= nil and defaultColor or FONT_COLOR.DEFAULT
+end
+function characterInfo:UpdateDefaultInfoPart()
+  characterInfo.level:ChangedLevel(tostring(X2Unit:UnitLevel("player")))
+  local templates = X2Unit:GetTargetAbilityTemplates("player")
+  if GetCombinedAbilityName ~= nil then
+    local job = GetCombinedAbilityName(templates[1].index, templates[2].index, templates[3].index)
+    characterInfo.job:Show(true)
+    characterInfo.job:SetText(job)
+  else
+    characterInfo.job:Show(false)
+  end
+  characterInfo.characterName:SetText(tostring(X2Unit:UnitName("player")))
+end
+function characterInfo:UpdateCommunityPart(visibilitys)
+  local factionName = X2Unit:GetFactionName("player")
+  if factionName ~= nil then
+    do
+      local valueLabel = characterInfo.value[INDEX_FACTION]
+      local function GetOffsetX()
+        local width = valueLabel.style:GetTextWidth(factionName)
+        if width >= valueLabel:GetWidth() then
+          width = valueLabel:GetWidth()
+        end
+        return width
+      end
+      valueLabel:SetText(factionName)
+      local anchorInfo = {
+        myAnchor = "TOPLEFT",
+        targetAnchor = "BOTTOMLEFT",
+        x = GetOffsetX(),
+        y = -4
+      }
+      local function OnEnter(self)
+        ShowTextTooltip(self, nil, factionName, anchorInfo)
+      end
+      valueLabel:SetHandler("OnEnter", OnEnter)
+      local OnLeave = function()
+        HideTextTooltip()
+      end
+      valueLabel:SetHandler("OnLeave", OnLeave)
+    end
+  else
+    visibilitys[INDEX_FACTION] = false
+  end
+  local count = X2Player:GetAppellationCount()
+  if count >= 1 then
+    self.subtitle[INDEX_APPELLATION].appellationPopupBtn:Enable(true)
+    local window = characterInfo.mainWindow.appellationWindow
+    if window:IsVisible() then
+      window:FillAppellationData(window.pageControl:GetCurrentPageIndex())
+    end
+  else
+    self.subtitle[INDEX_APPELLATION].appellationPopupBtn:Enable(false)
+    local window = characterInfo.mainWindow.appellationWindow
+    window:Show(false)
+  end
+  visibilitys[3] = false
+  visibilitys[4] = false
+  visibilitys[5] = false
+end
+function characterInfo:UpdateCrimePart(visibilitys)
+  local crimeInfo = X2Player:GetCrimeInfo()
+  local crimePoint = tostring(crimeInfo.crimePoint)
+  local crimeRecord = tostring(crimeInfo.crimeRecord)
+  if (crimePoint == "" or crimePoint == "0") and (crimeRecord == "" or crimeRecord == "0") then
+    visibilitys[8] = false
+  end
+  if crimeRecord == "" or crimeRecord == "0" then
+    visibilitys[9] = false
+  end
+  local point = X2Player:GetJuryPoint()
+  local juryPoint = tostring(point)
+  if juryPoint == "" or juryPoint == "0" then
+    visibilitys[10] = false
+  end
+  characterInfo.value[INDEX_GEAR_SCORE]:SetText(X2Unit:UnitGearScore("player"))
+  local featureSet = X2Player:GetFeatureSet()
+  visibilitys[INDEX_LEADERSHIP_POINT] = featureSet.hero
+  visibilitys[INDEX_ACCUMULATED_LEADERSHIP_POINT] = featureSet.hero
+end
+function characterInfo:UpdateCombatDefaultInfoPart(visibilitys)
+  if charInfoStat == nil then
+    charInfoStat = X2Unit:UnitInfo("player")
+    charInfoModifierStat = X2Unit:UnitModifierInfo("player")
+  end
+  local itemStartIndex = 13
+  for i = 1, #baseInfoTable do
+    local sumVal = 0
+    local modifierVal = 0
+    local rate = 1
+    for idx = 1, #baseInfoTable[i].affect do
+      if baseInfoTable[i].affectRate then
+        rate = baseInfoTable[i].affectRate[idx]
+      end
+      modifierVal = charInfoModifierStat[baseInfoTable[i].affect[idx]] * rate
+      sumVal = sumVal + modifierVal
+    end
+    ApplyTextColor(characterInfo.value[itemStartIndex + i], GetModifierColorByValue(sumVal, baseInfoTable[i].defaultColor))
+    local str = string.format("%s", baseInfoTable[i].func())
+    characterInfo.value[itemStartIndex + i]:SetText(str)
+  end
+end
+function characterInfo:UpdateValue()
+  local visibilitys = {}
+  for i = 1, #characterInfo.value do
+    visibilitys[i] = true
+  end
+  self:UpdateDefaultInfoPart()
+  self:UpdateCommunityPart(visibilitys)
+  self:UpdateCrimePart(visibilitys)
+  self:UpdateCombatDefaultInfoPart(visibilitys)
+  UpadateBodyAnchors(visibilitys)
+end
+characterInfo:UpdateValue()
+function characterInfo.popupBtn:OnClick()
+  local subWindow = characterInfo.mainWindow.subWindow
+  if subWindow:IsVisible() then
+    subWindow:Show(false)
+  else
+    MakeDetailCharacterInfo()
+    subWindow:Show(true)
+  end
+end
+characterInfo.popupBtn:SetHandler("OnClick", characterInfo.popupBtn.OnClick)
+local OnEnter = function(self)
+  SetTooltip(locale.faction.show_detail, self)
+end
+characterInfo.popupBtn:SetHandler("OnEnter", OnEnter)
+local widget = characterInfo.value[INDEX_MELEE_DPS]
+function widget:GetExtraInfo()
+  local meleeMinDps = charInfoStat.melee_min_dps
+  local meleeMaxDps = charInfoStat.melee_max_dps
+  local tooltip_string = locale.character.subtitleInfoTooltip.melee_dmg
+  return string.format("%s : %s", tooltip_string, locale.common.from_to(meleeMinDps, meleeMaxDps))
+end
+local widget = characterInfo.value[INDEX_RANGED_DPS]
+function widget:GetExtraInfo()
+  local rangedMinDps = charInfoStat.ranged_min_dps
+  local rangedMaxDps = charInfoStat.ranged_max_dps
+  local tooltip_string = locale.character.subtitleInfoTooltip.ranged_dmg
+  return string.format("%s : %s", tooltip_string, locale.common.from_to(rangedMinDps, rangedMaxDps))
+end
+function ApplyDetailTextColor(popupItems, info)
+  local sumVal = 0
+  local color = FONT_COLOR.DEFAULT
+  if info.affect[1] == "ignore_shield_bonus" then
+    sumVal = 0
+    for i = 1, #info.affect do
+      sumVal = sumVal + charInfoModifierStat[info.affect[i]]
+    end
+    if sumVal ~= 0 then
+      color = FONT_COLOR.GREEN
+    end
+  else
+    if charInfoStat[info.affect[1]] ~= 0 then
+      for idx = 1, #info.affect do
+        sumVal = sumVal + charInfoModifierStat[info.affect[idx]]
+      end
+    end
+    if (info.affect[1] == "incoming_damage_mul_anti_npc" or info.affect[1] == "incoming_melee_damage_add_anti_npc" or info.affect[1] == "incoming_spell_damage_add_anti_npc" or info.affect[1] == "incoming_ranged_damage_add_anti_npc") and sumVal ~= 0 then
+      color = FONT_COLOR.GREEN
+    else
+      color = GetModifierColorByValue(sumVal)
+    end
+  end
+  ApplyTextColor(popupItems, color)
+end
+function MakeDetailCharacterInfo()
+  local GetPlayerAttribute = function(attribute)
+    return X2Unit:UnitAttr("player", attribute)
+  end
+  for j = 1, #characterInfo.mainWindow.subWindow.SubInfoWnd do
+    local popupItems = characterInfo.mainWindow.subWindow.SubInfoWnd[j].popupValue
+    for i = 1, #popupItems do
+      ApplyDetailTextColor(popupItems[i], detailInfoTable[j][i])
+      local func = detailInfoTable[j][i].func
+      local value = string.format("%s", func())
+      popupItems[i]:SetText(value)
+    end
+  end
+end
+function characterInfo.mainWindow:Begin(show)
+  for i = 1, #equippedItem.bagslot do
+    equippedItem.bagslot[i]:Show(false)
+  end
+  equippedItem:Begin(show)
+  DockingManager:Show(characterInfo.mainWindow)
+end
+function characterInfo.mainWindow:ReleaseHandlers()
+  characterInfo.mainWindow:ReleaseHandler("OnClick")
+  characterInfo.popupWindow.titleBar:ReleaseHandler("OnMouseDown")
+  characterInfo.popupWindow.titleBar:ReleaseHandler("OnMouseUp")
+  characterInfo.popupWindow.titleBar:ReleaseHandler("OnDragStart")
+  characterInfo.popupWindow.titleBar:ReleaseHandler("OnDragStop")
+end
+function OnUpdatedCharacterInfo(updateEquippedItem)
+  if characterInfo.mainWindow:IsVisible() == false then
+    return
+  end
+  charInfoStat = X2Unit:UnitInfo("player")
+  charInfoModifierStat = X2Unit:UnitModifierInfo("player")
+  characterInfo:UpdateValue()
+  MakeDetailCharacterInfo()
+  if updateEquippedItem ~= false then
+    equippedItem:Update()
+  end
+end
+local characterInfoEvents = {
+  UNIT_EQUIPMENT_CHANGED = function(equipSlot)
+    if equipSlot == -1 then
+      OnUpdatedCharacterInfo()
+      RefeshOptionFrame()
+    else
+      equippedItem:AninForEquipped(equipSlot)
+    end
+  end,
+  LEVEL_CHANGED = OnUpdatedCharacterInfo,
+  ABILITY_CHANGED = OnUpdatedCharacterInfo,
+  CRIME_REPORTED = OnUpdatedCharacterInfo,
+  PLAYER_HONOR_POINT = OnUpdatedCharacterInfo,
+  BUFF_UPDATE = function(action, target)
+    if target == "character" then
+      OnUpdatedCharacterInfo(false)
+    end
+  end,
+  DEBUFF_UPDATE = function(action, target)
+    if target == "character" then
+      OnUpdatedCharacterInfo(false)
+    end
+  end,
+  SKILL_LEARNED = OnUpdatedCharacterInfo,
+  SKILL_CHANGED = OnUpdatedCharacterInfo,
+  SKILLS_RESET = OnUpdatedCharacterInfo,
+  BAG_UPDATE = OnUpdatedCharacterInfo,
+  TOGGLE_WALK = function()
+    OnUpdatedCharacterInfo(false)
+  end,
+  PLAYER_JURY_POINT = function()
+    OnUpdatedCharacterInfo(false)
+  end,
+  MOVE_SPEED_CHANGE = function()
+    OnUpdatedCharacterInfo(false)
+  end,
+  APPELLATION_GAINED = function()
+    local visiibilitys = {}
+    characterInfo:UpdateCommunityPart(visiibilitys)
+  end,
+  APPELLATION_CHANGED = function(stringId)
+    if X2Unit:GetUnitId("player") ~= stringId then
+      return
+    end
+    local visiibilitys = {}
+    characterInfo:UpdateCommunityPart(visiibilitys)
+  end
+}
+characterInfo.mainWindow:SetHandler("OnEvent", function(this, event, ...)
+  characterInfoEvents[event](...)
+end)
+RegistUIEvent(characterInfo.mainWindow, characterInfoEvents)
+function characterInfo.mainWindow:ShowProc()
+  charInfoStat = X2Unit:UnitInfo("player")
+  charInfoModifierStat = X2Unit:UnitModifierInfo("player")
+  characterInfo:UpdateValue()
+  equippedItem:Update()
+  equippedItem:Show(true)
+end
+function characterInfo.mainWindow:OnHide()
+  equippedItem:Show(false)
+  ToggleVisualOptionFrame(false)
+  characterInfo.mainWindow.subWindow:Show(false)
+end
+characterInfo.mainWindow:SetHandler("OnHide", characterInfo.mainWindow.OnHide)
+local appellationPopupBtn = characterInfo.subtitle[INDEX_APPELLATION].appellationPopupBtn
+function appellationPopupBtn:OnClick()
+  local window = characterInfo.mainWindow.appellationWindow
+  if window:IsVisible() then
+    window:Show(false)
+  else
+    window:FillAppellationData()
+    window:Show(true)
+  end
+end
+appellationPopupBtn:SetHandler("OnClick", appellationPopupBtn.OnClick)
+if X2Player:GetFeatureSet().shopOnUI then
+  local livingPointPopupBtn = characterInfo.subtitle[INDEX_LIVING_POINT].livingPointPopupBtn
+  function livingPointPopupBtn:OnClick()
+    DirectOpenStore(1)
+  end
+  livingPointPopupBtn:SetHandler("OnClick", livingPointPopupBtn.OnClick)
+  local honorPointPopupBtn = characterInfo.subtitle[INDEX_HONOR_POINT].honorPointPopupBtn
+  function honorPointPopupBtn:OnClick()
+    DirectOpenStore(2)
+  end
+  honorPointPopupBtn:SetHandler("OnClick", honorPointPopupBtn.OnClick)
+end

@@ -1,0 +1,150 @@
+function CreateScrollListBox(parent, ownId, bgType)
+  local frame = parent:CreateChildWidget("emptywidget", ownId, 0, true)
+  frame:Show(true)
+  if bgType == nil then
+    bgType = "TYPE3"
+  end
+  local bg = CreateContentBackground(frame, bgType)
+  frame.bg = bg
+  if bgType == "TYPE3" then
+    bg:AddAnchor("TOPLEFT", frame, -MARGIN.WINDOW_SIDE, -MARGIN.WINDOW_SIDE)
+    bg:AddAnchor("BOTTOMRIGHT", frame, MARGIN.WINDOW_SIDE, MARGIN.WINDOW_SIDE * 2)
+  else
+    bg:AddAnchor("TOPLEFT", frame, -2, -MARGIN.WINDOW_SIDE / 2)
+    bg:AddAnchor("BOTTOMRIGHT", frame, 7, MARGIN.WINDOW_SIDE / 2)
+  end
+  local content = CreateList(frame:GetId() .. ".content", frame)
+  content:EnableScroll(true)
+  content:Show(true)
+  content:RemoveAllDrawables("background")
+  frame.content = content
+  content:SetListItemStateTexture(TEXTURE_PATH.DEFAULT)
+  content:SetListItemStateTextureInset(-15, -2, -10, -1)
+  content:SetSelectedItemCoord(353, 995, 190, 29)
+  content:SetSelectedItemColor(ConvertColor(73), ConvertColor(114), ConvertColor(188), 0.3)
+  content:SetOveredItemCoord(353, 995, 190, 29)
+  content:SetOveredItemColor(ConvertColor(73), ConvertColor(114), ConvertColor(188), 0.3)
+  content:SetDefaultItemCoord(0, 0, 0, 0)
+  content:SetDefaultItemColor(1, 1, 1, 0)
+  content:SetSelectedItemTextColor(FONT_COLOR.BLUE[1], FONT_COLOR.BLUE[2], FONT_COLOR.BLUE[3], FONT_COLOR.BLUE[4])
+  content:SetOveredItemTextColor(FONT_COLOR.BLUE[1], FONT_COLOR.BLUE[2], FONT_COLOR.BLUE[3], FONT_COLOR.BLUE[4])
+  content:SetDefaultItemTextColor(FONT_COLOR.DEFAULT[1], FONT_COLOR.DEFAULT[2], FONT_COLOR.DEFAULT[3], FONT_COLOR.DEFAULT[4])
+  content.itemStyle:SetEllipsis(true)
+  local scroll = CreateScroll("scroll", frame)
+  scroll:AddAnchor("TOPRIGHT", frame, 0, 0)
+  scroll:AddAnchor("BOTTOMRIGHT", frame, 0, 0)
+  frame.scroll = scroll
+  content:AddAnchor("TOPLEFT", frame, 0, 0)
+  content:AddAnchor("BOTTOM", frame, 0, 0)
+  content:AddAnchor("RIGHT", scroll, "LEFT", 0, 0)
+  frame.x = 0
+  frame.y = 0
+  frame.WheelUp = 3
+  frame.WheelDown = 3
+  frame.buttonUp = 1
+  frame.buttonDown = 1
+  local function UpButtonLeftClickFunc()
+    content:ScrollUp()
+    scroll.vs:Up(frame.buttonUp)
+  end
+  ButtonOnClickHandler(scroll.upButton, UpButtonLeftClickFunc)
+  local function DownButtonLeftClickFunc()
+    content:ScrollDown()
+    scroll.vs:Down(frame.buttonDown)
+  end
+  ButtonOnClickHandler(scroll.downButton, DownButtonLeftClickFunc)
+  function scroll.vs:OnSliderChanged(_value)
+    local a, b = self:GetMinMaxValues()
+    content:SetTop(_value)
+    content:ChangeChildAnchorByScrollValue("vert", _value)
+    if frame.ProcSliderChanged ~= nil then
+      frame:ProcSliderChanged()
+    end
+  end
+  scroll.vs:SetHandler("OnSliderChanged", scroll.vs.OnSliderChanged)
+  function content:OnSelChanged()
+    frame:SetMinMaxValues("vert", 0, content:GetMaxTop())
+    self:Select(self:GetSelectedIndex())
+    if frame.OnSelChanged ~= nil then
+      frame:OnSelChanged(self:GetSelectedIndex())
+    end
+    X2Cursor:ClearCursor()
+  end
+  content:SetHandler("OnSelChanged", content.OnSelChanged)
+  function frame:SetItemTrees(arg)
+    if arg == nil then
+      return
+    end
+    content:SetItemTrees(arg)
+    self:SetMinMaxValues("vert", 0, content:GetMaxTop())
+  end
+  function frame:AppendItem(v, k)
+    content:AppendItem(v, k)
+    self:SetMinMaxValues("vert", 0, content:GetMaxTop())
+  end
+  function frame:OnScroll(scrollType, _visible)
+    if _visible == false then
+      return
+    end
+    local _, smin, smax = self:GetMinMaxValues(scrollType)
+    local offsetx = 0
+    local offsety = 0
+    self:SetMinMaxValues(scrollType, smin, smax)
+    frame.content:AddAnchor("BOTTOMRIGHT", parent, -20, -20, false)
+    if scrollType == "vert" then
+      self.scroll:Show(_visible)
+      if _visible then
+        offsety = 20
+        offsetx = 30
+        frame.content:AddAnchor("BOTTOMRIGHT", parent, offsety * -1, offsetx * -1, false)
+      else
+        offsety = 0
+      end
+    else
+      self.scroll:Show(false)
+    end
+    if self == actionWnd.scrollframe then
+      frame.content:AddAnchor("BOTTOMRIGHT", parent, 0, 0, false)
+    end
+  end
+  frame:SetHandler("OnScroll", frame.OnScroll)
+  function frame:OnWheelUp()
+    if not scroll.vs.thumb:IsEnabled() then
+      return
+    end
+    scroll.vs:Up(frame.WheelUp)
+  end
+  frame:SetHandler("OnWheelUp", frame.OnWheelUp)
+  function frame:OnWheelDown()
+    if not scroll.vs.thumb:IsEnabled() then
+      return
+    end
+    scroll.vs:Down(frame.WheelDown)
+  end
+  frame:SetHandler("OnWheelDown", frame.OnWheelDown)
+  function frame:SetValue(_value)
+    frame.content:ChangeChildAnchorByScrollValue("vert", _value)
+    scroll.vs:SetValue(_value, false)
+  end
+  function frame:SetMinMaxValues(scrollType, _min, _max)
+    local x, y = frame:GetExtent()
+    scroll.vs:SetMinMaxValues(_min, _max)
+    if _max <= 0 then
+      self.scroll:SetEnable(false)
+    else
+      self.scroll:SetEnable(true)
+      local value = scroll.vs:GetValue()
+      self:SetValue(value)
+    end
+  end
+  function frame:SetValueStep(v)
+    scroll.vs:SetValueStep(v)
+  end
+  function frame:ClearAllSelected()
+    content:ClearAllSelected()
+  end
+  function frame:ClearItem()
+    content:ClearItem()
+  end
+  return frame
+end

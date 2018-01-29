@@ -1,0 +1,172 @@
+local CreateEtcEnchantAlarmMessage = function(id, parent)
+  local frame = CreateEmptyWindow(id, parent)
+  frame:SetExtent(370, 95)
+  local closeButton = frame:CreateChildWidget("button", "closeBtn", 0, true)
+  ApplyButtonSkin(closeButton, BUTTON_HUD.RISK_ALARM_CLOSE)
+  closeButton:AddAnchor("TOPRIGHT", frame, -MARGIN.WINDOW_SIDE / 4, MARGIN.WINDOW_SIDE / 4)
+  function closeButton:OnClick()
+    frame:Show(false)
+  end
+  closeButton:SetHandler("OnClick", closeButton.OnClick)
+  local bg = CreateContentBackground(frame, "TYPE1")
+  bg:AddAnchor("TOPLEFT", frame, -12, 0)
+  bg:AddAnchor("BOTTOMRIGHT", frame, 18, 0)
+  bg:SetColor(0, 0, 0, 0.6)
+  local icon = CreateItemIconImage(frame:GetId() .. ".icon", frame)
+  icon:SetExtent(ICON_SIZE.SLAVE, ICON_SIZE.SLAVE)
+  icon:AddAnchor("LEFT", frame, MARGIN.WINDOW_SIDE, 0)
+  frame.icon = icon
+  local failTexture = icon:CreateImageDrawable(TEXTURE_PATH.ITEM_DIAGONAL_LINE, "overlay")
+  failTexture:SetVisible(false)
+  failTexture:SetCoords(0, 0, 55, 55)
+  failTexture:SetExtent(55, 55)
+  failTexture:AddAnchor("CENTER", icon, 0, 0)
+  icon.failTexture = failTexture
+  local topText = frame:CreateChildWidget("label", "topText", 0, true)
+  topText:SetHeight(FONT_SIZE.XLARGE)
+  topText.style:SetFontSize(FONT_SIZE.XLARGE)
+  topText.style:SetShadow(true)
+  topText:SetAutoResize(true)
+  local middleText = frame:CreateChildWidget("textbox", "middleText", 0, true)
+  middleText:SetExtent(1000, FONT_SIZE.LARGE)
+  middleText.style:SetFontSize(FONT_SIZE.LARGE)
+  middleText:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  middleText.style:SetShadow(true)
+  middleText:SetAutoResize(true)
+  middleText.style:SetAlign(ALIGN_LEFT)
+  local bottomText = frame:CreateChildWidget("label", "bottomText", 0, true)
+  bottomText:SetHeight(FONT_SIZE.LARGE)
+  bottomText.style:SetFontSize(FONT_SIZE.LARGE)
+  bottomText.style:SetShadow(true)
+  bottomText:SetAutoResize(true)
+  local OnHide = function(self)
+    self:ReleaseHandler("OnUpdate")
+  end
+  frame:SetHandler("OnHide", OnHide)
+  local function GetTopText(resultCode, enchantType)
+    if resultCode == 1 then
+      ApplyTextColor(topText, FONT_COLOR.SKYBLUE)
+      local texts = {
+        socket = GetCommonText("socket_enchant_success"),
+        gem = GetCommonText("gem_enchant_success"),
+        refurbishment = GetCommonText("refurbishment_success")
+      }
+      if texts[enchantType] == nil then
+        return ""
+      end
+      return texts[enchantType]
+    else
+      ApplyTextColor(topText, FONT_COLOR.RED)
+      return GetCommonText("socket_enchant_fail")
+    end
+  end
+  local function GetMiddleText(resultCode, resultInfo)
+    if resultInfo.enchantType == "refurbishment" then
+      local linkText = resultInfo.linkText
+      if linkText == nil then
+        return ""
+      end
+      local etcInfo = resultInfo.etcInfo
+      if etcInfo == nil then
+        return ""
+      end
+      local itemInfo = X2Item:InfoFromLink(linkText)
+      if itemInfo == nil then
+        return ""
+      end
+      if resultCode ~= 1 then
+        return ""
+      end
+      local str = ""
+      if itemInfo.scaledA ~= nil and itemInfo.scaledA ~= 0 then
+        local before = etcInfo.beforeScaleA == 0 and 100 or etcInfo.beforeScaleA
+        str = string.format("%s %d%%\226\150\182%d%%", GetUIText(COMMON_TEXT, "meele_scale"), before, etcInfo.afterScaleA)
+      end
+      if itemInfo.scaledB ~= nil and itemInfo.scaledB ~= 0 then
+        local before = etcInfo.beforeScaleB == 0 and 100 or etcInfo.beforeScaleB
+        str = SetEnterString(str, string.format("%s %d%%\226\150\182%d%%", GetUIText(COMMON_TEXT, "magic_scale"), before, etcInfo.afterScaleB))
+      end
+      ApplyTextColor(middleText, FONT_COLOR.SKYBLUE)
+      return str
+    elseif resultInfo.enchantType == "socket" then
+      if resultCode ~= 2 then
+        return ""
+      end
+      ApplyTextColor(middleText, FONT_COLOR.WHITE)
+      return GetCommonText("socket_enchant_fail_desc")
+    end
+    return ""
+  end
+  local function GetBottomText(resultCode, info)
+    local color = Hex2Dec(info.gradeColor)
+    ApplyTextColor(bottomText, color)
+    return string.format("[%s]", info.name)
+  end
+  local function GetWidth()
+    local width = math.max(frame.topText:GetWidth(), frame.bottomText:GetWidth())
+    if middleText:GetText() ~= "" then
+      width = math.max(width, middleText:GetText())
+    end
+    width = frame.icon:GetWidth() + width + MARGIN.WINDOW_SIDE * 2.5 + closeButton:GetWidth()
+    return math.min(math.max(width, 220), 720)
+  end
+  local showTime = 0
+  function frame:SetResult(resultCode, itemType, resultInfo)
+    local itemInfo = X2Item:GetItemInfoByType(itemType)
+    icon:Show(false)
+    topText:Show(false)
+    middleText:Show(false)
+    bottomText:Show(false)
+    bg:SetVisible(false)
+    self:Show(true, 300)
+    local isFailed = (resultCode == 0 or resultCode == 2) and true or false
+    self.icon:SetItemIconImage(itemInfo, itemInfo.itemGrade)
+    self.icon.failTexture:SetVisible(isFailed)
+    self.icon.overlay:SetVisible(isFailed)
+    self.icon:SetOverlayColor(ICON_BUTTON_OVERLAY_COLOR.BLACK)
+    self.topText:SetText(GetTopText(resultCode, resultInfo.enchantType))
+    self.bottomText:SetText(GetBottomText(resultCode, itemInfo))
+    local middleStr = GetMiddleText(resultCode, resultInfo)
+    if middleStr == "" then
+      middleText:SetText("")
+      topText:AddAnchor("TOPLEFT", icon, "TOPRIGHT", 5, 7)
+      bottomText:AddAnchor("TOPLEFT", topText, "BOTTOMLEFT", 0, 5)
+    else
+      middleText:SetWidth(1000)
+      middleText:SetText(middleStr)
+      middleText:SetWidth(middleText:GetLongestLineWidth() + 20)
+      topText:AddAnchor("TOPLEFT", icon, "TOPRIGHT", 5, 7 - middleText:GetHeight() / 2)
+      middleText:AddAnchor("TOPLEFT", topText, "BOTTOMLEFT", 0, 3)
+      bottomText:AddAnchor("TOPLEFT", middleText, "BOTTOMLEFT", 0, 3)
+    end
+    self:SetWidth(GetWidth())
+    local width = math.max(frame.topText:GetWidth(), frame.bottomText:GetWidth()) + self.icon:GetWidth() + 5
+    self.icon:AddAnchor("LEFT", frame, (frame:GetWidth() - width) / 2 - 25, 0)
+    showTime = 0
+    local visibleTime = 300
+    local function OnUpdate(self, dt)
+      icon:Show(true, visibleTime)
+      topText:Show(true, visibleTime)
+      if middleStr ~= "" then
+        middleText:Show(true, visibleTime)
+      end
+      bottomText:Show(true, visibleTime)
+      bg:SetVisible(true)
+      showTime = dt + showTime
+      if showTime >= 4000 then
+        self:Show(false, 500)
+        self:ReleaseHandler("OnUpdate")
+      end
+    end
+    self:SetHandler("OnUpdate", OnUpdate)
+  end
+  return frame
+end
+etcEnchantAlarm = CreateEtcEnchantAlarmMessage("etcEnchantAlarm", "UIParent")
+function ShowEtcEnchantAlarmMessage(resultCode, itemType, resultInfo)
+  etcEnchantAlarm:SetResult(resultCode, itemType, resultInfo)
+  etcEnchantAlarm:Raise()
+  etcEnchantAlarm:RemoveAllAnchors()
+  etcEnchantAlarm:AddAnchor("TOP", "UIParent", 0, 70)
+  return true
+end

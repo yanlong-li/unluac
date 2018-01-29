@@ -1,0 +1,3 @@
+if X2Util:GetGameProvider() == TRION then
+  combatTextLocale.fontPath = "ui/font/yoon_firedgothic_b.ttf"
+end

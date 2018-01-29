@@ -1,0 +1,450 @@
+local MAX_SAVE_SLOT = 3
+local savedAbilList, selectedIndex
+local usableCount = 0
+local controls = {}
+local GetAbilCategoryName = function(name)
+  return locale.common.abilityCategory[name]
+end
+local IsValidAbil = function(abilNum)
+  return abilNum ~= ABILITY_GENERAL and abilNum ~= ABILITY_MAX
+end
+local function IsExistSavedJob(index)
+  if index < MAX_SAVE_SLOT + 1 and index > usableCount then
+    return nil
+  end
+  if savedAbilList then
+    local savedAbility = savedAbilList[index]
+    return savedAbility and (IsValidAbil(savedAbility[1]) or IsValidAbil(savedAbility[2]) or IsValidAbil(savedAbility[3]))
+  end
+  return false
+end
+local function GetNowUseSlotCount()
+  local validJobCnt = 0
+  for i = 1, usableCount do
+    if IsExistSavedJob(i) then
+      validJobCnt = validJobCnt + 1
+    end
+  end
+  return validJobCnt
+end
+local function UseAllMaxSaveSlot()
+  return GetNowUseSlotCount() == MAX_SAVE_SLOT
+end
+local function UseAllUsableSlot()
+  return usableCount > 0 and MAX_SAVE_SLOT > usableCount and GetNowUseSlotCount() == usableCount
+end
+local function GetValidAbilCount(abils)
+  local total = 0
+  for i = 1, 3 do
+    if IsValidAbil(abils[i]) then
+      total = total + 1
+    end
+  end
+  return total
+end
+local function GetJobName(abils)
+  local newJobName = GetCombinedAbilityName(abils[1], abils[2], abils[3])
+  local abilName = GetAbilCategoryName(X2Ability:GetAbilityStr(abils[1]))
+  local abil2Name = GetAbilCategoryName(X2Ability:GetAbilityStr(abils[2]))
+  local abil3Name = GetAbilCategoryName(X2Ability:GetAbilityStr(abils[3]))
+  if abil2Name then
+    abilName = string.format("%s, %s", abilName, abil2Name)
+  end
+  if abil3Name then
+    abilName = string.format("%s, %s", abilName, abil3Name)
+  end
+  abilName = string.format("%s (%s)", newJobName, abilName)
+  return abilName
+end
+local function ActiveSavedAbilitiesDialogHandler(dialogWnd)
+  ApplyDialogStyle(dialogWnd, DIALOG_STYLE.INCLUDE_VALUE_TEXT)
+  local width = dialogWnd:GetWidth() - MARGIN.WINDOW_SIDE * 2
+  local jobName = dialogWnd:CreateChildWidget("label", "jobName", 0, true)
+  jobName:SetExtent(dialogWnd.textbox:GetWidth(), FONT_SIZE.MIDDLE)
+  jobName:AddAnchor("TOP", dialogWnd.titleBar, "BOTTOM", 0, 0)
+  ApplyTextColor(jobName, FONT_COLOR.BLUE)
+  jobName:SetText(GetJobName(savedAbilList[selectedIndex]))
+  local freeCountInfo = dialogWnd:CreateChildWidget("label", "freeCountInfo", 0, true)
+  freeCountInfo:SetExtent(dialogWnd.textbox:GetWidth(), FONT_SIZE.MIDDLE)
+  freeCountInfo:AddAnchor("TOP", dialogWnd.valueTextBox, "BOTTOM", 0, 0)
+  ApplyTextColor(freeCountInfo, FONT_COLOR.GRAY)
+  freeCountInfo:SetText(GetCommonText("ability_set_free_count_info"))
+  dialogWnd.textbox:RemoveAllAnchors()
+  dialogWnd.textbox:AddAnchor("TOP", jobName, "BOTTOM", 0, 10)
+  dialogWnd.valueTextBox:RemoveAllAnchors()
+  dialogWnd.valueTextBox:AddAnchor("TOP", dialogWnd.textbox, "BOTTOM", 0, 10)
+  dialogWnd:SetTitle(GetCommonText("change_abilities"))
+  dialogWnd:RegistBottomWidget(freeCountInfo)
+  local usedFreeCnt, maxFreeCnt = X2Ability:GetAbilitySetFreeActivationCountInfo()
+  local valueText = ""
+  local isRemainFreeCount = not (maxFreeCnt <= usedFreeCnt)
+  if isRemainFreeCount then
+    valueText = string.format("%s %s%d/%d", GetCommonText("ability_set_free_count"), FONT_COLOR_HEX.BLUE, usedFreeCnt, maxFreeCnt)
+  else
+    valueText = string.format(F_MONEY.currency.pipeString[F_MONEY.currency.abilityChange], tostring(X2Ability:GetAbilitySetChangeCost()))
+  end
+  freeCountInfo:Show(isRemainFreeCount)
+  dialogWnd.valueTextBox.bg:Show(not isRemainFreeCount)
+  dialogWnd:SetContentEx(GetCommonText("change_saved_job_confirm_msg"), valueText)
+  function dialogWnd:OkProc()
+    X2Ability:ActiveAbilitySet(selectedIndex - 1)
+  end
+end
+local function DeleteSavedAbilitiesDialogHandler(dialogWnd)
+  ApplyDialogStyle(dialogWnd, DIALOG_STYLE.INCLUDE_SEPERATE_TEXT)
+  dialogWnd:SetTitle(GetCommonText("delete_saved_job_title"))
+  dialogWnd:SetTextColor(FONT_COLOR.DEFAULT, FONT_COLOR.BLUE)
+  dialogWnd:SetContent(GetCommonText("delete_saved_job_confirm_msg"), GetJobName(savedAbilList[selectedIndex]))
+  function dialogWnd:OkProc()
+    X2Ability:DeleteAbilitySet(selectedIndex - 1)
+  end
+end
+local function CreateExpandSaveJobSlot()
+  local window = CreateWindow("expandSaveSlotDialog", "UIParent")
+  window:SetExtent(POPUP_WINDOW_WIDTH, 300)
+  window:SetTitle(GetCommonText("add_saved_job_slot_title"))
+  window:SetWindowModal(true)
+  window:SetUILayer("dialog")
+  window:EnableHidingIsRemove(true)
+  window:Show(false)
+  local content = window:CreateChildWidget("label", "content", 0, true)
+  content:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, FONT_SIZE.LARGE)
+  content:AddAnchor("TOP", window, 0, MARGIN.WINDOW_TITLE)
+  content.style:SetFontSize(FONT_SIZE.LARGE)
+  content:SetText(GetCommonText("add_saved_job_slot_confirm_msg"))
+  ApplyTextColor(content, FONT_COLOR.DEFAULT)
+  local countFrame = window:CreateChildWidget("emptywidget", "countFrame", 0, true)
+  countFrame:SetWidth(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH)
+  countFrame:AddAnchor("TOP", content, "BOTTOM", 0, MARGIN.WINDOW_SIDE)
+  local bg = CreateContentBackground(countFrame, "TYPE2")
+  bg:AddAnchor("TOPLEFT", countFrame, -MARGIN.WINDOW_SIDE / 2, -MARGIN.WINDOW_SIDE / 2)
+  bg:AddAnchor("BOTTOMRIGHT", countFrame, MARGIN.WINDOW_SIDE / 2, MARGIN.WINDOW_SIDE / 2)
+  ApplyTextureColor(bg, TEXTURE_COLOR.BOX_BROWN)
+  local currentEnableCount = window:CreateChildWidget("textbox", "currentEnableCount", 0, true)
+  currentEnableCount:SetWidth(125)
+  currentEnableCount.style:SetFontSize(FONT_SIZE.LARGE)
+  currentEnableCount:SetLineSpace(3)
+  currentEnableCount:AddAnchor("TOPLEFT", countFrame, MARGIN.WINDOW_SIDE / 2, 0)
+  ApplyTextColor(currentEnableCount, FONT_COLOR.DEFAULT)
+  currentEnableCount:SetText(string.format([[
+%s
+%s]], GetCommonText("add_saved_job_slot_result1_msg"), usableCount))
+  currentEnableCount:SetHeight(currentEnableCount:GetTextHeight())
+  local arrow = CreateIcon(window, "arrow")
+  arrow:AddAnchor("LEFT", currentEnableCount, "RIGHT", 0, 0)
+  ApplyTextureColor(arrow, TEXTURE_COLOR.ARROW_BLUE)
+  local expandEnableCount = window:CreateChildWidget("textbox", "expandEnableCount", 0, true)
+  expandEnableCount:SetWidth(125)
+  expandEnableCount.style:SetFontSize(FONT_SIZE.LARGE)
+  expandEnableCount:SetLineSpace(3)
+  expandEnableCount:AddAnchor("TOPRIGHT", countFrame, -MARGIN.WINDOW_SIDE / 2, 0)
+  ApplyTextColor(expandEnableCount, FONT_COLOR.BLUE)
+  expandEnableCount:SetText(string.format([[
+%s
+%s]], GetCommonText("add_saved_job_slot_result2_msg"), usableCount + 1))
+  expandEnableCount:SetHeight(expandEnableCount:GetTextHeight())
+  countFrame:SetHeight(expandEnableCount:GetTextHeight())
+  local itemFrame = window:CreateChildWidget("emptywidget", "itemFrame", 0, true)
+  itemFrame:SetHeight(ICON_SIZE.DEFAULT)
+  local itemName = window:CreateChildWidget("textbox", "itemName", 0, true)
+  itemName:SetLineSpace(3)
+  itemName:AddAnchor("BOTTOMRIGHT", itemFrame, 0, -3)
+  itemName.style:SetAlign(ALIGN_LEFT)
+  itemName:SetWidth(POPUP_WINDOW_WIDTH)
+  local slotItemInfo = X2Ability:GetExpandAbilitySetSlotInfo()
+  if slotItemInfo.curCount < slotItemInfo.needCount then
+    ApplyTextColor(itemName, FONT_COLOR.RED)
+  else
+    ApplyTextColor(itemName, FONT_COLOR.DEFAULT)
+  end
+  local itemIconButton = CreateItemIconButton(window:GetId() .. ".itemIconButton", window)
+  itemIconButton:AddAnchor("LEFT", itemFrame, 0, 0)
+  window.itemIconButton = itemIconButton
+  local itemDetailInfo = X2Item:GetItemInfoByType(slotItemInfo.itemType)
+  AddTooltipFunction(itemIconButton, itemDetailInfo, itemDetailInfo.lookType, itemDetailInfo.itemGrade, false)
+  itemName:SetText(string.format([[
+%s
+%d/%d]], itemDetailInfo.name, slotItemInfo.curCount, slotItemInfo.needCount))
+  itemName:SetExtent(itemName:GetLongestLineWidth() + 10, itemName:GetTextHeight())
+  itemFrame:SetWidth(itemName:GetLongestLineWidth() + itemIconButton:GetWidth() + 15)
+  itemFrame:AddAnchor("TOP", countFrame, "BOTTOM", 0, MARGIN.WINDOW_SIDE)
+  local warningText = window:CreateChildWidget("label", "warningText", 0, true)
+  warningText:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, FONT_SIZE.LARGE)
+  warningText:AddAnchor("TOP", itemFrame, "BOTTOM", 0, 20)
+  ApplyTextColor(warningText, FONT_COLOR.RED)
+  warningText:SetText(GetCommonText("add_saved_job_slot_info_msg", MAX_SAVE_SLOT))
+  local info = {
+    leftButtonStr = GetCommonText("ok"),
+    leftButtonLeftClickFunc = function()
+      X2Ability:RequestExpandAbilitySetSlot()
+      window:Show(false)
+    end,
+    rightButtonStr = GetCommonText("cancel"),
+    rightButtonLeftClickFunc = function()
+      window:Show(false)
+    end
+  }
+  CreateWindowDefaultTextButtonSet(window, info)
+  return window
+end
+local function UpdatePreviewSkillSlots(skillWnd, abils, isSelectCurrentJob)
+  if not isSelectCurrentJob then
+    skillWnd.savedSkills = X2Ability:GetSavedSkillSet(selectedIndex)
+    skillWnd.savedPassiveBuffs = X2Ability:GetSavedPassiveBuffSet(selectedIndex)
+  else
+    skillWnd.savedSkills = nil
+    skillWnd.savedPassiveBuffs = nil
+  end
+  for i = 1, 3 do
+    local combatSkillList = skillWnd.children[i]
+    if IsValidAbil(abils[i]) then
+      X2Ability:SetAbilityToView(i, abils[i])
+      if isSelectCurrentJob then
+        combatSkillList:Update()
+      else
+        combatSkillList:UpdateSavedSkillSetPreview(selectedIndex)
+      end
+    else
+      X2Ability:SetAbilityToView(i, ABILITY_MAX)
+      combatSkillList:Update(selectedIndex)
+    end
+  end
+  if skillWnd.UpdateJobName then
+    skillWnd:UpdateJobName()
+    if isSelectCurrentJob then
+      skillWnd:UpdateSkillPoint()
+    else
+      skillWnd:UpdateSkillPoint(selectedIndex)
+    end
+  end
+end
+local function SetEventHandlersBottomPannel(pannel, infoPreviewLabel)
+  local jobListCombo = pannel.jobListCombo
+  local saveDeleteBtn = pannel.saveDeleteBtn
+  local applyBtn = pannel.applyBtn
+  local guide = pannel.guide
+  local expandBtn = pannel.expandBtn
+  local saveDeleteBtnTooltipMsg
+  function jobListCombo:SelectProc(selIndex)
+    selectedIndex = selIndex
+    local selectedAbils
+    local currentJobIndex = X2Ability:GetIndexCurrentJobInSavedJobList()
+    if currentJobIndex == nil then
+      currentJobIndex = -1
+    end
+    X2Ability:SelectAbilitySetIndex(selectedIndex, currentJobIndex)
+    local selectedString = self.dropdownItem[selectedIndex]
+    local selectedJobNotInJobList = selectedString == GetCommonText("current_use")
+    local selectedEmptySlot = not IsExistSavedJob(selectedIndex)
+    local curMyAbilInfo = X2Unit:GetTargetAbilityTemplates("player")
+    local curMyAbilIndexes = {
+      curMyAbilInfo[1].index,
+      curMyAbilInfo[2].index,
+      curMyAbilInfo[3].index
+    }
+    if selectedJobNotInJobList then
+      selectedAbils = curMyAbilIndexes
+      jobListCombo:SetText(GetJobName(selectedAbils))
+    else
+      jobListCombo:SetText(selectedString)
+    end
+    if selectedEmptySlot or selectedJobNotInJobList then
+      selectedAbils = curMyAbilIndexes
+    else
+      selectedAbils = savedAbilList[selectedIndex]
+    end
+    local isSelectCurrentJob = currentJobIndex + 1 == selectedIndex or selectedJobNotInJobList or selectedEmptySlot
+    UpdatePreviewSkillSlots(pannel:GetParent(), selectedAbils, isSelectCurrentJob)
+    local isAllExpand = usableCount == MAX_SAVE_SLOT
+    infoPreviewLabel:Show(not isSelectCurrentJob)
+    applyBtn:Enable(not isSelectCurrentJob)
+    expandBtn:Enable(not isAllExpand)
+    if selectedEmptySlot or selectedJobNotInJobList then
+      ApplyButtonSkin(saveDeleteBtn, BUTTON_CONTENTS.SKILL_ABILITY_SAVE)
+      if UseAllMaxSaveSlot() then
+        saveDeleteBtn:Enable(false)
+        saveDeleteBtnTooltipMsg = GetCommonText("warning_max_saved_job", MAX_SAVE_SLOT)
+      elseif UseAllUsableSlot() then
+        saveDeleteBtn:Enable(false)
+        saveDeleteBtnTooltipMsg = GetCommonText("lack_of_saved_job_slot")
+      else
+        local canSave = selectedIndex == MAX_SAVE_SLOT + 1 or not (selectedIndex > usableCount)
+        canSave = canSave and X2Ability:GetNumSkills() > 0 and GetNowUseSlotCount() < usableCount and GetValidAbilCount(selectedAbils) == 3
+        saveDeleteBtn:Enable(canSave)
+        saveDeleteBtnTooltipMsg = GetCommonText("save_job")
+      end
+    else
+      ApplyButtonSkin(saveDeleteBtn, BUTTON_CONTENTS.SKILL_ABILITY_DELETE)
+      saveDeleteBtn:Enable(true)
+      saveDeleteBtnTooltipMsg = GetCommonText("delete")
+    end
+  end
+  local function ProcSaveDeleteBtn()
+    if IsExistSavedJob(selectedIndex) then
+      X2DialogManager:RequestDefaultDialog(DeleteSavedAbilitiesDialogHandler, pannel:GetParent():GetId())
+    else
+      X2Ability:SaveAbilitySet(selectedIndex - 1)
+    end
+  end
+  saveDeleteBtn:SetHandler("OnClick", ProcSaveDeleteBtn)
+  local function ProcApply()
+    X2DialogManager:RequestDefaultDialog(ActiveSavedAbilitiesDialogHandler, pannel:GetParent():GetId())
+  end
+  applyBtn:SetHandler("OnClick", ProcApply)
+  local function ProcExpand()
+    local expandDlg = CreateExpandSaveJobSlot()
+    expandDlg:Show(true)
+    expandDlg:AddAnchor("CENTER", "UIParent", 0, 0)
+  end
+  expandBtn:SetHandler("OnClick", ProcExpand)
+  local OnGuideEnter = function(self)
+    local title = GetCommonText("tooltip_save_job_info_title")
+    local msg1 = GetCommonText("tooltip_save_job_info_msg1")
+    local msg2 = GetCommonText("tooltip_save_job_info_msg4")
+    local msg3 = GetCommonText("tooltip_save_job_info_msg2")
+    local msg4 = GetCommonText("tooltip_save_job_info_msg3")
+    local resultMsg = string.format([[
+%s
+%s
+%s
+%s
+%s]], title, msg1, msg2, msg3, msg4)
+    SetTooltip(resultMsg, self, false, 500)
+  end
+  guide:SetHandler("OnEnter", OnGuideEnter)
+  local OnExpandBtnEnter = function(self)
+    SetTooltip(GetCommonText("add_saved_job_slot_title"), self)
+  end
+  expandBtn:SetHandler("OnEnter", OnExpandBtnEnter)
+  local function OnSaveDeleteBtnEnter(self)
+    SetTooltip(saveDeleteBtnTooltipMsg, self)
+  end
+  saveDeleteBtn:SetHandler("OnEnter", OnSaveDeleteBtnEnter)
+  local OnApplyBtnEnter = function(self)
+    SetTooltip(GetCommonText("activation"), self)
+  end
+  applyBtn:SetHandler("OnEnter", OnApplyBtnEnter)
+end
+function CreateSaveAbilitiesWidget(wnd)
+  if X2Player:GetFeatureSet().useSavedAbilities == false then
+    return
+  end
+  local bottomPannel = wnd:CreateChildWidget("emptyWidget", "bottomPannel", 0, true)
+  bottomPannel:SetExtent(wnd:GetParent():GetWidth(), 50)
+  bottomPannel:AddAnchor("BOTTOM", wnd, "BOTTOM", 0, 0)
+  wnd.bottomPannel = bottomPannel
+  local bottomPannelBg = CreateContentBackground(bottomPannel, "TYPE10")
+  bottomPannelBg:SetExtent(640, 36)
+  bottomPannelBg:AddAnchor("TOPLEFT", bottomPannel, 0, -5)
+  bottomPannelBg:SetColor(ConvertColor(189), ConvertColor(179), ConvertColor(159), 0.4)
+  local guide = CreateGuideIconWidget(bottomPannel)
+  guide:AddAnchor("LEFT", bottomPannel, "LEFT", 10, 6)
+  bottomPannel.guide = guide
+  local saveJobTitle = bottomPannel:CreateChildWidget("label", "saveJobTitle", 0, true)
+  saveJobTitle:SetExtent(156, 24)
+  saveJobTitle:AddAnchor("LEFT", guide, "RIGHT", 5, 0)
+  saveJobTitle.style:SetAlign(ALIGN_LEFT)
+  saveJobTitle.style:SetFontSize(FONT_SIZE.LARGE)
+  ApplyTextColor(saveJobTitle, FONT_COLOR.TITLE)
+  saveJobTitle:SetText(GetCommonText("tooltip_save_job_info_title"))
+  local expandBtn = bottomPannel:CreateChildWidget("button", "expandBtn", 0, true)
+  expandBtn:AddAnchor("LEFT", saveJobTitle, "RIGHT", 5, 1)
+  ApplyButtonSkin(expandBtn, BUTTON_CONTENTS.INVENTORY_EXPAND)
+  expandBtn:SetExtent(expandBtn:GetWidth() * 0.6, expandBtn:GetHeight() * 0.6)
+  bottomPannel.expandBtn = expandBtn
+  table.insert(controls, bottomPannel.expandBtn)
+  local jobListCombo = CreateComboBox(bottomPannel)
+  jobListCombo:SetExtent(198, 21)
+  jobListCombo:AddAnchor("LEFT", expandBtn, "RIGHT", 5, 0)
+  jobListCombo:SetEllipsis(true, {
+    "LEFT",
+    jobListCombo,
+    "RIGHT",
+    0,
+    jobListCombo:GetHeight() + 8
+  })
+  jobListCombo:ShowDropdownTooltip(true)
+  bottomPannel.jobListCombo = jobListCombo
+  table.insert(controls, bottomPannel.jobListCombo)
+  local saveDeleteBtn = bottomPannel:CreateChildWidget("button", "saveDelete", 0, true)
+  saveDeleteBtn:AddAnchor("LEFT", jobListCombo, "RIGHT", 5, 0)
+  bottomPannel.saveDeleteBtn = saveDeleteBtn
+  ApplyButtonSkin(saveDeleteBtn, BUTTON_CONTENTS.SKILL_ABILITY_SAVE)
+  table.insert(controls, bottomPannel.saveDeleteBtn)
+  local applyBtn = bottomPannel:CreateChildWidget("button", "applyBtn", 0, true)
+  applyBtn:AddAnchor("LEFT", saveDeleteBtn, "RIGHT", 5, 0)
+  bottomPannel.applyBtn = applyBtn
+  ApplyButtonSkin(applyBtn, BUTTON_CONTENTS.SKILL_ABILITY_APPLY)
+  table.insert(controls, bottomPannel.applyBtn)
+  local infoPreviewLabel = bottomPannel:CreateChildWidget("label", "infoPreviewLabel", 0, true)
+  infoPreviewLabel:SetExtent(120, FONT_SIZE.LARGE)
+  infoPreviewLabel:AddAnchor("LEFT", applyBtn, "RIGHT", 0, 0)
+  infoPreviewLabel.style:SetAlign(ALIGN_RIGHT)
+  infoPreviewLabel.style:SetFontSize(FONT_SIZE.LARGE)
+  ApplyTextColor(infoPreviewLabel, FONT_COLOR.BLUE)
+  infoPreviewLabel:SetText(GetCommonText("preview_saved_job"))
+  infoPreviewLabel:Show(false)
+  SetEventHandlersBottomPannel(bottomPannel, infoPreviewLabel)
+  local function GetJobComboStringList(currentJobNotInList, colorList)
+    local jobList = {}
+    for i = 1, MAX_SAVE_SLOT do
+      if IsExistSavedJob(i) then
+        local savedAbilItem = savedAbilList[i]
+        jobName = string.format("%d. %s", i, GetJobName(savedAbilItem))
+        table.insert(jobList, jobName)
+      else
+        local msgKey
+        if i > usableCount then
+          msgKey = "disable_job_slot"
+          colorList[i] = FONT_COLOR.GRAY
+        else
+          msgKey = "savable_abilities"
+        end
+        local emptyStr = string.format("%d. %s", i, GetCommonText(msgKey))
+        table.insert(jobList, emptyStr)
+      end
+    end
+    if currentJobNotInList then
+      table.insert(jobList, GetCommonText("current_use"))
+    end
+    return jobList
+  end
+  function wnd:UpdateJobComboList()
+    savedAbilList, usableCount = X2Ability:GetSavedAbilitySets()
+    local currentJobIndex = X2Ability:GetIndexCurrentJobInSavedJobList()
+    if currentJobIndex == nil then
+      currentJobIndex = -1
+    end
+    local currentJobNotInList = currentJobIndex < 0
+    local colorList = {
+      FONT_COLOR.DEFAULT,
+      FONT_COLOR.DEFAULT,
+      FONT_COLOR.DEFAULT,
+      FONT_COLOR.DEFAULT
+    }
+    jobListCombo.dropdownItem = GetJobComboStringList(currentJobNotInList, colorList)
+    jobListCombo.dropdownItemColor = colorList
+    if currentJobNotInList then
+      currentJobIndex = #jobListCombo.dropdownItem
+      jobListCombo:Select(currentJobIndex)
+    else
+      jobListCombo:Select(currentJobIndex + 1)
+    end
+  end
+  function wnd:UpdateControlsEnable(caster, enable)
+    if caster ~= "player" then
+      return
+    end
+    for i = 1, #controls do
+      if i == 2 then
+        controls[i]:SetEnable(enable)
+      else
+        controls[i]:Enable(enable)
+      end
+    end
+    if enable then
+      controls[2]:SelectProc(selectedIndex)
+    end
+  end
+  wnd:UpdateJobComboList()
+end

@@ -1,0 +1,2198 @@
+featureSet = X2Player:GetFeatureSet()
+selectedRankTabIdx = 1
+onlyPlayerRecordUpdate = false
+local makeTooltip = function(prev, form, ...)
+  if prev ~= "" then
+    prev = string.format("%s%s", prev, "\n")
+  end
+  local str = string.format(form, unpack(arg))
+  local returnString = string.format("%s%s", prev, str)
+  return returnString
+end
+RANKING = {
+  TAB_BATTLEFIELD = 1,
+  TAB_RACING = 2,
+  TAB_FISH_WEIGHT = 3,
+  TAB_FISH_LENGTH = 4,
+  TAB_GOODS_VALUE = 5,
+  TAB_GEAR_SCORE = 6,
+  TAB_EXPEDITION = 7,
+  TAB_BATTLEFIELD_NO_ITEM = 8
+}
+EXPEDITION_RANKING = {GEAR_SCORE = 1, BATTLE_RECORD = 2}
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+local CommonGradeLayoutFunc = function(listCtrl, subItem)
+  local bg = CreateContentBackground(subItem, "TYPE11")
+  bg:SetWidth(listCtrl:GetWidth())
+  bg:AddAnchor("TOPLEFT", subItem, 0, 0)
+  bg:AddAnchor("BOTTOM", subItem, 0, 0)
+  subItem.bg = bg
+end
+local ChangeColorForPlayer = function(widget, name, worldName)
+  if name == X2Unit:UnitName("player") and worldName == X2World:GetCurrentWorldName() then
+    ApplyTextColor(widget, FONT_COLOR.BLUE)
+  else
+    ApplyTextColor(widget, FONT_COLOR.DEFAULT)
+  end
+end
+local GetPlayerGrade = function(rankInfo, playerGrade)
+  for i = 1, #rankInfo do
+    if playerGrade >= rankInfo[i].from and playerGrade <= rankInfo[i].to then
+      return i
+    end
+  end
+end
+local GetGradeStartIndex = function(rankInfo, playerRank)
+  local isStartIndex = false
+  for i = 1, #rankInfo do
+    if playerRank == rankInfo[i].from then
+      isStartIndex = true
+    end
+  end
+  return isStartIndex
+end
+local BuildWorldName = function(worldInfo)
+  local worldNames = {}
+  for i = 1, #worldInfo do
+    if worldInfo[i].id == 0 then
+      worldNames[i] = GetUIText(COMMON_TEXT, "entire_server")
+    else
+      worldNames[i] = worldInfo[i].name
+    end
+  end
+  return worldNames
+end
+local BuildSeasonInformation = function(code)
+  local seasonInfo = X2Rank:GetRankingSeasonInformation(code)
+  seasonInfo.periodStr = ""
+  if seasonInfo.schedule == "monthly" then
+    seasonInfo.periodStr = string.format("%s: %s", GetUIText(COMMON_TEXT, "ranking_season_off"), GetUIText(COMMON_TEXT, "ranking_season_off_monthly"))
+  elseif seasonInfo.schedule == "weekly" then
+    local seasonoffDay = GetUIText(COMMON_TEXT, string.lower(seasonInfo.season_off))
+    local weekSeasonOffStr = X2Locale:LocalizeUiText(COMMON_TEXT, "ranking_season_off_weekly", seasonoffDay)
+    seasonInfo.periodStr = string.format("%s: %s", GetUIText(COMMON_TEXT, "ranking_season_off"), weekSeasonOffStr)
+  else
+    seasonInfo.periodStr = string.format("%s: %s", GetUIText(COMMON_TEXT, "period"), GetUIText(COMMON_TEXT, "always_in_progress"))
+  end
+  seasonInfo.periodTooltip = GetUIText(COMMON_TEXT, string.format("%s_%s", "ranking_tip_schedule", code))
+  return seasonInfo
+end
+local function CreateRewardWindow(id, parent)
+  local window = CreateWindow(id, parent)
+  window:Show(false)
+  window:SetExtent(POPUP_WINDOW_WIDTH, 425)
+  window:SetTitle(locale.ranking.reward)
+  window:SetCloseOnEscape(true)
+  local scrollList = CreateScrollListCtrl(window, "scrollList", 0)
+  scrollList:Show(true)
+  scrollList:SetUseDoubleClick(true)
+  scrollList:AddAnchor("TOPLEFT", window, sideMargin, titleMargin)
+  scrollList:AddAnchor("TOPRIGHT", window, -sideMargin, titleMargin)
+  scrollList:SetHeight(275)
+  window.scrollList = scrollList
+  local GradeDataSetFunc = function(subItem, data, setValue)
+    if setValue then
+      subItem.bg:SetVisible(false)
+      subItem.icon:SetVisible(false)
+      if data.grade == nil then
+        return
+      end
+      SetRankingGradeDataFunc(subItem.bg, subItem.icon, data.grade)
+      local str = string.format([[
+%s
+%s]], locale.common.from_to(data.scopeFrom, data.scopeTo), locale.ranking.placing)
+      subItem.gradeText:SetText(str)
+      subItem.gradeText:SetHeight(subItem.gradeText:GetTextHeight())
+    else
+      subItem.bg:SetVisible(false)
+      subItem.icon:SetVisible(false)
+    end
+  end
+  local function GradeLayoutSetFunc(widget, rowIndex, colIndex, subItem)
+    CommonGradeLayoutFunc(widget.listCtrl, subItem)
+    local icon = subItem:CreateImageDrawable(TEXTURE_PATH.RANKING_GRADE, "overlay")
+    icon:AddAnchor("CENTER", subItem, 0, -13)
+    subItem.icon = icon
+    local gradeText = subItem:CreateChildWidget("textbox", "gradeText", 0, true)
+    gradeText:SetWidth(subItem:GetWidth() - 10)
+    gradeText.style:SetFontSize(FONT_SIZE.SMALL)
+    gradeText:SetLineSpace(TEXTBOX_LINE_SPACE.SMALL)
+    gradeText:AddAnchor("TOP", subItem.icon, "BOTTOM", 0, 5)
+    ApplyTextColor(gradeText, FONT_COLOR.GRAY)
+  end
+  local function RewardDataSetFunc(subItem, data, setValue)
+    if setValue then
+      subItem.appellationIcon:Show(false)
+      subItem.appellationName:Show(false)
+      subItem.itemIcon:Show(false)
+      subItem.itemName:Show(false)
+      if data.appellation ~= nil then
+        if data.appellation.buffType ~= nil then
+          subItem.appellationIcon:Show(true)
+        end
+        if data.appellation.name ~= nil then
+          subItem.appellationName:Show(true)
+          subItem.appellationName:SetText(data.appellation.name)
+          subItem.appellationName:SetHeight(subItem.appellationName:GetTextHeight())
+        end
+      end
+      if data.itemInfo ~= nil then
+        subItem.itemIcon:Show(true)
+        subItem.itemName:Show(true)
+        subItem.itemIcon:SetItem(data.itemInfo.type, data.itemInfo.grade, data.itemInfo.count)
+        local tip = X2Item:GetItemInfoByType(data.itemInfo.type)
+        subItem.itemName:SetText(tip.name)
+        subItem.itemName:SetHeight(subItem.itemName:GetTextHeight())
+      end
+      if subItem.appellationIcon:IsVisible() and subItem.itemIcon:IsVisible() then
+        subItem.appellationIcon:RemoveAllAnchors()
+        subItem.appellationIcon:AddAnchor("LEFT", subItem, sideMargin / 2, -ICON_SIZE.APPELLAITON / 1.7)
+        subItem.itemIcon:RemoveAllAnchors()
+        subItem.itemIcon:AddAnchor("LEFT", subItem, sideMargin / 2, ICON_SIZE.APPELLAITON / 1.7)
+      elseif subItem.appellationIcon:IsVisible() and not subItem.itemIcon:IsVisible() then
+        subItem.appellationIcon:RemoveAllAnchors()
+        subItem.appellationIcon:AddAnchor("LEFT", subItem, sideMargin / 2, 0)
+      elseif not subItem.appellationIcon:IsVisible() and subItem.appellationName:IsVisible() then
+        if subItem.itemIcon:IsVisible() then
+          subItem.appellationName:RemoveAllAnchors()
+          subItem.appellationName:AddAnchor("LEFT", subItem, sideMargin / 2, -ICON_SIZE.APPELLAITON / 1.7)
+        else
+          subItem.appellationName:RemoveAllAnchors()
+          subItem.appellationName:AddAnchor("LEFT", subItem, sideMargin / 2, 0)
+        end
+      elseif not subItem.appellationIcon:IsVisible() and subItem.itemIcon:IsVisible() then
+        subItem.itemIcon:RemoveAllAnchors()
+        subItem.itemIcon:AddAnchor("LEFT", subItem, sideMargin / 2, 0)
+      end
+    else
+      subItem.appellationIcon:Show(false)
+      subItem.appellationName:Show(false)
+      subItem.itemIcon:Show(false)
+      subItem.itemName:Show(false)
+    end
+  end
+  local function RewardLayoutSetFunc(widget, rowIndex, colIndex, subItem)
+    local appellationIcon = CreateItemIconButton(subItem:GetId() .. ".appellationIcon", subItem)
+    appellationIcon:SetExtent(ICON_SIZE.APPELLAITON, ICON_SIZE.APPELLAITON)
+    appellationIcon:AddAnchor("LEFT", subItem, sideMargin / 2, -ICON_SIZE.APPELLAITON / 1.7)
+    subItem.appellationIcon = appellationIcon
+    local appellationName = subItem:CreateChildWidget("textbox", "appellationName", 0, true)
+    appellationName:SetWidth(150)
+    appellationName:AddAnchor("LEFT", appellationIcon, "RIGHT", 7, 0)
+    appellationName.style:SetAlign(ALIGN_LEFT)
+    ApplyTextColor(appellationName, FONT_COLOR.DEFAULT)
+    local itemIcon = CreateSlotItemButton(subItem:GetId() .. ".itemIcon", subItem)
+    itemIcon:SetExtent(ICON_SIZE.APPELLAITON, ICON_SIZE.APPELLAITON)
+    itemIcon:AddAnchor("LEFT", subItem, sideMargin / 2, ICON_SIZE.APPELLAITON / 1.7)
+    subItem.itemIcon = itemIcon
+    local itemName = subItem:CreateChildWidget("textbox", "itemName", 0, true)
+    itemName:SetWidth(150)
+    itemName:AddAnchor("LEFT", itemIcon, "RIGHT", 7, 0)
+    itemName.style:SetAlign(ALIGN_LEFT)
+    ApplyTextColor(itemName, FONT_COLOR.DEFAULT)
+  end
+  scrollList:InsertColumn(locale.ranking.rank, 80, LCCIT_WINDOW, GradeDataSetFunc, nil, nil, GradeLayoutSetFunc)
+  scrollList:InsertColumn(locale.ranking.reward, 215, LCCIT_WINDOW, RewardDataSetFunc, nil, nil, RewardLayoutSetFunc)
+  scrollList:InsertRows(3, false)
+  DrawListCtrlUnderLine(scrollList.listCtrl)
+  for i = 1, #scrollList.listCtrl.column do
+    SettingListColumn(scrollList.listCtrl, scrollList.listCtrl.column[i])
+    DrawListCtrlColumnSperatorLine(scrollList.listCtrl.column[i], #scrollList.listCtrl.column, i)
+  end
+  for i = 1, scrollList:GetRowCount() do
+    ListCtrlItemGuideLine(scrollList.listCtrl.items, scrollList:GetRowCount())
+  end
+  function window:FillRewardInfo(rewardInfo, periodInfo)
+    self.scrollList:DeleteAllDatas()
+    for i = 1, self.scrollList:GetRowCount() do
+      if scrollList.listCtrl.items[i].line ~= nil then
+        scrollList.listCtrl.items[i].line:SetVisible(false)
+      end
+    end
+    if rewardInfo ~= nil then
+      if #rewardInfo >= self.scrollList:GetRowCount() then
+        for i = 1, self.scrollList:GetRowCount() do
+          if scrollList.listCtrl.items[i].line ~= nil then
+            scrollList.listCtrl.items[i].line:SetVisible(true)
+          end
+        end
+      else
+        for i = 1, #rewardInfo do
+          if scrollList.listCtrl.items[i].line ~= nil then
+            scrollList.listCtrl.items[i].line:SetVisible(true)
+          end
+        end
+      end
+      for i = 1, #rewardInfo do
+        local scopeInfo = {
+          grade = i,
+          scopeTo = rewardInfo[i].scopeTo,
+          scopeFrom = rewardInfo[i].scopeFrom,
+          scopeName = rewardInfo[i].scopeName
+        }
+        self.scrollList:InsertData(i, 1, scopeInfo)
+        local rewardColumnInfo = {
+          appellation = rewardInfo[i].appellation,
+          itemInfo = rewardInfo[i].item
+        }
+        self.scrollList:InsertData(i, 2, rewardColumnInfo)
+      end
+    end
+    local filter = rankingLocale.timeFilter.reward
+    local str = locale.time.GetDateToDateFormat(periodInfo, filter)
+    self.provisionDay:SetText(locale.ranking.rewardProvisionDay(str))
+  end
+  local okButton = window:CreateChildWidget("button", "okButton", 0, true)
+  okButton:SetText(locale.common.ok)
+  okButton:AddAnchor("BOTTOM", window, 0, BUTTON_COMMON_INSET.MESSAGEBOX_BOTTOM)
+  ApplyButtonSkin(okButton, BUTTON_BASIC.DEFAULT)
+  local function OkButtonLeftClickFunc()
+    window:Show(false)
+  end
+  ButtonOnClickHandler(okButton, OkButtonLeftClickFunc)
+  local provisionDay = window:CreateChildWidget("label", "provisionDay", 0, true)
+  provisionDay:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, FONT_SIZE.MIDDLE)
+  provisionDay:AddAnchor("BOTTOM", okButton, "TOP", 0, -sideMargin / 1.5)
+  ApplyTextColor(provisionDay, FONT_COLOR.BLUE)
+  return window
+end
+local function CreateUpperFrame(id, parent)
+  local frame = UIParent:CreateWidget("emptywidget", id, parent)
+  frame:SetExtent(760, 40)
+  frame:AddAnchor("TOPLEFT", parent, 0, 10)
+  local bg = CreateContentBackground(frame, "TYPE5")
+  bg:AddAnchor("TOPLEFT", frame, -sideMargin * 1.5, -8)
+  bg:AddAnchor("BOTTOMRIGHT", frame, sideMargin * 1.5, 8)
+  ApplyTextureColor(bg, TEXTURE_COLOR.BOX_BROWN)
+  local period = CreatePeriodWidget("period", frame)
+  period:AddAnchor("LEFT", frame, sideMargin / 2, 0)
+  local rewardButton = frame:CreateChildWidget("button", "rewardButton", 0, true)
+  rewardButton:SetText(locale.ranking.reward)
+  rewardButton:AddAnchor("RIGHT", frame, 0, 0)
+  ApplyButtonSkin(rewardButton, BUTTON_BASIC.DEFAULT)
+  local refreshButton = frame:CreateChildWidget("button", "refreshButton", 0, true)
+  refreshButton:AddAnchor("RIGHT", rewardButton, "LEFT", -5, 0)
+  ApplyButtonSkin(refreshButton, BUTTON_BASIC.RESET)
+  frame.myCurRecord = frame:CreateChildWidget("label", "myCurRecord", 0, true)
+  frame.myCurRecord:SetAutoResize(true)
+  frame.myCurRecord:SetHeight(FONT_SIZE.LARGE)
+  frame.myCurRecord.style:SetFontSize(FONT_SIZE.LARGE)
+  frame.myCurRecord:AddAnchor("RIGHT", refreshButton, "LEFT", -5, 0)
+  ApplyTextColor(frame.myCurRecord, FONT_COLOR.BLUE)
+  local OnEnter = function(self)
+    if self.tip == nil or self.tip == "" then
+      return
+    end
+    SetHorizonTooltip(self.tip, self, 5)
+  end
+  frame.myCurRecord:SetHandler("OnEnter", OnEnter)
+  local OnClick = function()
+    onlyPlayerRecordUpdate = true
+    X2Rank:RequestPlayerRecords(selectedRankTabIdx)
+  end
+  refreshButton:SetHandler("OnClick", OnClick)
+  function frame:Lock()
+    refreshButton:Enable(false)
+  end
+  function frame:Unlock()
+    refreshButton:Enable(true)
+  end
+  function frame:FillPeriod(periodStr, inProgress)
+    period:SetPeriod(periodStr, inProgress, true)
+  end
+  function frame:FillRewardInfo(rewardInfo, periodInfo)
+    if rewardInfo == nil then
+      rewardButton:Enable(false)
+      return
+    end
+    rewardButton:Enable(true)
+  end
+  return frame
+end
+local function CreateRenewaledRewardWindow(id, parent, desc)
+  local window = CreateWindow(id, nil)
+  window:Show(false)
+  window:SetExtent(POPUP_WINDOW_WIDTH, 452)
+  window:SetTitle(locale.ranking.reward)
+  window:SetCloseOnEscape(true)
+  local divisionWidget = UIParent:CreateWidget("emptywidget", id, window)
+  divisionWidget:AddAnchor("TOPLEFT", window, sideMargin, titleMargin)
+  divisionWidget:AddAnchor("TOPRIGHT", window, -sideMargin, titleMargin)
+  divisionWidget:SetExtent(POPUP_WINDOW_WIDTH, 28)
+  local divisionLabel = divisionWidget:CreateChildWidget("label", "divisionLabel", 0, true)
+  divisionLabel:SetExtent(70, divisionWidget:GetHeight())
+  divisionLabel:AddAnchor("TOPLEFT", divisionWidget, 0, 0)
+  ApplyTextColor(divisionLabel, FONT_COLOR.DEFAULT)
+  divisionLabel:SetText(GetUIText(COMMON_TEXT, "ranking_reward_division"))
+  local divisionNames = {}
+  local divisions = X2Rank:GetRankingRewardDivisions(desc.code)
+  for i = 1, #divisions do
+    divisionNames[i] = divisions[i].division
+    if divisionNames[i] == "global" then
+      divisionNames[i] = X2Locale:LocalizeUiText(COMMON_TEXT, "ranking_division_global")
+    else
+      divisionNames[i] = X2World:GetCurrentWorldName()
+    end
+  end
+  local divisionCombo = CreateComboBox(divisionWidget)
+  divisionCombo:SetExtent(divisionWidget:GetWidth() - divisionLabel:GetWidth() - sideMargin, divisionWidget:GetHeight())
+  divisionCombo:AddAnchor("TOPLEFT", divisionLabel, "TOPRIGHT", 0, 0)
+  divisionCombo.dropdownItem = divisionNames
+  divisionCombo:Select(1)
+  if #divisions <= 0 then
+    divisionCombo:Enable(false)
+  end
+  function divisionCombo:SelectedProc()
+    local selIdx = self:GetSelectedIndex()
+    local rewards = X2Rank:GetRankingRewards(desc.code, divisions[selIdx].division)
+    window:FillRewardInfo(rewards)
+  end
+  local scrollList = CreateScrollListCtrl(window, "scrollList", 0)
+  scrollList:Show(true)
+  scrollList:SetUseDoubleClick(true)
+  scrollList:AddAnchor("TOPLEFT", divisionWidget, "BOTTOMLEFT", 0, 5)
+  scrollList:AddAnchor("TOPRIGHT", divisionWidget, "BOTTOMRIGHT", 0, 5)
+  scrollList:SetHeight(275)
+  local GradeDataSetFunc = function(subItem, data, setValue)
+    subItem.bg:SetVisible(false)
+    subItem.icon:SetVisible(false)
+    if setValue then
+      if data.grade > 0 then
+        SetRankingGradeDataFunc(subItem.bg, subItem.icon, data.grade)
+      end
+      local str = string.format([[
+%s
+%s]], locale.common.from_to(data._begin, data._end), locale.ranking.placing)
+      subItem.gradeText:SetText(str)
+      subItem.gradeText:SetHeight(subItem.gradeText:GetTextHeight())
+    end
+  end
+  local function GradeLayoutSetFunc(widget, rowIndex, colIndex, subItem)
+    CommonGradeLayoutFunc(widget.listCtrl, subItem)
+    local icon = subItem:CreateImageDrawable(TEXTURE_PATH.RANKING_GRADE, "overlay")
+    icon:AddAnchor("CENTER", subItem, 0, -13)
+    subItem.icon = icon
+    local gradeText = subItem:CreateChildWidget("textbox", "gradeText", 0, true)
+    gradeText:SetWidth(subItem:GetWidth() - 10)
+    gradeText.style:SetFontSize(FONT_SIZE.SMALL)
+    gradeText:SetLineSpace(TEXTBOX_LINE_SPACE.SMALL)
+    gradeText:AddAnchor("TOP", subItem.icon, "BOTTOM", 0, 5)
+    ApplyTextColor(gradeText, FONT_COLOR.GRAY)
+  end
+  local RewardDataSetFunc = function(subItem, data, setValue)
+    local show = false
+    if setValue and data.rewardItem ~= nil then
+      subItem.itemIcon:SetItem(data.rewardItem, data.itemGrade, data.count)
+      local tip = X2Item:GetItemInfoByType(data.rewardItem)
+      subItem.itemName:SetText(tip.name)
+      subItem.itemName:SetHeight(subItem.itemName:GetTextHeight())
+      show = true
+    end
+    subItem.itemIcon:Show(show)
+    subItem.itemName:Show(show)
+  end
+  local RewardLayoutSetFunc = function(widget, rowIndex, colIndex, subItem)
+    local itemIcon = CreateSlotItemButton(subItem:GetId() .. ".itemIcon", subItem)
+    itemIcon:AddAnchor("LEFT", subItem, "LEFT", 0, 0)
+    subItem.itemIcon = itemIcon
+    local itemName = subItem:CreateChildWidget("textbox", "itemName", 0, true)
+    itemName:SetWidth(150)
+    itemName:AddAnchor("LEFT", itemIcon, "RIGHT", 7, 0)
+    itemName.style:SetAlign(ALIGN_LEFT)
+    ApplyTextColor(itemName, FONT_COLOR.DEFAULT)
+  end
+  scrollList:InsertColumn(locale.ranking.rank, 80, LCCIT_WINDOW, GradeDataSetFunc, nil, nil, GradeLayoutSetFunc)
+  scrollList:InsertColumn(locale.ranking.reward, 215, LCCIT_WINDOW, RewardDataSetFunc, nil, nil, RewardLayoutSetFunc)
+  scrollList:InsertRows(3, false)
+  DrawListCtrlUnderLine(scrollList.listCtrl)
+  for i = 1, #scrollList.listCtrl.column do
+    SettingListColumn(scrollList.listCtrl, scrollList.listCtrl.column[i])
+    DrawListCtrlColumnSperatorLine(scrollList.listCtrl.column[i], #scrollList.listCtrl.column, i)
+  end
+  for i = 1, scrollList:GetRowCount() do
+    ListCtrlItemGuideLine(scrollList.listCtrl.items, scrollList:GetRowCount())
+  end
+  function window:FillRewardInfo(rewardInfo)
+    scrollList:DeleteAllDatas()
+    for i = 1, scrollList:GetRowCount() do
+      if scrollList.listCtrl.items[i].line ~= nil then
+        scrollList.listCtrl.items[i].line:SetVisible(false)
+      end
+    end
+    local visibleCnt = #rewardInfo >= scrollList:GetRowCount() and scrollList:GetRowCount() or #rewardInfo
+    for i = 1, visibleCnt do
+      if scrollList.listCtrl.items[i].line ~= nil then
+        scrollList.listCtrl.items[i].line:SetVisible(true)
+      end
+    end
+    for i = 1, #rewardInfo do
+      local reward = rewardInfo[i]
+      scrollList:InsertRowData(i, 2, reward)
+    end
+    scrollList:UpdateView()
+  end
+  if #divisions > 0 then
+    local selectedIdx = divisionCombo:GetSelectedIndex()
+    local currentDivision = divisions[selectedIdx].division
+    local rewards = X2Rank:GetRankingRewards(desc.code, currentDivision)
+    window:FillRewardInfo(rewards)
+  end
+  local provisionDay = window:CreateChildWidget("label", "provisionDay", 0, true)
+  provisionDay:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, FONT_SIZE.MIDDLE)
+  provisionDay:AddAnchor("TOP", scrollList, "BOTTOM", 0, 5)
+  ApplyTextColor(provisionDay, FONT_COLOR.BLUE)
+  local seasonoffDate = X2Rank:GetRankingSeasonOffDate(desc.code)
+  local filter = rankingLocale.timeFilter.reward
+  local str = locale.time.GetDateToDateFormat(seasonoffDate, filter)
+  provisionDay:SetText(locale.ranking.rewardProvisionDay(str))
+  local okButton = window:CreateChildWidget("button", "okButton", 0, true)
+  okButton:SetText(locale.common.ok)
+  okButton:AddAnchor("BOTTOM", window, 0, BUTTON_COMMON_INSET.MESSAGEBOX_BOTTOM)
+  ApplyButtonSkin(okButton, BUTTON_BASIC.DEFAULT)
+  local function OkButtonLeftClickFunc()
+    window:Show(false)
+  end
+  ButtonOnClickHandler(okButton, OkButtonLeftClickFunc)
+  return window
+end
+local function CreateBattleFieldRankUpperFrame(id, parent, desc)
+  local frame = UIParent:CreateWidget("emptywidget", id, parent)
+  frame:SetExtent(760, 40)
+  frame:AddAnchor("TOPLEFT", parent, 0, 40)
+  local bg = CreateContentBackground(frame, "TYPE5")
+  bg:AddAnchor("TOPLEFT", frame, -sideMargin * 1.5, 0)
+  bg:AddAnchor("BOTTOMRIGHT", frame, sideMargin * 1.5, 0)
+  ApplyTextureColor(bg, TEXTURE_COLOR.BOX_BROWN)
+  local period = CreatePeriodWidget("period", frame)
+  period:AddAnchor("LEFT", frame, sideMargin / 2, 0)
+  local function OnEnter(self)
+    local seasonInfo = BuildSeasonInformation(desc.code)
+    SetTooltip(seasonInfo.periodTooltip, self)
+  end
+  period:SetHandler("OnEnter", OnEnter)
+  local rewardButton = frame:CreateChildWidget("button", "rewardButton", 0, true)
+  rewardButton:SetText(locale.ranking.reward)
+  rewardButton:AddAnchor("RIGHT", frame, 0, 0)
+  ApplyButtonSkin(rewardButton, BUTTON_BASIC.DEFAULT)
+  local divisions = X2Rank:GetRankingRewardDivisions(desc.code)
+  if #divisions <= 0 then
+    rewardButton:Enable(false)
+  else
+    do
+      local rewardDialog = CreateRenewaledRewardWindow("reward", parent, desc)
+      rewardDialog:AddAnchor("RIGHT", parent, "RIGHT", 0, 0)
+      local function RewardButtonLeftClickFunc(self)
+        rewardDialog:AddAnchor("TOP", self, "BOTTOM", 0, sideMargin / 2)
+        rewardDialog:Show(not rewardDialog:IsVisible())
+      end
+      ButtonOnClickHandler(rewardButton, RewardButtonLeftClickFunc)
+    end
+  end
+  local refreshButton = frame:CreateChildWidget("button", "refreshButton", 0, true)
+  refreshButton:AddAnchor("RIGHT", frame.rewardButton, "LEFT", -5, 0)
+  ApplyButtonSkin(refreshButton, BUTTON_BASIC.RESET)
+  local myCurRecord = frame:CreateChildWidget("label", "myCurRecord", 0, true)
+  myCurRecord:SetAutoResize(true)
+  myCurRecord:SetHeight(FONT_SIZE.LARGE)
+  myCurRecord.style:SetFontSize(FONT_SIZE.LARGE)
+  myCurRecord:AddAnchor("RIGHT", refreshButton, "LEFT", -5, 0)
+  ApplyTextColor(myCurRecord, FONT_COLOR.BLUE)
+  local tooltipMyScore
+  local function OnEnter(self)
+    SetTooltip(tooltipMyScore, self)
+  end
+  myCurRecord:SetHandler("OnEnter", OnEnter)
+  local function OnClick()
+    parent:RefreshBattleFieldRanking()
+  end
+  refreshButton:SetHandler("OnClick", OnClick)
+  function frame:Lock()
+    refreshButton:Enable(false)
+  end
+  function frame:Unlock()
+    refreshButton:Enable(true)
+  end
+  function frame:RefreshSeasonState()
+    local seasonInfo = BuildSeasonInformation(desc.code)
+    period:SetPeriod(seasonInfo.periodStr, seasonInfo.onSeason, true)
+  end
+  function frame:FillMyRecord(myScore)
+    if myScore.ranking > 0 then
+      tooltipMyScore = X2Locale:LocalizeUiText(COMMON_TEXT, "ranking_tip_battle_field_score_mine", tostring(myScore.ranking))
+    else
+      tooltipMyScore = X2Locale:LocalizeUiText(COMMON_TEXT, "ranking_tip_gear_score_mine", GetUIText(COMMON_TEXT, "no_ranking"))
+    end
+    local str = string.format("%s: %d", GetUIText(RANKING_TEXT, "my_cur_record"), myScore.score)
+    myCurRecord:SetText(str)
+  end
+  function frame:FillRewardInfo(rewardInfo, periodInfo)
+    if rewardInfo == nil then
+      rewardButton:Enable(false)
+    else
+      upperFrame.rewardButton:Enable(true)
+    end
+  end
+  return frame
+end
+local function CreateGearScoreRankUpperFrame(id, parent, desc)
+  local frame = UIParent:CreateWidget("emptywidget", id, parent)
+  frame:SetExtent(760, 40)
+  frame:AddAnchor("TOPLEFT", parent, 0, 40)
+  local bg = CreateContentBackground(frame, "TYPE5")
+  bg:AddAnchor("TOPLEFT", frame, -sideMargin * 1.5, 0)
+  bg:AddAnchor("BOTTOMRIGHT", frame, sideMargin * 1.5, 0)
+  ApplyTextureColor(bg, TEXTURE_COLOR.BOX_BROWN)
+  local period = CreatePeriodWidget("period", frame)
+  period:AddAnchor("LEFT", frame, sideMargin / 2, 0)
+  local function OnEnter(self)
+    local seasonInfo = BuildSeasonInformation(desc.code)
+    SetTooltip(seasonInfo.periodTooltip, self)
+  end
+  period:SetHandler("OnEnter", OnEnter)
+  local rewardButton = frame:CreateChildWidget("button", "rewardButton", 0, true)
+  rewardButton:SetText(locale.ranking.reward)
+  rewardButton:AddAnchor("RIGHT", frame, 0, 0)
+  ApplyButtonSkin(rewardButton, BUTTON_BASIC.DEFAULT)
+  local divisions = X2Rank:GetRankingRewardDivisions(desc.code)
+  if #divisions <= 0 then
+    rewardButton:Enable(false)
+  else
+    do
+      local rewardDialog = CreateRenewaledRewardWindow("reward", parent, desc)
+      rewardDialog:AddAnchor("RIGHT", parent, "RIGHT", 0, 0)
+      local function RewardButtonLeftClickFunc(self)
+        rewardDialog:AddAnchor("TOP", self, "BOTTOM", 0, sideMargin / 2)
+        rewardDialog:Show(not rewardDialog:IsVisible())
+      end
+      ButtonOnClickHandler(rewardButton, RewardButtonLeftClickFunc)
+    end
+  end
+  local refreshButton = frame:CreateChildWidget("button", "refreshButton", 0, true)
+  refreshButton:AddAnchor("RIGHT", rewardButton, "LEFT", -5, 0)
+  ApplyButtonSkin(refreshButton, BUTTON_BASIC.RESET)
+  local myCurRecord = frame:CreateChildWidget("label", "myCurRecord", 0, true)
+  myCurRecord:SetAutoResize(true)
+  myCurRecord:SetHeight(FONT_SIZE.LARGE)
+  myCurRecord.style:SetFontSize(FONT_SIZE.LARGE)
+  myCurRecord:AddAnchor("RIGHT", refreshButton, "LEFT", -5, 0)
+  ApplyTextColor(myCurRecord, FONT_COLOR.BLUE)
+  local tooltipMyScore
+  local function OnEnter(self)
+    SetTooltip(tooltipMyScore, self)
+  end
+  myCurRecord:SetHandler("OnEnter", OnEnter)
+  local function OnClick()
+    parent:RefreshGearRanking()
+  end
+  refreshButton:SetHandler("OnClick", OnClick)
+  function frame:Lock()
+    refreshButton:Enable(false)
+  end
+  function frame:Unlock()
+    refreshButton:Enable(true)
+  end
+  function frame:RefreshSeasonState()
+    local seasonInfo = BuildSeasonInformation(desc.code)
+    period:SetPeriod(seasonInfo.periodStr, seasonInfo.onSeason, false)
+  end
+  function frame:FillMyRecord(myScore)
+    if myScore.ranking > 0 then
+      tooltipMyScore = X2Locale:LocalizeUiText(COMMON_TEXT, "ranking_tip_gear_score_mine", tostring(myScore.ranking))
+    else
+      tooltipMyScore = X2Locale:LocalizeUiText(COMMON_TEXT, "ranking_tip_gear_score_mine", GetUIText(COMMON_TEXT, "no_ranking"))
+    end
+    local score = myScore.gearScore
+    local bareScore = myScore.bareScore
+    local extScore = score - bareScore
+    local str = string.format("%s: %d (%d + %d)", GetUIText(RANKING_TEXT, "my_cur_record"), score, bareScore, extScore)
+    myCurRecord:SetText(str)
+  end
+  function frame:FillRewardInfo(rewardInfo, periodInfo)
+    if rewardInfo == nil then
+      rewardButton:Enable(false)
+      return
+    end
+    upperFrame.rewardButton:Enable(true)
+  end
+  return frame
+end
+local function CreateItemRankUpperFrame(id, parent, desc)
+  local frame = UIParent:CreateWidget("emptywidget", id, parent)
+  frame:SetExtent(760, 40)
+  frame:AddAnchor("TOPLEFT", parent, 0, 40)
+  local bg = CreateContentBackground(frame, "TYPE5")
+  bg:AddAnchor("TOPLEFT", frame, -sideMargin * 1.5, 0)
+  bg:AddAnchor("BOTTOMRIGHT", frame, sideMargin * 1.5, 0)
+  ApplyTextureColor(bg, TEXTURE_COLOR.BOX_BROWN)
+  local period = CreatePeriodWidget("period", frame)
+  period:AddAnchor("LEFT", frame, sideMargin / 2, 0)
+  local function OnEnter(self)
+    local seasonInfo = BuildSeasonInformation(desc.code)
+    SetTooltip(seasonInfo.periodTooltip, self)
+  end
+  period:SetHandler("OnEnter", OnEnter)
+  local rewardButton = frame:CreateChildWidget("button", "rewardButton", 0, true)
+  rewardButton:SetText(locale.ranking.reward)
+  rewardButton:AddAnchor("RIGHT", frame, 0, 0)
+  ApplyButtonSkin(rewardButton, BUTTON_BASIC.DEFAULT)
+  local divisions = X2Rank:GetRankingRewardDivisions(desc.code)
+  if #divisions <= 0 then
+    rewardButton:Enable(false)
+  else
+    do
+      local rewardDialog = CreateRenewaledRewardWindow("reward", parent, desc)
+      rewardDialog:AddAnchor("RIGHT", parent, "RIGHT", 0, 0)
+      local function RewardButtonLeftClickFunc(self)
+        rewardDialog:AddAnchor("TOP", self, "BOTTOM", 0, sideMargin / 2)
+        rewardDialog:Show(not rewardDialog:IsVisible())
+      end
+      ButtonOnClickHandler(rewardButton, RewardButtonLeftClickFunc)
+    end
+  end
+  local refreshButton = frame:CreateChildWidget("button", "refreshButton", 0, true)
+  refreshButton:AddAnchor("RIGHT", rewardButton, "LEFT", -5, 0)
+  ApplyButtonSkin(refreshButton, BUTTON_BASIC.RESET)
+  local myCurRecord = frame:CreateChildWidget("label", "myCurRecord", 0, true)
+  myCurRecord:SetAutoResize(true)
+  myCurRecord:SetHeight(FONT_SIZE.LARGE)
+  myCurRecord.style:SetFontSize(FONT_SIZE.LARGE)
+  myCurRecord:AddAnchor("RIGHT", refreshButton, "LEFT", -5, 0)
+  ApplyTextColor(myCurRecord, FONT_COLOR.BLUE)
+  local tooltipMyScore = ""
+  local function OnEnter(self)
+    SetTooltip(tooltipMyScore, self)
+  end
+  myCurRecord:SetHandler("OnEnter", OnEnter)
+  local function OnClick()
+    parent.RefreshItemRanking()
+  end
+  refreshButton:SetHandler("OnClick", OnClick)
+  function frame:Lock()
+    refreshButton:Enable(false)
+  end
+  function frame:Unlock()
+    refreshButton:Enable(true)
+  end
+  function frame:FillMyRecord(myScore)
+    local texString
+    if myScore.code == "ranking_item_onehand" then
+      texString = "ranking_tip_item_rank_1_mine"
+    elseif myScore.code == "ranking_item_twohand" then
+      texString = "ranking_tip_item_rank_2_mine"
+    elseif myScore.code == "ranking_item_bow" then
+      texString = "ranking_tip_item_rank_3_mine"
+    end
+    if myScore.ranking > 0 then
+      tooltipMyScore = X2Locale:LocalizeUiText(COMMON_TEXT, texString, tostring(myScore.ranking))
+    else
+      tooltipMyScore = X2Locale:LocalizeUiText(COMMON_TEXT, texString, GetUIText(COMMON_TEXT, "no_ranking"))
+    end
+    local text = string.format("%s : %d (%d + %d)", GetUIText(RANKING_TEXT, "my_cur_record"), myScore.totalScore, myScore.bareScore, myScore.totalScore - myScore.bareScore)
+    myCurRecord:SetText(text)
+  end
+  function frame:RefreshSeasonState()
+    local seasonInfo = BuildSeasonInformation(desc.code)
+    period:SetPeriod(seasonInfo.periodStr, seasonInfo.onSeason, false)
+  end
+  return frame
+end
+local function CreateExpeditionUpperFrame(id, parent, desc)
+  local frame = UIParent:CreateWidget("emptywidget", id, parent)
+  frame:SetExtent(760, 40)
+  frame:AddAnchor("TOPLEFT", parent, 0, 40)
+  local bg = CreateContentBackground(frame, "TYPE5")
+  bg:AddAnchor("TOPLEFT", frame, -sideMargin * 1.5, 0)
+  bg:AddAnchor("BOTTOMRIGHT", frame, sideMargin * 1.5, 0)
+  ApplyTextureColor(bg, TEXTURE_COLOR.BOX_BROWN)
+  local period = CreatePeriodWidget("period", frame)
+  period:AddAnchor("LEFT", frame, sideMargin / 2, 0)
+  local function OnEnter(self)
+    local seasonInfo = BuildSeasonInformation(desc.code)
+    SetTooltip(seasonInfo.periodTooltip, self)
+  end
+  period:SetHandler("OnEnter", OnEnter)
+  local refreshButton = frame:CreateChildWidget("button", "refreshButton", 0, true)
+  refreshButton:AddAnchor("RIGHT", frame, "RIGHT", -5, 0)
+  ApplyButtonSkin(refreshButton, BUTTON_BASIC.RESET)
+  local function OnClick()
+    parent.RefreshExpeditionRanking()
+  end
+  refreshButton:SetHandler("OnClick", OnClick)
+  function frame:Lock()
+    refreshButton:Enable(false)
+  end
+  function frame:Unlock()
+    refreshButton:Enable(true)
+  end
+  function frame:FillMyRecord(category, myScore)
+  end
+  function frame:RefreshSeasonState()
+    local seasonInfo = BuildSeasonInformation(desc.code)
+    period:SetPeriod(seasonInfo.periodStr, seasonInfo.onSeason, true)
+  end
+  return frame
+end
+local function CreateLegacyRankingListCtrl(id, parent, height)
+  local frame = CreateScrollListCtrl(parent, id, 0)
+  frame:Show(true)
+  frame:SetExtent(760, height)
+  local GradeDataSetFunc = function(subItem, data, setValue)
+    if setValue then
+      subItem.bg:SetVisible(false)
+      if data.value == nil then
+        return
+      end
+      SetRankingGradeDataFunc(subItem.bg, subItem.icon, data.value)
+      subItem.icon:SetVisible(data.isStartIndex)
+    else
+      subItem.bg:SetVisible(false)
+      if subItem.icon ~= nil then
+        subItem.icon:SetVisible(false)
+      end
+    end
+  end
+  local function GradeLayoutSetFunc(widget, rowIndex, colIndex, subItem)
+    CommonGradeLayoutFunc(widget.listCtrl, subItem)
+    local icon = subItem:CreateImageDrawable(TEXTURE_PATH.RANKING_GRADE, "overlay")
+    icon:AddAnchor("CENTER", subItem, 2, 0)
+    subItem.icon = icon
+  end
+  local function CommonDataSetFunc(subItem, data, setValue)
+    if setValue then
+      subItem:SetText(tostring(data.value))
+      ChangeColorForPlayer(subItem, data.name, data.worldName)
+    else
+      subItem:SetText("")
+    end
+  end
+  local function NameDataSetFunc(subItem, data, setValue)
+    if setValue then
+      subItem:SetText(tostring(data.name))
+      ChangeColorForPlayer(subItem, data.name, data.worldName)
+    else
+      subItem:SetText("")
+    end
+  end
+  local function ValueDataSetFunc(subItem, data, setValue)
+    if setValue then
+      local str = ""
+      if data.v1 ~= nil and data.v2 ~= nil then
+        if data.rankKind == RANKING.TAB_FISH_LENGTH or data.rankKind == RANKING.TAB_FISH_WEIGHT or data.rankKind == RANKING.TAB_GOODS_VALUE then
+          str = string.format("%s", data.v1)
+        else
+          str = string.format("%s / %s", data.v1, data.v2)
+        end
+      else
+        str = string.format("%s", data.v1 or data.v2)
+      end
+      subItem:SetText(str)
+      ChangeColorForPlayer(subItem, data.name, data.worldName)
+    else
+      subItem:SetText("")
+    end
+  end
+  local function ServerNameDataSetFunc(subItem, data, setValue)
+    if setValue then
+      subItem:SetText(tostring(data.worldName))
+      ChangeColorForPlayer(subItem, data.name, data.worldName)
+    else
+      subItem:SetText("")
+    end
+  end
+  local function RecordDataSetFunc(subItem, data, setValue)
+    if setValue then
+      ChangeColorForPlayer(subItem, data.name, data.worldName)
+      if data.month == nil and data.day == nil and data.hour == nil and data.minute == nil and data.second == nil then
+        subItem:SetText("-")
+        return
+      end
+      local str = rankingLocale.timeFilter.record(data)
+      subItem:SetText(str)
+    else
+      subItem:SetText("")
+    end
+  end
+  local columnWidth = rankingLocale.columnWidth
+  frame:InsertColumn(locale.ranking.rank, columnWidth[1], LCCIT_WINDOW, GradeDataSetFunc, nil, nil, GradeLayoutSetFunc)
+  frame:InsertColumn(locale.ranking.placing, columnWidth[2], LCCIT_STRING, CommonDataSetFunc, nil, nil, nil)
+  frame:InsertColumn(locale.common.name, columnWidth[3], LCCIT_CHARACTER_NAME, NameDataSetFunc, nil, nil, nil)
+  frame:InsertColumn(locale.tooltip.hour, columnWidth[4], LCCIT_STRING, ValueDataSetFunc, nil, nil, nil)
+  frame:InsertColumn(locale.server.name, columnWidth[5], LCCIT_STRING, ServerNameDataSetFunc, nil, nil, nil, nil)
+  frame:InsertColumn(locale.ranking.recordTime, columnWidth[6], LCCIT_STRING, RecordDataSetFunc, nil, nil, nil)
+  frame:InsertRows(20, false)
+  DrawListCtrlUnderLine(frame.listCtrl)
+  local valueColumn = frame.listCtrl.column[4]
+  local OnEnter = function(self)
+    if self.tip == nil or self.tip == "" then
+      return
+    end
+    SetTooltip(self.tip, self)
+  end
+  valueColumn:SetHandler("OnEnter", OnEnter)
+  for i = 1, #frame.listCtrl.column do
+    SettingListColumn(frame.listCtrl, frame.listCtrl.column[i])
+    DrawListCtrlColumnSperatorLine(frame.listCtrl.column[i], #frame.listCtrl.column, i)
+    frame.listCtrl.column[i]:Enable(false)
+    SetButtonFontColor(frame.listCtrl.column[i], GetButtonDefaultFontColor_V2())
+  end
+  local insetInfo = {leftInset = 70, rightInset = 10}
+  for i = 1, frame:GetRowCount() do
+    ListCtrlItemGuideLine(frame.listCtrl.items, frame:GetRowCount(), insetInfo)
+  end
+  local GetGradeInfo = function(rankInfo, maxPeopleCount)
+    local nonePeopleGrade
+    for i = #rankInfo, 1, -1 do
+      if maxPeopleCount >= rankInfo[i].from and maxPeopleCount <= rankInfo[i].to then
+        nonePeopleGrade = i + 1
+        break
+      end
+    end
+    if nonePeopleGrade == nil then
+      nonePeopleGrade = 1
+    end
+    return #rankInfo, nonePeopleGrade
+  end
+  local scopeIndex = 0
+  local function GetScopeValue(scopeInfo, index)
+    if #scopeInfo == 0 then
+      return "-"
+    end
+    index = index + 1
+    scopeIndex = index
+    if index > #scopeInfo then
+      return "-"
+    else
+      return string.format("%d \226\150\188", scopeInfo[index].v1)
+    end
+  end
+  function frame:FillSnapshot(snapshotInfo, snapshotScopeInfo)
+    self:DeleteAllDatas()
+    scopeIndex = 0
+    local rankInfo = snapshotScopeInfo.rankScopes
+    local scopeInfo = snapshotScopeInfo.snapshotScopes
+    local rankKind = X2Rank:GetRankKind(selectedRankTabIdx)
+    for i = 1, self:GetRowCount() do
+      if self.listCtrl.items[i].line ~= nil then
+        self.listCtrl.items[i].line:SetVisible(false)
+      end
+    end
+    local visibleCnt = #snapshotInfo >= self:GetRowCount() and self:GetRowCount() or #snapshotInfo
+    for i = 1, visibleCnt do
+      if self.listCtrl.items[i].line ~= nil then
+        self.listCtrl.items[i].line:SetVisible(true)
+      end
+    end
+    local index
+    for i = 1, #snapshotInfo do
+      if snapshotInfo[i] ~= nil then
+        local gradeInfo = {
+          value = GetPlayerGrade(rankInfo, i),
+          isStartIndex = GetGradeStartIndex(rankInfo, i),
+          name = snapshotInfo[i].name,
+          worldName = snapshotInfo[i].worldName
+        }
+        self:InsertData(i, 1, gradeInfo)
+        local rankInfo = {
+          value = i,
+          name = snapshotInfo[i].name,
+          worldName = snapshotInfo[i].worldName
+        }
+        self:InsertData(i, 2, rankInfo)
+        local nameInfo = {
+          name = snapshotInfo[i].name,
+          worldName = snapshotInfo[i].worldName
+        }
+        self:InsertData(i, 3, nameInfo)
+        local valueInfo = {
+          v1 = snapshotInfo[i].v1,
+          v2 = snapshotInfo[i].v2,
+          rankKind = rankKind,
+          name = snapshotInfo[i].name,
+          worldName = snapshotInfo[i].worldName
+        }
+        self:InsertData(i, 4, valueInfo)
+        local worldInfo = {
+          name = snapshotInfo[i].name,
+          worldName = snapshotInfo[i].worldName
+        }
+        self:InsertData(i, 5, worldInfo)
+        local recordTimeInfo = {
+          year = snapshotInfo[i].year,
+          month = snapshotInfo[i].month,
+          day = snapshotInfo[i].day,
+          hour = snapshotInfo[i].hour,
+          minute = snapshotInfo[i].minute,
+          second = snapshotInfo[i].second,
+          name = snapshotInfo[i].name,
+          worldName = snapshotInfo[i].worldName
+        }
+        self:InsertData(i, 6, recordTimeInfo)
+      end
+      index = i
+    end
+    local gradeCount, noneRankGrade = GetGradeInfo(rankInfo, #snapshotInfo)
+    if gradeCount ~= noneRankGrade then
+      if index == nil then
+        index = 0
+      end
+      local grade = noneRankGrade
+      local startIndex = index + 1
+      for i = startIndex, startIndex + (gradeCount - noneRankGrade) do
+        local gradeInfo = {value = grade, isStartIndex = true}
+        self:InsertData(i, 1, gradeInfo)
+        local rankInfo = {value = "-"}
+        self:InsertData(i, 2, rankInfo)
+        local nameInfo = {name = "-", worldName = nil}
+        self:InsertData(i, 3, nameInfo)
+        local valueInfo = {
+          v1 = GetScopeValue(scopeInfo, scopeIndex),
+          v2 = nil
+        }
+        self:InsertData(i, 4, valueInfo)
+        local worldInfo = {worldName = "-"}
+        self:InsertData(i, 5, worldInfo)
+        local recordTimeInfo = {
+          year = nil,
+          month = nil,
+          day = nil,
+          hour = nil,
+          minute = nil,
+          second = nil
+        }
+        self:InsertData(i, 6, recordTimeInfo)
+        grade = grade + 1
+      end
+    end
+  end
+  return frame
+end
+local function CreateBattleFieldRankingListCtrl(id, parent, height, desc)
+  local frame = CreateScrollListCtrl(parent, id, 0)
+  frame:Show(true)
+  frame:SetExtent(760, height)
+  local GradeDataSetFunc = function(subItem, data, setValue)
+    if setValue then
+      subItem.bg:SetVisible(false)
+      if data.grade > 0 then
+        SetRankingGradeDataFunc(subItem.bg, subItem.icon, data.grade)
+      end
+      subItem.icon:SetVisible(data.gradeLeader)
+    else
+      subItem.bg:SetVisible(false)
+      if subItem.icon ~= nil then
+        subItem.icon:SetVisible(false)
+      end
+    end
+  end
+  local function GradeLayoutSetFunc(widget, rowIndex, colIndex, subItem)
+    CommonGradeLayoutFunc(widget.listCtrl, subItem)
+    local icon = subItem:CreateImageDrawable(TEXTURE_PATH.RANKING_GRADE, "overlay")
+    icon:AddAnchor("CENTER", subItem, 2, 0)
+    subItem.icon = icon
+  end
+  local function RankDataSetFunc(subItem, data, setValue)
+    if setValue then
+      subItem:SetText(tostring(data.rank))
+      ChangeColorForPlayer(subItem, data.name, data.worldName)
+    else
+      subItem:SetText("")
+    end
+  end
+  local function NameDataSetFunc(subItem, data, setValue)
+    if setValue then
+      subItem:SetText(tostring(data.name))
+      ChangeColorForPlayer(subItem, data.name, data.worldName)
+    else
+      subItem:SetText("")
+    end
+  end
+  local function ScoreSetFunc(subItem, data, setValue)
+    if setValue then
+      subItem:SetText(tostring(data.rating))
+      ChangeColorForPlayer(subItem, data.name, data.worldName)
+    else
+      subItem:SetText("")
+    end
+  end
+  local function WinRatioSetFunc(subItem, data, setValue)
+    if setValue then
+      local str = string.format("%.1f%%", data.win_ratio)
+      subItem:SetText(str)
+      ChangeColorForPlayer(subItem, data.name, data.worldName)
+    else
+      subItem:SetText("")
+    end
+  end
+  local function KillSetFunc(subItem, data, setValue)
+    if setValue then
+      local str = string.format("%d", data.kill_count)
+      subItem:SetText(str)
+      ChangeColorForPlayer(subItem, data.name, data.worldName)
+    else
+      subItem:SetText("")
+    end
+  end
+  local function DeathSetFunc(subItem, data, setValue)
+    if setValue then
+      local str = string.format("%d", data.death_count)
+      subItem:SetText(str)
+      ChangeColorForPlayer(subItem, data.name, data.worldName)
+    else
+      subItem:SetText("")
+    end
+  end
+  local function ServerNameDataSetFunc(subItem, data, setValue)
+    if setValue then
+      subItem:SetText(tostring(data.worldName))
+      ChangeColorForPlayer(subItem, data.name, data.worldName)
+    else
+      subItem:SetText("")
+    end
+  end
+  local columnWidth = rankingLocale.battlefieldRankColumnWidth
+  frame:InsertColumn(locale.ranking.rank, columnWidth[1], LCCIT_WINDOW, GradeDataSetFunc, nil, nil, GradeLayoutSetFunc)
+  frame:InsertColumn(locale.ranking.placing, columnWidth[2], LCCIT_STRING, RankDataSetFunc, nil, nil, nil)
+  frame:InsertColumn(locale.common.name, columnWidth[3], LCCIT_CHARACTER_NAME, NameDataSetFunc, nil, nil, nil)
+  frame:InsertColumn(GetUIText(COMMON_TEXT, "score"), columnWidth[4], LCCIT_STRING, ScoreSetFunc, nil, nil, nil)
+  frame:InsertColumn(GetUIText(COMMON_TEXT, "win_ratio"), columnWidth[5], LCCIT_STRING, WinRatioSetFunc, nil, nil, nil)
+  frame:InsertColumn(GetUIText(COMMON_TEXT, "kill_count"), columnWidth[6], LCCIT_STRING, KillSetFunc, nil, nil, nil)
+  frame:InsertColumn(GetUIText(COMMON_TEXT, "death_count"), columnWidth[7], LCCIT_STRING, DeathSetFunc, nil, nil, nil)
+  frame:InsertColumn("", columnWidth[8], LCCIT_STRING, ServerNameDataSetFunc, nil, nil, nil, nil)
+  frame:InsertRows(20, false)
+  DrawListCtrlUnderLine(frame.listCtrl)
+  local worldCombo, callbackWorldSelected
+  function frame:RegisterCallbackWorldSelectedFunc(func)
+    callbackWorldSelected = func
+  end
+  local worldNames = BuildWorldName(desc)
+  local function WorldLayoutFunc(column)
+    worldCombo = CreateComboBox(column)
+    worldCombo:SetExtent(column:GetWidth() - 8, column:GetHeight() - 8)
+    worldCombo:AddAnchor("TOPLEFT", column, "TOPLEFT", 4, 4)
+    worldCombo.dropdownItem = worldNames
+    worldCombo:Select(1)
+    function worldCombo:SelectedProc(selIdx)
+      callbackWorldSelected(selIdx)
+    end
+  end
+  function frame:GetSelectedWorldIdx()
+    return worldCombo:GetSelectedIndex()
+  end
+  for i = 1, #frame.listCtrl.column do
+    SettingListColumn(frame.listCtrl, frame.listCtrl.column[i])
+    DrawListCtrlColumnSperatorLine(frame.listCtrl.column[i], #frame.listCtrl.column, i)
+    if i == 4 then
+      local OnEnter = function(self)
+        SetTooltip(GetUIText(COMMON_TEXT, "ranking_tip_battle_field_score"), self)
+      end
+      frame.listCtrl.column[i]:SetHandler("OnEnter", OnEnter)
+    end
+    if i == 8 then
+      WorldLayoutFunc(frame.listCtrl.column[i])
+    end
+    frame.listCtrl.column[i]:Enable(false)
+    SetButtonFontColor(frame.listCtrl.column[i], GetButtonDefaultFontColor_V2())
+  end
+  local insetInfo = {leftInset = 70, rightInset = 10}
+  for i = 1, frame:GetRowCount() do
+    ListCtrlItemGuideLine(frame.listCtrl.items, frame:GetRowCount(), insetInfo)
+  end
+  function frame:FillRankData(rankDatas)
+    self:DeleteAllDatas()
+    for i = 1, self:GetRowCount() do
+      if self.listCtrl.items[i].line ~= nil then
+        self.listCtrl.items[i].line:SetVisible(false)
+      end
+    end
+    local visibleCnt = #rankDatas >= self:GetRowCount() and self:GetRowCount() or #rankDatas
+    for i = 1, visibleCnt do
+      if self.listCtrl.items[i].line ~= nil then
+        self.listCtrl.items[i].line:SetVisible(true)
+      end
+    end
+    for i = 1, #rankDatas do
+      self:InsertRowData(i, #frame.listCtrl.column, rankDatas[i])
+      do
+        local function OnEnter(self)
+          local rankData = frame:GetDataByViewIndex(i, 1)
+          if rankData == nil then
+            return
+          end
+          local data = X2Rank:GetRankerInformation(rankData.worldID, rankData.charID)
+          if data ~= nil then
+            local abilityNames = {
+              data.ability_name_0,
+              data.ability_name_1,
+              data.ability_name_2
+            }
+            local abilities = ""
+            for index = 1, #abilityNames do
+              if abilityNames[index] ~= "invalid ability" then
+                if abilities == "" then
+                  abilities = locale.common.abilityCategory[abilityNames[index]]
+                else
+                  abilities = string.format("%s, %s", abilities, locale.common.abilityCategory[abilityNames[index]])
+                end
+              end
+            end
+            local abilityIndex = {
+              data.ability_idx_0,
+              data.ability_idx_1,
+              data.ability_idx_2
+            }
+            local str = ""
+            if data.expedition ~= "" then
+              str = makeTooltip(str, "%s%s: %s", FONT_COLOR_HEX.SOFT_BROWN, locale.unitFrame.expedition, tostring(data.expedition))
+            end
+            str = makeTooltip(str, "%s%s: %s (%s)", FONT_COLOR_HEX.SOFT_BROWN, locale.community.job, GetCombinedAbilityName(abilityIndex[1], abilityIndex[2], abilityIndex[3]), abilities)
+            str = makeTooltip(str, "%s%s: %s", FONT_COLOR_HEX.BRIGHT_GREEN, locale.tooltip.hp, tostring(data.health))
+            str = makeTooltip(str, "%s%s: %s", FONT_COLOR_HEX.BRIGHT_GREEN, locale.tooltip.mp, tostring(data.mana))
+            str = makeTooltip(str, "%s%s: %s", FONT_COLOR_HEX.BRIGHT_BULE, GetUIText(COMMON_TEXT, "gear_score"), tostring(data.gear))
+            str = makeTooltip(str, "%s%s: %s", FONT_COLOR_HEX.SOFT_BROWN, locale.tooltip.leadership, tostring(data.leadership))
+            str = makeTooltip(str, "%s%s: %s", FONT_COLOR_HEX.SOFT_BROWN, locale.unitFrame.pvp_honor_point, tostring(data.pvp_honor))
+            str = makeTooltip(str, "%s%s: %s", FONT_COLOR_HEX.SOFT_BROWN, locale.unitFrame.pvp_kill_point, tostring(data.pvp_kill_count))
+            ShowUnitFrameTooltipCursor(self, str)
+          end
+        end
+        local OnLeave = function(self)
+          HideUnitFrameTooltip()
+        end
+        local function OnClick(self, arg)
+          HideUnitFrameTooltip()
+          if arg == "RightButton" and X2Rank:IsRankerQueriable(desc.code) == true then
+            local rankData = frame:GetDataByViewIndex(i, 1)
+            if rankData ~= nil then
+              ActivateRankerPopupMenu(self, rankData.worldID, rankData.charID, rankData.name)
+            end
+          end
+        end
+        if self.listCtrl.items[i] ~= nil then
+          self.listCtrl.items[i]:SetHandler("OnEnter", OnEnter)
+          self.listCtrl.items[i]:SetHandler("OnLeave", OnLeave)
+          self.listCtrl.items[i]:SetHandler("OnClick", OnClick)
+        end
+      end
+    end
+    self:UpdateView()
+  end
+  return frame
+end
+local function CreateGearScoreRankingListCtrl(id, parent, height, desc)
+  local frame = CreateScrollListCtrl(parent, id, 0)
+  frame:Show(true)
+  frame:SetExtent(760, height)
+  local GradeDataSetFunc = function(subItem, data, setValue)
+    if setValue then
+      subItem.bg:SetVisible(false)
+      if data.grade > 0 then
+        SetRankingGradeDataFunc(subItem.bg, subItem.icon, data.grade)
+      end
+      subItem.icon:SetVisible(data.gradeLeader)
+    else
+      subItem.bg:SetVisible(false)
+      if subItem.icon ~= nil then
+        subItem.icon:SetVisible(false)
+      end
+    end
+  end
+  local function GradeLayoutSetFunc(widget, rowIndex, colIndex, subItem)
+    CommonGradeLayoutFunc(widget.listCtrl, subItem)
+    local icon = subItem:CreateImageDrawable(TEXTURE_PATH.RANKING_GRADE, "overlay")
+    icon:AddAnchor("CENTER", subItem, 2, 0)
+    subItem.icon = icon
+  end
+  local function RankDataSetFunc(subItem, data, setValue)
+    if setValue then
+      subItem:SetText(tostring(data.rank))
+      ChangeColorForPlayer(subItem, data.name, data.worldName)
+    else
+      subItem:SetText("")
+    end
+  end
+  local function NameDataSetFunc(subItem, data, setValue)
+    if setValue then
+      subItem:SetText(tostring(data.name))
+      ChangeColorForPlayer(subItem, data.name, data.worldName)
+    else
+      subItem:SetText("")
+    end
+  end
+  local function ScoreSetFunc(subItem, data, setValue)
+    if setValue then
+      subItem:SetText(tostring(data.v1))
+      ChangeColorForPlayer(subItem, data.name, data.worldName)
+    else
+      subItem:SetText("")
+    end
+  end
+  local function DetailScoreSetFunc(subItem, data, setValue)
+    if setValue then
+      local score = tonumber(data.v1)
+      local bareScore = tonumber(data.v2)
+      local extScore = score - bareScore
+      local str = string.format("%d + %d", bareScore, extScore)
+      subItem:SetText(str)
+      ChangeColorForPlayer(subItem, data.name, data.worldName)
+    else
+      subItem:SetText("")
+    end
+  end
+  local function ServerNameDataSetFunc(subItem, data, setValue)
+    if setValue then
+      subItem:SetText(tostring(data.worldName))
+      ChangeColorForPlayer(subItem, data.name, data.worldName)
+    else
+      subItem:SetText("")
+    end
+  end
+  local columnWidth = rankingLocale.gearRankColumnWidth
+  frame:InsertColumn(locale.ranking.rank, columnWidth[1], LCCIT_WINDOW, GradeDataSetFunc, nil, nil, GradeLayoutSetFunc)
+  frame:InsertColumn(locale.ranking.placing, columnWidth[2], LCCIT_STRING, RankDataSetFunc, nil, nil, nil)
+  frame:InsertColumn(locale.common.name, columnWidth[3], LCCIT_CHARACTER_NAME, NameDataSetFunc, nil, nil, nil)
+  frame:InsertColumn(GetUIText(COMMON_TEXT, "gear_score"), columnWidth[4], LCCIT_STRING, ScoreSetFunc, nil, nil, nil)
+  frame:InsertColumn(GetUIText(COMMON_TEXT, "detail_score"), columnWidth[5], LCCIT_STRING, DetailScoreSetFunc, nil, nil, nil)
+  frame:InsertColumn("", columnWidth[6], LCCIT_STRING, ServerNameDataSetFunc, nil, nil, nil, nil)
+  frame:InsertRows(20, false)
+  DrawListCtrlUnderLine(frame.listCtrl)
+  local worldCombo, callbackWorldSelected
+  function frame:RegisterCallbackWorldSelectedFunc(func)
+    callbackWorldSelected = func
+  end
+  local worldNames = BuildWorldName(desc)
+  local function WorldLayoutFunc(column)
+    worldCombo = CreateComboBox(column)
+    worldCombo:SetExtent(column:GetWidth() - 8, column:GetHeight() - 8)
+    worldCombo:AddAnchor("TOPLEFT", column, "TOPLEFT", 4, 4)
+    worldCombo.dropdownItem = worldNames
+    worldCombo:Select(1)
+    function worldCombo:SelectedProc(selIdx)
+      callbackWorldSelected(selIdx)
+    end
+  end
+  function frame:GetSelectedWorldIdx()
+    return worldCombo:GetSelectedIndex()
+  end
+  local score_tips = {
+    GetUIText(COMMON_TEXT, "ranking_tip_gear_score_value"),
+    GetUIText(COMMON_TEXT, "ranking_tip_gear_score_detail_value")
+  }
+  for i = 1, #frame.listCtrl.column do
+    SettingListColumn(frame.listCtrl, frame.listCtrl.column[i])
+    DrawListCtrlColumnSperatorLine(frame.listCtrl.column[i], #frame.listCtrl.column, i)
+    if i == 4 or i == 5 then
+      local function OnEnter(self)
+        local tooltipString = score_tips[i - 4 + 1]
+        SetTooltip(tooltipString, self)
+      end
+      frame.listCtrl.column[i]:SetHandler("OnEnter", OnEnter)
+    end
+    if i == 6 then
+      WorldLayoutFunc(frame.listCtrl.column[i])
+    end
+    frame.listCtrl.column[i]:Enable(false)
+    SetButtonFontColor(frame.listCtrl.column[i], GetButtonDefaultFontColor_V2())
+  end
+  local insetInfo = {leftInset = 70, rightInset = 10}
+  for i = 1, frame:GetRowCount() do
+    ListCtrlItemGuideLine(frame.listCtrl.items, frame:GetRowCount(), insetInfo)
+  end
+  function frame:FillRankData(rankDatas)
+    self:DeleteAllDatas()
+    for i = 1, self:GetRowCount() do
+      if self.listCtrl.items[i].line ~= nil then
+        self.listCtrl.items[i].line:SetVisible(false)
+      end
+    end
+    local visibleCnt = #rankDatas >= self:GetRowCount() and self:GetRowCount() or #rankDatas
+    for i = 1, visibleCnt do
+      if self.listCtrl.items[i].line ~= nil then
+        self.listCtrl.items[i].line:SetVisible(true)
+      end
+    end
+    for i = 1, #rankDatas do
+      self:InsertRowData(i, 6, rankDatas[i])
+      do
+        local function OnEnter(self)
+          local rankData = frame:GetDataByViewIndex(i, 1)
+          if rankData == nil then
+            return
+          end
+          local data = X2Rank:GetRankerInformation(rankData.worldID, rankData.charID)
+          if data ~= nil then
+            local abilityNames = {
+              data.ability_name_0,
+              data.ability_name_1,
+              data.ability_name_2
+            }
+            local abilities = ""
+            for index = 1, #abilityNames do
+              if abilityNames[index] ~= "invalid ability" then
+                if abilities == "" then
+                  abilities = locale.common.abilityCategory[abilityNames[index]]
+                else
+                  abilities = string.format("%s, %s", abilities, locale.common.abilityCategory[abilityNames[index]])
+                end
+              end
+            end
+            local abilityIndex = {
+              data.ability_idx_0,
+              data.ability_idx_1,
+              data.ability_idx_2
+            }
+            local str = ""
+            if data.expedition ~= "" then
+              str = makeTooltip(str, "%s%s: %s", FONT_COLOR_HEX.SOFT_BROWN, locale.unitFrame.expedition, tostring(data.expedition))
+            end
+            str = makeTooltip(str, "%s%s: %s (%s)", FONT_COLOR_HEX.SOFT_BROWN, locale.community.job, GetCombinedAbilityName(abilityIndex[1], abilityIndex[2], abilityIndex[3]), abilities)
+            str = makeTooltip(str, "%s%s: %s", FONT_COLOR_HEX.BRIGHT_GREEN, locale.tooltip.hp, tostring(data.health))
+            str = makeTooltip(str, "%s%s: %s", FONT_COLOR_HEX.BRIGHT_GREEN, locale.tooltip.mp, tostring(data.mana))
+            str = makeTooltip(str, "%s%s: %s", FONT_COLOR_HEX.BRIGHT_BULE, GetUIText(COMMON_TEXT, "gear_score"), tostring(data.gear))
+            str = makeTooltip(str, "%s%s: %s", FONT_COLOR_HEX.SOFT_BROWN, locale.tooltip.leadership, tostring(data.leadership))
+            str = makeTooltip(str, "%s%s: %s", FONT_COLOR_HEX.SOFT_BROWN, locale.unitFrame.pvp_honor_point, tostring(data.pvp_honor))
+            str = makeTooltip(str, "%s%s: %s", FONT_COLOR_HEX.SOFT_BROWN, locale.unitFrame.pvp_kill_point, tostring(data.pvp_kill_count))
+            ShowUnitFrameTooltipCursor(self, str)
+          end
+        end
+        local OnLeave = function(self)
+          HideUnitFrameTooltip()
+        end
+        local function OnClick(self, arg)
+          HideUnitFrameTooltip()
+          if arg == "RightButton" and X2Rank:IsRankerQueriable(desc.code) == true then
+            local rankData = frame:GetDataByViewIndex(i, 1)
+            if rankData ~= nil then
+              ActivateRankerPopupMenu(self, rankData.worldID, rankData.charID, rankData.name)
+            end
+          end
+        end
+        if self.listCtrl.items[i] ~= nil then
+          self.listCtrl.items[i]:SetHandler("OnEnter", OnEnter)
+          self.listCtrl.items[i]:SetHandler("OnLeave", OnLeave)
+          self.listCtrl.items[i]:SetHandler("OnClick", OnClick)
+        end
+      end
+    end
+    self:UpdateView()
+  end
+  return frame
+end
+local function CreateItemRankingListCtrl(id, parent, height, desc)
+  local frame = CreateScrollListCtrl(parent, id, 0)
+  frame:Show(true)
+  frame:SetExtent(760, height)
+  function frame:FillRankData(rankData)
+    self:DeleteAllDatas()
+    for i = 1, self:GetRowCount() do
+      if self.listCtrl.items[i].line ~= nil then
+        self.listCtrl.items[i].line:SetVisible(false)
+      end
+    end
+    local visibleCnt = #rankData >= self:GetRowCount() and self:GetRowCount() or #rankData
+    for i = 1, visibleCnt do
+      if self.listCtrl.items[i].line ~= nil then
+        self.listCtrl.items[i].line:SetVisible(true)
+      end
+    end
+    for i = 1, #rankData do
+      if rankData[i] ~= nil then
+        self:InsertRowData(i, 6, rankData[i])
+        local function OnEnter(self)
+          local itemData = frame:GetDataByViewIndex(i, 1)
+          if itemData == nil then
+            return
+          end
+          local data = X2Rank:GetRankerInformation(itemData.worldID, itemData.charID)
+          if data ~= nil then
+            local abilityNames = {
+              data.ability_name_0,
+              data.ability_name_1,
+              data.ability_name_2
+            }
+            local abilities = ""
+            for index = 1, #abilityNames do
+              if abilityNames[index] ~= "invalid ability" then
+                if abilities == "" then
+                  abilities = locale.common.abilityCategory[abilityNames[index]]
+                else
+                  abilities = string.format("%s, %s", abilities, locale.common.abilityCategory[abilityNames[index]])
+                end
+              end
+            end
+            local abilityIndex = {
+              data.ability_idx_0,
+              data.ability_idx_1,
+              data.ability_idx_2
+            }
+            local str = ""
+            if data.expedition ~= "" then
+              str = makeTooltip(str, "%s%s: %s", FONT_COLOR_HEX.SOFT_BROWN, locale.unitFrame.expedition, tostring(data.expedition))
+            end
+            str = makeTooltip(str, "%s%s: %s (%s)", FONT_COLOR_HEX.SOFT_BROWN, locale.community.job, GetCombinedAbilityName(abilityIndex[1], abilityIndex[2], abilityIndex[3]), abilities)
+            str = makeTooltip(str, "%s%s: %s", FONT_COLOR_HEX.BRIGHT_GREEN, locale.tooltip.hp, tostring(data.health))
+            str = makeTooltip(str, "%s%s: %s", FONT_COLOR_HEX.BRIGHT_GREEN, locale.tooltip.mp, tostring(data.mana))
+            str = makeTooltip(str, "%s%s: %s", FONT_COLOR_HEX.BRIGHT_BULE, GetUIText(COMMON_TEXT, "gear_score"), tostring(data.gear))
+            str = makeTooltip(str, "%s%s: %s", FONT_COLOR_HEX.SOFT_BROWN, locale.tooltip.leadership, tostring(data.leadership))
+            str = makeTooltip(str, "%s%s: %s", FONT_COLOR_HEX.SOFT_BROWN, locale.unitFrame.pvp_honor_point, tostring(data.pvp_honor))
+            str = makeTooltip(str, "%s%s: %s", FONT_COLOR_HEX.SOFT_BROWN, locale.unitFrame.pvp_kill_point, tostring(data.pvp_kill_count))
+            ShowUnitFrameTooltipCursor(self, str)
+          end
+        end
+        local OnLeave = function(self)
+          HideUnitFrameTooltip()
+        end
+        local function OnClick(self, arg)
+          HideUnitFrameTooltip()
+          if X2Rank:IsRankerQueriable(desc.code) == true and arg == "RightButton" then
+            local data = frame:GetDataByViewIndex(i, 1)
+            if data ~= nil then
+              ActivateRankerPopupMenu(self, data.worldID, data.charID, data.charName)
+            end
+          end
+        end
+        if self.listCtrl.items[i] ~= nil then
+          self.listCtrl.items[i]:SetHandler("OnEnter", OnEnter)
+          self.listCtrl.items[i]:SetHandler("OnLeave", OnLeave)
+          self.listCtrl.items[i]:SetHandler("OnClick", OnClick)
+        end
+      end
+    end
+    self:UpdateView()
+  end
+  local GradeDataSetFunc = function(subItem, data, setValue)
+    if setValue then
+      subItem.bg:SetVisible(false)
+      if data.grade > 0 then
+        SetRankingGradeDataFunc(subItem.bg, subItem.icon, data.grade)
+      end
+      subItem.icon:SetVisible(data.gradeLeader)
+    else
+      subItem.bg:SetVisible(false)
+      if subItem.icon ~= nil then
+        subItem.icon:SetVisible(false)
+      end
+    end
+  end
+  local function GradeLayoutSetFunc(widget, rowIndex, colIndex, subItem)
+    CommonGradeLayoutFunc(widget.listCtrl, subItem)
+    local icon = subItem:CreateImageDrawable(TEXTURE_PATH.RANKING_GRADE, "overlay")
+    icon:AddAnchor("CENTER", subItem, 2, 0)
+    subItem.icon = icon
+  end
+  local function RankSetFunc(subItem, data, setValue)
+    local str = ""
+    if setValue then
+      str = tostring(data.rank)
+    end
+    subItem:SetText(str)
+    ChangeColorForPlayer(subItem, data.charName, data.world)
+  end
+  local function OwnerSetFunc(subItem, data, setValue)
+    local str = ""
+    if setValue then
+      str = data.charName
+    end
+    subItem:SetText(str)
+    ChangeColorForPlayer(subItem, data.charName, data.world)
+  end
+  local function GearNameSetFunc(subItem, data, setValue)
+    local str = ""
+    if setValue then
+      str = data.itemName
+    end
+    subItem:SetText(str)
+    ChangeColorForPlayer(subItem, data.charName, data.world)
+  end
+  local function GearScoreSetFunc(subItem, data, setValue)
+    local str = ""
+    if setValue then
+      local extValue = data.gearScore - data.bareScore
+      str = string.format("%d (%d + %d)", data.gearScore, data.bareScore, extValue)
+    end
+    subItem:SetText(str)
+    ChangeColorForPlayer(subItem, data.charName, data.world)
+  end
+  local function ServerNameSetFunc(subItem, data, setValue)
+    local str = ""
+    if setValue then
+      str = data.worldName
+    end
+    subItem:SetText(str)
+    ChangeColorForPlayer(subItem, data.charName, data.world)
+  end
+  local gearName = string.format("%s %s", GetUIText(SLAVE_KIND, "slave_equipment"), locale.common.name)
+  local columnWidth = rankingLocale.itemRankColumnWidth
+  frame:InsertColumn(locale.ranking.rank, columnWidth[1], LCCIT_WINDOW, GradeDataSetFunc, nil, nil, GradeLayoutSetFunc)
+  frame:InsertColumn(locale.ranking.placing, columnWidth[2], LCCIT_STRING, RankSetFunc, nil, nil, nil)
+  frame:InsertColumn(GetUIText(COMMON_TEXT, "owner"), columnWidth[3], LCCIT_CHARACTER_NAME, OwnerSetFunc, nil, nil, nil)
+  frame:InsertColumn(gearName, columnWidth[4], LCCIT_STRING, GearNameSetFunc, nil, nil, nil)
+  frame:InsertColumn(GetUIText(COMMON_TEXT, "gear_score"), columnWidth[5], LCCIT_STRING, GearScoreSetFunc, nil, nil, nil, nil)
+  frame:InsertColumn("", columnWidth[6], LCCIT_STRING, ServerNameSetFunc, nil, nil, nil, nil)
+  frame:InsertRows(20, false)
+  DrawListCtrlUnderLine(frame.listCtrl)
+  local worldCombo, callbackWorldSelected
+  function frame:RegisterCallbackWorldSelectedFunc(func)
+    callbackWorldSelected = func
+  end
+  local worldNames = BuildWorldName(desc)
+  local function WorldLayoutFunc(column)
+    worldCombo = CreateComboBox(column)
+    worldCombo:SetExtent(column:GetWidth() - 8, column:GetHeight() - 8)
+    worldCombo:AddAnchor("TOPLEFT", column, "TOPLEFT", 4, 4)
+    worldCombo.dropdownItem = worldNames
+    worldCombo:Select(1)
+    function worldCombo:SelectedProc(selIdx)
+      callbackWorldSelected()
+    end
+  end
+  function frame:GetSelectedWorldIdx()
+    return worldCombo:GetSelectedIndex()
+  end
+  local item_ranking_gear_score_tip = GetUIText(COMMON_TEXT, "ranking_tip_item_score_value")
+  for i = 1, #frame.listCtrl.column do
+    SettingListColumn(frame.listCtrl, frame.listCtrl.column[i])
+    DrawListCtrlColumnSperatorLine(frame.listCtrl.column[i], #frame.listCtrl.column, i)
+    local columnEnable = false
+    if i == 5 then
+      local column = frame.listCtrl.column[i]
+      local function OnEnter(self)
+        if item_ranking_gear_score_tip == "" then
+          return
+        end
+        SetTooltip(item_ranking_gear_score_tip, self)
+      end
+      column:SetHandler("OnEnter", OnEnter)
+    end
+    if i == 6 then
+      WorldLayoutFunc(frame.listCtrl.column[i])
+    end
+    frame.listCtrl.column[i]:Enable(columnEnable)
+    SetButtonFontColor(frame.listCtrl.column[i], GetButtonDefaultFontColor_V2())
+  end
+  local insetInfo = {leftInset = 70, rightInset = 10}
+  for i = 1, frame:GetRowCount() do
+    ListCtrlItemGuideLine(frame.listCtrl.items, frame:GetRowCount(), insetInfo)
+  end
+  return frame
+end
+local function CreateExpeditionRankingListCtrl(id, parent, height, tab)
+  local frame = CreateScrollListCtrl(parent, id, 0)
+  frame:Show(true)
+  frame:SetExtent(760, height)
+  function frame:FillRankData(rankData)
+    self:DeleteAllDatas()
+    for i = 1, self:GetRowCount() do
+      if self.listCtrl.items[i].line ~= nil then
+        self.listCtrl.items[i].line:SetVisible(false)
+      end
+    end
+    local visibleCnt = #rankData >= self:GetRowCount() and self:GetRowCount() or #rankData
+    for i = 1, visibleCnt do
+      if self.listCtrl.items[i].line ~= nil then
+        self.listCtrl.items[i].line:SetVisible(true)
+      end
+    end
+    for i = 1, #rankData do
+      if rankData[i] ~= nil then
+        self:InsertRowData(i, 7, rankData[i])
+      end
+    end
+    self:UpdateView()
+  end
+  local GradeDataSetFunc = function(subItem, data, setValue)
+    if setValue then
+      subItem.bg:SetVisible(false)
+      if data.grade > 0 then
+        SetRankingGradeDataFunc(subItem.bg, subItem.icon, data.grade)
+      end
+      subItem.icon:SetVisible(data.gradeLeader)
+    else
+      subItem.bg:SetVisible(false)
+      if subItem.icon ~= nil then
+        subItem.icon:SetVisible(false)
+      end
+    end
+  end
+  local function GradeLayoutSetFunc(widget, rowIndex, colIndex, subItem)
+    CommonGradeLayoutFunc(widget.listCtrl, subItem)
+    local icon = subItem:CreateImageDrawable(TEXTURE_PATH.RANKING_GRADE, "overlay")
+    icon:AddAnchor("CENTER", subItem, 2, 0)
+    subItem.icon = icon
+  end
+  local RankSetFunc = function(subItem, data, setValue)
+    local str = ""
+    if setValue then
+      str = tostring(data.rank)
+    end
+    subItem:SetText(str)
+    local curWorldId = X2:GetCurrentWorldId()
+    if data.worldID == curWorldId and X2Faction:GetMyExpeditionId() == data.id then
+      ApplyTextColor(subItem, FONT_COLOR.BLUE)
+    else
+      ApplyTextColor(subItem, FONT_COLOR.DEFAULT)
+    end
+  end
+  local LvlSetFunc = function(subItem, data, setValue)
+    local str = ""
+    if setValue then
+      str = tostring(data.lvl)
+    end
+    subItem:SetText(str)
+    local curWorldId = X2:GetCurrentWorldId()
+    if data.worldID == curWorldId and X2Faction:GetMyExpeditionId() == data.id then
+      ApplyTextColor(subItem, FONT_COLOR.BLUE)
+    else
+      ApplyTextColor(subItem, FONT_COLOR.DEFAULT)
+    end
+  end
+  local function ExpeditionNameLayoutSetFunc(widget, rowIndex, colIndex, subItem)
+    subItem.nameLabel = subItem:CreateChildWidget("label", "expeditionName", 0, true)
+    subItem.nameLabel:SetExtent(subItem:GetWidth(), subItem:GetHeight())
+    subItem.nameLabel:AddAnchor("CENTER", subItem, 0, 0)
+    subItem.nameLabel:SetLimitWidth(true)
+    local function OnEnter(self)
+      local data = frame:GetDataByViewIndex(rowIndex, 1)
+      local str = ""
+      if data ~= nil then
+        str = makeTooltip(str, "%s%s", FONT_COLOR_HEX.SOFT_BROWN, data.name)
+        SetTooltip(str, subItem.nameLabel)
+      end
+    end
+    local OnLeave = function(self)
+      HideTooltip()
+    end
+    local OnClick = function(self, arg)
+      HideTooltip()
+    end
+    subItem.nameLabel:SetHandler("OnEnter", OnEnter)
+    subItem.nameLabel:SetHandler("OnLeave", OnLeave)
+    subItem.nameLabel:SetHandler("OnClick", OnClick)
+  end
+  local ExpeditionNameSetFunc = function(subItem, data, setValue)
+    local str = ""
+    if setValue then
+      str = data.name
+    end
+    subItem.nameLabel:SetText(str)
+    local curWorldId = X2:GetCurrentWorldId()
+    if data.worldID == curWorldId and X2Faction:GetMyExpeditionId() == data.id then
+      ApplyTextColor(subItem.nameLabel, FONT_COLOR.BLUE)
+    else
+      ApplyTextColor(subItem.nameLabel, FONT_COLOR.DEFAULT)
+    end
+  end
+  local GearScoreSetFunc = function(subItem, data, setValue)
+    local str = ""
+    if setValue then
+      str = string.format("%d / %d", data.totalGearScore, data.totalGearScore / data.members)
+    end
+    subItem:SetText(str)
+    local curWorldId = X2:GetCurrentWorldId()
+    if data.worldID == curWorldId and X2Faction:GetMyExpeditionId() == data.id then
+      ApplyTextColor(subItem, FONT_COLOR.BLUE)
+    else
+      ApplyTextColor(subItem, FONT_COLOR.DEFAULT)
+    end
+  end
+  local BattleRecordScoreSetFunc = function(subItem, data, setValue)
+    local str = ""
+    if setValue then
+      str = string.format("%d / %d", data.win, data.lose)
+    end
+    subItem:SetText(str)
+    local curWorldId = X2:GetCurrentWorldId()
+    if data.worldID == curWorldId and X2Faction:GetMyExpeditionId() == data.id then
+      ApplyTextColor(subItem, FONT_COLOR.BLUE)
+    else
+      ApplyTextColor(subItem, FONT_COLOR.DEFAULT)
+    end
+  end
+  local MemberCountSetFunc = function(subItem, data, setValue)
+    local str = ""
+    if setValue then
+      str = tostring(data.members)
+    end
+    subItem:SetText(str)
+    local curWorldId = X2:GetCurrentWorldId()
+    if data.worldID == curWorldId and X2Faction:GetMyExpeditionId() == data.id then
+      ApplyTextColor(subItem, FONT_COLOR.BLUE)
+    else
+      ApplyTextColor(subItem, FONT_COLOR.DEFAULT)
+    end
+  end
+  local ServerNameSetFunc = function(subItem, data, setValue)
+    local str = ""
+    if setValue then
+      str = data.worldName
+    end
+    subItem:SetText(str)
+    local curWorldId = X2:GetCurrentWorldId()
+    if data.worldID == curWorldId and X2Faction:GetMyExpeditionId() == data.id then
+      ApplyTextColor(subItem, FONT_COLOR.BLUE)
+    else
+      ApplyTextColor(subItem, FONT_COLOR.DEFAULT)
+    end
+  end
+  local columnWidth = rankingLocale.expeditionRankColumnWidth
+  frame:InsertColumn(locale.ranking.rank, columnWidth[1], LCCIT_WINDOW, GradeDataSetFunc, nil, nil, GradeLayoutSetFunc)
+  frame:InsertColumn(locale.ranking.placing, columnWidth[2], LCCIT_STRING, RankSetFunc, nil, nil, nil)
+  frame:InsertColumn(GetUIText(COMMON_TEXT, "level"), columnWidth[3], LCCIT_STRING, LvlSetFunc, nil, nil, nil)
+  frame:InsertColumn(GetUIText(COMMON_TEXT, "expedition"), columnWidth[4], LCCIT_STRING, ExpeditionNameSetFunc, nil, nil, ExpeditionNameLayoutSetFunc)
+  if tab.code == "ranking_expedition_gear_score" then
+    frame:InsertColumn(GetUIText(COMMON_TEXT, "gear_score"), columnWidth[5], LCCIT_STRING, GearScoreSetFunc, nil, nil, nil, nil)
+  elseif tab.code == "ranking_expedition_battle_record" then
+    frame:InsertColumn(GetUIText(COMMON_TEXT, "expedition_rank_category_battle_record"), columnWidth[5], LCCIT_STRING, BattleRecordScoreSetFunc, nil, nil, nil, nil)
+  end
+  frame:InsertColumn(GetUIText(COMMON_TEXT, "number_of_people"), columnWidth[6], LCCIT_STRING, MemberCountSetFunc, nil, nil, nil, nil)
+  frame:InsertColumn("", columnWidth[7], LCCIT_STRING, ServerNameSetFunc, nil, nil, nil, nil)
+  frame:InsertRows(20, false)
+  DrawListCtrlUnderLine(frame.listCtrl)
+  local callbackWorldSelected
+  function frame:RegisterCallbackWorldSelectedFunc(func)
+    callbackWorldSelected = func
+  end
+  local worldNames = BuildWorldName(tab)
+  local worldCombo
+  local function WorldLayoutFunc(column)
+    worldCombo = CreateComboBox(column)
+    worldCombo:SetExtent(column:GetWidth() - 8, column:GetHeight() - 8)
+    worldCombo:AddAnchor("TOPLEFT", column, "TOPLEFT", 4, 4)
+    worldCombo.dropdownItem = worldNames
+    worldCombo:Select(1)
+    function worldCombo:SelectedProc()
+      callbackWorldSelected()
+    end
+  end
+  function frame:GetSelectedWorldIdx()
+    return worldCombo:GetSelectedIndex()
+  end
+  for i = 1, #frame.listCtrl.column do
+    SettingListColumn(frame.listCtrl, frame.listCtrl.column[i])
+    DrawListCtrlColumnSperatorLine(frame.listCtrl.column[i], #frame.listCtrl.column, i)
+    if i == 7 then
+      WorldLayoutFunc(frame.listCtrl.column[i])
+    end
+    frame.listCtrl.column[i]:Enable(false)
+    SetButtonFontColor(frame.listCtrl.column[i], GetButtonDefaultFontColor_V2())
+  end
+  return frame
+end
+function CreateCommonRankingWidget(id, parent)
+  local widget = UIParent:CreateWidget("emptywidget", id, parent)
+  widget.upperFrame = CreateUpperFrame("upperFrame", widget)
+  widget.code = id
+  local activeRankList
+  activeRankList = CreateLegacyRankingListCtrl("scrollList", widget, 516)
+  activeRankList:AddAnchor("TOPLEFT", widget.upperFrame, "BOTTOMLEFT", 0, 5)
+  activeRankList:Show(true)
+  local updateTime = widget:CreateChildWidget("label", "updateTime", 0, true)
+  updateTime:SetAutoResize(true)
+  updateTime:SetHeight(FONT_SIZE.MIDDLE)
+  updateTime:AddAnchor("TOPLEFT", activeRankList, "BOTTOMLEFT", 0, sideMargin / 2)
+  ApplyTextColor(updateTime, FONT_COLOR.DEFAULT)
+  local tip = widget:CreateChildWidget("textbox", "tip", 0, true)
+  tip:Show(false)
+  tip:SetExtent(760, FONT_SIZE.MIDDLE)
+  tip:AddAnchor("TOPLEFT", updateTime, "BOTTOMLEFT", 0, 3)
+  tip:SetText(GetUIText(COMMON_TEXT, "ranking_tip"))
+  tip:SetHeight(tip:GetTextHeight())
+  tip.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(tip, FONT_COLOR.GRAY)
+  local rewardWindow = CreateRewardWindow("rewardWindow", widget)
+  rewardWindow:SetSounds("ranking_reward")
+  function widget:Activate(selectedIdx)
+    X2Rank:RequestPlayerRecords(selectedIdx)
+    parent:WaitPage(true)
+  end
+  function widget:RefreshRankTypeUI(str, valueColumnTooltip, processExplain)
+    activeRankList.listCtrl.column[4]:SetText(str)
+    activeRankList.listCtrl.column[4].tip = valueColumnTooltip
+    widget.upperFrame.myCurRecord.tip = string.format("%s", processExplain)
+  end
+  function widget:Lock()
+    widget.upperFrame:Lock()
+  end
+  function widget:Unlock()
+    widget.upperFrame:Unlock()
+  end
+  function widget:FillSnapshot(snapShotInfo, snapshotScopeInfo)
+    activeRankList:FillSnapshot(snapShotInfo, snapshotScopeInfo)
+  end
+  function widget:FillRewardInfo(rewardInfo, periodInfo)
+    widget.upperFrame:FillRewardInfo(rewardInfo, periodInfo)
+    rewardWindow:FillRewardInfo(rewardInfo, periodInfo)
+  end
+  local function RewardButtonLeftClickFunc(self)
+    if rewardWindow == nil then
+      return
+    end
+    rewardWindow:AddAnchor("TOP", self, "BOTTOM", 0, sideMargin / 2)
+    rewardWindow:Show(not rewardWindow:IsVisible())
+  end
+  ButtonOnClickHandler(widget.upperFrame.rewardButton, RewardButtonLeftClickFunc)
+  function widget:GetContentHeight()
+    local _, height = F_LAYOUT:GetExtentWidgets(widget.upperFrame, activeRankList)
+    return height + sideMargin / 1.7
+  end
+  return widget
+end
+function CreateRenewalRankingBattleFieldWidget(id, parent)
+  local widget = UIParent:CreateWidget("emptywidget", id, parent)
+  widget.code = id
+  widget.upperFrames = {}
+  widget.rankLists = {}
+  widget.upperFrame = nil
+  local activeRankList
+  local rankingNames = {}
+  local rankings = X2Rank:BuildRankingTabInfo(id)
+  for i = 1, #rankings do
+    local desc = rankings[i]
+    rankingNames[i] = GetUIText(COMMON_TEXT, desc.name)
+    widget.upperFrames[i] = CreateBattleFieldRankUpperFrame("battlefieldUpper", widget, desc)
+    widget.upperFrames[i]:Show(false)
+    widget.rankLists[i] = CreateBattleFieldRankingListCtrl("defaultList", widget, 516, desc)
+    widget.rankLists[i]:AddAnchor("TOPLEFT", widget.upperFrames[i], "BOTTOMLEFT", 0, 5)
+    widget.rankLists[i]:Show(false)
+  end
+  widget.upperFrame = widget.upperFrames[1]
+  activeRankList = widget.rankLists[1]
+  local updateTime = widget:CreateChildWidget("label", "updateTime", 0, true)
+  updateTime:SetAutoResize(true)
+  updateTime:SetHeight(FONT_SIZE.MIDDLE)
+  updateTime:AddAnchor("TOPLEFT", activeRankList, "BOTTOMLEFT", 0, sideMargin / 2)
+  ApplyTextColor(updateTime, FONT_COLOR.DEFAULT)
+  local tip = widget:CreateChildWidget("textbox", "tip", 0, true)
+  tip:Show(false)
+  tip:SetExtent(760, FONT_SIZE.MIDDLE)
+  tip:AddAnchor("BOTTOMLEFT", widget, "BOTTOMLEFT", 0, 0)
+  tip:SetText(GetUIText(COMMON_TEXT, "ranking_tip_battle_field_score_widget"))
+  tip:SetHeight(tip:GetTextHeight())
+  tip.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(tip, FONT_COLOR.GRAY)
+  local rankKindLabel = widget:CreateChildWidget("label", "rankKindLabel", 0, true)
+  rankKindLabel:SetAutoResize(true)
+  rankKindLabel:SetHeight(FONT_SIZE.LARGE)
+  rankKindLabel.style:SetFontSize(FONT_SIZE.LARGE)
+  rankKindLabel:AddAnchor("TOPLEFT", widget, "TOPLEFT", 10, sideMargin - 5)
+  rankKindLabel:SetText(GetUIText(COMMON_TEXT, "detail_rank"))
+  ApplyTextColor(rankKindLabel, FONT_COLOR.DEFAULT)
+  local rankingCombo = CreateComboBox(widget)
+  rankingCombo:SetWidth(150)
+  rankingCombo:AddAnchor("LEFT", rankKindLabel, "RIGHT", 5, 0)
+  rankingCombo.dropdownItem = rankingNames
+  rankingCombo:Select(1)
+  function rankingCombo:SelectedProc()
+    local selIdx = self:GetSelectedIndex()
+    widget:ChangeRankingTypeUI(selIdx)
+    widget:Activate(selectedRankTabIdx)
+  end
+  function widget:ChangeRankingTypeUI(selectedRank)
+    widget.upperFrame:Show(false)
+    activeRankList:Show(false)
+    widget.upperFrame = widget.upperFrames[selectedRank]
+    activeRankList = widget.rankLists[selectedRank]
+    widget.upperFrame:Show(true)
+    activeRankList:Show(true)
+    local ranking = rankings[selectedRank]
+    tip:SetText(GetUIText(COMMON_TEXT, ranking.tooltip))
+  end
+  widget:ChangeRankingTypeUI(1)
+  function widget:RefreshBattleFieldRanking()
+    local selIdx = rankingCombo:GetSelectedIndex()
+    local worldIdx = activeRankList:GetSelectedWorldIdx()
+    local division = rankings[selIdx][worldIdx].id
+    local ranking = rankings[selIdx]
+    X2Rank:RequestRankData(ranking.code, division)
+  end
+  function widget:Activate(selectedIdx)
+    widget:RefreshBattleFieldRanking()
+    parent:WaitPage(true)
+  end
+  local function WorldSelected()
+    widget:Activate(selectedRankTabIdx)
+  end
+  for i = 1, #widget.rankLists do
+    widget.rankLists[i]:RegisterCallbackWorldSelectedFunc(WorldSelected)
+  end
+  function widget:RefreshRankTypeUI(str, valueColumnTooltip, processExplain)
+    activeRankList.listCtrl.column[4].tip = valueColumnTooltip
+    widget.upperFrame.myCurRecord.tip = string.format("%s", processExplain)
+  end
+  function widget:Lock()
+    widget.upperFrame:Lock()
+  end
+  function widget:Unlock()
+    widget.upperFrame:Unlock()
+  end
+  function widget:FillRankData(rankDatas)
+    activeRankList:FillRankData(rankDatas)
+  end
+  function widget:FillRewardInfo(rewardInfo, periodInfo)
+  end
+  function widget:FillMyRecord(myScore)
+    widget.upperFrame:FillMyRecord(myScore)
+  end
+  function widget:RefreshSeasonState()
+    widget.upperFrame:RefreshSeasonState()
+  end
+  function widget:GetContentHeight()
+    local _, height = F_LAYOUT:GetExtentWidgets(rankingCombo, activeRankList)
+    return height + sideMargin / 1.7
+  end
+  return widget
+end
+function CreateRenewalRankingGearScoreWidget(id, parent)
+  local widget = UIParent:CreateWidget("emptywidget", id, parent)
+  widget.code = id
+  widget.upperFrame = nil
+  local activeRankList
+  widget.upperFrames = {}
+  widget.rankLists = {}
+  local rankingNames = {}
+  local rankings = X2Rank:BuildRankingTabInfo(id)
+  for i = 1, #rankings do
+    local desc = rankings[i]
+    rankingNames[i] = GetUIText(COMMON_TEXT, desc.name)
+    if desc.code == "ranking_item_gear" then
+      widget.upperFrames[i] = CreateGearScoreRankUpperFrame("gearRankUpper", widget, desc)
+      widget.rankLists[i] = CreateGearScoreRankingListCtrl("defaultList", widget, 516, desc)
+    else
+      widget.upperFrames[i] = CreateItemRankUpperFrame("itemRankUpper", widget, desc)
+      widget.rankLists[i] = CreateItemRankingListCtrl("itemRankList", widget, 516, desc)
+    end
+    widget.rankLists[i]:AddAnchor("TOPLEFT", widget.upperFrames[i], "BOTTOMLEFT", 0, 5)
+    widget.upperFrames[i]:Show(false)
+    widget.rankLists[i]:Show(false)
+  end
+  widget.upperFrame = widget.upperFrames[1]
+  activeRankList = widget.rankLists[1]
+  widget.upperFrame:Show(true)
+  activeRankList:Show(true)
+  local rankKindLabel = widget:CreateChildWidget("label", "rankKindLabel", 0, true)
+  rankKindLabel:SetAutoResize(true)
+  rankKindLabel:SetHeight(FONT_SIZE.LARGE)
+  rankKindLabel.style:SetFontSize(FONT_SIZE.LARGE)
+  rankKindLabel:AddAnchor("TOPLEFT", widget, "TOPLEFT", 10, sideMargin - 5)
+  rankKindLabel:SetText(GetUIText(COMMON_TEXT, "detail_rank"))
+  ApplyTextColor(rankKindLabel, FONT_COLOR.DEFAULT)
+  local updateTime = widget:CreateChildWidget("label", "updateTime", 0, true)
+  updateTime:SetAutoResize(true)
+  updateTime:SetHeight(FONT_SIZE.MIDDLE)
+  updateTime:AddAnchor("TOPLEFT", widget.rankLists[1], "BOTTOMLEFT", 0, sideMargin / 2)
+  ApplyTextColor(updateTime, FONT_COLOR.DEFAULT)
+  local tip = widget:CreateChildWidget("textbox", "tip", 0, true)
+  tip:Show(false)
+  tip:SetExtent(760, FONT_SIZE.MIDDLE)
+  tip:AddAnchor("BOTTOMLEFT", widget, "BOTTOMLEFT", 0, 0)
+  tip:SetText(GetUIText(COMMON_TEXT, "ranking_tip_gear_score"))
+  tip:SetHeight(tip:GetTextHeight())
+  tip.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(tip, FONT_COLOR.GRAY)
+  function widget:ChangeItemRankTypeUI(selectedRank)
+    widget.upperFrame:Show(false)
+    activeRankList:Show(false)
+    widget.upperFrame = widget.upperFrames[selectedRank]
+    activeRankList = widget.rankLists[selectedRank]
+    widget.upperFrame:Show(true)
+    activeRankList:Show(true)
+    updateTime:Show(selectedRank == 1)
+    local ranking = rankings[selectedRank]
+    tip:SetText(GetUIText(COMMON_TEXT, ranking.tooltip))
+  end
+  widget:ChangeItemRankTypeUI(1)
+  function widget:Activate(selectedIdx)
+    if IsItemRankingView() == true then
+      widget:RefreshItemRanking()
+    else
+      widget:RefreshGearRanking()
+    end
+    parent:WaitPage(true)
+  end
+  local gearCombo = CreateComboBox(widget)
+  gearCombo:SetWidth(150)
+  gearCombo:AddAnchor("LEFT", rankKindLabel, "RIGHT", 5, 0)
+  gearCombo.dropdownItem = rankingNames
+  gearCombo:Select(1)
+  function gearCombo:SelectedProc()
+    local selIdx = self:GetSelectedIndex()
+    widget:ChangeItemRankTypeUI(selIdx)
+    widget:Activate(selectedRankTabIdx)
+  end
+  local function WorldSelected()
+    widget:Activate(selectedRankTabIdx)
+  end
+  for i = 1, #widget.rankLists do
+    widget.rankLists[i]:RegisterCallbackWorldSelectedFunc(WorldSelected)
+  end
+  function IsItemRankingView()
+    if gearCombo:GetSelectedIndex() <= 1 then
+      return false
+    end
+    return true
+  end
+  function widget:RefreshGearRanking()
+    local selIdx = gearCombo:GetSelectedIndex()
+    local worldIdx = activeRankList:GetSelectedWorldIdx()
+    local division = rankings[selIdx][worldIdx].id
+    local ranking = rankings[selIdx]
+    X2Rank:RequestRankData(ranking.code, division)
+  end
+  function widget:RefreshItemRanking()
+    local selIdx = gearCombo:GetSelectedIndex()
+    if selIdx > 1 then
+      local category = selIdx - 1
+      local worldIdx = activeRankList:GetSelectedWorldIdx()
+      local division = rankings[selIdx][worldIdx].id
+      X2Rank:RequestItemRank(division, category)
+    end
+    parent:WaitPage(true)
+  end
+  function widget:RefreshRankTypeUI(str, valueColumnTooltip, processExplain)
+    activeRankList.listCtrl.column[4]:SetText(str)
+    activeRankList.listCtrl.column[4].tip = valueColumnTooltip
+    widget.upperFrame.myCurRecord.tip = string.format("%s", processExplain)
+  end
+  function widget:Lock()
+    widget.upperFrame:Lock()
+  end
+  function widget:Unlock()
+    widget.upperFrame:Unlock()
+  end
+  function widget:FillRankData(rankDatas)
+    activeRankList:FillRankData(rankDatas)
+  end
+  function widget:FillRewardInfo(rewardInfo, periodInfo)
+  end
+  function widget:FillRankData(rankData)
+    activeRankList:FillRankData(rankData)
+  end
+  function widget:FillMyRecord(myScore)
+    widget.upperFrame:FillMyRecord(myScore)
+  end
+  function widget:RefreshSeasonState()
+    widget.upperFrame:RefreshSeasonState()
+  end
+  function widget:GetContentHeight()
+    local _, height = F_LAYOUT:GetExtentWidgets(gearCombo, activeRankList)
+    return height + sideMargin / 1.7
+  end
+  return widget
+end
+function CreateExpeditionWidget(id, parent)
+  local selectedCategory = 1
+  local widget = UIParent:CreateWidget("emptywidget", id, parent)
+  widget.code = id
+  widget.upperFrames = {}
+  widget.rankLists = {}
+  local expeditionRankCategories = {}
+  local rankings = X2Rank:BuildRankingTabInfo(id)
+  for i = 1, #rankings do
+    local desc = rankings[i]
+    expeditionRankCategories[i] = GetUIText(COMMON_TEXT, desc.name)
+    widget.upperFrames[i] = CreateExpeditionUpperFrame("expeditionUpper", widget, desc)
+    widget.upperFrames[i]:Show(false)
+    widget.rankLists[i] = CreateExpeditionRankingListCtrl(desc.code, widget, 516, desc)
+    widget.rankLists[i]:AddAnchor("TOPLEFT", widget.upperFrames[i], "BOTTOMLEFT", 0, 5)
+    widget.rankLists[i]:Show(false)
+  end
+  widget.upperFrames[1]:Show(true)
+  widget.rankLists[1]:Show(true)
+  local rankKindLabel = widget:CreateChildWidget("label", "rankKindLabel", 0, true)
+  rankKindLabel:SetAutoResize(true)
+  rankKindLabel:SetHeight(FONT_SIZE.LARGE)
+  rankKindLabel.style:SetFontSize(FONT_SIZE.LARGE)
+  rankKindLabel:AddAnchor("TOPLEFT", widget, "TOPLEFT", 10, sideMargin - 5)
+  rankKindLabel:SetText(GetUIText(COMMON_TEXT, "detail_rank"))
+  ApplyTextColor(rankKindLabel, FONT_COLOR.DEFAULT)
+  local categoryCombo = CreateComboBox(widget)
+  categoryCombo:SetWidth(200)
+  categoryCombo:AddAnchor("LEFT", rankKindLabel, "RIGHT", 5, 0)
+  categoryCombo.dropdownItem = expeditionRankCategories
+  categoryCombo:Select(1)
+  local tip = widget:CreateChildWidget("textbox", "tip", 0, true)
+  tip:Show(false)
+  tip:SetExtent(760, FONT_SIZE.MIDDLE)
+  tip:AddAnchor("BOTTOMLEFT", widget, "BOTTOMLEFT", 0, 0)
+  tip:SetText(GetUIText(COMMON_TEXT, "expedition_rank_tip"))
+  tip:SetHeight(tip:GetTextHeight())
+  tip.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(tip, FONT_COLOR.GRAY)
+  local function WorldSelected()
+    local selectedWorld = widget.rankLists[selectedCategory]:GetSelectedWorldIdx()
+    local ranking = rankings[selectedCategory]
+    local division = ranking[selectedWorld].id
+    X2Rank:RequestRankData(ranking.code, division)
+    parent:WaitPage(true)
+  end
+  for i = 1, #widget.rankLists do
+    widget.rankLists[i]:RegisterCallbackWorldSelectedFunc(WorldSelected)
+  end
+  function widget:RefreshExpeditionRanking()
+    local selectedWorld = widget.rankLists[selectedCategory]:GetSelectedWorldIdx()
+    local ranking = rankings[selectedCategory]
+    local division = ranking[selectedWorld].id
+    X2Rank:RequestRankData(ranking.code, division)
+    parent:WaitPage(true)
+  end
+  function categoryCombo:SelectedProc()
+    widget.upperFrames[selectedCategory]:Show(false)
+    widget.rankLists[selectedCategory]:Show(false)
+    selectedCategory = self:GetSelectedIndex()
+    local selectedWorld = widget.rankLists[selectedCategory]:GetSelectedWorldIdx()
+    local ranking = rankings[selectedCategory]
+    local division = ranking[selectedWorld].id
+    widget.upperFrames[selectedCategory]:Show(true)
+    widget.rankLists[selectedCategory]:Show(true)
+    X2Rank:RequestRankData(ranking.code, division)
+    parent:WaitPage(true)
+  end
+  function widget:Activate(selectedIdx)
+    local selectedWorld = widget.rankLists[selectedCategory]:GetSelectedWorldIdx()
+    local ranking = rankings[selectedCategory]
+    local division = ranking[selectedWorld].id
+    X2Rank:RequestRankData(ranking.code, division)
+    parent:WaitPage(true)
+  end
+  function widget:Lock()
+    widget.upperFrames[selectedCategory]:Lock()
+  end
+  function widget:Unlock()
+    widget.upperFrames[selectedCategory]:Unlock()
+  end
+  function widget:FillRankData(rankData)
+    widget.rankLists[selectedCategory]:FillRankData(rankData)
+  end
+  function widget:FillMyRecord(category, myScore)
+  end
+  function widget:RefreshSeasonState()
+    widget.upperFrames[selectedCategory]:RefreshSeasonState()
+  end
+  function widget:GetContentHeight()
+    local _, height = F_LAYOUT:GetExtentWidgets(categoryCombo, widget.rankLists[1])
+    return height + sideMargin / 1.7
+  end
+  return widget
+end
+function CreateRankingContent(id, parent, tabCodes)
+  local contents = {}
+  for i = 1, #tabCodes do
+    local code = tabCodes[i]
+    local content
+    if featureSet.rankingRenewal == true then
+      if code == "tab_ranking_battlefield" then
+        content = CreateRenewalRankingBattleFieldWidget(code, parent)
+      elseif code == "tab_ranking_item" then
+        content = CreateRenewalRankingGearScoreWidget(code, parent)
+      elseif code == "tab_ranking_expedition" then
+        content = CreateExpeditionWidget(code, parent)
+      else
+        content = CreateCommonRankingWidget(code, parent)
+      end
+    else
+      content = CreateCommonRankingWidget(code, parent)
+    end
+    if content ~= nil then
+      contents[i] = content
+    end
+  end
+  return contents
+end

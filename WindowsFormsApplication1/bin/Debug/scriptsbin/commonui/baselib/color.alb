@@ -1,0 +1,1151 @@
+function ConvertColor(value)
+  return value / 255
+end
+function GetDecColorForString(stringValue)
+  return GetHexColorForString(Dec2Hex)
+end
+function GetHexColorForString(stringValue)
+  local color = ""
+  color = "|c" .. stringValue
+  return color
+end
+function Dec2Hex(colors)
+  return string.format("%02x%02x%02x%02x", colors[4] * 255, colors[1] * 255, colors[2] * 255, colors[3] * 255)
+end
+function Hex2Dec(stringValue)
+  local colors = {}
+  local _, closeIdx = string.find(stringValue, "|c")
+  if closeIdx ~= nil then
+    stringValue = string.sub(stringValue, closeIdx + 1)
+  end
+  colors[1] = string.sub(stringValue, 3, 4)
+  colors[2] = string.sub(stringValue, 5, 6)
+  colors[3] = string.sub(stringValue, 7, 8)
+  colors[4] = string.sub(stringValue, 1, 2)
+  for i = 1, #colors do
+    colors[i] = tonumber(string.format("0x" .. colors[i]))
+    colors[i] = ConvertColor(colors[i])
+  end
+  return colors
+end
+function ApplyTextColor(widget, color)
+  widget.style:SetColor(color[1], color[2], color[3], color[4])
+end
+function ApplyTitleFontColor(widget, color)
+  widget.titleStyle:SetColor(color[1], color[2], color[3], color[4])
+end
+function ApplyTextureColor(texture, color)
+  texture:SetColor(color[1], color[2], color[3], color[4])
+end
+FONT_COLOR = {
+  TITLE = {
+    ConvertColor(101),
+    ConvertColor(63),
+    ConvertColor(10),
+    1
+  },
+  HIGH_TITLE = {
+    ConvertColor(71),
+    ConvertColor(47),
+    ConvertColor(13),
+    1
+  },
+  MIDDLE_TITLE = {
+    ConvertColor(87),
+    ConvertColor(60),
+    ConvertColor(23),
+    1
+  },
+  DEFAULT = {
+    ConvertColor(126),
+    ConvertColor(81),
+    ConvertColor(19),
+    1
+  },
+  REWARD = {
+    ConvertColor(104),
+    ConvertColor(68),
+    ConvertColor(18),
+    1
+  },
+  BLUE = {
+    ConvertColor(44),
+    ConvertColor(100),
+    ConvertColor(136),
+    1
+  },
+  RED = {
+    ConvertColor(193),
+    ConvertColor(61),
+    ConvertColor(54),
+    1
+  },
+  SOFT_RED = {
+    ConvertColor(210),
+    ConvertColor(94),
+    ConvertColor(84),
+    1
+  },
+  GREEN = {
+    ConvertColor(11),
+    ConvertColor(156),
+    ConvertColor(35),
+    1
+  },
+  LIGHT_RED = {
+    ConvertColor(255),
+    ConvertColor(0),
+    ConvertColor(0),
+    1
+  },
+  BRIGHT_BULE = {
+    ConvertColor(85),
+    ConvertColor(143),
+    ConvertColor(215),
+    1
+  },
+  GRAY = {
+    ConvertColor(100),
+    ConvertColor(100),
+    ConvertColor(100),
+    1
+  },
+  DARK_GRAY = {
+    ConvertColor(60),
+    ConvertColor(60),
+    ConvertColor(60),
+    1
+  },
+  YELLOW = {
+    ConvertColor(209),
+    ConvertColor(141),
+    ConvertColor(9),
+    1
+  },
+  SOFT_YELLOW = {
+    ConvertColor(255),
+    ConvertColor(248),
+    ConvertColor(199),
+    1
+  },
+  PURPLE = {
+    ConvertColor(162),
+    ConvertColor(98),
+    ConvertColor(216),
+    1
+  },
+  GRAY_PURPLE = {
+    ConvertColor(133),
+    ConvertColor(114),
+    ConvertColor(163),
+    1
+  },
+  GRAY_PINK = {
+    ConvertColor(193),
+    ConvertColor(105),
+    ConvertColor(181),
+    1
+  },
+  WHITE = {
+    1,
+    1,
+    1,
+    1
+  },
+  SKYBLUE = {
+    ConvertColor(126),
+    ConvertColor(184),
+    ConvertColor(208),
+    1
+  },
+  BROWN = {
+    ConvertColor(125),
+    ConvertColor(76),
+    ConvertColor(7),
+    1
+  },
+  BLACK = {
+    ConvertColor(42),
+    ConvertColor(42),
+    ConvertColor(42),
+    1
+  },
+  ORANGE = {
+    ConvertColor(220),
+    ConvertColor(133),
+    ConvertColor(97),
+    1
+  },
+  DEEP_ORANGE = {
+    ConvertColor(255),
+    ConvertColor(54),
+    ConvertColor(0),
+    1
+  },
+  LIGHT_GRAY = {
+    0.6,
+    0.6,
+    0.6,
+    1
+  },
+  SOFT_BROWN = {
+    ConvertColor(209),
+    ConvertColor(192),
+    ConvertColor(172),
+    1
+  },
+  MEDIUM_BROWN = {
+    ConvertColor(133),
+    ConvertColor(118),
+    ConvertColor(94),
+    1
+  },
+  QUEST_TASK = {
+    ConvertColor(183),
+    ConvertColor(247),
+    ConvertColor(255),
+    1
+  },
+  LOGIN_STAGE_BLUE = {
+    ConvertColor(41),
+    ConvertColor(79),
+    ConvertColor(157),
+    1
+  },
+  LOGIN_STAGE_BROWN = {
+    ConvertColor(255),
+    ConvertColor(249),
+    ConvertColor(235),
+    1
+  },
+  RAID_PARTY_ORANGE = {
+    ConvertColor(198),
+    ConvertColor(136),
+    ConvertColor(76),
+    0.15
+  },
+  RAID_PARTY_BLUE = {
+    ConvertColor(124),
+    ConvertColor(175),
+    ConvertColor(205),
+    0.15
+  },
+  ROLE_TANKER = {
+    ConvertColor(94),
+    ConvertColor(152),
+    ConvertColor(3),
+    1
+  },
+  ROLE_HEALER = {
+    ConvertColor(208),
+    ConvertColor(104),
+    ConvertColor(148),
+    1
+  },
+  ROLE_DEALER = {
+    ConvertColor(212),
+    ConvertColor(81),
+    ConvertColor(81),
+    1
+  },
+  ROLE_NONE = {
+    ConvertColor(76),
+    ConvertColor(149),
+    ConvertColor(195),
+    1
+  },
+  MIDDLE_BROWN = {
+    ConvertColor(186),
+    ConvertColor(151),
+    ConvertColor(109),
+    1
+  },
+  FACTION_FRIENDLY_PC = {
+    ConvertColor(124),
+    ConvertColor(226),
+    ConvertColor(28),
+    1
+  },
+  USER_TRAL_RED = {
+    ConvertColor(90),
+    ConvertColor(79),
+    ConvertColor(79),
+    1
+  },
+  EXP_ORANGE = {
+    ConvertColor(238),
+    ConvertColor(148),
+    ConvertColor(42),
+    1
+  },
+  LABORPOWER_YELLOW = {
+    ConvertColor(233),
+    ConvertColor(198),
+    ConvertColor(115),
+    1
+  },
+  LEVEL_UP_BLUE = {
+    ConvertColor(52),
+    ConvertColor(118),
+    ConvertColor(191),
+    1
+  },
+  NOTICE_ORANGE = {
+    ConvertColor(255),
+    ConvertColor(102),
+    ConvertColor(0),
+    1
+  },
+  DETAIL_DEMAGE = {
+    ConvertColor(131),
+    ConvertColor(221),
+    ConvertColor(95),
+    1
+  },
+  INQUIRE_NOTIFY = {
+    ConvertColor(196),
+    ConvertColor(174),
+    ConvertColor(91),
+    1
+  },
+  SINERGY = {
+    ConvertColor(149),
+    ConvertColor(184),
+    ConvertColor(75),
+    1
+  },
+  MAP_ZONE_COLOR_STATE_LOW = {
+    ConvertColor(169),
+    ConvertColor(43),
+    ConvertColor(4),
+    1
+  },
+  MAP_ZONE_COLOR_STATE_MIDDLE = {
+    ConvertColor(169),
+    ConvertColor(43),
+    ConvertColor(4),
+    1
+  },
+  MAP_ZONE_COLOR_STATE_HIGH = {
+    ConvertColor(160),
+    ConvertColor(24),
+    ConvertColor(22),
+    1
+  },
+  MAP_ZONE_COLOR_STATE_PEACE = {
+    ConvertColor(25),
+    ConvertColor(89),
+    ConvertColor(128),
+    1
+  },
+  MAP_ZONE_COLOR_STATE_FESTIVAL = {
+    ConvertColor(29),
+    ConvertColor(118),
+    ConvertColor(22),
+    1
+  },
+  TOOLTIP_ZONE_COLOR_STATE_LOW = {
+    ConvertColor(246),
+    ConvertColor(118),
+    ConvertColor(23),
+    1
+  },
+  TOOLTIP_ZONE_COLOR_STATE_MIDDLE = {
+    ConvertColor(246),
+    ConvertColor(118),
+    ConvertColor(23),
+    1
+  },
+  TOOLTIP_ZONE_COLOR_STATE_HIGH = {
+    ConvertColor(229),
+    ConvertColor(57),
+    ConvertColor(48),
+    1
+  },
+  TOOLTIP_ZONE_COLOR_STATE_PEACE = {
+    ConvertColor(47),
+    ConvertColor(160),
+    ConvertColor(225),
+    1
+  },
+  TOOLTIP_ZONE_COLOR_STATE_FESTIVAL = {
+    ConvertColor(76),
+    ConvertColor(178),
+    ConvertColor(68),
+    1
+  },
+  HUD_ZONE_COLOR_STATE_LOW = {
+    ConvertColor(202),
+    ConvertColor(98),
+    ConvertColor(42),
+    1
+  },
+  HUD_ZONE_COLOR_STATE_MIDDLE = {
+    ConvertColor(181),
+    ConvertColor(59),
+    ConvertColor(1),
+    1
+  },
+  HUD_ZONE_COLOR_STATE_HIGH = {
+    ConvertColor(160),
+    ConvertColor(24),
+    ConvertColor(22),
+    1
+  },
+  HUD_ZONE_COLOR_STATE_PEACE = {
+    ConvertColor(25),
+    ConvertColor(89),
+    ConvertColor(128),
+    1
+  },
+  HUD_ZONE_COLOR_STATE_FESTIVAL = {
+    ConvertColor(29),
+    ConvertColor(118),
+    ConvertColor(22),
+    1
+  },
+  MSG_ZONE_COLOR_STATE_LOW = {
+    ConvertColor(202),
+    ConvertColor(98),
+    ConvertColor(42),
+    1
+  },
+  MSG_ZONE_COLOR_STATE_MIDDLE = {
+    ConvertColor(202),
+    ConvertColor(98),
+    ConvertColor(42),
+    1
+  },
+  MSG_ZONE_COLOR_STATE_HIGH = {
+    ConvertColor(180),
+    ConvertColor(64),
+    ConvertColor(79),
+    1
+  },
+  MSG_ZONE_COLOR_STATE_PEACE = {
+    ConvertColor(130),
+    ConvertColor(189),
+    ConvertColor(202),
+    1
+  },
+  MSG_ZONE_COLOR_STATE_FESTIVAL = {
+    ConvertColor(101),
+    ConvertColor(190),
+    ConvertColor(95),
+    1
+  },
+  CONGESTION = {
+    {
+      ConvertColor(161),
+      ConvertColor(201),
+      ConvertColor(238),
+      1
+    },
+    {
+      ConvertColor(242),
+      ConvertColor(157),
+      ConvertColor(36),
+      1
+    },
+    {
+      ConvertColor(237),
+      ConvertColor(167),
+      ConvertColor(167),
+      1
+    },
+    {
+      ConvertColor(237),
+      ConvertColor(167),
+      ConvertColor(167),
+      1
+    }
+  },
+  DARK_RED = {
+    ConvertColor(163),
+    ConvertColor(21),
+    ConvertColor(21),
+    1
+  },
+  CHECK_BUTTON_LIGHT = {
+    ConvertColor(217),
+    ConvertColor(191),
+    ConvertColor(161),
+    1
+  },
+  BATTLEFIELD_RED = {
+    ConvertColor(255),
+    ConvertColor(96),
+    ConvertColor(96),
+    1
+  },
+  BATTLEFIELD_BLUE = {
+    ConvertColor(151),
+    ConvertColor(213),
+    ConvertColor(249),
+    1
+  },
+  BATTLEFIELD_TIME = {
+    ConvertColor(248),
+    ConvertColor(189),
+    ConvertColor(71),
+    1
+  },
+  BATTLEFIELD_ORANGE = {
+    ConvertColor(236),
+    ConvertColor(113),
+    ConvertColor(4),
+    1
+  },
+  BATTLEFIELD_YELLOW = {
+    ConvertColor(255),
+    ConvertColor(253),
+    ConvertColor(106),
+    1
+  },
+  NATION_GREEN = {
+    ConvertColor(142),
+    ConvertColor(177),
+    ConvertColor(49),
+    1
+  },
+  MILEAGE = {
+    ConvertColor(116),
+    ConvertColor(181),
+    ConvertColor(255),
+    1
+  },
+  DAY_EVENT = {
+    ConvertColor(234),
+    ConvertColor(118),
+    ConvertColor(164),
+    1
+  },
+  GENDER_MALE = {
+    ConvertColor(61),
+    ConvertColor(137),
+    ConvertColor(215),
+    1
+  },
+  GENDER_FEMALE = {
+    ConvertColor(211),
+    ConvertColor(117),
+    ConvertColor(133),
+    1
+  },
+  VIOLET = {
+    ConvertColor(131),
+    ConvertColor(118),
+    ConvertColor(217),
+    1
+  },
+  CASH_BROWN = {
+    ConvertColor(166),
+    ConvertColor(88),
+    ConvertColor(54),
+    1
+  },
+  SKIN_ITEM = {
+    ConvertColor(126),
+    ConvertColor(226),
+    ConvertColor(255),
+    1
+  },
+  STAT_ITEM = {
+    ConvertColor(255),
+    ConvertColor(153),
+    ConvertColor(151),
+    1
+  },
+  CONQUEST_STATE_VIEW = {
+    ConvertColor(225),
+    ConvertColor(173),
+    ConvertColor(66),
+    1
+  },
+  CONQUEST_ADD_SCORE = {
+    ConvertColor(16),
+    ConvertColor(159),
+    ConvertColor(200),
+    1
+  },
+  CONQUEST_MINUS_SCORE = {
+    ConvertColor(189),
+    ConvertColor(70),
+    ConvertColor(70),
+    1
+  },
+  POPUP_MENU_BINDING_KEY = {
+    ConvertColor(222),
+    ConvertColor(169),
+    ConvertColor(101),
+    1
+  },
+  EVOLVING_GRAY = {
+    ConvertColor(180),
+    ConvertColor(166),
+    ConvertColor(143),
+    1
+  },
+  EXPEDITION_WAR_DECLARER = {
+    ConvertColor(50),
+    ConvertColor(201),
+    ConvertColor(233),
+    1
+  },
+  EXPEDITION_WAR_DEFENDANT = {
+    ConvertColor(210),
+    ConvertColor(94),
+    ConvertColor(84),
+    1
+  }
+}
+FONT_COLOR_HEX = {
+  TITLE = "|cFF653F0A",
+  HIGH_TITLE = "|cFF472FOD",
+  MIDDLE_TITLE = "|cFF573C17",
+  DEFAULT = "|cFF7E5113",
+  BLUE = "|cFF2C6488",
+  BRIGHT_BULE = "|cFF558FD7",
+  RED = "|cFFC13D36",
+  BATTLEFIELD_RED = "|cFFFF6060",
+  GREEN = "|cFF0C9C23",
+  BRIGHT_GREEN = "|cFF4CB244",
+  WHITE = "|cFFFFFFFF",
+  BLACK = "|cFF2A2A2A",
+  YELLOW = "|cFFD18D09",
+  SOFT_YELLOW = "|cFFFFF8C7",
+  LABORPOWER_YELLOW = "|cFFE9C673",
+  DARK_GRAY = "|cFF787878",
+  GRAY = "|cFF8F8F8F",
+  SKYBLUE = "|cFF97D5F9",
+  PORTAL = "|cFF723F05",
+  LEMON = "|cFF723F05",
+  SINERGY = "|cFF95B84B",
+  SOFT_BROWN = "|cFFD1C0AC",
+  SET_ORANGE = "|cFFF8BD47",
+  FACTION_PARTY = "|cFF4CCCEA",
+  FACTION_RAID = "|cFF278BFC",
+  FACTION_FRIENDLY_PC = "|cFF7CE21C",
+  FACTION_FRIENDLY_NPC = "|cFFF7E84C",
+  DOODAD = "|cFFEF7735",
+  QUEST_TASK = "|cFFB7F7FF",
+  ORANGE = "|cFFFF9C27",
+  DEEP_ORANGE = "|cFFFF3600",
+  DETAIL_DEMAGE = "|cFF83DD5F",
+  MONEY_ITEM_DELPI = "|cFFFF7e00",
+  MONEY_ITEM_STAR = "|cFFFF4546",
+  MONEY_ITEM_KEY = "|cFFCA5567",
+  MONEY_ITEM_NETCAFE = "|cFF546ba6",
+  SOFT_RED = "|cFFD25E54",
+  CONGESTION = {
+    "|cFFA1C9EE",
+    "|cFFF9A587",
+    "|cFFB5B5B5",
+    "|cFFB5B5B5"
+  },
+  MILEAGE_ARCHELIFE = "|cFF87D680",
+  MILEAGE_FREE = "|cFFFFC946",
+  MILEAGE_PCROOM = "|cFFDD7164",
+  MILEAGE_EVENT = "|cFF75C2E2",
+  NATION_INDEPENDENCE = "|cFF95B84B",
+  SOCKET = "|cFFBF9CFF",
+  BATTLEFIELD_BLUE = "|cFF97D5F9",
+  VIOLET = "|cFF8376D9",
+  CASH_BROWN = "|cFFA65836",
+  POPUP_MENU_BINDING_KEY = "|cFFDEA965"
+}
+TEXTURE_COLOR = {
+  SINERGY_BUFF = {
+    ConvertColor(58),
+    ConvertColor(255),
+    ConvertColor(33),
+    1
+  },
+  SINERGY_DEBUFF = {
+    ConvertColor(233),
+    ConvertColor(59),
+    ConvertColor(21),
+    1
+  },
+  HUD_ZONE_COLOR_STATE_LOW = {
+    ConvertColor(0),
+    ConvertColor(0),
+    ConvertColor(0),
+    0.7
+  },
+  HUD_ZONE_COLOR_STATE_MIDDLE = {
+    ConvertColor(240),
+    ConvertColor(185),
+    ConvertColor(126),
+    0.7
+  },
+  HUD_ZONE_COLOR_STATE_HIGH = {
+    ConvertColor(240),
+    ConvertColor(139),
+    ConvertColor(126),
+    0.7
+  },
+  HUD_ZONE_COLOR_STATE_PEACE = {
+    ConvertColor(126),
+    ConvertColor(205),
+    ConvertColor(240),
+    0.7
+  },
+  HUD_ZONE_COLOR_STATE_FESTIVAL = {
+    ConvertColor(150),
+    ConvertColor(190),
+    ConvertColor(121),
+    0.7
+  },
+  MAP_ZONE_COLOR_STATE_LOW = {
+    ConvertColor(172),
+    ConvertColor(56),
+    ConvertColor(0),
+    0.7
+  },
+  MAP_ZONE_COLOR_STATE_MIDDLE = {
+    ConvertColor(172),
+    ConvertColor(56),
+    ConvertColor(0),
+    0.7
+  },
+  MAP_ZONE_COLOR_STATE_HIGH = {
+    ConvertColor(173),
+    ConvertColor(27),
+    ConvertColor(25),
+    0.7
+  },
+  MAP_ZONE_COLOR_STATE_PEACE = {
+    ConvertColor(60),
+    ConvertColor(138),
+    ConvertColor(185),
+    0.7
+  },
+  MAP_ZONE_COLOR_STATE_FESTIVAL = {
+    ConvertColor(45),
+    ConvertColor(154),
+    ConvertColor(36),
+    0.7
+  },
+  BOX_BROWN = {
+    ConvertColor(217),
+    ConvertColor(187),
+    ConvertColor(161),
+    0.3
+  },
+  BOX_BLUE = {
+    ConvertColor(193),
+    ConvertColor(205),
+    ConvertColor(218),
+    0.4
+  },
+  BOX_RED = {
+    ConvertColor(208),
+    ConvertColor(142),
+    ConvertColor(142),
+    0.2
+  },
+  TYPE3_BROWN = {
+    ConvertColor(255),
+    ConvertColor(185),
+    ConvertColor(105),
+    0.3
+  },
+  TYPE3_BLUE = {
+    ConvertColor(105),
+    ConvertColor(211),
+    ConvertColor(255),
+    0.3
+  },
+  TYPE5_PURPLE = {
+    ConvertColor(162),
+    ConvertColor(98),
+    ConvertColor(216),
+    0.2
+  },
+  TYPE5_PINK = {
+    ConvertColor(185),
+    ConvertColor(80),
+    ConvertColor(170),
+    0.2
+  },
+  TYPE7_RED = {
+    ConvertColor(208),
+    ConvertColor(142),
+    ConvertColor(142),
+    0.4
+  },
+  TYPE7_BROWN = {
+    ConvertColor(212),
+    ConvertColor(192),
+    ConvertColor(158),
+    0.5
+  },
+  TYPE8_BLUE = {
+    ConvertColor(12),
+    ConvertColor(99),
+    ConvertColor(171),
+    0.15
+  },
+  TYPE8_RED = {
+    ConvertColor(171),
+    ConvertColor(12),
+    ConvertColor(12),
+    0.15
+  },
+  TYPE8_BLACK = {
+    0,
+    0,
+    0,
+    0.6
+  },
+  TYPE9_BROWN = {
+    ConvertColor(190),
+    ConvertColor(174),
+    ConvertColor(140),
+    0.6
+  },
+  TYPE10_BROWN = {
+    ConvertColor(229),
+    ConvertColor(215),
+    ConvertColor(189),
+    0.6
+  },
+  TYPE10_BLUE = {
+    ConvertColor(183),
+    ConvertColor(206),
+    ConvertColor(220),
+    0.5
+  },
+  TYPE12_BROWN = {
+    ConvertColor(212),
+    ConvertColor(192),
+    ConvertColor(158),
+    0.6
+  },
+  TAB_LINE = {
+    ConvertColor(114),
+    ConvertColor(94),
+    ConvertColor(5),
+    1
+  },
+  GENDER_MALE = {
+    ConvertColor(156),
+    ConvertColor(178),
+    ConvertColor(177),
+    0.8
+  },
+  GENDER_FEMALE = {
+    ConvertColor(192),
+    ConvertColor(165),
+    ConvertColor(164),
+    0.8
+  },
+  ARROW_BROWN = {
+    ConvertColor(200),
+    ConvertColor(144),
+    ConvertColor(83),
+    1
+  },
+  ARROW_DARK_BROWN = {
+    ConvertColor(87),
+    ConvertColor(60),
+    ConvertColor(23),
+    1
+  },
+  ARROW_BLUE = {
+    ConvertColor(22),
+    ConvertColor(118),
+    ConvertColor(173),
+    1
+  },
+  PREMIUM_LISTCTRL = {
+    ConvertColor(159),
+    ConvertColor(135),
+    ConvertColor(86),
+    1
+  },
+  SLIDER = {
+    ConvertColor(153),
+    ConvertColor(132),
+    ConvertColor(86),
+    1
+  },
+  LOGIN_STAGE_SLIDER = {
+    ConvertColor(227),
+    ConvertColor(216),
+    ConvertColor(179),
+    1
+  },
+  BADGE_RED = {
+    ConvertColor(212),
+    ConvertColor(123),
+    ConvertColor(124),
+    1
+  },
+  BADGE_BLUE = {
+    ConvertColor(80),
+    ConvertColor(149),
+    ConvertColor(174),
+    1
+  },
+  ACHIEVEMENT_WINDOW_BG = {
+    ConvertColor(219),
+    ConvertColor(229),
+    ConvertColor(212),
+    1
+  },
+  ACTABILITY_POSSIBLE_UP_BG = {
+    ConvertColor(132),
+    ConvertColor(172),
+    ConvertColor(212),
+    0.4
+  }
+}
+NATION_RELATION_LIST_COLOR = {
+  LIGEANCE = {
+    ConvertColor(82),
+    ConvertColor(125),
+    ConvertColor(69),
+    1
+  },
+  NATIVE = {
+    ConvertColor(146),
+    ConvertColor(180),
+    ConvertColor(136),
+    1
+  },
+  HOSTILE = {
+    ConvertColor(221),
+    ConvertColor(161),
+    ConvertColor(157),
+    1
+  },
+  FRIENDLY = {
+    ConvertColor(130),
+    ConvertColor(176),
+    ConvertColor(185),
+    1
+  },
+  WAR = {
+    ConvertColor(206),
+    ConvertColor(167),
+    ConvertColor(213),
+    1
+  },
+  NONE_OWNER = {
+    ConvertColor(200),
+    ConvertColor(200),
+    ConvertColor(200),
+    1
+  }
+}
+NATION_MAP_COLOR = {
+  LIGEANCE = {
+    82,
+    125,
+    69,
+    1
+  },
+  NATIVE = {
+    146,
+    180,
+    136,
+    1
+  },
+  HOSTILE = {
+    221,
+    161,
+    157,
+    1
+  },
+  FRIENDLY = {
+    130,
+    176,
+    185,
+    1
+  },
+  WAR = {
+    206,
+    167,
+    213,
+    1
+  },
+  NONE_OWNER = {
+    150,
+    150,
+    150,
+    1
+  }
+}
+function GetHudZoneStateFontColor(zoneInfo)
+  if zoneInfo == nil then
+    return
+  elseif zoneInfo.isFestivalZone then
+    return FONT_COLOR.HUD_ZONE_COLOR_STATE_FESTIVAL
+  elseif zoneInfo.isConflictZone then
+    if zoneInfo.conflictState == HPWS_BATTLE then
+      return FONT_COLOR.HUD_ZONE_COLOR_STATE_MIDDLE
+    elseif zoneInfo.conflictState == HPWS_WAR then
+      return FONT_COLOR.HUD_ZONE_COLOR_STATE_HIGH
+    elseif zoneInfo.conflictState == HPWS_PEACE then
+      return FONT_COLOR.HUD_ZONE_COLOR_STATE_PEACE
+    else
+      return FONT_COLOR.HUD_ZONE_COLOR_STATE_LOW
+    end
+  elseif zoneInfo.isSiegeZone then
+    return FONT_COLOR.HUD_ZONE_COLOR_STATE_MIDDLE
+  else
+    return FONT_COLOR.HUD_ZONE_COLOR_STATE_PEACE
+  end
+end
+function GetMapZoneStateFontColor(zoneInfo)
+  if zoneInfo == nil then
+    return
+  elseif zoneInfo.isFestivalZone then
+    return FONT_COLOR.MAP_ZONE_COLOR_STATE_FESTIVAL
+  elseif zoneInfo.isConflictZone then
+    if zoneInfo.conflictState == HPWS_BATTLE then
+      return FONT_COLOR.MAP_ZONE_COLOR_STATE_MIDDLE
+    elseif zoneInfo.conflictState == HPWS_WAR then
+      return FONT_COLOR.MAP_ZONE_COLOR_STATE_HIGH
+    elseif zoneInfo.conflictState == HPWS_PEACE then
+      return FONT_COLOR.MAP_ZONE_COLOR_STATE_PEACE
+    else
+      return FONT_COLOR.MAP_ZONE_COLOR_STATE_LOW
+    end
+  elseif zoneInfo.isSiegeZone then
+    return FONT_COLOR.MAP_ZONE_COLOR_STATE_MIDDLE
+  elseif zoneInfo.isNuiaProtectedZone or zoneInfo.isHariharaProtectedZone or zoneInfo.isPeaceZone then
+    return FONT_COLOR.MAP_ZONE_COLOR_STATE_PEACE
+  else
+    return FONT_COLOR.MAP_ZONE_COLOR_STATE_MIDDLE
+  end
+end
+function GetMsgZoneStateFontColor(zoneInfo)
+  if zoneInfo == nil then
+    return
+  elseif zoneInfo.isFestivalZone then
+    return FONT_COLOR.MSG_ZONE_COLOR_STATE_FESTIVAL
+  elseif zoneInfo.isConflictZone then
+    if zoneInfo.conflictState == HPWS_BATTLE then
+      return FONT_COLOR.MSG_ZONE_COLOR_STATE_MIDDLE
+    elseif zoneInfo.conflictState == HPWS_WAR then
+      return FONT_COLOR.MSG_ZONE_COLOR_STATE_HIGH
+    elseif zoneInfo.conflictState == HPWS_PEACE then
+      return FONT_COLOR.MSG_ZONE_COLOR_STATE_PEACE
+    else
+      return FONT_COLOR.MSG_ZONE_COLOR_STATE_LOW
+    end
+  elseif zoneInfo.isSiegeZone then
+    return FONT_COLOR.MSG_ZONE_COLOR_STATE_MIDDLE
+  elseif zoneInfo.isNuiaProtectedZone or zoneInfo.isHariharaProtectedZone or zoneInfo.isPeaceZone then
+    return FONT_COLOR.MSG_ZONE_COLOR_STATE_PEACE
+  else
+    return FONT_COLOR.MSG_ZONE_COLOR_STATE_MIDDLE
+  end
+end
+function GetHudZoneStateTextureColor(zoneInfo)
+  if zoneInfo == nil then
+    return
+  elseif zoneInfo.isFestivalZone then
+    return TEXTURE_COLOR.HUD_ZONE_COLOR_STATE_FESTIVAL
+  elseif zoneInfo.isConflictZone then
+    if zoneInfo.conflictState == HPWS_BATTLE then
+      return TEXTURE_COLOR.HUD_ZONE_COLOR_STATE_MIDDLE
+    elseif zoneInfo.conflictState == HPWS_WAR then
+      return TEXTURE_COLOR.HUD_ZONE_COLOR_STATE_HIGH
+    elseif zoneInfo.conflictState == HPWS_PEACE then
+      return TEXTURE_COLOR.HUD_ZONE_COLOR_STATE_PEACE
+    else
+      return TEXTURE_COLOR.HUD_ZONE_COLOR_STATE_LOW
+    end
+  elseif zoneInfo.isSiegeZone then
+    return TEXTURE_COLOR.HUD_ZONE_COLOR_STATE_MIDDLE
+  elseif zoneInfo.isNuiaProtectedZone or zoneInfo.isHariharaProtectedZone or zoneInfo.isPeaceZone then
+    return TEXTURE_COLOR.HUD_ZONE_COLOR_STATE_PEACE
+  else
+    return TEXTURE_COLOR.HUD_ZONE_COLOR_STATE_MIDDLE
+  end
+end
+function GetMapZoneStateTextureColor(zoneInfo)
+  if zoneInfo == nil then
+    return
+  elseif zoneInfo.isFestivalZone then
+    return TEXTURE_COLOR.MAP_ZONE_COLOR_STATE_FESTIVAL
+  elseif zoneInfo.isConflictZone then
+    if zoneInfo.conflictState == HPWS_BATTLE then
+      return TEXTURE_COLOR.MAP_ZONE_COLOR_STATE_MIDDLE
+    elseif zoneInfo.conflictState == HPWS_WAR then
+      return TEXTURE_COLOR.MAP_ZONE_COLOR_STATE_HIGH
+    elseif zoneInfo.conflictState == HPWS_PEACE then
+      return TEXTURE_COLOR.MAP_ZONE_COLOR_STATE_PEACE
+    else
+      return TEXTURE_COLOR.MAP_ZONE_COLOR_STATE_LOW
+    end
+  elseif zoneInfo.isSiegeZone then
+    return TEXTURE_COLOR.MAP_ZONE_COLOR_STATE_MIDDLE
+  elseif zoneInfo.isNuiaProtectedZone or zoneInfo.isHariharaProtectedZone or zoneInfo.isPeaceZone then
+    return TEXTURE_COLOR.MAP_ZONE_COLOR_STATE_PEACE
+  else
+    return TEXTURE_COLOR.MAP_ZONE_COLOR_STATE_MIDDLE
+  end
+end
+function GetTooltipZoneStateFontColor(zoneInfo)
+  if zoneInfo == nil then
+    return
+  elseif zoneInfo.isFestivalZone then
+    return FONT_COLOR.TOOLTIP_ZONE_COLOR_STATE_FESTIVAL
+  elseif zoneInfo.isConflictZone then
+    if zoneInfo.conflictState == HPWS_BATTLE then
+      return FONT_COLOR.TOOLTIP_ZONE_COLOR_STATE_MIDDLE
+    elseif zoneInfo.conflictState == HPWS_WAR then
+      return FONT_COLOR.TOOLTIP_ZONE_COLOR_STATE_HIGH
+    elseif zoneInfo.conflictState == HPWS_PEACE then
+      return FONT_COLOR.TOOLTIP_ZONE_COLOR_STATE_PEACE
+    else
+      return FONT_COLOR.TOOLTIP_ZONE_COLOR_STATE_LOW
+    end
+  elseif zoneInfo.isSiegeZone then
+    return FONT_COLOR.TOOLTIP_ZONE_COLOR_STATE_MIDDLE
+  elseif zoneInfo.isNuiaProtectedZone or zoneInfo.isHariharaProtectedZone or zoneInfo.isPeaceZone then
+    return FONT_COLOR.TOOLTIP_ZONE_COLOR_STATE_PEACE
+  else
+    return FONT_COLOR.TOOLTIP_ZONE_COLOR_STATE_MIDDLE
+  end
+end
+function GetUnitGradeColor(grade)
+  if grade == nil then
+    return "|cFFFFFFFF"
+  end
+  local colorTable = {
+    weak = "|cFF959394",
+    normal = "|cFFba976d",
+    strong = "|cFF77b064",
+    elite = "|cFF558fd7",
+    boss_c = "|cFFcb72d8",
+    boss_b = "|cFFd78b06",
+    boss_a = "|cFFe17853",
+    boss_s = "|cFFf95252"
+  }
+  local color = colorTable[grade]
+  if color == nil then
+    return "|cFFFFFFFF"
+  end
+  return color
+end
+function GetPriceColor(priceType)
+  if priceType == PRICE_TYPE_AA_CASH then
+    return baselibLocale.inGameShop.aa_cash_color
+  elseif priceType == PRICE_TYPE_AA_POINT then
+    return FONT_COLOR.DEFAULT
+  elseif priceType == PRICE_TYPE_BM_MILEAGE then
+    return FONT_COLOR.DEEP_ORANGE
+  elseif priceType == PRICE_TYPE_AA_BONUS_CASH then
+    return FONT_COLOR.SOFT_RED
+  elseif priceType == PRICE_TYPE_AA_CASH_AND_BONUS_CASH then
+    return baselibLocale.inGameShop.aa_cash_color
+  else
+    return FONT_COLOR.BLUE
+  end
+end

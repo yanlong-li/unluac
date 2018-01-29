@@ -1,0 +1,596 @@
+local alreadyNotified = false
+function ShowDisconnectMsg(title, body)
+  if alreadyNotified then
+    return
+  end
+  local function DialogHandler(wnd)
+    wnd:SetTitle(title)
+    wnd:SetContent(body)
+    function wnd:OkProc()
+      X2World:LeaveWorld(EXIT_CLIENT)
+    end
+    function wnd:OnUpdate()
+      self:Raise()
+      self:SetUILayer("system")
+    end
+    wnd:SetHandler("OnUpdate", wnd.OnUpdate)
+  end
+  local id = X2DialogManager:RequestNoticeDialog(DialogHandler, "")
+  alreadyNotified = id ~= "0"
+end
+UIParent:SetEventHandler("DISCONNECTED_BY_WORLD", ShowDisconnectMsg)
+local SetViewOfLeaderMark = function(id, parent)
+  local mark = CreateEmptyButton(id .. "leaderMark", parent)
+  mark:SetExtent(11, 11)
+  local bg = mark:CreateImageDrawable(TEXTURE_PATH.HUD, "background")
+  bg:SetExtent(11, 11)
+  bg:AddAnchor("CENTER", mark, 0, 0)
+  mark.bg = bg
+  function mark:SetMarkTexture(style)
+    mark:Show(true)
+    if style == "leader" then
+      bg:SetCoords(705, 147, 11, 11)
+    elseif style == "subleader" then
+      bg:SetCoords(717, 147, 11, 11)
+    else
+      mark:Show(false)
+    end
+  end
+  mark:SetMarkTexture(nil)
+  return mark
+end
+function CreateLeaderMark(id, parent)
+  local leaderMark = SetViewOfLeaderMark(id, parent)
+  local text
+  function leaderMark:SetMark(grade, showTooltip)
+    if grade == nil or grade == "looting" then
+      self.grade = ""
+      self:Show(false)
+      return
+    end
+    self:Show(true)
+    self.grade = grade
+    self:SetMarkTexture(grade)
+    self.showTooltip = showTooltip
+  end
+  local function OnEnter(self)
+    if self.showTooltip == true then
+      if self.grade == "leader" then
+        text = locale.team.leaderTip()
+      elseif self.grade == "subleader" then
+        text = locale.raid.subleaderTip
+      end
+      SetTooltip(text, self)
+    end
+  end
+  leaderMark:SetHandler("OnEnter", OnEnter)
+  return leaderMark
+end
+local SetViewOfSpinner = function(id, parent)
+  local window = CreateEmptyWindow(id, parent)
+  local text = window:CreateChildWidget("editbox", "text", 0, true)
+  text:AddAnchor("TOPLEFT", window, 0, 0)
+  text:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+  ApplyEditSkin(text)
+  text.style:SetAlign(ALIGN_CENTER)
+  text:SetInset(0, 0, 12, 0)
+  local upButton = window:CreateChildWidget("button", "upButton", 0, true)
+  ApplyButtonSkin(upButton, BUTTON_BASIC.SPINNER_UP)
+  upButton:AddAnchor("TOPRIGHT", window, -1, 3)
+  local downButton = window:CreateChildWidget("button", "downButton", 0, true)
+  ApplyButtonSkin(downButton, BUTTON_BASIC.FOLDER_CLOSE)
+  downButton:AddAnchor("BOTTOMRIGHT", window, 0, 1)
+  return window
+end
+function CreateSpinner(id, parent)
+  parent = parent or "UIParent"
+  local window = SetViewOfSpinner(id, parent)
+  window:SetExtent(DEFAULT_SIZE.SPINNER[1], DEFAULT_SIZE.SPINNER[2])
+  window.minValue = 1
+  window.maxValue = 20
+  window.curValue = 1
+  window.useRotateCount = false
+  window.text:SetMaxTextLength(string.len(window.maxValue))
+  function window:SetFocus()
+    self.text:SetFocus()
+  end
+  function window:ClearFocus()
+    self.text:ClearFocus()
+  end
+  function window:UseRotateCount()
+    window.useRotateCount = true
+  end
+  function window:GetCurValue()
+    return self.curValue
+  end
+  function window:SetEnable(enable)
+    self.upButton:Enable(enable)
+    self.downButton:Enable(enable)
+    self.text:SetEnable(enable)
+  end
+  local function OnEnterPressed()
+    if parent.ProcOnEnterPressed ~= nil then
+      parent:ProcOnEnterPressed()
+      parent:Show(false)
+    end
+  end
+  window.text:SetHandler("OnEnterPressed", OnEnterPressed)
+  local function OnTextChanged(self)
+    local text = self:GetText()
+    if parent.OnTextChanged ~= nil then
+      parent:OnTextChanged(text)
+    end
+    local number = tonumber(text)
+    if number == window.curValue then
+      return
+    end
+    if number ~= nil then
+      if number > window.maxValue then
+        window.curValue = window.maxValue
+      elseif number < window.minValue then
+        window.curValue = window.minValue
+      else
+        window.curValue = number
+      end
+      window:SetValue(window.curValue)
+    else
+      window:SetValue("")
+    end
+  end
+  window.text:SetHandler("OnTextChanged", OnTextChanged)
+  function window.upButton:OnClick(arg)
+    if arg == "LeftButton" then
+      window.curValue = tonumber(window.text:GetText()) or 1
+      window.curValue = window.curValue + 1
+      if window.curValue > window.maxValue then
+        window.curValue = window.maxValue
+      elseif window.curValue < window.minValue then
+        window.curValue = window.minValue
+      end
+      window.text:SetText(tostring(window.curValue))
+      window.text:ClearFocus()
+    end
+  end
+  function window.downButton:OnClick(arg)
+    if arg == "LeftButton" then
+      window.curValue = tonumber(window.text:GetText()) or 1
+      window.curValue = window.curValue - 1
+      if window.useRotateCount then
+        if window.curValue < window.minValue then
+          window.curValue = window.maxValue
+        end
+      elseif window.curValue < window.minValue then
+        window.curValue = window.minValue
+      end
+      window.text:SetText(tostring(window.curValue))
+      window.text:ClearFocus()
+    end
+  end
+  function window:SetValue(arg)
+    window.text:SetText(tostring(arg))
+  end
+  function window:SetMinMaxValues(_min, _max)
+    self.minValue = tonumber(_min)
+    self.maxValue = tonumber(_max)
+    self.text:SetMaxTextLength(string.len(_max))
+  end
+  window.upButton:SetHandler("OnClick", window.upButton.OnClick)
+  window.downButton:SetHandler("OnClick", window.downButton.OnClick)
+  return window
+end
+local SetViewOfMoneyEditsWindow = function(id, parent, titleText)
+  local window = CreateEmptyWindow(id, parent)
+  window:SetExtent(175, DEFAULT_SIZE.EDIT_HEIGHT)
+  window:Show(true)
+  local goldEdit = CreateMoneyEdit(id .. ".goldEdit", parent)
+  goldEdit:SetExtent(75, DEFAULT_SIZE.EDIT_HEIGHT)
+  goldEdit:SetDigit(true)
+  goldEdit:SetMaxTextLength(6)
+  window.goldEdit = goldEdit
+  local goldIcon = DrawMoneyIcon(goldEdit, "gold")
+  goldIcon:AddAnchor("RIGHT", goldEdit, -3, 0)
+  goldEdit.goldIcon = goldIcon
+  local silverEdit = CreateMoneyEdit(id .. ".silveredit", parent)
+  silverEdit:SetExtent(42, DEFAULT_SIZE.EDIT_HEIGHT)
+  silverEdit:SetDigit(true)
+  silverEdit:SetMaxTextLength(2)
+  window.silverEdit = silverEdit
+  local silverIcon = DrawMoneyIcon(silverEdit, "silver")
+  silverIcon:AddAnchor("RIGHT", silverEdit, -3, 0)
+  silverEdit.silverIcon = silverIcon
+  local copperEdit = CreateMoneyEdit(id .. ".copperedit", parent)
+  copperEdit:SetExtent(42, DEFAULT_SIZE.EDIT_HEIGHT)
+  copperEdit:SetDigit(true)
+  copperEdit:SetMaxTextLength(2)
+  window.copperEdit = copperEdit
+  local copperIcon = DrawMoneyIcon(copperEdit, "copper")
+  copperIcon:AddAnchor("RIGHT", copperEdit, -3, 0)
+  copperEdit.copperIcon = copperIcon
+  if titleText ~= nil then
+    local title = window:CreateChildWidget("label", "title", 0, true)
+    title.style:SetAlign(ALIGN_LEFT)
+    ApplyTextColor(title, FONT_COLOR.TITLE)
+    title:SetText(titleText)
+    title:SetExtent(65, 13)
+    title:AddAnchor("RIGHT", window, "LEFT", 0, 0)
+    title:SetLimitWidth(false)
+  end
+  function window:AnchorStyling(style)
+    if style == "twoLine" then
+      goldEdit:RemoveAllAnchors()
+      goldEdit:AddAnchor("TOPLEFT", window, 0, 0)
+      silverEdit:RemoveAllAnchors()
+      silverEdit:AddAnchor("TOPLEFT", goldEdit, "BOTTOMLEFT", 0, 2)
+      copperEdit:RemoveAllAnchors()
+      copperEdit:AddAnchor("TOPRIGHT", goldEdit, "BOTTOMRIGHT", 0, 2)
+      self:SetHeight(52)
+    else
+      goldEdit:RemoveAllAnchors()
+      goldEdit:AddAnchor("TOPLEFT", window, 0, 0)
+      silverEdit:RemoveAllAnchors()
+      silverEdit:AddAnchor("LEFT", goldEdit, "RIGHT", 4, 0)
+      copperEdit:RemoveAllAnchors()
+      copperEdit:AddAnchor("LEFT", silverEdit, "RIGHT", 4, 0)
+      self:SetHeight(22)
+    end
+  end
+  window:AnchorStyling()
+  function window:SetStyle(style)
+    if style == "brown" then
+      ApplyEditSkin(goldEdit, "brown", false)
+      ApplyEditSkin(silverEdit, "brown", false)
+      ApplyEditSkin(copperEdit, "brown", false)
+    else
+      ApplyEditSkin(goldEdit, "blue", false)
+      ApplyEditSkin(silverEdit, "blue", false)
+      ApplyEditSkin(copperEdit, "blue", false)
+    end
+  end
+  function window:SetExtentByMultiplier(widthMultiplier, heightMultiplier)
+    local tempWidth, tempHeight = self:GetExtent()
+    self:SetExtent(tempWidth * widthMultiplier, tempHeight * heightMultiplier)
+    tempWidth, tempHeight = self.goldEdit:GetExtent()
+    self.goldEdit:SetExtent(tempWidth * widthMultiplier, tempHeight * heightMultiplier)
+    tempWidth, tempHeight = self.goldEdit.goldIcon:GetExtent()
+    self.goldEdit.goldIcon:SetExtent(tempWidth * widthMultiplier, tempHeight * heightMultiplier)
+    tempWidth, tempHeight = self.silverEdit:GetExtent()
+    self.silverEdit:SetExtent(tempWidth * widthMultiplier, tempHeight * heightMultiplier)
+    tempWidth, tempHeight = self.silverEdit.silverIcon:GetExtent()
+    self.silverEdit.silverIcon:SetExtent(tempWidth * widthMultiplier, tempHeight * heightMultiplier)
+    tempWidth, tempHeight = self.copperEdit:GetExtent()
+    self.copperEdit:SetExtent(tempWidth * widthMultiplier, tempHeight * heightMultiplier)
+    tempWidth, tempHeight = self.copperEdit.copperIcon:GetExtent()
+    self.copperEdit.copperIcon:SetExtent(tempWidth * widthMultiplier, tempHeight * heightMultiplier)
+  end
+  function window:SetMoneyFontSize(size)
+    self.goldEdit.style:SetFontSize(size)
+    self.silverEdit.style:SetFontSize(size)
+    self.copperEdit.style:SetFontSize(size)
+  end
+  window:SetStyle(nil)
+  return window
+end
+function CreateMoneyEditsWindow(id, parent, titleText)
+  local window = SetViewOfMoneyEditsWindow(id, parent, titleText)
+  local MONEY_LIMIT = "2000000000"
+  window.money_limit = MONEY_LIMIT
+  function window:SetAmountStr(moneyStr)
+    if moneyStr == nil then
+      moneyStr = "0"
+    end
+    if type(moneyStr) == "number" then
+      moneyStr = string.format("%i", moneyStr)
+    end
+    local money = tonumber(moneyStr)
+    if money ~= nil and (money < 0 or 0 < X2Util:CompareMoneyString(moneyStr, MONEY_LIMIT)) then
+      moneyStr = MONEY_LIMIT
+    end
+    local gold, silver, copper = GoldSilverCopperStringFromMoneyStr(moneyStr)
+    window.goldEdit:SetText(gold)
+    window.silverEdit:SetText(silver)
+    window.copperEdit:SetText(copper)
+    window.moneyStr = moneyStr
+  end
+  function window:GetAmountStr()
+    local gold = window.goldEdit:GetText()
+    local silver = window.silverEdit:GetText()
+    local copper = window.copperEdit:GetText()
+    window.moneyStr = X2Util:MakeMoneyString(gold, silver, copper)
+    return window.moneyStr
+  end
+  function window:GetSystemCurrencyAmountLimit()
+    return MONEY_LIMIT
+  end
+  function window:SetCurrencyAmountLimit(limit)
+    limit = tostring(limit)
+    if X2Util:CompareMoneyString(limit, MONEY_LIMIT) > 0 then
+      limit = MONEY_LIMIT
+    end
+    self.money_limit = limit
+  end
+  function window:OnTextChanged()
+    local moneyStr = window:GetAmountStr()
+    if X2Util:CompareMoneyString(moneyStr, window.money_limit) > 0 then
+      window:SetAmountStr(window.money_limit)
+    end
+    if window.MoneyEditProc ~= nil then
+      window:MoneyEditProc()
+    end
+  end
+  window.goldEdit:SetHandler("OnTextChanged", window.OnTextChanged)
+  window.silverEdit:SetHandler("OnTextChanged", window.OnTextChanged)
+  window.copperEdit:SetHandler("OnTextChanged", window.OnTextChanged)
+  return window
+end
+local SetViewOfAAPointEditsWindow = function(id, parent, titleText)
+  local window = CreateEmptyWindow(id, parent)
+  window:SetExtent(175, DEFAULT_SIZE.EDIT_HEIGHT)
+  window:Show(true)
+  local goldEdit = CreateAAPointEdit(id .. ".goldEdit", parent)
+  goldEdit:SetExtent(75, DEFAULT_SIZE.EDIT_HEIGHT)
+  goldEdit:SetDigit(true)
+  goldEdit:SetMaxTextLength(6)
+  window.goldEdit = goldEdit
+  local goldIcon = DrawMoneyIcon(goldEdit, "aapointGold")
+  goldIcon:AddAnchor("RIGHT", goldEdit, -3, 0)
+  goldEdit.goldIcon = goldIcon
+  local silverEdit = CreateAAPointEdit(id .. ".silveredit", parent)
+  silverEdit:SetExtent(42, DEFAULT_SIZE.EDIT_HEIGHT)
+  silverEdit:SetDigit(true)
+  silverEdit:SetMaxTextLength(2)
+  window.silverEdit = silverEdit
+  local silverIcon = DrawMoneyIcon(silverEdit, "aapointSilver")
+  silverIcon:AddAnchor("RIGHT", silverEdit, -3, 0)
+  silverEdit.silverIcon = silverIcon
+  local copperEdit = CreateAAPointEdit(id .. ".copperedit", parent)
+  copperEdit:SetExtent(42, DEFAULT_SIZE.EDIT_HEIGHT)
+  copperEdit:SetDigit(true)
+  copperEdit:SetMaxTextLength(2)
+  window.copperEdit = copperEdit
+  local copperIcon = DrawMoneyIcon(copperEdit, "aapointCopper")
+  copperIcon:AddAnchor("RIGHT", copperEdit, -3, 0)
+  copperEdit.copperIcon = copperIcon
+  if titleText ~= nil then
+    local title = window:CreateChildWidget("label", "title", 0, true)
+    title.style:SetAlign(ALIGN_LEFT)
+    ApplyTextColor(title, FONT_COLOR.TITLE)
+    title:SetText(titleText)
+    title:SetExtent(65, 13)
+    title:AddAnchor("RIGHT", window, "LEFT", 0, 0)
+    title:SetLimitWidth(false)
+  end
+  function window:AnchorStyling(style)
+    if style == "twoLine" then
+      goldEdit:RemoveAllAnchors()
+      goldEdit:AddAnchor("TOPLEFT", window, 0, 0)
+      silverEdit:RemoveAllAnchors()
+      silverEdit:AddAnchor("TOPLEFT", goldEdit, "BOTTOMLEFT", 0, 2)
+      copperEdit:RemoveAllAnchors()
+      copperEdit:AddAnchor("TOPRIGHT", goldEdit, "BOTTOMRIGHT", 0, 2)
+      self:SetHeight(52)
+    else
+      goldEdit:RemoveAllAnchors()
+      goldEdit:AddAnchor("TOPLEFT", window, 0, 0)
+      silverEdit:RemoveAllAnchors()
+      silverEdit:AddAnchor("LEFT", goldEdit, "RIGHT", 4, 0)
+      copperEdit:RemoveAllAnchors()
+      copperEdit:AddAnchor("LEFT", silverEdit, "RIGHT", 4, 0)
+      self:SetHeight(22)
+    end
+  end
+  window:AnchorStyling()
+  function window:SetStyle(style)
+    if style == "brown" then
+      ApplyEditSkin(goldEdit, "brown", false)
+      ApplyEditSkin(silverEdit, "brown", false)
+      ApplyEditSkin(copperEdit, "brown", false)
+    else
+      ApplyEditSkin(goldEdit, "blue", false)
+      ApplyEditSkin(silverEdit, "blue", false)
+      ApplyEditSkin(copperEdit, "blue", false)
+    end
+  end
+  function window:SetExtentByMultiplier(widthMultiplier, heightMultiplier)
+    local tempWidth, tempHeight = self:GetExtent()
+    self:SetExtent(tempWidth * widthMultiplier, tempHeight * heightMultiplier)
+    tempWidth, tempHeight = self.goldEdit:GetExtent()
+    self.goldEdit:SetExtent(tempWidth * widthMultiplier, tempHeight * heightMultiplier)
+    tempWidth, tempHeight = self.goldEdit.goldIcon:GetExtent()
+    self.goldEdit.goldIcon:SetExtent(tempWidth * widthMultiplier, tempHeight * heightMultiplier)
+    tempWidth, tempHeight = self.silverEdit:GetExtent()
+    self.silverEdit:SetExtent(tempWidth * widthMultiplier, tempHeight * heightMultiplier)
+    tempWidth, tempHeight = self.silverEdit.silverIcon:GetExtent()
+    self.silverEdit.silverIcon:SetExtent(tempWidth * widthMultiplier, tempHeight * heightMultiplier)
+    tempWidth, tempHeight = self.copperEdit:GetExtent()
+    self.copperEdit:SetExtent(tempWidth * widthMultiplier, tempHeight * heightMultiplier)
+    tempWidth, tempHeight = self.copperEdit.copperIcon:GetExtent()
+    self.copperEdit.copperIcon:SetExtent(tempWidth * widthMultiplier, tempHeight * heightMultiplier)
+  end
+  function window:SetMoneyFontSize(size)
+    self.goldEdit.style:SetFontSize(size)
+    self.silverEdit.style:SetFontSize(size)
+    self.copperEdit.style:SetFontSize(size)
+  end
+  window:SetStyle(nil)
+  return window
+end
+function CreateAAPointEditsWindow(id, parent, titleText)
+  local window = SetViewOfAAPointEditsWindow(id, parent, titleText)
+  local AA_POINT_LIMIT = "2000000000"
+  window.aaPoint_limit = AA_POINT_LIMIT
+  function window:SetAmountStr(aaPointStr)
+    if aaPointStr == nil then
+      aaPointStr = "0"
+    end
+    if type(aaPointStr) == "number" then
+      aaPointStr = string.format("%i", aaPointStr)
+    end
+    local gold, silver, copper = GetAAPointByUnitFromAAPointStr(aaPointStr)
+    window.goldEdit:SetText(gold)
+    window.silverEdit:SetText(silver)
+    window.copperEdit:SetText(copper)
+    window.aaPointStr = aaPointStr
+  end
+  function window:GetAmountStr()
+    local gold = window.goldEdit:GetText()
+    local silver = window.silverEdit:GetText()
+    local copper = window.copperEdit:GetText()
+    window.aaPointStr = X2Util:MakeAAPointString(gold, silver, copper)
+    return window.aaPointStr
+  end
+  function window:GetSystemCurrencyAmountLimit()
+    return AA_POINT_LIMIT
+  end
+  function window:SetCurrencyAmountLimit(limit)
+    limit = tostring(limit)
+    if X2Util:CompareMoneyString(limit, AA_POINT_LIMIT) > 0 then
+      limit = AA_POINT_LIMIT
+    end
+    self.aaPoint_limit = limit
+  end
+  function window:OnTextChanged()
+    local aaPointStr = window:GetAmountStr()
+    if X2Util:CompareAAPointString(aaPointStr, window.aaPoint_limit) > 0 then
+      window:SetAmountStr(window.aaPoint_limit)
+    end
+    if window.MoneyEditProc ~= nil then
+      window:MoneyEditProc()
+    end
+  end
+  window.goldEdit:SetHandler("OnTextChanged", window.OnTextChanged)
+  window.silverEdit:SetHandler("OnTextChanged", window.OnTextChanged)
+  window.copperEdit:SetHandler("OnTextChanged", window.OnTextChanged)
+  return window
+end
+function GetPriceTextColor(priceType, itemType)
+  if priceType == PRICE_TYPE_AA_CASH then
+    return baselibLocale.inGameShop.aa_cash_color_hex
+  elseif priceType == PRICE_TYPE_AA_POINT then
+    return FONT_COLOR_HEX.DEFAULT
+  elseif priceType == PRICE_TYPE_BM_MILEAGE then
+    return FONT_COLOR_HEX.DEEP_ORANGE
+  elseif priceType == PRICE_TYPE_ITEM then
+    if itemType == ISMI_DELPI then
+      return FONT_COLOR_HEX.MONEY_ITEM_DELPI
+    elseif itemType == ISMI_STAR then
+      return FONT_COLOR_HEX.MONEY_ITEM_STAR
+    elseif itemType == ISMI_KEY then
+      return FONT_COLOR_HEX.MONEY_ITEM_KEY
+    elseif itemType == ISMI_NETCAFE then
+      return FONT_COLOR_HEX.MONEY_ITEM_NETCAFE
+    elseif itemType == ISMI_LORDCOIN then
+      return FONT_COLOR_HEX.DEEP_ORANGE
+    end
+  elseif priceType == PRICE_TYPE_AA_BONUS_CASH then
+    return FONT_COLOR_HEX.SOFT_RED
+  elseif priceType == PRICE_TYPE_AA_CASH_AND_BONUS_CASH then
+    return baselibLocale.inGameShop.aa_cash_color_hex
+  end
+  return FONT_COLOR_HEX.BLUE
+end
+local GetPriceText = function(priceType, itemType, amount)
+  if type(amount) == "number" then
+    amount = tostring(amount)
+  end
+  if priceType == PRICE_TYPE_AA_CASH then
+    return string.format("|j%s;", amount)
+  elseif priceType == PRICE_TYPE_AA_POINT then
+    return string.format("|p%s;", amount)
+  elseif priceType == PRICE_TYPE_BM_MILEAGE then
+    return string.format("|b%s;", amount)
+  elseif priceType == PRICE_TYPE_ITEM then
+    if itemType == ISMI_DELPI then
+      return string.format("|se%s;", amount)
+    elseif itemType == ISMI_STAR then
+      return string.format("|ss%s;", amount)
+    elseif itemType == ISMI_KEY then
+      return string.format("|sy%s;", amount)
+    elseif itemType == ISMI_NETCAFE then
+      return string.format("|sf%s;", amount)
+    elseif itemType == ISMI_LORDCOIN then
+      return string.format("|sl%s;", amount)
+    else
+      return string.format("%s;", amount)
+    end
+  elseif priceType == PRICE_TYPE_AA_BONUS_CASH then
+    return string.format("|zi%s;", amount)
+  elseif priceType == PRICE_TYPE_AA_CASH_AND_BONUS_CASH then
+    return string.format("|zl%s;", amount)
+  else
+    return string.format("|m%s;", amount)
+  end
+end
+function SettingPriceText(priceText, priceType, color, itemType)
+  local strColor
+  if color ~= nil then
+    strColor = color
+  else
+    strColor = GetPriceTextColor(priceType, itemType)
+  end
+  return string.format("%s%s", strColor, GetPriceText(priceType, itemType, priceText))
+end
+function ApplyEllipsisText(widget, width, attachParam)
+  if attachParam == nil then
+    attachParam = {
+      "RIGHT",
+      widget,
+      "LEFT",
+      0,
+      0
+    }
+  end
+  if widget.SetAutoResize then
+    widget:SetAutoResize(false)
+  end
+  widget:SetWidth(width)
+  widget.style:SetEllipsis(true)
+  local function OnEnter(self)
+    if self:GetText() == "" then
+      return
+    end
+    SetTargetAnchorTooltip(self:GetText(), attachParam[1], attachParam[2], attachParam[3], attachParam[4])
+  end
+  widget:SetHandler("OnEnter", OnEnter)
+end
+function GetLimitInfoText(namePolicy)
+  local isSameLen = namePolicy.local_min == namePolicy.eng_min and namePolicy.local_max == namePolicy.eng_max
+  local strLimitLength
+  if isSameLen then
+    local strLocalMin = tostring(namePolicy.local_min)
+    local strLocalMax = tostring(namePolicy.local_max)
+    strLimitLength = locale.changeName.limit_alphabet(strLocalMin, strLocalMax)
+  else
+    local strLocalLang = locale.changeName.korean
+    local strEngLang = locale.changeName.english
+    local strLocalMin = tostring(namePolicy.local_min)
+    local strLocalMax = tostring(namePolicy.local_max)
+    local strEngMin = tostring(namePolicy.eng_min)
+    local strEngMax = tostring(namePolicy.eng_max)
+    strLimitLength = locale.changeName.limit_multi_lang_alphabet(strLocalLang, strLocalMin, strLocalMax, strEngLang, strEngMin, strEngMax)
+  end
+  local strAllowOption
+  if namePolicy.is_allow_mix_case == true then
+    strAllowOption = locale.changeName.allow_mixcase
+  end
+  if namePolicy.is_allow_space == true then
+    if namePolicy.limit_space_cnt == 0 then
+      strAllowOption = string.format("%s, %s", strAllowOption, locale.changeName.allow_space)
+    else
+      strAllowOption = string.format("%s, %s", strAllowOption, locale.changeName.allow_space_limit(tostring(namePolicy.limit_space_cnt)))
+    end
+  end
+  if namePolicy.is_allow_special_letter == true then
+    strAllowOption = string.format("%s, %s", strAllowOption, locale.changeName.allow_special_character)
+  end
+  if strAllowOption ~= nil then
+    return string.format("%s (%s)", strLimitLength, strAllowOption)
+  else
+    return strLimitLength
+  end
+end
+function GetPetTargetName(mateType)
+  if mateType == MATE_TYPE_NONE then
+    return "playerpet"
+  end
+  return "playerpet" .. tostring(mateType)
+end

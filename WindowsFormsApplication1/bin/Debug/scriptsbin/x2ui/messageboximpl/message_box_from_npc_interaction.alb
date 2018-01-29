@@ -1,0 +1,396 @@
+local w = CreateEmptyWindow("message_box_from_npc_interaction", "UIParent")
+local function CreateNpcInteractionMessageBoxHandleWindow(id)
+  local wnd = w:CreateChildWidget("window", id, 0, true)
+  wnd:Show(false)
+  return wnd
+end
+local ShowErrorMessageBox = function(title, content, parent)
+  local function DialogHandler(wnd)
+    wnd:SetTitle(title)
+    wnd:SetContent(content)
+    function wnd:OkProc()
+      parent:Show(false)
+    end
+  end
+  X2DialogManager:RequestNoticeDialog(DialogHandler, parent:GetId())
+end
+local wnd = CreateNpcInteractionMessageBoxHandleWindow("stabler")
+function wnd:OnShow()
+  local cost = X2:GetTotalRepairsForPetItems()
+  if cost == 0 then
+    local title = locale.stabler.title
+    local content = string.format("%s", locale.stabler.needPet)
+    ShowErrorMessageBox(title, content, wnd)
+    return
+  end
+  local content = string.format("%s", locale.stabler.confirmRevivePet)
+  local valueText = string.format("|m%d;", cost)
+  local function DialogHandler(dlgWnd)
+    ApplyDialogStyle(dlgWnd, DIALOG_STYLE.INCLUDE_VALUE_TEXT)
+    dlgWnd:SetTitle(locale.stabler.title)
+    dlgWnd:SetContentEx(content, valueText)
+    function dlgWnd:OkProc()
+      X2:RepairPetItems()
+      wnd:Show(false)
+    end
+    function dlgWnd:CancelProc()
+      wnd:Show(false)
+    end
+  end
+  X2DialogManager:RequestDefaultDialog(DialogHandler, self:GetId())
+end
+wnd:SetHandler("OnShow", wnd.OnShow)
+w.stabler = wnd
+local wnd = CreateNpcInteractionMessageBoxHandleWindow("divineBlessing")
+function wnd:OnShow()
+  local item = X2Priest:GetPriestBuff(1)
+  local content = string.format([[
+%s
+%s|m%d;]], locale.priest.confirmBuyBuff, locale.priest.buff_desc, item.cost)
+  local function DialogHandler(dlgWnd)
+    dlgWnd:SetTitle(locale.priest.title)
+    dlgWnd:SetContent(content)
+    function dlgWnd:OkProc()
+      local k = X2Priest:GetPriestBuffCount()
+      X2Priest:BuyPriestBuff(k)
+      wnd:Show(false)
+    end
+    function dlgWnd:CancelProc()
+      wnd:Show(false)
+    end
+  end
+  X2DialogManager:RequestDefaultDialog(DialogHandler, self:GetId())
+end
+wnd:SetHandler("OnShow", wnd.OnShow)
+w.divineBlessing = wnd
+local wnd = CreateNpcInteractionMessageBoxHandleWindow("recoverExp")
+function wnd:OnShow()
+  local moneyCost, laborPowerCost = X2Priest:GetCostForRecoverExp()
+  if moneyCost == nil and laborPowerCost == nil then
+    local title = locale.priest.title
+    local content = locale.priest.noRecoverableExp
+    ShowErrorMessageBox(title, content, wnd)
+    return
+  end
+  local content = string.format("%s", locale.priest.GetRecoverExp(FONT_COLOR_HEX.BLUE, X2Player:GetRecoverableExp()))
+  local function DialogHandler(dlgWnd)
+    ApplyDialogStyle(dlgWnd, DIALOG_STYLE.INCLUDE_VALUE_TEXT)
+    dlgWnd:SetTitle(locale.priest.title)
+    dlgWnd:SetContentEx(content, locale.priest.needLaborPower(laborPowerCost))
+    function dlgWnd:OkProc()
+      X2Priest:RecoverExp()
+      wnd:Show(false)
+    end
+    function dlgWnd:CancelProc()
+      wnd:Show(false)
+    end
+  end
+  X2DialogManager:RequestDefaultDialog(DialogHandler, self:GetId())
+end
+wnd:SetHandler("OnShow", wnd.OnShow)
+w.recoverExp = wnd
+local wnd = CreateNpcInteractionMessageBoxHandleWindow("createExpedition")
+function wnd:OnShow()
+  if X2Faction:GetMyExpeditionId() ~= 0 then
+    local function DialogHandler(dlgWnd)
+      dlgWnd:SetTitle(locale.expedition.creationFailTitle)
+      dlgWnd:SetContent(locale.expedition.creationFailMsg)
+      function dlgWnd:OkProc()
+        wnd:Show(false)
+      end
+    end
+    X2DialogManager:RequestNoticeDialog(DialogHandler, self:GetId())
+    return
+  end
+  local function DialogHandler(dlgWnd)
+    dlgWnd:SetTitle(locale.expedition.notificationTitle)
+    dlgWnd:SetContent(locale.expedition.notification)
+    function dlgWnd:OkProc()
+      local alliance = X2Faction:GetMyTopLevelFaction()
+      ShowCreateExpedition(true, alliance)
+    end
+    function dlgWnd:CancelProc()
+      wnd:Show(false)
+    end
+    function dlgWnd:GetOkSound()
+      return "message_box_create_expedtion"
+    end
+  end
+  X2DialogManager:RequestDefaultDialog(DialogHandler, self:GetId())
+end
+wnd:SetHandler("OnShow", wnd.OnShow)
+w.createExpedition = wnd
+local wnd = CreateNpcInteractionMessageBoxHandleWindow("specialtyStore")
+function wnd:OnShow()
+  local backpackInfo = X2Equipment:GetEquippedItemTooltipText("player", ES_BACKPACK)
+  if backpackInfo == nil then
+    AddMessageToSysMsgWindow(locale.store_specialty.noGoods)
+    wnd:Show(false)
+    return
+  end
+  local ok, refund, coinType = X2Store:GetSpecialtyRatioRefund(backpackInfo.refund)
+  if ok == false then
+    wnd:Show(false)
+    return
+  end
+  local title = ""
+  local content = ""
+  local price = ""
+  local ratio = ""
+  local btnOkEnable = true
+  local featureSet = X2Player:GetFeatureSet()
+  local function GetTitle(coinType)
+    if coinType ~= nil then
+      if featureSet.backpackProfitShare then
+        return GetCommonText("npc_store_goods")
+      else
+        return locale.store_specialty.delphinad_title
+      end
+    else
+      return locale.store_specialty.title
+    end
+  end
+  local GetContent = function(featureSet, coinType, refund)
+    local result = ""
+    if featureSet then
+      if coinType ~= nil and refund < 0 then
+        result = GetCommonText("sell_backpack_next_time")
+      else
+        local sellerRatio = X2Store:GetSellerShareRatio()
+        result = X2Locale:LocalizeUiText(COMMON_TEXT, "sell_backpack_content", FONT_COLOR_HEX.BLUE, tostring(100 - sellerRatio), tostring(sellerRatio))
+        if coinType == nil or coinType == 0 then
+          local ratio = 0
+          local extraResult = ""
+          if X2Player:GetPayLocation() == "pcbang" then
+            local pcBangRatio = X2Store:GetPCBangRatio()
+            if ratio < pcBangRatio then
+              ratio = pcBangRatio
+              extraResult = X2Locale:LocalizeUiText(COMMON_TEXT, "sell_backpack_at_pcbang", FONT_COLOR_HEX.RED, FONT_COLOR_HEX.RED, tostring(pcBangRatio))
+            end
+          end
+          if X2Player:HasPeriodBuffUsingSpecialityConfig() then
+            local info = X2Store:GetPeriodBuffInfoUsingSpecialityConfig()
+            if ratio < info.ratio then
+              ratio = info.ratio
+              extraResult = X2Locale:LocalizeUiText(COMMON_TEXT, "sell_backpack_with_account_buff", FONT_COLOR_HEX.RED, info.buffName, FONT_COLOR_HEX.RED, tostring(info.ratio))
+            end
+          end
+          return string.format("%s%s", result, extraResult)
+        end
+      end
+    elseif coinType ~= nil then
+      if refund > 0 then
+        result = locale.store_specialty.delphinad_bodyText
+      else
+        result = locale.store_specialty.bodyTextFull
+      end
+    else
+      result = locale.store_specialty.bodyText
+      local ratio = 0
+      local extraResult = ""
+      if X2Player:GetPayLocation() == "pcbang" then
+        local pcBangRatio = X2Store:GetPCBangRatio()
+        if ratio < pcBangRatio then
+          ratio = pcBangRatio
+          extraResult = X2Locale:LocalizeUiText(COMMON_TEXT, "sell_backpack_at_pcbang", FONT_COLOR_HEX.RED, FONT_COLOR_HEX.RED, tostring(pcBangRatio))
+        end
+      end
+      if X2Player:HasPeriodBuffUsingSpecialityConfig() then
+        local info = X2Store:GetPeriodBuffInfoUsingSpecialityConfig()
+        if ratio < info.ratio then
+          ratio = info.ratio
+          extraResult = X2Locale:LocalizeUiText(COMMON_TEXT, "sell_backpack_with_account_buff", FONT_COLOR_HEX.RED, info.buffName, FONT_COLOR_HEX.RED, tostring(info.ratio))
+        end
+      end
+      return string.format("%s%s", result, extraResult)
+    end
+    return result
+  end
+  local GetOkButtonEnable = function(coinType, refund)
+    if coinType == nil then
+      return true
+    elseif refund ~= nil and refund > 0 then
+      return true
+    else
+      return false
+    end
+  end
+  local function GetRefund(coinType)
+    if coinType ~= nil then
+      return string.format("x %d", tonumber(refund))
+    else
+      return string.format("|m%d;", tonumber(refund))
+    end
+  end
+  local GetUpperContent = function(coinType, refund)
+    if coinType ~= nil and refund <= 0 then
+      return GetCommonText("sell_backpack_sell_goods_full")
+    else
+      return GetCommonText("sell_backpack_ask_sell_goods")
+    end
+  end
+  title = GetTitle(coinType)
+  content = GetContent(featureSet.backpackProfitShare, coinType, refund)
+  price = GetRefund(coinType)
+  ratio = string.format("%s: %d%%", locale.store_specialty.prices, tonumber(X2Store:GetSpecialtyRatio()))
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local function DialogHandler(dlgWnd)
+    if featureSet.backpackProfitShare then
+      do
+        local upperContent = dlgWnd:CreateChildWidget("label", "upperContent", 0, false)
+        upperContent:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, FONT_SIZE.LARGE)
+        upperContent.style:SetFontSize(FONT_SIZE.LARGE)
+        ApplyTextColor(upperContent, FONT_COLOR.DEFAULT)
+        upperContent:SetAutoResize(true)
+        upperContent:SetText(GetUpperContent(coinType, refund))
+        upperContent:AddAnchor("TOP", dlgWnd, 0, titleMargin)
+        dlgWnd.textbox:RemoveAllAnchors()
+        dlgWnd.textbox:AddAnchor("TOP", upperContent, "BOTTOM", 0, sideMargin / 2)
+        dlgWnd.textbox.style:SetAlign(ALIGN_LEFT)
+        local function CreateInfoFrame(id, titleText)
+          local width = (DEFAULT_SIZE.DIALOG_CONTENT_WIDTH - sideMargin / 2) / 2
+          local frame = UIParent:CreateWidget("emptywidget", id, dlgWnd)
+          frame:Show(true)
+          frame:SetExtent(width, 110)
+          local bg = CreateContentBackground(frame, "TYPE10")
+          bg:AddAnchor("TOPLEFT", frame, 0, 0)
+          bg:AddAnchor("BOTTOMRIGHT", frame, 0, 0)
+          ApplyTextureColor(bg, TEXTURE_COLOR.TYPE10_BROWN)
+          local title = frame:CreateChildWidget("label", "title", 0, true)
+          title:SetHeight(FONT_SIZE.MIDDLE)
+          title:SetAutoResize(true)
+          title:SetText(titleText)
+          title:AddAnchor("TOP", frame, 0, sideMargin / 2)
+          ApplyTextColor(title, FONT_COLOR.HIGH_TITLE)
+          local itemIcon = CreateSlotItemButton(frame:GetId() .. ".itemIcon", frame)
+          itemIcon:AddAnchor("TOP", title, "BOTTOM", 0, sideMargin / 2)
+          frame.itemIcon = itemIcon
+          return frame
+        end
+        local leftInfoFrame = CreateInfoFrame("leftInfoFrame", GetCommonText("sell_backpack_goods"))
+        leftInfoFrame:AddAnchor("TOPLEFT", dlgWnd.textbox, "BOTTOMLEFT", 0, sideMargin / 1.5)
+        local rightInfoFrame = CreateInfoFrame("rightInfoFrame", GetCommonText("sell_backpack_price"))
+        rightInfoFrame:AddAnchor("TOPRIGHT", dlgWnd.textbox, "BOTTOMRIGHT", 0, sideMargin / 1.5)
+        local ratioLabel = rightInfoFrame:CreateChildWidget("label", "ratioLabel", 0, true)
+        ratioLabel:SetAutoResize(true)
+        ratioLabel:SetHeight(FONT_SIZE.MIDDLE)
+        ratioLabel:AddAnchor("BOTTOM", rightInfoFrame, 0, -sideMargin)
+        ApplyTextColor(ratioLabel, FONT_COLOR.DEFAULT)
+        local textbox = rightInfoFrame:CreateChildWidget("textbox", "textbox", 0, true)
+        textbox:Show(false)
+        textbox:SetWidth(rightInfoFrame:GetWidth())
+        textbox:SetHeight(FONT_SIZE.LARGE)
+        textbox.style:SetFontSize(FONT_SIZE.LARGE)
+        ApplyTextColor(textbox, FONT_COLOR.BLUE)
+        local function FillInfo()
+          leftInfoFrame.itemIcon:SetItem(backpackInfo.itemType, backpackInfo.itemGrade, 1)
+          rightInfoFrame.ratioLabel:SetText(ratio)
+          if coinType ~= nil then
+            rightInfoFrame.itemIcon:Show(true)
+            local info = X2Item:GetItemInfoByType(coinType)
+            rightInfoFrame.itemIcon:SetItem(info.itemType, info.itemGrade, refund)
+            leftInfoFrame:SetHeight(115)
+            rightInfoFrame:SetHeight(115)
+          else
+            rightInfoFrame.itemIcon:Show(false)
+            rightInfoFrame.textbox:Show(true)
+            rightInfoFrame.textbox:AddAnchor("TOP", rightInfoFrame.title, "BOTTOM", 0, sideMargin / 1.5)
+            rightInfoFrame.textbox:SetText(price)
+            rightInfoFrame.textbox:SetWidth(rightInfoFrame.textbox:GetLongestLineWidth() + 5)
+            leftInfoFrame:SetHeight(95)
+            rightInfoFrame:SetHeight(95)
+          end
+          if refund <= 0 then
+            rightInfoFrame.itemIcon:Show(false)
+            rightInfoFrame.textbox:Show(false)
+          end
+        end
+        FillInfo()
+        function dlgWnd:Resize()
+          local height = self:GetFrameHeight()
+          height = height + upperContent:GetHeight() + leftInfoFrame:GetHeight() + sideMargin
+          self:SetExtent(POPUP_WINDOW_WIDTH, height)
+        end
+        dlgWnd:SetTitle(title)
+        dlgWnd:SetContent(content)
+      end
+    else
+      ApplyDialogStyle(dlgWnd, DIALOG_STYLE.INCLUDE_ITEM_ICON)
+      do
+        local ratioLabel = dlgWnd:CreateChildWidget("label", "ratioLabel", 0, false)
+        ratioLabel:SetHeight(FONT_SIZE.MIDDLE)
+        ratioLabel:SetAutoResize(true)
+        ApplyTextColor(ratioLabel, FONT_COLOR.DEFAULT)
+        ratioLabel:AddAnchor("TOP", dlgWnd.itemTextbox, "BOTTOM", 0, sideMargin / 2.5)
+        ratioLabel:SetText(ratio)
+        if coinType ~= nil then
+          backpackInfo = X2Item:GetItemInfoByType(coinType)
+        end
+        if refund <= 0 then
+          dlgWnd.itemTextbox:Show(false)
+        end
+        function dlgWnd:Resize()
+          local height = self:GetFrameHeight()
+          height = height + ratioLabel:GetHeight() + self.itemTextbox.bg:GetHeight() + sideMargin + self.itemIcon:GetHeight()
+          self:SetExtent(POPUP_WINDOW_WIDTH, height)
+        end
+        dlgWnd:SetTitle(title)
+        dlgWnd:SetContentEx(content, backpackInfo, 1, price)
+        dlgWnd.btnOk:Enable(GetOkButtonEnable(coinType, refund))
+      end
+    end
+    function dlgWnd:OkProc()
+      X2Store:SellBackPackGoods()
+      wnd:Show(false)
+    end
+    function dlgWnd:CancelProc()
+      wnd:Show(false)
+    end
+  end
+  X2DialogManager:RequestDefaultDialog(DialogHandler, self:GetId())
+end
+wnd:SetHandler("OnShow", wnd.OnShow)
+w.specialtyStore = wnd
+local events = {
+  NPC_INTERACTION_END = function()
+    if w.divineBlessing:IsVisible() == true then
+      w.divineBlessing:Show(false)
+    end
+    if w.recoverExp:IsVisible() == true then
+      w.recoverExp:Show(false)
+    end
+    if w.stabler:IsVisible() == true then
+      w.stabler:Show(false)
+    end
+    if w.createExpedition:IsVisible() == true then
+      w.createExpedition:Show(false)
+    end
+    if w.specialtyStore:IsVisible() == true then
+      w.specialtyStore:Show(false)
+    end
+  end,
+  UNIT_EQUIPMENT_CHANGED = function(equipSlot)
+    if equipSlot == ES_BACKPACK and w.specialtyStore:IsVisible() then
+      w.specialtyStore:Show(false)
+    end
+  end
+}
+w:SetHandler("OnEvent", function(this, event, ...)
+  events[event](...)
+end)
+RegistUIEvent(w, events)
+function GetStablerMessageBoxHandleWindow()
+  return w.stabler
+end
+function GetDivineBlessingMessageBoxHandleWindow()
+  return w.divineBlessing
+end
+function GetRecoverExpMessageBoxHandleWindow()
+  return w.recoverExp
+end
+function GetCreateExpeditionMessageBoxHandleWindow()
+  return w.createExpedition
+end
+function GetSpecialtyStoreMessageBoxHandleWindow()
+  return w.specialtyStore
+end

@@ -1,0 +1,38 @@
+if X2Util:GetGameProvider() == GAMEON then
+  chatLocale.chatTabWidth = 80
+  chatLocale.chatTypeExtent = {w = 120, h = 23}
+  chatLocale.chatComboListExtent = {w = 120, h = 305}
+  chatLocale.lineSpace = {chatWindow = -1, chatBubble = 0}
+  chatLocale.chatOption = {
+    windowWidth = 510,
+    menuList = {width = 85},
+    leftButtonWidth = BUTTON_SIZE.DEFAULT_SMALL.WIDTH,
+    alarmPage = {
+      colWidth = 185,
+      leftMenuChkOffset = 150,
+      rightMenuChkOffset = 150,
+      leftSubmenuChkOffset = 132,
+      rightSubmenuChkOffset = 132
+    },
+    normalPage = {menuChkOffset = 150, enterCountOffset = 190},
+    combatPage = {
+      colWidth = 185,
+      menuChkOffset = 150,
+      subMenuChkOffset = 132
+    },
+    pageColWidth = {
+      205,
+      180,
+      205
+    },
+    fontSizeOption = false,
+    fontSizeText = {
+      locale.chatOptionFontSizeText.bigSmall,
+      locale.chatOptionFontSizeText.small,
+      locale.chatOptionFontSizeText.middle,
+      locale.chatOptionFontSizeText.large,
+      locale.chatOptionFontSizeText.bigLarge
+    },
+    X2Chat:SetOptionDefaultFontSize(14)
+  }
+end

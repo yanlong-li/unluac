@@ -1,0 +1,23 @@
+local wnd
+function ShowRequestFriend(param)
+  if wnd == nil then
+    wnd = SetViewOfFriendRequest("ShowFriendRequest", "UIParent")
+    function wnd.okBtn:OnClick()
+      X2Nation:SendRelationFriend(wnd.factionId, wnd.input:GetText())
+      wnd:Show(false)
+    end
+    wnd.okBtn:SetHandler("OnClick", wnd.okBtn.OnClick)
+    function wnd.noBtn:OnClick()
+      wnd:Show(false)
+    end
+    wnd.noBtn:SetHandler("OnClick", wnd.noBtn.OnClick)
+  end
+  wnd:Show(true)
+  wnd.factionId = param.factionId
+  wnd.targetName:SetText(param.name)
+  wnd.votePeriod:SetText(X2Locale:LocalizeUiText(COMMON_TEXT, "nation_period", tostring(param.sMonth), tostring(param.sDay), tostring(param.sHour), tostring(param.eMonth), tostring(param.eDay), tostring(param.eHour)))
+  local itemInfo = X2Item:GetItemInfoByType(param.itemType)
+  wnd.itemIcon:SetItemInfo(itemInfo)
+  wnd.itemIcon:SetStack(param.hasItemCount, param.useItemCount)
+end
+UIParent:SetEventHandler("NATION_RELATION_FRIEND", ShowRequestFriend)

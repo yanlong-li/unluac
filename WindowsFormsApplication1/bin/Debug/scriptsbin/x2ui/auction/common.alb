@@ -1,0 +1,589 @@
+local path = TEXTURE_PATH.AUCTION
+local PAGE_PER_COUNT = 9
+columnSortKind = {
+  {"bid_price", true},
+  {"bid_price", false},
+  {
+    "direct_price",
+    true
+  },
+  {
+    "direct_price",
+    false
+  },
+  {"item_name", nil},
+  {"item_level", nil},
+  {
+    "expire_date",
+    nil
+  },
+  {"evaluated", nil}
+}
+BID_STATE = {
+  BS_NOBID = 0,
+  BS_MYSELF_BID = 1,
+  BS_OTHER_PEOPLE_BID = 2
+}
+local GetSortKindName = function(sortKind, ascending)
+  if ascending == nil then
+    return GetCommonText(sortKind)
+  end
+  if ascending then
+    return GetCommonText(sortKind .. "_asc")
+  end
+  return GetCommonText(sortKind .. "_desc")
+end
+coolTimeButtons = {}
+searchCoolTime = nil
+function IsSearchCoolTime()
+  UIParent:LogAlways(string.format("[LOG] IsSearchCoolTime : %s", tostring(searchCoolTime)))
+  return searchCoolTime ~= nil and searchCoolTime > 0
+end
+function RegistCoolTimeButton(btn, sec)
+  local obj = {button = btn, coolTime = sec}
+  table.insert(coolTimeButtons, obj)
+end
+function SetSearchCoolTime()
+  searchCoolTime = os.clock()
+  UIParent:LogAlways(string.format("[LOG] set search cooltime : %s", tostring(searchCoolTime)))
+  for i = 1, #coolTimeButtons do
+    coolTimeButtons[i].button:Enable(false)
+  end
+  auctionWindow:SetHandler("OnUpdate", auctionWindow.OnUpdate)
+end
+function CheckSearchCoolTime()
+  if searchCoolTime == nil then
+    UIParent:LogAlways(string.format("[ERROR] auction check search cooltime is nil~!"))
+    return
+  end
+  local enableBtns = 0
+  local nowTime = os.clock()
+  local sec = nowTime - searchCoolTime
+  for i = 1, #coolTimeButtons do
+    local coolTime = coolTimeButtons[i].coolTime
+    if sec > coolTime then
+      coolTimeButtons[i].button:Enable(true)
+      enableBtns = enableBtns + 1
+    end
+  end
+  if enableBtns == #coolTimeButtons then
+    searchCoolTime = nil
+    auctionWindow:ReleaseHandler("OnUpdate")
+  end
+end
+function MakeItemLink(selectIndex, listCtrl)
+  if X2Input:IsShiftKeyDown() then
+    if X2Chat:IsActivatedChatInput() then
+      local itemLink = X2Auction:GetLinkText(selectIndex)
+      AddLinkItem(itemLink)
+    else
+      local window = listCtrl:GetParent()
+      if window.searchFrame == nil or window.searchFrame.nameEditbox == nil then
+        return
+      end
+      local itemInfo = X2Auction:GetSearchedItemInfo(selectIndex)
+      if itemInfo == nil then
+        return
+      end
+      window.searchFrame.nameEditbox:SetText(tostring(itemInfo.name))
+    end
+  end
+end
+function CreateItemName(subItem, colIdx, limitLen)
+  local itemButton = CreateItemIconButton(subItem:GetId() .. ".itemButton", subItem)
+  itemButton:SetExtent(ICON_SIZE.AUCTION, ICON_SIZE.AUCTION)
+  itemButton:AddAnchor("LEFT", subItem, 3, 0)
+  itemButton:Raise()
+  function itemButton:procOnEnter()
+    local itemInfo = X2Auction:GetSearchedItemInfo(itemButton.auctionItemIdx)
+    if itemInfo ~= nil then
+      self:SetTooltip(itemInfo)
+    end
+  end
+  function itemButton:OnClickProc(arg)
+    if arg == "LeftButton" then
+      local listCtrl = subItem:GetParent():GetParent()
+      MakeItemLink(itemButton.auctionItemIdx, listCtrl)
+    end
+  end
+  subItem.itemButton = itemButton
+  local width, height = subItem:GetExtent()
+  local itemName = subItem:CreateChildWidget("textbox", "itemName", 0, true)
+  itemName:AddAnchor("LEFT", itemButton, "RIGHT", 4, 0)
+  itemName:SetExtent(width - 45, height)
+  itemName:SetLineSpace(TEXTBOX_LINE_SPACE.SMALL)
+  itemName.style:SetAlign(ALIGN_LEFT)
+  itemName.style:SetEllipsis(true)
+  function subItem:SetValues(itemInfo)
+    local color = Hex2Dec(itemInfo.gradeColor)
+    itemButton:Init()
+    itemButton:SetItemInfo(itemInfo)
+    itemButton:SetStack(itemInfo.stackCount)
+    itemButton.auctionItemIdx = itemInfo.auctionItemIdx
+    ApplyTextColor(itemName, color)
+    local itemNameStr = tostring(itemInfo.name)
+    itemNameStr = X2Util:UTF8StringLimit(itemNameStr, limitLen, "..")
+    itemName:SetText(itemNameStr)
+  end
+end
+function CreateItemLevel(subItem, colIdx)
+  subItem:SetInset(2, 0, 0, 0)
+  subItem.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE)
+  subItem.style:SetSnap(true)
+  ApplyTextColor(subItem, FONT_COLOR.DEFAULT)
+  function subItem:SetValues(itemInfo, listCtrl)
+    local articleId = itemInfo.articleId
+    local strLevel = tostring(itemInfo.level_requirement)
+    if strLevel == "nil" then
+      strLevel = "1"
+    end
+    listCtrl:InsertData(itemInfo.idx, colIdx, strLevel)
+  end
+end
+function CreateMyItemBiddingState(subItem, colIdx)
+  function subItem:SetValues(itemInfo, listCtrl)
+    local articleId = itemInfo.articleId
+    local bidState = itemInfo.bidState
+    local str = ""
+    if bidState ~= BID_STATE.BS_NOBID then
+      str = locale.auction.bidding
+      ApplyTextColor(subItem, FONT_COLOR.BLUE)
+    else
+      str = locale.auction.notBid
+      ApplyTextColor(subItem, FONT_COLOR.GRAY)
+    end
+    listCtrl:InsertData(itemInfo.idx, colIdx, str)
+  end
+end
+function CreateItemBiddingState(subItem)
+  local textbox = subItem:CreateChildWidget("textbox", "textbox", 0, true)
+  textbox:AddAnchor("TOPLEFT", subItem, 5, 0)
+  textbox:AddAnchor("BOTTOMRIGHT", subItem, -5, 0)
+  textbox:SetLineSpace(TEXTBOX_LINE_SPACE.SMALL)
+  subItem.textbox = textbox
+  function subItem:SetValues(itemInfo)
+    local bidState = itemInfo.bidState
+    local seller = tostring(itemInfo.seller)
+    local curWorldId = X2:GetCurrentWorldId()
+    local str = ""
+    if X2Auction:IsMyPutupArticle(itemInfo.idx) then
+      str = string.format([[
+%s %s
+|r]], FONT_COLOR_HEX.DEFAULT, locale.auction.myPutupGoods)
+    end
+    if bidState == BID_STATE.BS_NOBID then
+      str = str .. locale.auction.notBid
+      ApplyTextColor(textbox, FONT_COLOR.GRAY)
+    elseif bidState == BID_STATE.BS_MYSELF_BID then
+      str = str .. locale.auction.myselfBid
+      ApplyTextColor(textbox, FONT_COLOR.GREEN)
+    else
+      str = str .. locale.auction.otherPeopleBid
+      ApplyTextColor(textbox, FONT_COLOR.BLUE)
+    end
+    subItem.textbox:SetText(str)
+  end
+end
+function CreateItemLeftTime(subItem, colIdx)
+  subItem:SetInset(0, 0, auctionLocale.leftTimeColInset, 0)
+  subItem.style:SetAlign(ALIGN_RIGHT)
+  subItem.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE)
+  subItem.style:SetSnap(true)
+  ApplyTextColor(subItem, FONT_COLOR.DEFAULT)
+  function subItem:SetValues(itemInfo, listCtrl)
+    local articleId = itemInfo.articleId
+    local leftTimeStr, timeWarning = CheckLeftTime(itemInfo.leftTime)
+    listCtrl:InsertData(itemInfo.idx, colIdx, leftTimeStr)
+    if timeWarning then
+      ApplyTextColor(subItem, FONT_COLOR.RED)
+    else
+      ApplyTextColor(subItem, FONT_COLOR.DEFAULT)
+    end
+  end
+end
+function CreateItemBiddingPrice(subItem)
+  local coords = auctionLocale.icon.currentCoords
+  local currentIcon = subItem:CreateImageDrawable(TEXTURE_PATH.AUCTION, "background")
+  currentIcon:SetCoords(coords[1], coords[2], coords[3], coords[4])
+  currentIcon:SetExtent(coords[3], coords[4])
+  currentIcon:AddAnchor("TOPRIGHT", subItem, 0, 2)
+  local currentPrice = CreateDefaultMoneyWindow(subItem:GetId() .. ".currentPrice", subItem, 150, 15)
+  currentPrice:AddAnchor("RIGHT", currentIcon, "LEFT", -2, 0)
+  currentPrice.currency = F_MONEY.currency.auctionBid
+  subItem.currentPrice = currentPrice
+  local coords = auctionLocale.icon.directCoords
+  local directIcon = subItem:CreateImageDrawable(TEXTURE_PATH.AUCTION, "background")
+  directIcon:SetCoords(coords[1], coords[2], coords[3], coords[4])
+  directIcon:SetExtent(coords[3], coords[4])
+  directIcon:AddAnchor("BOTTOMRIGHT", subItem, 0, -2)
+  local directPrice = CreateDefaultMoneyWindow(subItem:GetId() .. ".directPrice", subItem, 150, 15)
+  directPrice:AddAnchor("RIGHT", directIcon, "LEFT", -2, 0)
+  directPrice.currency = F_MONEY.currency.auctionBid
+  subItem.directPrice = directPrice
+  local directForbiddenLabel = subItem:CreateChildWidget("label", "directForbiddenLabel", 0, true)
+  directForbiddenLabel:SetExtent(110, 15)
+  directForbiddenLabel:AddAnchor("RIGHT", directIcon, "LEFT", -2, 0)
+  directForbiddenLabel:SetText(locale.auction.directForbidden)
+  ApplyTextColor(directForbiddenLabel, FONT_COLOR.RED)
+  directForbiddenLabel.style:SetAlign(ALIGN_RIGHT)
+  function subItem:SetValues(itemInfo)
+    currentPrice:Update(itemInfo.bidPriceStr, false)
+    local itemDirectPrice = itemInfo.directPriceStr
+    if itemDirectPrice == "0" then
+      directForbiddenLabel:Show(true)
+      directIcon:SetVisible(false)
+      directPrice:Show(false)
+    else
+      directForbiddenLabel:Show(false)
+      directIcon:SetVisible(true)
+      directPrice:Show(true)
+      directPrice:Update(itemDirectPrice, false)
+    end
+    local itemStackCnt = itemInfo.stackCount
+    if itemStackCnt > 1 then
+      do
+        local bidPricePerCnt = X2Util:DivideNumberString(itemInfo.bidPriceStr, tostring(itemStackCnt))
+        local directPricePerCnt = X2Util:DivideNumberString(itemDirectPrice, tostring(itemStackCnt))
+        local tipStr = string.format("%s: " .. F_MONEY.currency.pipeString[F_MONEY.currency.auctionBid] .. [[
+
+%s: ]] .. F_MONEY.currency.pipeString[F_MONEY.currency.auctionBid], locale.auction.bidPriceTooltip, tostring(bidPricePerCnt), locale.auction.directPriceTooltip, tostring(directPricePerCnt))
+        local function OnEnter(self)
+          SetTooltip(tipStr, self)
+        end
+        subItem:SetHandler("OnEnter", OnEnter)
+      end
+    else
+      subItem:ReleaseHandler("OnEnter")
+      subItem:ReleaseHandler("OnLeave")
+    end
+  end
+end
+function CreateMyBiddingPrice(subItem)
+  local myBiddingPrice = CreateDefaultMoneyWindow(subItem:GetId() .. ".myBiddingPrice", subItem, 145, 15)
+  myBiddingPrice.currency = F_MONEY.currency.auctionBid
+  myBiddingPrice:Show(true)
+  myBiddingPrice:AddAnchor("RIGHT", subItem, -10, 0)
+  subItem.myBiddingPrice = myBiddingPrice
+  function subItem:SetValues(itemInfo)
+    myBiddingPrice:Update(itemInfo.extra, false)
+  end
+end
+function UpdateComboBoxTypeSorting(window)
+  local listCtrl = window.listCtrl
+  local sortKind, ascendingSort = X2Auction:GetSearchedSortInfo()
+  for i = 1, #listCtrl.column do
+    if listCtrl.column[i].sortKinds ~= nil then
+      sortKindCount = #listCtrl.column[i].sortKinds
+      if 1 < sortKindCount then
+        for j = 1, sortKindCount do
+          if listCtrl.column[i].sortKinds[j][1] == sortKind and listCtrl.column[i].sortKinds[j][2] == ascendingSort then
+            listCtrl.column[i].sortKindBtn:Select(j)
+            break
+          end
+        end
+      end
+    end
+  end
+end
+function UpdateSortingArrow(window)
+  local listCtrl = window.listCtrl
+  listCtrl.AscendingSortMark:SetVisible(false)
+  listCtrl.DescendingSortMark:SetVisible(false)
+  local sortKind, ascendingSort = X2Auction:GetSearchedSortInfo()
+  for i = 1, #listCtrl.column do
+    if listCtrl.column[i].sortKinds ~= nil then
+      local currentColumnSortKind
+      if #listCtrl.column[i].sortKinds == 1 then
+        currentColumnSortKind = listCtrl.column[i].sortKinds[1][1]
+      elseif listCtrl.column[i].sortKindBtn:IsSelected() then
+        currentColumnSortKind = listCtrl.column[i].sortKinds[listCtrl.column[i].sortKindBtn:GetSelectedIndex()][1]
+      end
+      if currentColumnSortKind == sortKind then
+        if #listCtrl.column[i].sortKinds == 1 then
+          local showMark, hideMark
+          if ascendingSort == true then
+            showMark = listCtrl.AscendingSortMark
+            hideMark = listCtrl.DescendingSortMark
+          else
+            showMark = listCtrl.DescendingSortMark
+            hideMark = listCtrl.AscendingSortMark
+          end
+          hideMark:SetVisible(false)
+          showMark:SetVisible(true)
+          showMark:RemoveAllAnchors()
+          showMark:AddAnchor("RIGHT", listCtrl.column[i], -3, 2)
+        end
+      elseif 1 < #listCtrl.column[i].sortKinds then
+        listCtrl.column[i].sortKindBtn:Select(0)
+      end
+    end
+  end
+end
+function RefreshItemList(window, forceAllClear)
+  local listCtrl = window.listCtrl
+  local itemCountNowPage = X2Auction:GetSearchedItemCount()
+  if forceAllClear then
+    itemCountNowPage = 0
+  end
+  listCtrl:DeleteAllDatas()
+  if window.ShowNoneSearchResult ~= nil then
+    window:ShowNoneSearchResult(itemCountNowPage == 0)
+  end
+  UpdateSortingArrow(window)
+  for itemIdx = 1, #listCtrl.items do
+    if listCtrl.items[itemIdx].line ~= nil then
+      listCtrl.items[itemIdx].line:SetVisible(false)
+    end
+  end
+  for itemIdx = 1, itemCountNowPage do
+    local itemInfo = X2Auction:GetSearchedItemInfo(itemIdx)
+    if itemInfo == nil then
+      return
+    end
+    itemInfo.auctionItemIdx = itemIdx
+    for subItemIdx = 1, #listCtrl.items[itemIdx].subItems do
+      listCtrl.items[itemIdx].subItems[subItemIdx]:SetValues(itemInfo, listCtrl)
+      if itemIdx ~= itemCountNowPage then
+        listCtrl.items[itemIdx].line:SetVisible(true)
+      end
+    end
+  end
+  window:EnableSearch(true)
+  local maxLimitPage = X2Auction:GetSearchedItemTotalCount()
+  local nowPage = X2Auction:GetSearchedItemPage()
+  local remainCount = PAGE_PER_COUNT - itemCountNowPage
+  if remainCount == 0 then
+    if maxLimitPage > nowPage then
+      remainCount = -PAGE_PER_COUNT
+    end
+  elseif remainCount == PAGE_PER_COUNT and nowPage > 1 then
+    remainCount = 1
+  end
+  local totalCount = nowPage * PAGE_PER_COUNT - remainCount
+  window.pageControl:SetCurrentPage(nowPage, false)
+  window.pageControl:SetPageByItemCount(totalCount, PAGE_PER_COUNT)
+end
+function CreateAuctionItemList(window, listInfos)
+  local listCtrl = window:CreateChildWidget("listctrl", "listCtrl", 0, true)
+  listCtrl:Show(true)
+  listCtrl:SetExtent(listInfos.width, listInfos.height)
+  listCtrl:SetUseDoubleClick(true)
+  if listInfos.anchorWidget ~= nil then
+    listCtrl:AddAnchor("TOPLEFT", listInfos.anchorWidget, "TOPRIGHT", 10, 0)
+  else
+    listCtrl:AddAnchor("TOPLEFT", window, 0, 20)
+  end
+  local AscendingSortMark = listCtrl:CreateImageDrawable(TEXTURE_PATH.TAB_LIST, "overlay")
+  AscendingSortMark:SetVisible(false)
+  AscendingSortMark:SetCoords(153, 65, 18, 18)
+  AscendingSortMark:SetExtent(23, 23)
+  listCtrl.AscendingSortMark = AscendingSortMark
+  local DescendingSortMark = listCtrl:CreateImageDrawable(TEXTURE_PATH.TAB_LIST, "overlay")
+  DescendingSortMark:SetVisible(false)
+  DescendingSortMark:SetCoords(153, 83, 18, -18)
+  DescendingSortMark:SetExtent(23, 23)
+  listCtrl.DescendingSortMark = DescendingSortMark
+  for i = 1, #listInfos.columns do
+    do
+      local item = listInfos.columns[i]
+      listCtrl:InsertColumn(item.width, item.itemType)
+      listCtrl.column[i]:SetText(item.name)
+      listCtrl.column[i].sortKinds = item.sortKinds
+      if listCtrl.column[i].sortKinds ~= nil then
+        if #listCtrl.column[i].sortKinds == 1 then
+          RegistCoolTimeButton(listCtrl.column[i], 1)
+        else
+          listCtrl.column[i]:SetText("")
+          local sortKinds = {}
+          for j = 1, #listCtrl.column[i].sortKinds do
+            table.insert(sortKinds, GetSortKindName(listCtrl.column[i].sortKinds[j][1], listCtrl.column[i].sortKinds[j][2]))
+          end
+          local sortKindBtn = CreateComboBox(listCtrl.column[i])
+          sortKindBtn:AddAnchor("TOPLEFT", listCtrl.column[i], 20, 5)
+          sortKindBtn:AddAnchor("BOTTOMRIGHT", listCtrl.column[i], -20, -5)
+          sortKindBtn.dropdownItem = sortKinds
+          sortKindBtn.unselectedText = item.name
+          local savedSortKind = X2Auction:GetSearchedSortInfo()
+          if item.defaultSortKinds ~= nil and savedSortKind == "default" then
+            sortKindBtn:Select(item.defaultSortKinds)
+            X2Auction:SetListSort(item.sortKinds[item.defaultSortKinds][1], item.sortKinds[item.defaultSortKinds][2])
+          else
+            sortKindBtn:Select(0)
+          end
+          listCtrl.column[i].sortKindBtn = sortKindBtn
+          RegistCoolTimeButton(sortKindBtn, 1)
+          RegistCoolTimeButton(sortKindBtn.button, 1)
+        end
+      else
+        listCtrl.column[i]:Enable(false)
+      end
+      SettingListColumn(listCtrl, listCtrl.column[i])
+      DrawListCtrlColumnSperatorLine(listCtrl.column[i], #listInfos.columns, i)
+      local column = listCtrl.column[i]
+      if column.sortKindBtn == nil then
+        function column:OnClick(MBT)
+          if MBT == "LeftButton" then
+            X2Auction:SearchedListSort(self.sortKinds[1][1], self.sortKinds[1][2])
+            SetSearchCoolTime()
+          end
+        end
+        column:SetHandler("OnClick", column.OnClick)
+      else
+        function column.sortKindBtn:SelectedProc(selectedIndex)
+          local result = X2Auction:SearchedListSort(column.sortKinds[selectedIndex][1], column.sortKinds[selectedIndex][2])
+          if result == false then
+            self:Select(self:GetPrevSelectedIndex())
+          end
+          SetSearchCoolTime()
+        end
+      end
+    end
+  end
+  listCtrl:InsertRows(9, false)
+  DrawListCtrlUnderLine(listCtrl)
+  ListCtrlOverClickTextureSetting(listCtrl)
+  UpdateComboBoxTypeSorting(window)
+  UpdateSortingArrow(window)
+  for itemIdx = 1, #listCtrl.items do
+    if itemIdx ~= #listCtrl.items then
+      local line = DrawItemUnderLine(listCtrl.items[itemIdx])
+      line:SetVisible(false)
+      listCtrl.items[itemIdx].line = line
+    end
+    for colIdx = 1, #listCtrl.column do
+      local subItem = listCtrl.items[itemIdx].subItems[colIdx]
+      local item = listInfos.columns[colIdx]
+      item.itemPropFunc(subItem, colIdx, item.limitLen)
+    end
+  end
+  local pageControl = CreatePageControl(window:GetId() .. ".pageControl", window, "craft")
+  pageControl:Show(true)
+  pageControl:AddAnchor("TOP", listCtrl, "BOTTOM", 0, 5)
+  pageControl:SetWidth(40)
+  window.pageControl = pageControl
+  local refreshButton = window:CreateChildWidget("button", "refreshButton", 0, true)
+  refreshButton:AddAnchor("TOPRIGHT", listCtrl, "BOTTOMRIGHT", 0, 5)
+  refreshButton:Show(true)
+  ApplyButtonSkin(refreshButton, BUTTON_BASIC.RESET)
+  RegistCoolTimeButton(refreshButton, 1)
+  function window:RefreshItemList()
+    RefreshItemList(window)
+  end
+  function pageControl:OnPageChanged(pageIndex, countPerPage)
+    if window.SetLastSearchArticlePage ~= nil then
+      window:SetLastSearchArticlePage(pageIndex)
+    end
+    X2Auction:SearchAuctionArticleByPage(pageIndex)
+  end
+  local OnEnter = function(self)
+    SetTooltip(locale.auction.refresh_tooltip, self)
+  end
+  refreshButton:SetHandler("OnEnter", OnEnter)
+end
+function bidButtonOnClick(window, MBT)
+  if MBT == "LeftButton" then
+    do
+      local selIdx = window.listCtrl:GetSelectedIdx()
+      local articleId = X2Auction:GetSearchedItemArticleId(selIdx)
+      local itemInfo = X2Auction:GetSearchedItemInfo(selIdx)
+      local moneyStr = window.moneyEditsWindow:GetAmountStr()
+      if articleId == nil or moneyStr == nil then
+        return
+      end
+      window.listCtrl:ClearSelection()
+      window.moneyEditsWindow:SetAmountStr("0")
+      local function DialogHandler(wnd)
+        ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_VALUE_TEXT)
+        local content = locale.auction.askBidMsg(itemInfo.name, tostring(itemInfo.stackCount))
+        local valueText = string.format(F_MONEY.currency.pipeString[F_MONEY.currency.auctionBid], moneyStr)
+        wnd:SetTitle(locale.auction.bid)
+        wnd:SetContentEx(content, valueText)
+        function wnd:OkProc()
+          X2Auction:BidAuctionArticle(articleId, moneyStr)
+        end
+      end
+      X2DialogManager:RequestDefaultDialog(DialogHandler, window:GetParent():GetParent():GetId())
+    end
+  end
+end
+function directButtonOnClick(window, MBT)
+  if MBT == "LeftButton" then
+    do
+      local selIdx = window.listCtrl:GetSelectedIdx()
+      local articleId = X2Auction:GetSearchedItemArticleId(selIdx)
+      local itemInfo = X2Auction:GetSearchedItemInfo(selIdx)
+      if articleId == nil then
+        return
+      end
+      window.listCtrl:ClearSelection()
+      window.moneyEditsWindow:SetAmountStr("0")
+      local function DialogHandler(wnd)
+        ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_VALUE_TEXT)
+        local content = locale.auction.askDirectMsg(itemInfo.name, tostring(itemInfo.stackCount))
+        local valueText = string.format(F_MONEY.currency.pipeString[F_MONEY.currency.auctionBid], itemInfo.directPriceStr)
+        wnd:SetTitle(locale.auction.directBid)
+        wnd:SetContentEx(content, valueText)
+        function wnd:OkProc()
+          X2Auction:DirectPurchaseAuctionArticle(articleId)
+        end
+      end
+      X2DialogManager:RequestDefaultDialog(DialogHandler, window:GetParent():GetParent():GetId())
+    end
+  end
+end
+function CheckLeftTime(leftSec)
+  local hours_1 = 60
+  local timeWarning = false
+  local leftMin = math.floor(leftSec / hours_1)
+  local leftTimeStr
+  if hours_1 < leftMin then
+    if leftMin % hours_1 > 0 then
+      leftTimeStr = string.format("%d%s", math.floor(leftMin / hours_1) + 1, locale.auction.under_time)
+    else
+      leftTimeStr = string.format("%d%s", math.floor(leftMin / hours_1), locale.auction.under_time)
+    end
+  elseif leftMin == 0 then
+    leftTimeStr = string.format("%s", locale.server.timeBelowOneMinute)
+    timeWarning = true
+  else
+    leftTimeStr = string.format("%d%s", leftMin, locale.tooltip.minute)
+    timeWarning = true
+  end
+  return leftTimeStr, timeWarning
+end
+function CreateMarketPriceBtn(id, parent)
+  if X2Player:GetFeatureSet().marketPrice ~= true then
+    return
+  end
+  local button = parent:CreateChildWidget("button", id, 0, false)
+  ApplyButtonSkin(button, BUTTON_CONTENTS.MARKET_PRICE)
+  function button:SetMarketPrice(itemType, itemGrade)
+    self.itemType = itemType
+    self.itemGrade = itemGrade
+  end
+  function button:InitMarketPrice()
+    self.itemType = nil
+    self.itemGrade = 0
+  end
+  local OnEnter = function(self)
+    SetTooltip(GetUIText(COMMON_TEXT, "maket_price_button_tooltip"), self)
+  end
+  button:SetHandler("OnEnter", OnEnter)
+  local OnLeave = function()
+    HideTooltip()
+  end
+  button:SetHandler("OnLeave", OnLeave)
+  local OnClick = function(self)
+    if self.itemType == nil then
+      return
+    end
+    if self.itemGrade == nil then
+      self.itemGrade = 1
+    end
+    if ShowMarketPriceWindow ~= nil then
+      ShowMarketPriceWindow(self.itemType, self.itemGrade)
+    end
+  end
+  button:SetHandler("OnClick", OnClick)
+  return button
+end

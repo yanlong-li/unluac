@@ -1,0 +1,324 @@
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+CRAFT_MAX_COUNT = {
+  PAGE_PER_HIGH_RANK_ITEM = 5,
+  MATERIAL_ITEM = 12,
+  VIEW_CRAFTABLE = 999
+}
+CRAFT_SEARCH_CONDITION = {PRODUCT = 1, MATERIAL = 2}
+CRAFT_ALL_CATEGORY = 1
+local function CreateSearchBar(id, parent)
+  local inset = 3
+  local barFrame = UIParent:CreateWidget("emptywidget", id, parent)
+  barFrame:SetExtent(parent:GetWidth() - sideMargin * 2, parent:GetHeight() * 0.08)
+  local resetBtn = barFrame:CreateChildWidget("button", "resetBtn", 0, true)
+  resetBtn:SetText(GetUIText(AUCTION_TEXT, "search_condition_init"))
+  ApplyButtonSkin(resetBtn, BUTTON_BASIC.DEFAULT)
+  resetBtn:AddAnchor("TOPLEFT", barFrame, 0, 0)
+  local combobox = CreateComboBox(barFrame)
+  combobox:AddAnchor("LEFT", resetBtn, "RIGHT", inset, 0)
+  combobox:SetEllipsis(true)
+  combobox:ShowDropdownTooltip(true)
+  combobox.limitItemCount = 10
+  barFrame.combobox = combobox
+  local editbox = barFrame:CreateChildWidget("editbox", "editbox", 0, true)
+  editbox:SetHeight(DEFAULT_SIZE.EDIT_HEIGHT)
+  editbox:AddAnchor("LEFT", combobox, "RIGHT", inset, 0)
+  InitEdit(editbox)
+  ApplyEditSkin(editbox)
+  local searchButton = barFrame:CreateChildWidget("button", "searchButton", 0, true)
+  searchButton:SetText(GetUIText(COMMON_TEXT, "search"))
+  ApplyButtonSkin(searchButton, BUTTON_BASIC.DEFAULT)
+  searchButton:AddAnchor("LEFT", editbox, "RIGHT", inset, 0)
+  local radioFrame = barFrame:CreateChildWidget("emptywidget", "radioFrame", 0, false)
+  radioFrame:Show(true)
+  radioFrame:AddAnchor("LEFT", searchButton, "RIGHT", 8, 0)
+  local textTable = {
+    GetUIText(COMMON_TEXT, "crafting_product"),
+    GetUIText(AUCTION_TEXT, "item_group_material")
+  }
+  local firstOffset = {x = 0, y = 0}
+  local conditionRadio = CreateRadioButton("conditionRadio", radioFrame, 2, "vertical", firstOffset, 3, textTable)
+  conditionRadio:Check(CRAFT_SEARCH_CONDITION.PRODUCT)
+  barFrame.conditionRadio = conditionRadio
+  local radioWidth, ridioHeight = 0, 0
+  for i = 1, #conditionRadio do
+    local width = conditionRadio[i]:GetWidth() + conditionRadio[i].textButton:GetWidth() + 5
+    if radioWidth < width then
+      radioWidth = width
+    end
+    ridioHeight = ridioHeight + conditionRadio[i].textButton:GetHeight()
+  end
+  radioFrame:SetExtent(radioWidth, ridioHeight)
+  local lineLeft, lintRight = CreateLine(barFrame, "TYPE2")
+  lineLeft:SetWidth(barFrame:GetWidth() / 2)
+  lintRight:SetWidth(barFrame:GetWidth() / 2)
+  lineLeft:AddAnchor("BOTTOMLEFT", barFrame, 0, 0)
+  lintRight:AddAnchor("BOTTOMRIGHT", barFrame, 0, 0)
+  local reftWidth = barFrame:GetWidth() - resetBtn:GetWidth() - searchButton:GetWidth() - radioWidth - sideMargin
+  combobox:SetWidth(reftWidth * 0.3)
+  editbox:SetWidth(reftWidth * 0.7)
+  return barFrame
+end
+local CreateActabilityGroupPage = function(id, parent)
+  local pageWindow = UIParent:CreateWidget("emptywidget", id, parent)
+  pageWindow:SetExtent(parent:GetWidth() - 60, parent:GetHeight() * 0.8)
+  function pageWindow:CreateActabilityButton(id, parent)
+    local button = CreateEmptyButton(id, parent)
+    ApplyButtonSkin(button, BUTTON_CONTENTS.CRAFT_ICON)
+    local icon = button:CreateIconImageDrawable(EMPTY_SLOT_PATH, "background")
+    icon:AddAnchor("TOPLEFT", button, 0, 0)
+    icon:AddAnchor("BOTTOMRIGHT", button, 0, 0)
+    button.icon = icon
+    local line = button:CreateImageDrawable(TEXTURE_PATH.CRAFT, "overlay")
+    line:SetCoords(0, 0, 83, 84)
+    line:AddAnchor("TOPLEFT", button, -1, -3)
+    line:AddAnchor("BOTTOMRIGHT", button, 2, 2)
+    local textButton = button:CreateChildWidget("button", "textButton", 0, true)
+    textButton:SetAutoResize(true)
+    textButton:SetHeight(craftingLocale.abilityGroup.btnFontSize)
+    textButton:AddAnchor("TOP", button, "BOTTOM", 0, 5)
+    textButton.style:SetFont(FONT_PATH.SNAIL, craftingLocale.abilityGroup.btnFontSize)
+    SetButtonFontColor(textButton, GetButtonDefaultFontColor())
+    function button:SetButtonInfo(text, iconPath)
+      if text == nil or iconPath == nil then
+        return
+      end
+      if iconPath == "" then
+        iconPath = EMPTY_SLOT_PATH
+      end
+      self.textButton:SetText(text)
+      self.icon:ClearAllTextures()
+      self.icon:AddTexture(iconPath)
+    end
+    return button
+  end
+  return pageWindow
+end
+local function CreateDetailPage(id, parent)
+  local categoryListFontSize = FONT_SIZE.LARGE
+  local countListFontSize = FONT_SIZE.MIDDLE
+  local categoryListHeight = FONT_SIZE.MIDDLE
+  local detailPage = UIParent:CreateWidget("emptywidget", id, parent)
+  detailPage:SetExtent(parent:GetWidth() - sideMargin * 2, parent:GetHeight() * 0.8)
+  local backPageBtn = detailPage:CreateChildWidget("button", "backPageBtn", 0, true)
+  ApplyButtonSkin(backPageBtn, BUTTON_CONTENTS.PREV_PAGE)
+  local rightContentWidth = 325
+  local highRankFrame = detailPage:CreateChildWidget("emptywidget", "highRankFrame", 0, true)
+  highRankFrame:SetExtent(rightContentWidth, 90)
+  highRankFrame:AddAnchor("TOPRIGHT", detailPage, 0, 0)
+  local title = highRankFrame:CreateChildWidget("label", "title", 0, false)
+  title:SetAutoResize(true)
+  title:SetHeight(FONT_SIZE.LARGE)
+  title:SetText(X2Locale:LocalizeUiText(CRAFT_TEXT, "high_rank_item"))
+  title:AddAnchor("TOPLEFT", highRankFrame, 0, sideMargin / 2)
+  title.style:SetFontSize(FONT_SIZE.LARGE)
+  ApplyTextColor(title, FONT_COLOR.MIDDLE_TITLE)
+  local combobox = CreateComboBox(highRankFrame)
+  combobox:SetExtent(highRankFrame:GetWidth() * 0.5, DEFAULT_SIZE.COMBOBOX_HEIGHT)
+  combobox:AddAnchor("TOPRIGHT", highRankFrame, 0, 2)
+  combobox:SetEllipsis(true)
+  combobox:ShowDropdownTooltip(true)
+  local categoryType = X2Craft:GetCategoryType()
+  local cNames = {}
+  local categoryIdxs = {}
+  cNames[1] = GetUIText(CRAFT_TEXT, "show_all")
+  categoryIdxs[1] = 0
+  for i = 1, #categoryType do
+    cNames[#cNames + 1] = X2Craft:GetCategoryName(categoryType[i])
+    categoryIdxs[#cNames] = categoryType[i]
+  end
+  combobox.dropdownItem = cNames
+  combobox.categoryIdxs = categoryIdxs
+  combobox.limitItemCount = 10
+  highRankFrame.combobox = combobox
+  local pageCtrl = CreatePageControl("pageCtrl", highRankFrame, "craft")
+  pageCtrl:Show(true)
+  pageCtrl:SetExtent(highRankFrame:GetWidth(), 50)
+  pageCtrl:AddAnchor("BOTTOMLEFT", highRankFrame, 0, 0)
+  highRankFrame.pageCtrl = pageCtrl
+  local bg = CreateContentBackground(pageCtrl, "TYPE8")
+  bg:AddAnchor("TOPLEFT", pageCtrl, -sideMargin, -sideMargin / 2)
+  bg:AddAnchor("BOTTOMRIGHT", pageCtrl, sideMargin, sideMargin / 2)
+  ApplyTextureColor(bg, TEXTURE_COLOR.BOX_BROWN)
+  highRankFrame.items = {}
+  for i = 1, CRAFT_MAX_COUNT.PAGE_PER_HIGH_RANK_ITEM do
+    local highRankItem = CreateItemIconButton(string.format("highRankFrame.items[%d]", i), highRankFrame)
+    highRankItem:SetExtent(ICON_SIZE.LARGE, ICON_SIZE.LARGE)
+    highRankItem:AddAnchor("LEFT", pageCtrl, (i - 1) * 56 + 26, 0)
+    highRankFrame.items[i] = highRankItem
+  end
+  local productInfoFrame = detailPage:CreateChildWidget("emptywidget", "productInfoFrame", 0, true)
+  productInfoFrame:SetExtent(rightContentWidth, 140)
+  productInfoFrame:AddAnchor("TOPLEFT", highRankFrame, "BOTTOMLEFT", 0, sideMargin)
+  local title = productInfoFrame:CreateChildWidget("label", "title", 0, false)
+  title:SetAutoResize(true)
+  title:SetHeight(FONT_SIZE.LARGE)
+  title.style:SetFontSize(FONT_SIZE.LARGE)
+  title:SetText(X2Locale:LocalizeUiText(CRAFT_TEXT, "craft_item"))
+  title:AddAnchor("TOPLEFT", productInfoFrame, 0, 0)
+  ApplyTextColor(title, FONT_COLOR.MIDDLE_TITLE)
+  local name = productInfoFrame:CreateChildWidget("textbox", "name", 0, true)
+  name:SetExtent(productInfoFrame:GetWidth(), FONT_SIZE.LARGE)
+  name:AddAnchor("TOPLEFT", title, "BOTTOMLEFT", 0, sideMargin / 2)
+  name.style:SetFontSize(FONT_SIZE.LARGE)
+  name.style:SetAlign(ALIGN_LEFT)
+  local item = CreateItemIconButton("item", productInfoFrame)
+  item:SetExtent(ICON_SIZE.SLAVE, ICON_SIZE.SLAVE)
+  item:AddAnchor("TOPLEFT", name, "BOTTOMLEFT", 0, sideMargin / 2)
+  productInfoFrame.item = item
+  local function CreateTextWidget(id, widgetType)
+    local rightTextWidth = productInfoFrame:GetWidth() - item:GetWidth() - 5
+    local widget = productInfoFrame:CreateChildWidget(widgetType, id, 0, true)
+    widget:SetExtent(rightTextWidth, FONT_SIZE.MIDDLE)
+    widget.style:SetSnap(true)
+    widget.style:SetAlign(ALIGN_LEFT)
+    if widgetType == "label" then
+      widget.style:SetEllipsis(true)
+    end
+    return widget
+  end
+  local requireLaborPower = CreateTextWidget("requireLaborPower", "label")
+  requireLaborPower:AddAnchor("TOPLEFT", item, "TOPRIGHT", 5, 0)
+  local requireActability = CreateTextWidget("requireActability", "label")
+  requireActability:AddAnchor("TOPLEFT", requireLaborPower, "BOTTOMLEFT", 0, 5)
+  local requireDoodad = CreateTextWidget("requireDoodad", "textbox")
+  requireDoodad:AddAnchor("TOPLEFT", requireActability, "BOTTOMLEFT", 0, 5)
+  local requireMileage = CreateTextWidget("requireMileage", "textbox")
+  requireMileage:AddAnchor("TOPLEFT", requireDoodad, "BOTTOMLEFT", 0, 5)
+  local materialFrame = detailPage:CreateChildWidget("window", "materialFrame", 0, true)
+  materialFrame:Show(true)
+  materialFrame:SetExtent(rightContentWidth, 130)
+  materialFrame:AddAnchor("TOPLEFT", productInfoFrame, "BOTTOMLEFT", 0, 0)
+  local title = materialFrame:CreateChildWidget("label", "title", 0, false)
+  title:SetAutoResize(true)
+  title:SetHeight(FONT_SIZE.LARGE)
+  title.style:SetFontSize(FONT_SIZE.LARGE)
+  title:SetText(GetUIText(COMMON_TEXT, "material_item"))
+  title:AddAnchor("TOPLEFT", materialFrame, 0, 0)
+  ApplyTextColor(title, FONT_COLOR.MIDDLE_TITLE)
+  materialFrame.items = {}
+  local x = 0
+  local y = 23
+  for i = 1, CRAFT_MAX_COUNT.MATERIAL_ITEM do
+    local item = CreateItemIconButton("item" .. i, materialFrame)
+    item:SetExtent(ICON_SIZE.LARGE, ICON_SIZE.LARGE)
+    item:AddAnchor("TOPLEFT", materialFrame, x, y)
+    item.stack:Raise()
+    item.stack:SetHeight(FONT_SIZE.SMALL)
+    item.stack:SetNumberOnly(false)
+    item.stack:RemoveAllAnchors()
+    item.stack:AddAnchor("BOTTOM", item, 0, -5)
+    item.stack.style:SetAlign(ALIGN_CENTER)
+    x = x + 55
+    if i == 6 then
+      x = 0
+      y = y + 55
+    end
+    materialFrame.items[i] = item
+  end
+  local buttonFrame = detailPage:CreateChildWidget("window", "buttonFrame", 0, true)
+  buttonFrame:Show(true)
+  buttonFrame:SetExtent(rightContentWidth, DEFAULT_SIZE.SPINNER[2])
+  buttonFrame:AddAnchor("TOPLEFT", materialFrame, "BOTTOMLEFT", 0, 15)
+  local spinner = CreateSpinner("spinner", buttonFrame)
+  spinner:AddAnchor("LEFT", buttonFrame, -1, 0)
+  spinner.text.style:SetAlign(ALIGN_CENTER)
+  spinner.text:SetInset(0, 0, 12, 0)
+  buttonFrame.spinner = spinner
+  local buttonWidth = 73
+  local maxCraftBtn = buttonFrame:CreateChildWidget("button", "maxCraftBtn", 0, true)
+  maxCraftBtn:SetText(locale.craft.maximum)
+  maxCraftBtn:AddAnchor("LEFT", spinner, "RIGHT", 3, 0)
+  ApplyButtonSkin(maxCraftBtn, BUTTON_BASIC.DEFAULT)
+  maxCraftBtn:SetWidth(buttonWidth)
+  local cancelBtn = buttonFrame:CreateChildWidget("button", "cancelBtn", 0, true)
+  cancelBtn:SetText(locale.craft.cancel)
+  cancelBtn:AddAnchor("RIGHT", buttonFrame, 0, 0)
+  ApplyButtonSkin(cancelBtn, BUTTON_BASIC.DEFAULT)
+  local craftBtn = buttonFrame:CreateChildWidget("button", "craftBtn", 0, true)
+  craftBtn:SetText(locale.craft.make)
+  craftBtn:AddAnchor("RIGHT", cancelBtn, "LEFT", -3, 0)
+  ApplyButtonSkin(craftBtn, BUTTON_BASIC.DEFAULT)
+  local buttonTable = {cancelBtn, craftBtn}
+  AdjustBtnLongestTextWidth(buttonTable, buttonWidth)
+  local categoryList = CreateScrollListBox(detailPage, "categoryList")
+  categoryList:SetExtent(detailPage:GetWidth() - rightContentWidth - sideMargin / 1.5, detailPage:GetHeight() - 33)
+  categoryList:AddAnchor("TOPLEFT", detailPage, 0, 0)
+  categoryList.content:UseChildStyle(true)
+  categoryList.content:EnableSelectParent(false)
+  categoryList.content:SetInset(5, 5, 8, 5)
+  categoryList.content.itemStyle:SetFontSize(FONT_SIZE.LARGE)
+  categoryList.content.childStyle:SetFontSize(FONT_SIZE.MIDDLE)
+  categoryList.content.itemStyle:SetAlign(ALIGN_LEFT)
+  categoryList.content:SetTreeTypeIndent(true, 20)
+  categoryList.content:SetHeight(categoryListHeight)
+  categoryList.content:ShowTooltip(true)
+  categoryList.content:SetSubTextOffset(20, 0, true)
+  local color = FONT_COLOR.TITLE
+  categoryList.content:SetDefaultItemTextColor(color[1], color[2], color[3], color[4])
+  color = FONT_COLOR.DEFAULT
+  categoryList.content.childStyle:SetColor(color[1], color[2], color[3], color[4])
+  local opened = categoryList.content:CreateOpenedImageDrawable("ui/button/grid.dds")
+  opened:SetCoords(0, 0, 21, 14)
+  opened:SetExtent(21, 14)
+  local closed = categoryList.content:CreateClosedImageDrawable("ui/button/grid.dds")
+  closed:SetCoords(44, 0, 13, 21)
+  closed:SetExtent(13, 21)
+  local maxCountTip = detailPage:CreateChildWidget("label", "maxCountTip", 0, true)
+  maxCountTip:SetHeight(FONT_SIZE.SMALL)
+  maxCountTip:SetAutoResize(true)
+  maxCountTip:SetText(locale.craft.countTip)
+  maxCountTip:AddAnchor("TOPLEFT", categoryList, "BOTTOMLEFT", sideMargin / 2.5, sideMargin / 1.5)
+  maxCountTip.style:SetFontSize(FONT_SIZE.SMALL)
+  ApplyTextColor(maxCountTip, FONT_COLOR.GRAY)
+  function detailPage:InitHighRankFrameItems()
+    for i = 1, #highRankFrame.items do
+      highRankFrame.items[i]:Init()
+      highRankFrame.items[i].craftType = nil
+    end
+  end
+  function detailPage:Init()
+    highRankFrame.craftType = nil
+    self:InitHighRankFrameItems()
+    productInfoFrame.item:Init()
+    requireLaborPower:Show(false)
+    requireActability:Show(false)
+    requireDoodad:Show(false)
+    requireMileage:Show(false)
+    productInfoFrame.name:SetText("")
+    combobox:Select(0)
+    for j = 1, #materialFrame.items do
+      materialFrame.items[j]:Init()
+      materialFrame.items[j].itemType = nil
+    end
+    materialFrame.mileageCount = 0
+  end
+  return detailPage
+end
+function SetViewOfCraftingWindowRenewal(id, parent)
+  local window = CreateWindow(id, parent)
+  window:SetTitle(locale.craft.craftBook)
+  function window:MakeOriginWindowPos()
+    if window == nil then
+      return
+    end
+    window:RemoveAllAnchors()
+    window:SetExtent(craftingLocale.windowWidth, 580)
+    window:AddAnchor("CENTER", "UIParent", 0, 0)
+  end
+  window:SetExtent(craftingLocale.windowWidth, 580)
+  window:SetSounds("craft")
+  local searchBar = CreateSearchBar("searchBar", window)
+  searchBar:AddAnchor("TOP", window, 0, titleMargin)
+  window.searchBar = searchBar
+  local abilityGroupPage = CreateActabilityGroupPage("abilityGroupPage", window)
+  abilityGroupPage:Show(true)
+  abilityGroupPage:AddAnchor("TOP", searchBar, "BOTTOM", 0, sideMargin / 1.5)
+  window.abilityGroupPage = abilityGroupPage
+  local detailPage = CreateDetailPage("detailPage", window)
+  detailPage:Show(false)
+  detailPage:AddAnchor("TOP", searchBar, "BOTTOM", 0, sideMargin / 1.5)
+  detailPage.backPageBtn:AddAnchor("TOPLEFT", window, 8, 5)
+  window.detailPage = detailPage
+  return window
+end

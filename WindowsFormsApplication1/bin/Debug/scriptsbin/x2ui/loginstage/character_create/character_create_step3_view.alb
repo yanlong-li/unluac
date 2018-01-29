@@ -1,0 +1,365 @@
+characterCreate.step3 = {}
+local step3 = characterCreate.step3
+local id = "characterCreate.step3.content"
+local contentHeight = SCREEN_HEIGHT * 0.75
+step3.content = CreateEmptyWindow(id, characterCreate.bgWindow)
+step3.content:SetExtent(SCREEN_WIDTH, contentHeight)
+step3.content:AddAnchor("CENTER", characterCreate.bgWindow, "CENTER", 0, 0)
+local ABILITY_BUTTON_STYLE_TABEL = {
+  BUTTON_LOGINSTAGE.ABILITY_FIGHT,
+  BUTTON_LOGINSTAGE.ABILITY_MAGIC,
+  BUTTON_LOGINSTAGE.ABILITY_WILD,
+  BUTTON_LOGINSTAGE.ABILITY_LOVE,
+  BUTTON_LOGINSTAGE.ABILITY_DEATH,
+  BUTTON_LOGINSTAGE.ABILITY_VOCATION
+}
+local function CreateAbilitySet(parent, index)
+  local abilityIndex = ABILITY_TYPE[index]
+  local button = characterCreateLocale:CreateAbilityButton(parent, index, ABILITY_NAME(abilityIndex))
+  ApplyButtonSkinTable(button, ABILITY_BUTTON_STYLE_TABEL[index])
+  button.style:SetFontSize(characterCreateLocale.abilityButton.fontSize)
+  button:AddAnchor("TOPLEFT", parent, index * characterCreateLocale.abilityButton.anchorSize + characterCreateLocale.abilityButton.offset, 16)
+  button.index = abilityIndex
+end
+function CreateAbilityWindow(id, parent)
+  local widget = CreateRightPanel(id, parent, 3)
+  widget:SetWidth(characterCreateLocale.abilityWndWidth)
+  local uiAviBtnWidth = 0
+  widget.uiAviBtn = characterCreateLocale:CreateEffectAviButton(widget)
+  if widget.uiAviBtn and X2Player:GetFeatureSet().uiAvi then
+    widget.uiAviBtn:Show(true)
+    uiAviBtnWidth = widget.uiAviBtn:GetWidth()
+  else
+    widget.uiAviBtn = nil
+  end
+  local desc = widget:CreateChildWidget("label", "pageDesc", 0, true)
+  desc:SetExtent(widget:GetWidth() - uiAviBtnWidth, 40)
+  desc:AddAnchor("TOPLEFT", widget, 0, characterCreateLocale.descHeight)
+  desc:SetText(locale.characterCreate.abilityStageDesc)
+  desc.style:SetShadow(false)
+  desc.style:SetAlign(ALIGN_CENTER)
+  desc.style:SetColor(1, 1, 1, 1)
+  widget.desc = desc
+  characterCreateLocale:CreateAbilityDescLabel(widget)
+  local descGroup = widget:CreateChildWidget("emptywidget", "descGroup", 0, true)
+  descGroup:SetExtent(widget:GetWidth(), 100)
+  descGroup:AddAnchor("TOPLEFT", widget, "TOPLEFT", 0, 220)
+  widget.descGroup = descGroup
+  local abilityTilteTexture = descGroup:CreateImageDrawable(characterCreateLocale.abilityDesc.path, "artwork")
+  abilityTilteTexture:AddAnchor("TOPLEFT", descGroup, 0, 0)
+  descGroup.abilityTilteTexture = abilityTilteTexture
+  local bg = descGroup:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.REMNANTS, "background")
+  bg:SetCoords(0, 298, 289, 169)
+  bg:SetExtent(450, 213)
+  bg:SetColor(0.3, 0.3, 0.3, 0.7)
+  bg:SetVisible(false)
+  bg:AddAnchor("TOPLEFT", abilityTilteTexture, -50, -35)
+  desc.bg = bg
+  local abilityTitle = descGroup:CreateChildWidget("label", "abilityTitle", 0, true)
+  abilityTitle:Show(false)
+  abilityTitle:SetExtent(70, 30)
+  abilityTitle:SetText(locale.characterCreate.biginner)
+  abilityTitle.style:SetColor(0.83, 0.83, 0.83, 1)
+  abilityTitle.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.XLARGE)
+  abilityTitle:AddAnchor("BOTTOMLEFT", abilityTilteTexture, "BOTTOMRIGHT", 3, 0)
+  abilityTitle.style:SetAlign(ALIGN_LEFT)
+  local abilityDesc = descGroup:CreateChildWidget("textbox", "abilityDesc", 0, true)
+  abilityDesc:Show(true)
+  abilityDesc:SetExtent(380, 100)
+  abilityDesc:AddAnchor("TOPLEFT", abilityTilteTexture, "BOTTOMLEFT", 0, 5)
+  abilityDesc:SetLineSpace(localeView.lineSpace.abilityDesc)
+  abilityDesc.style:SetAlign(ALIGN_LEFT)
+  abilityDesc.style:SetColor(0.83, 0.83, 0.83, 1)
+  abilityDesc.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.LARGE)
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local dlPart = descGroup:CreateChildWidget("emptywidget", "difficultyLevelPart", 0, true)
+  dlPart:SetExtent(abilityDesc:GetWidth() - 40, 300)
+  dlPart:AddAnchor("TOPLEFT", abilityDesc, "BOTTOMLEFT", 0, 80)
+  dlPart:Show(false)
+  widget.dlPart = dlPart
+  local line = dlPart:CreateImageDrawable(TEXTURE_PATH.TAB_LIST, "artwork")
+  line:SetCoords(0, 6, 256, 3)
+  line:SetExtent(dlPart:GetWidth(), 3)
+  line:AddAnchor("TOPLEFT", dlPart, 0, -sideMargin / 2)
+  local lineSpace = 5
+  local dlTitle = dlPart:CreateChildWidget("label", "difficultyLevelTitle", 0, true)
+  dlTitle:SetAutoResize(true)
+  dlTitle:SetHeight(FONT_SIZE.XLARGE)
+  dlTitle:AddAnchor("TOPLEFT", dlPart, 0, 0)
+  dlTitle.style:SetColor(0.99, 0.74, 0.29, 1)
+  dlTitle.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.XLARGE)
+  dlTitle:SetText(GetCommonText("ability_difficulty_level"))
+  dlPart.scoreImages = {}
+  for i = 1, 5 do
+    dlPart.scoreImages[i] = dlPart:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.REMNANTS, "artwork")
+    dlPart.scoreImages[i]:SetTextureInfo("star_full")
+    if i == 1 then
+      dlPart.scoreImages[i]:AddAnchor("LEFT", dlTitle, "RIGHT", 5, 1)
+    else
+      dlPart.scoreImages[i]:AddAnchor("LEFT", dlPart.scoreImages[i - 1], "RIGHT", 0, 0)
+    end
+  end
+  local dlDesc = dlPart:CreateChildWidget("textbox", "difficultyLevelDesc", 0, true)
+  dlDesc:SetExtent(dlPart:GetWidth(), dlPart:GetHeight() - dlTitle:GetHeight() - lineSpace * 2)
+  dlDesc:SetLineSpace(localeView.lineSpace.abilityDesc)
+  dlDesc:AddAnchor("TOPLEFT", dlTitle, "BOTTOMLEFT", 0, 7)
+  dlDesc.style:SetColor(0.83, 0.83, 0.83, 1)
+  dlDesc.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.LARGE)
+  dlDesc.style:SetAlign(ALIGN_TOP_LEFT)
+  widget.abilityBtn = {}
+  function widget:ResetSelctedAbilityButtonTexture()
+    for i = 1, #ABILITY_TYPE do
+      SetBGPushed_table(widget.abilityBtn[i], false, ABILITY_BUTTON_STYLE_TABEL[i])
+    end
+  end
+  for i = 1, #ABILITY_TYPE do
+    CreateAbilitySet(widget, i)
+    do
+      local button = widget.abilityBtn[i]
+      function button:OnClick()
+        local abilityIndex = ABILITY_TYPE[i]
+        if widget.abilityWnd ~= nil then
+          widget.abilityWnd:Show(true)
+        end
+        abilityTilteTexture:SetVisible(true)
+        abilityTilteTexture:SetCoords(characterCreateLocale.abilityDesc.abilityTitle.coords[i][1], characterCreateLocale.abilityDesc.abilityTitle.coords[i][2], characterCreateLocale.abilityDesc.abilityTitle.coords[i][3], characterCreateLocale.abilityDesc.abilityTitle.coords[i][4])
+        abilityTilteTexture:SetExtent(characterCreateLocale.abilityDesc.abilityTitle.coords[i][3], characterCreateLocale.abilityDesc.abilityTitle.coords[i][4])
+        abilityTitle:Show(true)
+        abilityTitle:AddAnchor("BOTTOMLEFT", abilityTilteTexture, "BOTTOMRIGHT", 3, 0)
+        abilityDesc:SetText(ABILITY_DESC(abilityIndex))
+        abilityDesc:SetHeight(abilityDesc:GetTextHeight())
+        widget:ResetSelctedAbilityButtonTexture()
+        SetBGPushed_table(widget.abilityBtn[i], true, ABILITY_BUTTON_STYLE_TABEL[i])
+        local difficultyLevelInfo = ABILITY_DIFFICULTY_LEVEL_DESC[abilityIndex]
+        dlPart:RemoveAllAnchors()
+        dlPart:AddAnchor("TOPLEFT", abilityDesc, "BOTTOMLEFT", 0, 85)
+        dlPart:Show(true)
+        dlDesc:SetText(GetCommonText(difficultyLevelInfo.desc))
+        dlDesc:SetHeight(dlDesc:GetTextHeight())
+        local _, dlPartHeight = F_LAYOUT:GetExtentWidgets(dlTitle, dlDesc)
+        dlPart:SetHeight(dlPartHeight)
+        widget:UpdateScoreTexture(difficultyLevelInfo.score)
+        widget.desc:Show(false)
+        widget.desc.bg:SetVisible(true)
+        SelectAbility(i)
+        ShowAbilitySkillButtons(descGroup, descGroup.abilityDesc, i)
+      end
+      button:SetHandler("OnClick", button.OnClick)
+    end
+  end
+  function widget:SetSelctedAbilityButtonTexture(index)
+    for i = 1, #ABILITY_TYPE do
+      if ABILITY_TYPE[i] == index then
+        widget.abilityBtn[i]:OnClick()
+      end
+    end
+  end
+  function widget:UpdateScoreTexture(score)
+    if score == nil then
+      return
+    end
+    local result = 5 - score
+    if result < 0 then
+      return
+    end
+    for i = 1, 5 do
+      dlPart.scoreImages[i]:SetTextureInfo("star_full")
+    end
+    local integer = math.floor(result)
+    for i = 1, integer do
+      dlPart.scoreImages[5 - (i - 1)]:SetTextureInfo("star_empty")
+    end
+    if result - integer > 0 then
+      dlPart.scoreImages[5 - integer]:SetTextureInfo("star_half")
+    end
+  end
+  return widget
+end
+step3.content.rightPanel = CreateAbilityWindow("step3.content.rightPanel", step3.content)
+local rightPanel = step3.content.rightPanel
+local abilityWnd = step3.content.rightPanel:CreateChildWidget("emptywidget", "abilityWnd", 0, true)
+abilityWnd:Show(false)
+abilityWnd:AddAnchor("TOPLEFT", step3.content.rightPanel.dlPart, "TOPRIGHT", characterCreateLocale.abilityDiagram.bg.anchor[1], -20 + characterCreateLocale.abilityDiagram.bg.anchor[2])
+abilityWnd:SetExtent(215, 165)
+rightPanel.raceBgWindow = {}
+for i = 1, #RACE_TYPE do
+  local race = RACE_TYPE[i]
+  rightPanel.raceBgWindow[i] = CreateLoginStageBgWindow(STEP3_BG_PATH[race])
+  rightPanel.raceBgWindow[i]:Show(false)
+end
+local diagram = UIParent:CreateWidget("circlediagram", id .. ".abilityWnd.diagram", abilityWnd)
+diagram:Show(true)
+diagram:AddAnchor("CENTER", abilityWnd, characterCreateLocale.abilityDiagram.anchorX, 5)
+diagram:SetExtent(124, 118)
+diagram:SetDiagramColor(0.33, 0.62, 0.69, 0.7)
+diagram:SetMaxValue(5)
+diagram:AddPoint(64, 0)
+diagram:AddPoint(120, 42)
+diagram:AddPoint(100, 107)
+diagram:AddPoint(10, 135)
+diagram:AddPoint(17, 56)
+abilityWnd.diagram = diagram
+local bg = abilityWnd.diagram:CreateImageDrawable(characterCreateLocale.abilityDiagram.path, "background")
+bg:SetCoords(characterCreateLocale.abilityDiagram.bg.coords[1], characterCreateLocale.abilityDiagram.bg.coords[2], characterCreateLocale.abilityDiagram.bg.coords[3], characterCreateLocale.abilityDiagram.bg.coords[4])
+bg:SetExtent(characterCreateLocale.abilityDiagram.bg.coords[3], characterCreateLocale.abilityDiagram.bg.coords[4])
+bg:AddAnchor("CENTER", abilityWnd.diagram, characterCreateLocale.abilityDiagram.bg.anchor[1], characterCreateLocale.abilityDiagram.bg.anchor[2])
+function CreateTendencyLabel(id, parent, index, extentX)
+  local label = parent:CreateChildWidget("label", id, 0, true)
+  label:SetExtent(extentX[1], extentX[2])
+  label.style:SetFontSize(FONT_SIZE.SMALL)
+  label.style:SetAlign(ALIGN_CENTER)
+  function label:OnEnter()
+    SetTargetAnchorTooltip(locale.characterCreate.getTendencyInfo(TENDENCY_DESC[index]), "BOTTOMRIGHT", self, "TOPRIGHT", 0, 0)
+  end
+  label:SetHandler("OnEnter", label.OnEnter)
+  function label:OnLeave()
+    HideTooltip()
+  end
+  label:SetHandler("OnLeave", label.OnLeave)
+  return label
+end
+local physicalLabel = CreateTendencyLabel("physicalLabel", diagram, PHYSICAL, characterCreateLocale.abilityDiagram.labelExtent[1])
+physicalLabel:AddAnchor("BOTTOM", diagram, "TOP", characterCreateLocale.abilityDiagram.labelAnchor[1][1], characterCreateLocale.abilityDiagram.labelAnchor[1][2])
+local magicalLabel = CreateTendencyLabel("magicalLabel", diagram, MAGICAL, characterCreateLocale.abilityDiagram.labelExtent[2])
+magicalLabel:AddAnchor("LEFT", diagram, "RIGHT", characterCreateLocale.abilityDiagram.labelAnchor[2][1], characterCreateLocale.abilityDiagram.labelAnchor[2][2])
+local protectLabel = CreateTendencyLabel("protectLabel", diagram, PROTECT, characterCreateLocale.abilityDiagram.labelExtent[3])
+protectLabel:AddAnchor("BOTTOMRIGHT", diagram, characterCreateLocale.abilityDiagram.labelAnchor[3][1], characterCreateLocale.abilityDiagram.labelAnchor[3][2])
+local debuffLabel = CreateTendencyLabel("debuffLabel", diagram, DEBUFF, characterCreateLocale.abilityDiagram.labelExtent[4])
+debuffLabel:AddAnchor("BOTTOMLEFT", diagram, characterCreateLocale.abilityDiagram.labelAnchor[4][1], characterCreateLocale.abilityDiagram.labelAnchor[4][2])
+local enchantLabel = CreateTendencyLabel("enchantLabel", diagram, ENCHANT, characterCreateLocale.abilityDiagram.labelExtent[5])
+enchantLabel:AddAnchor("RIGHT", diagram, "LEFT", characterCreateLocale.abilityDiagram.labelAnchor[5][1], characterCreateLocale.abilityDiagram.labelAnchor[5][2])
+local nameWnd = step3.content:CreateChildWidget("emptywidget", "nameWnd", 0, true)
+nameWnd:Show(true)
+nameWnd:SetExtent(340, 135)
+nameWnd:AddAnchor("BOTTOMRIGHT", rightPanel, 0, -85)
+local bg = nameWnd:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.REMNANTS, "background")
+bg:SetCoords(175, 0, 290, 196)
+bg:AddAnchor("TOPLEFT", nameWnd, 0, -10)
+bg:AddAnchor("BOTTOMRIGHT", nameWnd, 50, 10)
+nameWnd.bg = bg
+local characterName = nameWnd:CreateChildWidget("editbox", "characterName", 0, true)
+local namePolicyInfo = X2Util:GetNamePolicyInfo(VNT_CHAR)
+local maxLen = namePolicyInfo.local_max
+if namePolicyInfo.local_max < namePolicyInfo.eng_max then
+  maxLen = namePolicyInfo.eng_max
+end
+characterName:SetExtent(242, 36)
+characterName:AddAnchor("LEFT", nameWnd, 53, -5)
+characterName:SetMaxTextLength(maxLen)
+InitEdit(characterName)
+ApplyEditSkin(characterName, "loginPage")
+characterName:SetReadOnly(true)
+characterName.style:SetFont(FONT_PATH.DEFAULT, characterCreateLocale.characterName.fontSize)
+characterName:SetInset(10, 5, 10, 5)
+characterName:Enable(false)
+characterName:SetSounds("edit_box")
+characterName:SetCursorColor(0, 0, 0, 0.7)
+characterName.style:SetColor(0, 0, 0, 0.7)
+local characterNameHelper = nameWnd:CreateChildWidget("label", "characterNameHelper", 0, true)
+characterNameHelper:Show(false)
+characterNameHelper:Raise()
+characterNameHelper:SetText(locale.characterCreate.makeName)
+characterNameHelper:AddAnchor("LEFT", nameWnd.characterName, 10, 0)
+characterNameHelper.style:SetFontSize(characterCreateLocale.characterName.fontSize)
+characterNameHelper.style:SetAlign(ALIGN_LEFT)
+characterNameHelper.style:SetShadow(false)
+local guide = characterName:CreateChildWidget("textbox", "guide", 0, true)
+guide:SetExtent(nameWnd:GetWidth(), FONT_SIZE.MIDDLE)
+guide:AddAnchor("BOTTOM", characterName, "TOP", 0, -45)
+guide:SetAutoResize(true)
+guide:SetText(GetLimitInfoText(namePolicyInfo))
+guide.style:SetFontSize(FONT_SIZE.MIDDLE)
+guide.style:SetAlign(ALIGN_CENTER)
+ApplyTextColor(guide, FONT_COLOR.WHITE)
+function EnableEditBox(isRead)
+  if isRead == true then
+    step3.content.nameWnd.bg:SetColor(1, 1, 1, 0.3)
+    step3.content.nameWnd.characterNameHelper:SetAlpha(0.5)
+    step3.content.nameWnd.characterName.guide:SetAlpha(0.5)
+  else
+    step3.content.nameWnd.bg:SetColor(1, 1, 1, 0.8)
+    step3.content.nameWnd.characterNameHelper:SetAlpha(1)
+    step3.content.nameWnd.characterName.guide:SetAlpha(1)
+  end
+  step3.content.nameWnd.characterName:SetReadOnly(isRead)
+  step3.content.nameWnd.characterName:Enable(not isRead)
+end
+function ShowCreateConfirmPopup(gotoIntro)
+  if gotoIntro == nil then
+    gotoIntro = false
+  end
+  local name = step3.content.nameWnd.characterName:GetText()
+  local race = characterCreate.race
+  local gender = characterCreate.gender
+  local ability = characterCreate.ability
+  local abilityName = ABILITY_TITLE(ability)
+  if X2LoginCharacter:IsRecustomizing() then
+    local function DialogHandler(wnd)
+      wnd:SetTitle(locale.characterCreate.confirmEditTitle)
+      wnd:SetContent(string.format([[
+%s
+%s]], name, locale.characterCreate.editConfirm))
+      function wnd:OkProc()
+        EditCharacter()
+      end
+    end
+    X2DialogManager:RequestDefaultDialog(DialogHandler, step3.content:GetId())
+  else
+    local function DialogHandler(wnd)
+      wnd:SetTitle(locale.characterCreate.confirmCreateTitle)
+      local contentStr = string.format([[
+%s
+%s]], name, locale.characterCreate.createConfirm)
+      if X2World:IsPreSelectCharacterPeriod() then
+        contentStr = string.format([[
+%s
+
+%s%s
+ ]], contentStr, FONT_COLOR_HEX.RED, GetCommonText("pre_select_period_character_notice"))
+      end
+      wnd:SetContent(contentStr)
+      function wnd:OkProc()
+        CreateCharacter(gotoIntro)
+        if gotoIntro == true then
+          F_SOUND:StopMusic()
+          F_SOUND:PlayUISound("login_stage_start_game")
+        end
+      end
+    end
+    X2DialogManager:RequestDefaultDialog(DialogHandler, step3.content:GetId())
+  end
+end
+function step3.content:OnVisibleChanged(visible)
+  if visible == true then
+    rightPanel:ResetSelctedAbilityButtonTexture()
+    rightPanel.desc:Show(true)
+    rightPanel.desc.bg:SetVisible(false)
+    rightPanel.abilityWnd:Show(false)
+    rightPanel.descGroup.abilityDesc:SetText("")
+    rightPanel.descGroup.abilityTitle:Show(false)
+    rightPanel.descGroup.abilityTilteTexture:SetVisible(false)
+    rightPanel.dlPart:Show(false)
+    step3.content.nameWnd.characterName:SetText("")
+    step3.content.nameWnd.characterNameHelper:Show(true)
+    UpdateAbilityDiagram()
+    ClearSkillButtonPool(rightPanel)
+    EnableEditBox(true)
+    if X2LoginCharacter:IsRecustomizing() then
+      local abi = X2LoginCharacter:GetEditUnitAbility()
+      local name = X2LoginCharacter:GetEditUnitName()
+      rightPanel:SetSelctedAbilityButtonTexture(abi)
+      if name ~= nil and string.len(name) ~= 0 then
+        step3.content.nameWnd.characterName:SetText(name)
+        step3.content.nameWnd.characterNameHelper:Show(false)
+        UpdateCreateCharacterBtnState()
+      end
+    end
+  end
+end
+function step3.content:OnEndFadeIn()
+  if rightPanel.uiAviBtn and rightPanel.allDrawableAnimInfos then
+    F_ANIMATION:StartEffectDrawableAnimation(rightPanel, rightPanel.allDrawableAnimInfos, rightPanel.allWidgetAnimInfos)
+  end
+end
+step3.content:SetHandler("OnVisibleChanged", step3.content.OnVisibleChanged)
+step3.content:SetHandler("OnEndFadeIn", step3.content.OnEndFadeIn)

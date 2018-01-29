@@ -1,0 +1,40 @@
+expedMgmt = {}
+expedMgmt = CreateWindow("expedMgmt", "UIParent")
+expedMgmt:Show(false)
+expedMgmt:AddAnchor("CENTER", "UIParent", 0, 0)
+expedMgmt:SetExtent(900, 700)
+expedMgmt:SetTitle(locale.expedition.managementTitle)
+expedMgmt:SetSounds("expedition")
+expedMgmt.ML_VIEW = {
+  NAME = 1,
+  LEVEL = 2,
+  CLASS = 3,
+  CONTRIBUTION = 4,
+  ROLE = 5,
+  POS = 6,
+  MAX = 6
+}
+local CreateExpdMgmtTab = function(id, parent)
+  local tab = CreateTab("tab", parent)
+  tab:AddAnchor("TOPLEFT", parent, MARGIN.WINDOW_SIDE, MARGIN.WINDOW_TITLE)
+  tab:AddAnchor("BOTTOMRIGHT", parent, -MARGIN.WINDOW_SIDE, 0)
+  tab:SetCorner("TOPLEFT")
+  local tabTexts = {}
+  for i = 1, #EXPEDITION_TAB_MENU_TABLE do
+    local tabMenu = EXPEDITION_TAB_MENU_TABLE[i]
+    table.insert(tabTexts, tabMenu.text)
+  end
+  tab:AddTabs(tabTexts)
+  return tab
+end
+function expedMgmt:CreateTab(id, parent)
+  local tab = CreateExpdMgmtTab(id .. ".tab", parent)
+  parent.tab = tab
+end
+function CreateWebBrowser(id, wnd)
+  local webBrowser = UIParent:CreateWidget("webbrowser", id, wnd)
+  webBrowser:AddAnchor("TOP", wnd, 0, 5)
+  webBrowser:SetExtent(890, 582)
+  webBrowser:SetEscEvent(true)
+  wnd.webBrowser = webBrowser
+end

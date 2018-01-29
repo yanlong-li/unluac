@@ -1,0 +1,55 @@
+local enteredRace = false
+local function RacingCondition(trackType, condition, remainTime)
+  local trackName = X2Racing:GetTrackName(trackType)
+  local timeTable = {}
+  timeTable.year, timeTable.month, timeTable.day = 0, 0, 0
+  timeTable.hour, timeTable.minute, timeTable.second = GetHourMinuteSecondeFromMsec(remainTime)
+  local timeStr = locale.time.GetRemainDateToDateFormat(timeTable, DEFAULT_FORMAT_FILTER + FORMAT_FILTER.SECOND)
+  local message
+  if condition == RACE_COND_WAIT then
+    message = string.format("\237\156\180\236\139\157: %s (%s \235\130\168\236\157\140)", trackName, timeStr)
+  elseif condition == RACE_COND_READY then
+    message = string.format("\236\164\128\235\185\132: %s (%s \235\130\168\236\157\140)", trackName, timeStr)
+  elseif condition == RACE_COND_START then
+    message = string.format("\236\185\180\236\154\180\237\138\184\235\139\164\236\154\180: %s", timeStr)
+  elseif condition == RACE_COND_PLAY then
+    message = string.format("\236\139\156\236\158\145: %s (%s  \235\130\168\236\157\140)", trackName, timeStr)
+  elseif condition == RACE_COND_END then
+    if enteredRace == true then
+      message = "\236\160\156\237\149\156\236\139\156\234\176\132\235\130\180\236\151\144 \235\143\132\236\176\169\237\149\152\236\167\128 \235\170\187\237\150\136\236\138\181\235\139\136\235\139\164."
+    else
+      message = string.format("\234\178\189\236\163\188 \235\129\157")
+    end
+    enteredRace = false
+  end
+  if message ~= nil then
+    X2Chat:DispatchChatMessage(CMF_SYSTEM, message)
+  end
+end
+UIParent:SetEventHandler("RACING_CONDITION", RacingCondition)
+local function RacingState(condition, recordTime, checkPoint)
+  local timeTable = {}
+  timeTable.year, timeTable.month, timeTable.day = 0, 0, 0
+  timeTable.hour, timeTable.minute, timeTable.second = GetHourMinuteSecondeFromMsec(recordTime)
+  local timeStr = locale.time.GetRemainDateToDateFormat(timeTable, DEFAULT_FORMAT_FILTER + FORMAT_FILTER.SECOND)
+  local message
+  if condition == RACE_COND_START then
+    message = string.format("\236\182\156\235\176\156: %s", timeStr)
+    enteredRace = true
+  elseif condition == RACE_COND_CHECK then
+    message = string.format("\236\178\180\237\129\172\237\143\172\236\157\184\237\138\184: %d, %02d:%02d:%02d", checkPoint, timeTable.hour, timeTable.minute, timeTable.second)
+  elseif condition == RACE_COND_END then
+    if recordTime ~= 0 then
+      message = string.format("\234\184\176\235\161\157: %s", timeStr)
+    end
+    enteredRace = false
+  end
+  if message ~= nil then
+    X2Chat:DispatchChatMessage(CMF_SYSTEM, message)
+  end
+end
+UIParent:SetEventHandler("RACING_STATE", RacingState)
+local RacingResult = function()
+  local result = X2Racing:GetResult()
+end
+UIParent:SetEventHandler("RACING_RESULT", RacingResult)

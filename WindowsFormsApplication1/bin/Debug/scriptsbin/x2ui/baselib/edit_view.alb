@@ -1,0 +1,113 @@
+function InitEdit(edit)
+  edit:SetInset(5, 5, 5, 5)
+  edit:SetCursorColor(0.3, 0.3, 0.3, 1)
+  baselibLocale:SetEditCursor(edit)
+  edit.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE)
+  edit.style:SetAlign(ALIGN_LEFT)
+  edit.style:SetSnap(true)
+  edit.style:SetShadow(false)
+  edit:UseSelectAllWhenFocused(true)
+  ApplyTextColor(edit, FONT_COLOR.TITLE)
+end
+function InitMultiline(edit)
+  edit:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  edit:SetInset(20, 20, 30, 20)
+  baselibLocale:SetEditCursor(edit)
+  edit:SetCursorColor(0.3, 0.3, 0.3, 1)
+  edit.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE)
+  edit.style:SetAlign(ALIGN_LEFT)
+  edit.style:SetSnap(true)
+  edit.style:SetShadow(false)
+  edit.style:SetColor(1, 1, 1, 1)
+end
+function CreateEditGuideText(edit, guidetext, align)
+  local guideText = CreateLabel(edit:GetId() .. ".guideText", edit)
+  guideText:Show(true)
+  guideText:AddAnchor("TOPLEFT", edit, 0, 0)
+  guideText:AddAnchor("BOTTOMRIGHT", edit, 0, 0)
+  guideText:SetText(guidetext)
+  guideText:SetInset(7, 1, 0, 0)
+  guideText.style:SetColor(0, 0, 0, 0.5)
+  if align == nil then
+    align = ALIGN_LEFT
+  end
+  guideText.style:SetAlign(align)
+  edit.guideText = guideText
+  function edit:OnTextChanged()
+    local text = string.len(edit:GetText())
+    if text >= 1 then
+      edit.guideText:Show(false)
+    end
+    if self.TextChangedFunc ~= nil then
+      self:TextChangedFunc(self)
+    end
+  end
+  edit:SetHandler("OnTextChanged", edit.OnTextChanged)
+end
+function ApplyEditSkin(edit, style, needInit)
+  if needInit == nil then
+    needInit = true
+  end
+  if edit.bg == nil then
+    edit.bg = edit:CreateNinePartDrawable(TEXTURE_PATH.MONEY_WINDOW, "background")
+    edit.bg:AddAnchor("TOPLEFT", edit, 0, 0)
+    edit.bg:AddAnchor("BOTTOMRIGHT", edit, 0, 0)
+    edit.bg:SetInset(6, 6, 6, 6)
+  end
+  if style == "brown" then
+    edit.bg:SetCoords(191, 0, 13, 13)
+  elseif style == "blue" then
+    edit.bg:SetCoords(205, 0, 13, 13)
+  elseif style == "loginPage" then
+    edit.bg:SetTexture(LOGIN_STAGE_TEXTURE_PATH.REMNANTS)
+    edit.bg:SetCoords(463, 445, 20, 20)
+    edit.bg:SetInset(9, 10, 8, 9)
+  else
+    edit.bg:SetCoords(191, 0, 13, 13)
+  end
+  if needInit then
+    InitEdit(edit)
+  end
+  function edit:SetEnable(enable)
+    if enable then
+      self.bg:SetColor(1, 1, 1, 1)
+      self:SetAlpha(1)
+    else
+      self.bg:SetColor(0.5, 0.5, 0.5, 0.7)
+      self:SetAlpha(0.7)
+    end
+  end
+end
+function CreateEdit(id, parent)
+  parent = parent or "UIParent"
+  local edit = UIParent:CreateWidget("editbox", id, parent)
+  ApplyEditSkin(edit)
+  return edit
+end
+function SetViewOfMoneyEdit(id, parent)
+  local edit = UIParent:CreateWidget("editbox", id, parent)
+  InitEdit(edit)
+  ApplyEditSkin(edit, "blue")
+  edit:SetInset(5, 7, 20, 7)
+  edit.style:SetAlign(ALIGN_RIGHT)
+  edit.style:SetSnap(true)
+  return edit
+end
+function SetViewOfAAPointEdit(id, parent)
+  local edit = UIParent:CreateWidget("editbox", id, parent)
+  InitEdit(edit)
+  ApplyEditSkin(edit, "blue")
+  edit:SetInset(5, 7, 20, 7)
+  edit.style:SetAlign(ALIGN_RIGHT)
+  edit.style:SetSnap(true)
+  return edit
+end
+function CreateEditMultiline(id, parent)
+  local edit = UIParent:CreateWidget("editboxmultiline", id, parent or "UIParent")
+  InitEdit(edit)
+  edit:SetLineSpace(3)
+  edit:SetInset(10, 10, 10, 10)
+  edit.style:SetAlign(ALIGN_TOP_LEFT)
+  edit.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE)
+  return edit
+end

@@ -1,0 +1,27 @@
+if X2Util:GetGameProvider() == TENCENT then
+  TEXTBOX_LINE_SPACE = {
+    SMALL = 3,
+    MIDDLE = 5,
+    TOOLTIP = 3
+  }
+  baselibLocale.premiumService = {
+    usePremiumGrade = true,
+    endTimeTooltipLine = false,
+    showTooltip = true,
+    showEndTime = true
+  }
+  baselibLocale.showMoneyTooltip = true
+  baselibLocale.openedSextant = true
+  baselibLocale.useForceAttackKey = false
+  baselibLocale.itemSideEffect = true
+  baselibLocale.webWidgetName = "webview"
+  baselibLocale.useMileage = false
+  baselibLocale.visibleRefundInfo = false
+  baselibLocale.visibleAddedRefundInfo = false
+  baselibLocale.useWebDiary = false
+  baselibLocale.useWebMessenger = false
+  baselibLocale.useQQTalk = true
+  baselibLocale.tencentUcc = true
+  baselibLocale.inGameShop.aa_cash_color = FONT_COLOR.VIOLET
+  baselibLocale.inGameShop.aa_cash_color_hex = FONT_COLOR_HEX.VIOLET
+end

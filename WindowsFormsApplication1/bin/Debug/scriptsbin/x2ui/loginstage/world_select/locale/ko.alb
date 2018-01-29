@@ -1,0 +1,360 @@
+if worldSelectLocale == nil then
+  worldSelectLocale = {}
+end
+worldSelectLocale.titleCoords = {
+  805,
+  256,
+  89,
+  33
+}
+worldSelectLocale.worldList = {
+  extent = {403, 300},
+  columnWidth = {
+    100,
+    100,
+    100,
+    80
+  },
+  columnInset = {
+    0,
+    0,
+    0,
+    13
+  },
+  raceCongestionIcon = {
+    check = {
+      138,
+      321,
+      46,
+      21
+    },
+    high = {
+      0,
+      321,
+      46,
+      21
+    },
+    middle = {
+      92,
+      321,
+      46,
+      21
+    },
+    low = {
+      46,
+      321,
+      46,
+      21
+    }
+  },
+  raceTypeIcon = {
+    {
+      988,
+      0,
+      22,
+      21
+    },
+    {
+      0,
+      0,
+      0,
+      0
+    },
+    {
+      0,
+      0,
+      0,
+      0
+    },
+    {
+      988,
+      21,
+      22,
+      21
+    },
+    {
+      988,
+      63,
+      22,
+      21
+    },
+    {
+      988,
+      42,
+      22,
+      21
+    },
+    {
+      0,
+      0,
+      0,
+      0
+    },
+    {
+      0,
+      0,
+      0,
+      0
+    }
+  }
+}
+worldSelectLocale.integrationWorldInfo = {
+  {
+    worldId = 35,
+    bgColor = {
+      0.627451,
+      0.52156866,
+      0.7882353,
+      0.8
+    }
+  }
+}
+worldSelectLocale.newWorldInfo = {
+  {
+    worldId = 34,
+    bgColor = {
+      0.63529414,
+      0.8745098,
+      0.5803922,
+      0.8
+    }
+  }
+}
+worldSelectLocale.combatWorldInfo = {
+  {
+    worldId = 51,
+    bgColor = {
+      0.67058825,
+      0.16470589,
+      0.16470589,
+      0.8
+    }
+  }
+}
+worldSelectLocale.integrationNoticeWidth = 60
+local integrationContent = {
+  {
+    title = string.format("%s 1 (%s)", locale.server.integration, locale.server.integratedWorld[1]),
+    titleBgColor = {
+      ConvertColor(160),
+      ConvertColor(133),
+      ConvertColor(201),
+      0.8
+    },
+    body = locale.server.integrationWorldList[1]
+  },
+  {
+    title = string.format("%s 2 (%s)", locale.server.integration, locale.server.integratedWorld[2]),
+    titleBgColor = {
+      ConvertColor(207),
+      ConvertColor(163),
+      ConvertColor(136),
+      0.8
+    },
+    body = locale.server.integrationWorldList[2]
+  }
+}
+worldSelectLocale.notifyIndex = 8
+worldSelectLocale.notifyInfo = {
+  {
+    title = locale.server.serverIntegrationWarning,
+    titleColor = FONT_COLOR.BATTLEFIELD_YELLOW,
+    setTitleAnchor = function(title, target)
+      title:AddAnchor("TOP", target, 0, 18)
+    end,
+    lineVisible = false,
+    contentWidth = {title = 120, body = 380},
+    content = integrationContent
+  },
+  {
+    title = locale.server.serverIntegrationNotice,
+    titleColor = FONT_COLOR.BATTLEFIELD_YELLOW,
+    setTitleAnchor = function(title, target)
+      title:AddAnchor("TOPLEFT", target, 40, 18)
+    end,
+    lineVisible = false,
+    contentWidth = {title = 120, body = 380},
+    content = integrationContent
+  },
+  {
+    title = locale.server.newWorldNotice,
+    titleColor = {
+      ConvertColor(162),
+      ConvertColor(223),
+      ConvertColor(148),
+      1
+    },
+    setTitleAnchor = function(title, target)
+      title:AddAnchor("TOP", target, 0, 18)
+    end,
+    lineVisible = true,
+    contentWidth = {title = 120, body = 380},
+    content = integrationContent
+  },
+  {
+    title = locale.server.newWorldNotice,
+    titleColor = {
+      ConvertColor(162),
+      ConvertColor(223),
+      ConvertColor(148),
+      1
+    },
+    setTitleAnchor = function(title, target)
+      title:AddAnchor("TOP", target, 0, 18)
+    end,
+    lineVisible = false
+  },
+  {
+    title = GetCommonText("new_world_update_notice"),
+    titleColor = {
+      ConvertColor(162),
+      ConvertColor(223),
+      ConvertColor(148),
+      1
+    },
+    setTitleAnchor = function(title, target)
+      title:AddAnchor("TOP", target, 0, 18)
+    end,
+    lineVisible = true,
+    contentWidth = {title = 200, body = 300},
+    content = {
+      {
+        title = GetCommonText("pre_select_period_notice1_title"),
+        titleBgColor = {
+          ConvertColor(160),
+          ConvertColor(133),
+          ConvertColor(201),
+          0.8
+        },
+        body = GetCommonText("pre_select_period_notice1_body")
+      },
+      {
+        title = GetCommonText("pre_select_period_notice2_title"),
+        titleBgColor = {
+          ConvertColor(207),
+          ConvertColor(163),
+          ConvertColor(136),
+          0.8
+        },
+        body = GetCommonText("pre_select_period_notice2_body")
+      }
+    }
+  },
+  {
+    title = GetCommonText("new_world_open_notice"),
+    titleColor = FONT_COLOR.BATTLEFIELD_YELLOW,
+    setTitleAnchor = function(title, target)
+      title:AddAnchor("TOPLEFT", target, 40, 18)
+    end,
+    lineVisible = true,
+    contentWidth = {title = 100, body = 400},
+    content = {
+      offset = 15,
+      {
+        title = GetCommonText("newWorldName02"),
+        titleBgColor = {
+          ConvertColor(171),
+          ConvertColor(42),
+          ConvertColor(42),
+          0.8
+        },
+        body = GetCommonText("newWorldDescription02")
+      },
+      {
+        title = GetCommonText("newWorldName01"),
+        titleBgColor = {
+          ConvertColor(162),
+          ConvertColor(223),
+          ConvertColor(148),
+          0.8
+        },
+        body = GetCommonText("newWorldDescription01")
+      }
+    }
+  },
+  {
+    title = locale.server.serverIntegrationWarning,
+    titleColor = FONT_COLOR.BATTLEFIELD_YELLOW,
+    setTitleAnchor = function(title, target)
+      title:AddAnchor("TOP", target, 0, 18)
+    end,
+    lineVisible = true,
+    contentWidth = {title = 100, body = 500},
+    content = {
+      offset = 15,
+      {
+        title = GetCommonText("newWorldName01"),
+        titleBgColor = {
+          ConvertColor(162),
+          ConvertColor(223),
+          ConvertColor(148),
+          0.8
+        },
+        body = GetCommonText("newWorldDescription01")
+      },
+      {
+        title = GetCommonText("newWorldName02"),
+        titleBgColor = {
+          ConvertColor(171),
+          ConvertColor(42),
+          ConvertColor(42),
+          0.8
+        },
+        body = GetCommonText("newWorldDescription02")
+      },
+      {
+        title = GetCommonText("newWorldName03"),
+        titleBgColor = {
+          ConvertColor(160),
+          ConvertColor(133),
+          ConvertColor(201),
+          0.8
+        },
+        body = GetCommonText("newWorldDescription03")
+      }
+    }
+  },
+  {
+    title = GetCommonText("serverStatus"),
+    titleColor = FONT_COLOR.BATTLEFIELD_YELLOW,
+    setTitleAnchor = function(title, target)
+      title:AddAnchor("TOPLEFT", target, 40, 18)
+    end,
+    lineVisible = true,
+    contentWidth = {title = 100, body = 400},
+    content = {
+      offset = 15,
+      {
+        title = GetCommonText("newWorldName01"),
+        titleBgColor = {
+          ConvertColor(162),
+          ConvertColor(223),
+          ConvertColor(148),
+          0.8
+        },
+        body = GetCommonText("newWorldDescription01")
+      },
+      {
+        title = GetCommonText("newWorldName02"),
+        titleBgColor = {
+          ConvertColor(171),
+          ConvertColor(42),
+          ConvertColor(42),
+          0.8
+        },
+        body = GetCommonText("newWorldDescription02_1")
+      },
+      {
+        title = GetCommonText("newWorldName03"),
+        titleBgColor = {
+          ConvertColor(160),
+          ConvertColor(133),
+          ConvertColor(201),
+          0.8
+        },
+        body = GetCommonText("newWorldDescription03")
+      }
+    }
+  }
+}
+worldSelectLocale.showWorldDescriptionInfo = {34, 51}

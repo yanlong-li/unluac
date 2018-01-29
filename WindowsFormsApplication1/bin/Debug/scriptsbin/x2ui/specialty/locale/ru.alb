@@ -1,0 +1,3 @@
+if X2Util:GetGameProvider() == MAILRU then
+  FORM_SPECIALTY_WINDOW = {WINDOW_WIDTH = 430}
+end

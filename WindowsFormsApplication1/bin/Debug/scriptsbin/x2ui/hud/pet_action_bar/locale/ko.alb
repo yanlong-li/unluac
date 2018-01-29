@@ -1,0 +1,7 @@
+if petLocale == nil then
+  petLocale = {}
+end
+petLocale.width = {
+  window = WINDOW_SIZE.SMALL,
+  attributeLabel = 90
+}

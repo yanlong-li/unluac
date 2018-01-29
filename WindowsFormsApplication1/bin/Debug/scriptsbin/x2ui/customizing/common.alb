@@ -1,0 +1,128 @@
+SCREEN_WIDTH = UIParent:GetScreenWidth()
+SCREEN_HEIGHT = UIParent:GetScreenHeight()
+BEAUTYSHOP_COLOR = {
+  ConvertColor(227),
+  ConvertColor(247),
+  ConvertColor(255),
+  0.3
+}
+local raceIconStrTable = {
+  [RACE_NUIAN] = "nuian",
+  [RACE_ELF] = "elf",
+  [RACE_HARIHARAN] = "hariharan",
+  [RACE_FERRE] = "fere",
+  [RACE_DWARF] = "dwarf",
+  [RACE_WARBORN] = "warborn"
+}
+function GetRaceStr(race)
+  return raceIconStrTable[race] or ""
+end
+function GetGenderStr(gender)
+  if gender == GENDER_FEMALE then
+    return "f"
+  end
+  return "m"
+end
+local styleIconStrTable = {
+  [EYEBROW_TYPE] = "decal_eyebrow",
+  [EYE_MAKEUP] = "decal_makeup",
+  [CHEEK_TYPE] = "decal_deco",
+  [MUSTACHE_TYPE] = "decal_deco",
+  [TATTOO_TYPE] = "decal_tattoo",
+  [SCAR_TYPE] = "decal_scar",
+  [WRINKLE_TYPE] = "skin",
+  [SKIN_COLOR] = "skin_color"
+}
+local function GetStyleIconPathStr(styleType)
+  return styleIconStrTable[styleType] or ""
+end
+local GetCustomizingHairColorIconPath = function(index)
+  local colorItem = {
+    iconPath = string.format("ui/login_stage/customizing/hair_color/hair_color_%02d.dds", index),
+    hot = false,
+    new = false
+  }
+  return colorItem
+end
+local itemIconInfos = {
+  [HAIR_TYPE] = function(index)
+    return X2Customizer:GetCustomHairItem(index)
+  end,
+  [HAIR_COLOR] = function(index)
+    return GetCustomizingHairColorIconPath(index)
+  end,
+  [EYEBROW_TYPE] = function(index)
+    return X2Customizer:GetCustomEyebrowItem(index)
+  end,
+  [EYE_MAKEUP] = function(index)
+    return X2Customizer:GetCustomMakeUpItem(index)
+  end,
+  [CHEEK_TYPE] = function(index)
+    return X2Customizer:GetCustomDecoItem(index)
+  end,
+  [MUSTACHE_TYPE] = function(index)
+    return X2Customizer:GetCustomDecoItem(index)
+  end,
+  [SKIN_COLOR] = function(index)
+    return X2Customizer:GetCustomSkinColorItem(index)
+  end,
+  [WRINKLE_TYPE] = function(index)
+    return X2Customizer:GetCustomFaceNormalItem(index)
+  end,
+  [TATTOO_TYPE] = function(index)
+    return X2Customizer:GetCustomTattooItem(index)
+  end,
+  [SCAR_TYPE] = function(index)
+    return X2Customizer:GetCustomScarItem(index)
+  end
+}
+function GetCosmeticItemInfo(race, gender, styleType, index)
+  local iconInfo = itemIconInfos[styleType](index)
+  if iconInfo == nil then
+    UIParent:Warning(string.format("[Lua Error] invalid cosmetic item info.. race[%s] gender[%s] styleType[%s] index[%s]", tostring(race), tostring(gender), tostring(styleType), tostring(index)))
+    return "", nil, nil
+  end
+  if styleType == HAIR_TYPE then
+    return iconInfo.iconPath, iconInfo.hot, iconInfo.new, iconInfo.twoTone
+  elseif styleType == HAIR_COLOR then
+    return iconInfo.iconPath, iconInfo.hot, iconInfo.new
+  end
+  local fullPath = string.format("ui/login_stage/customizing/%s_%s/%s/%s", GetRaceStr(race), GetGenderStr(gender), GetStyleIconPathStr(styleType), iconInfo.iconPath)
+  return fullPath, iconInfo.hot, iconInfo.new
+end
+local presetIconStrTable = {
+  [FACE] = "preset",
+  [EYES] = "preset_eye",
+  [NOSE] = "preset_nose",
+  [MOUTH] = "preset_lip",
+  [SHAPE] = "preset_face"
+}
+local function GetPresetIconPathStr(presetType)
+  return presetIconStrTable[presetType] or ""
+end
+local presetIconInfos = {
+  [FACE] = function(index)
+    return X2Customizer:GetTotalPresetItem(index)
+  end,
+  [EYES] = function(index)
+    return X2Customizer:GetFacePresetEyeItem(index)
+  end,
+  [NOSE] = function(index)
+    return X2Customizer:GetFacePresetNoseItem(index)
+  end,
+  [MOUTH] = function(index)
+    return X2Customizer:GetFacePresetLipItem(index)
+  end,
+  [SHAPE] = function(index)
+    return X2Customizer:GetFacePresetShapeItem(index)
+  end
+}
+function GetPresetItemInfo(race, gender, presetType, index)
+  local iconPath = presetIconInfos[presetType](index)
+  if iconPath == nil then
+    UIParent:Warning(string.format("[Lua Error] invalid preset item info.. race[%d] gender[%d] presetType[%d] index[%d]", race, gender, presetType, index))
+    return "", nil, nil
+  end
+  local fullPath = string.format("ui/login_stage/customizing/%s_%s/%s/%s", GetRaceStr(race), GetGenderStr(gender), GetPresetIconPathStr(presetType), iconPath)
+  return fullPath, nil, nil
+end

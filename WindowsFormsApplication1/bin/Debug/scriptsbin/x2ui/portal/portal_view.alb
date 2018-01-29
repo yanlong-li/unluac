@@ -1,0 +1,191 @@
+portal = {}
+TAB_INDUN_PORTAL = 3
+local COUNT_PER_PAGE = 10
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+local CreatePortalNameWindow = function(widget)
+  local returnIcon = CreateLabel(widget:GetId() .. "portalPage.returnIcon", widget)
+  returnIcon:Show(false)
+  returnIcon:SetExtent(21, 17)
+  returnIcon:AddAnchor("LEFT", widget, 3, 1)
+  widget.returnIcon = returnIcon
+  local bg = returnIcon:CreateImageDrawable("ui/portal.dds", "background")
+  bg:SetCoords(0, 38, 21, 17)
+  bg:AddAnchor("TOPLEFT", returnIcon, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", returnIcon, 0, 0)
+  function returnIcon:OnEnter()
+    SetTooltip(locale.portal.returnPlace, self)
+  end
+  returnIcon:SetHandler("OnEnter", returnIcon.OnEnter)
+  function returnIcon:OnLeave()
+    HideTooltip()
+  end
+  returnIcon:SetHandler("OnLeave", returnIcon.OnLeave)
+  local portalNameLabel = widget:CreateChildWidget("label", "portalNameLabel", 0, true)
+  portalNameLabel:Show(true)
+  portalNameLabel:AddAnchor("TOPLEFT", widget, 0, 0)
+  portalNameLabel:AddAnchor("BOTTOMRIGHT", widget, 0, 0)
+  portalNameLabel:SetInset(26, 2, 7, 0)
+  portalNameLabel:SetLimitWidth(true)
+  portalNameLabel.style:SetSnap(true)
+  portalNameLabel.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(portalNameLabel, FONT_COLOR.DEFAULT)
+end
+function CreatePortalFrameWindow(window)
+  local listCtrl = window:CreateChildWidget("listctrl", "listCtrl", 0, true)
+  listCtrl:AddAnchor("TOPLEFT", window, 0, sideMargin / 2)
+  listCtrl:AddAnchor("BOTTOMRIGHT", window, 0, -sideMargin / 2)
+  listCtrl:InsertColumn(portalLocale.width.column[1], LCCIT_STRING)
+  listCtrl.column[1]:SetText(locale.portal.location_name)
+  listCtrl:InsertColumn(portalLocale.width.column[2], LCCIT_STRING)
+  listCtrl.column[2]:SetText(locale.portal.zone_name)
+  listCtrl:InsertColumn(portalLocale.width.column[3], LCCIT_STRING)
+  listCtrl.column[3]:SetText(locale.portal.world_name)
+  listCtrl:InsertColumn(portalLocale.width.column[4], LCCIT_BUTTON)
+  listCtrl.column[4]:SetText(locale.portal.map_location)
+  listCtrl:InsertRows(COUNT_PER_PAGE, false)
+  DrawListCtrlUnderLine(listCtrl)
+  ListCtrlOverClickTextureSetting(listCtrl)
+  for i = 1, #listCtrl.column do
+    SettingListColumn(listCtrl, listCtrl.column[i])
+    DrawListCtrlColumnSperatorLine(listCtrl.column[i], #listCtrl.column, i)
+  end
+  listCtrl.showMap = {}
+  for i = 1, COUNT_PER_PAGE do
+    for j = 1, #listCtrl.column do
+      local subItem = listCtrl.items[i].subItems[j]
+      if j == 1 then
+        CreatePortalNameWindow(subItem)
+      elseif j == 2 then
+        portalLocale:SetLocationColumn(subItem)
+      elseif j == 4 then
+        local showMap = subItem:CreateChildWidget("button", "okButton", 0, true)
+        showMap:Show(false)
+        showMap:Enable(true)
+        showMap:AddAnchor("CENTER", subItem, 0, 1)
+        ApplyButtonSkin(showMap, BUTTON_CONTENTS.MAP_OPEN)
+        listCtrl.showMap[i] = showMap
+      else
+        subItem:SetInset(0, 2, 0, 0)
+        subItem.style:SetSnap(true)
+        ApplyTextColor(subItem, FONT_COLOR.DEFAULT)
+      end
+    end
+  end
+  local pageCtrl = CreatePageControl(window:GetId() .. ".pageControl", window)
+  pageCtrl:Show(true)
+  pageCtrl:AddAnchor("BOTTOM", window, 0, sideMargin * 2)
+  window.pageCtrl = pageCtrl
+end
+function CreatePortalIndunFrameWindow(window)
+  local listCtrl = window:CreateChildWidget("listctrl", "listCtrl", 0, true)
+  listCtrl:AddAnchor("TOPLEFT", window, 0, sideMargin / 2)
+  listCtrl:AddAnchor("BOTTOMRIGHT", window, 0, -sideMargin / 2)
+  local featureSet = X2Player:GetFeatureSet()
+  local colIdx = 0
+  local function AddColumn(str, viewType)
+    local widthTable = portalLocale.width.columnIndun
+    if featureSet.indunDailyLimit then
+      widthTable = portalLocale.width.columnIndunUseDaily
+    end
+    colIdx = colIdx + 1
+    listCtrl:InsertColumn(widthTable[colIdx], viewType)
+    listCtrl.column[colIdx]:SetText(str)
+  end
+  AddColumn(locale.portal.indun_name, LCCIT_STRING)
+  AddColumn(locale.portal.enter_condition, LCCIT_STRING)
+  AddColumn(locale.portal.player_count, LCCIT_STRING)
+  if featureSet.indunDailyLimit then
+    AddColumn(locale.portal.daily_use, LCCIT_STRING)
+  end
+  AddColumn(locale.portal.world_name, LCCIT_STRING)
+  AddColumn(locale.portal.location, LCCIT_BUTTON)
+  listCtrl:InsertRows(COUNT_PER_PAGE, false)
+  DrawListCtrlUnderLine(listCtrl)
+  ListCtrlOverClickTextureSetting(listCtrl)
+  for i = 1, #listCtrl.column do
+    SettingListColumn(listCtrl, listCtrl.column[i])
+    DrawListCtrlColumnSperatorLine(listCtrl.column[i], #listCtrl.column, i)
+  end
+  listCtrl.showMap = {}
+  for i = 1, COUNT_PER_PAGE do
+    for j = 1, #listCtrl.column do
+      local subItem = listCtrl.items[i].subItems[j]
+      if j == 1 then
+        CreatePortalNameWindow(subItem)
+      elseif j == colIdx then
+        local showMap = subItem:CreateChildWidget("button", "okButton", 0, true)
+        showMap:Show(false)
+        showMap:Enable(false)
+        showMap:AddAnchor("CENTER", subItem, 0, 1)
+        ApplyButtonSkin(showMap, BUTTON_CONTENTS.MAP_OPEN)
+        listCtrl.showMap[i] = showMap
+      else
+        subItem:SetInset(0, 2, 0, 0)
+        subItem.style:SetSnap(true)
+        ApplyTextColor(subItem, FONT_COLOR.DEFAULT)
+      end
+    end
+  end
+  local pageCtrl = CreatePageControl(window:GetId() .. ".pageControl", window)
+  pageCtrl:Show(true)
+  pageCtrl:AddAnchor("BOTTOM", window, 0, sideMargin * 2)
+  window.pageCtrl = pageCtrl
+end
+function SetViewOfPortalWindow(id, parent)
+  local window = CreateWindow(id, parent)
+  window:Show(false)
+  window:SetExtent(portalLocale.width.window, 450)
+  window:AddAnchor("CENTER", "UIParent", 0, 0)
+  window:SetTitle(locale.portal.title)
+  window:SetSounds("portal")
+  local spawnButton = window:CreateChildWidget("button", "spawnButton", 0, true)
+  spawnButton:Enable(false)
+  spawnButton:AddAnchor("BOTTOMRIGHT", window, -sideMargin + 5, -(sideMargin / 2))
+  ApplyButtonSkin(spawnButton, BUTTON_ICON.PORTAL_SPAWN)
+  SetButtonTooltip(spawnButton, locale.icon_shape_button_tooltip.portal_spawn)
+  window.spawnButton = spawnButton
+  local deleteButton = window:CreateChildWidget("button", "deleteButton", 0, true)
+  deleteButton:Enable(false)
+  deleteButton:AddAnchor("BOTTOMLEFT", window, sideMargin - 5, -(sideMargin / 2))
+  ApplyButtonSkin(deleteButton, BUTTON_ICON.PORTAL_DELETE)
+  SetButtonTooltip(deleteButton, locale.icon_shape_button_tooltip.portal_delete)
+  local renameButton = window:CreateChildWidget("button", "renameButton", 0, true)
+  renameButton:Enable(false)
+  renameButton:AddAnchor("LEFT", deleteButton, "RIGHT", 5, 0)
+  ApplyButtonSkin(renameButton, BUTTON_ICON.PORTAL_RENAME)
+  SetButtonTooltip(renameButton, locale.icon_shape_button_tooltip.portal_rename)
+  local tab = window:CreateChildWidget("tab", "tab", 0, true)
+  tab:Show(false)
+  tab:AddAnchor("TOPLEFT", window, sideMargin, titleMargin)
+  tab:AddAnchor("TOPRIGHT", window, -sideMargin, titleMargin)
+  tab:SetHeight(335)
+  tab:Show(true)
+  window.tab = tab
+  tab:AddSimpleTab(locale.portal.menu[1])
+  tab:AddSimpleTab(locale.portal.menu[2])
+  if X2Player:GetFeatureSet().indunPortal then
+    tab:AddSimpleTab(locale.portal.menu[TAB_INDUN_PORTAL])
+  end
+  local buttonTable = {}
+  for i = 1, #tab.window do
+    ApplyButtonSkin(tab.selectedButton[i], BUTTON_BASIC.TAB_SELECT)
+    ApplyButtonSkin(tab.unselectedButton[i], BUTTON_BASIC.TAB_UNSELECT)
+    table.insert(buttonTable, tab.selectedButton[i])
+    table.insert(buttonTable, tab.unselectedButton[i])
+  end
+  AdjustBtnLongestTextWidth(buttonTable)
+  tab:SetGap(1)
+  DrawTabSkin(tab, tab.window[1], tab.selectedButton[1])
+  CreatePortalFrameWindow(tab.window[1])
+  CreatePortalFrameWindow(tab.window[2])
+  tab.window[1].getList = X2Warp.GetReturnList
+  tab.window[1].getListCount = X2Warp.GetReturnListCount
+  tab.window[2].getList = X2Warp.GetPortalList
+  tab.window[2].getListCount = X2Warp.GetPortalListCount
+  if X2Player:GetFeatureSet().indunPortal then
+    CreatePortalIndunFrameWindow(tab.window[TAB_INDUN_PORTAL])
+    tab.window[TAB_INDUN_PORTAL].getList = X2Warp.GetIndunPortalList
+    tab.window[TAB_INDUN_PORTAL].getListCount = nil
+  end
+  return window
+end

@@ -1,0 +1,55 @@
+local SetFolderControlHandler = function(widget, folder)
+  widget.folder = folder
+  function widget:OnClick()
+    if self.folder == nil then
+      return
+    end
+    self.folder:ToggleState()
+  end
+  widget:SetHandler("OnClick", widget.OnClick)
+end
+function SetViewOfFolder(id, parent)
+  local fld = UIParent:CreateWidget("folder", id, parent)
+  fld:SetAnimateStep(1.3)
+  local closeBtn = CreateEmptyButton(id .. ".closeBtn", fld)
+  closeBtn:Show(true)
+  closeBtn:AddAnchor("TOPLEFT", fld, 0, 7)
+  ApplyButtonSkin(closeBtn, BUTTON_BASIC.FOLDER_CLOSE)
+  local openBtn = CreateEmptyButton(id .. ".openBtn", fld)
+  openBtn:Show(true)
+  openBtn:AddAnchor("TOPLEFT", fld, 0, 5)
+  ApplyButtonSkin(openBtn, BUTTON_BASIC.FOLDER_OPEN)
+  SetFolderControlHandler(closeBtn, fld)
+  SetFolderControlHandler(openBtn, fld)
+  fld:SetOpenStateButton(closeBtn)
+  fld:SetCloseStateButton(openBtn)
+  fld.btnClose = closeBtn
+  fld.btnOpen = openBtn
+  fld.titleBtn = CreateEmptyButton(id .. ".titleBtn", fld)
+  fld.titleBtn:Show(true)
+  fld.titleBtn.style:SetEllipsis(true)
+  fld.titleBtn.style:SetAlign(ALIGN_LEFT)
+  fld.titleBtn.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.LARGE)
+  SetButtonFontColor(fld.titleBtn, GetTitleButtonFontColor())
+  local OnEnter = function(self)
+    local text = self:GetText()
+    if text == "" then
+      return
+    end
+    SetTooltip(text, self)
+  end
+  fld.titleBtn:SetHandler("OnEnter", OnEnter)
+  fld:SetTitleButtonWidget(fld.titleBtn)
+  SetFolderControlHandler(fld.titleBtn, fld)
+  fld:SetInset(23, 3, 0, 2)
+  fld.style:SetSnap(true)
+  fld.style:SetAlign(ALIGN_LEFT)
+  return fld
+end
+FOLER_ITEM_LIST_HEIGHT = 25
+function ResetEmptyWidgetListScroll(scrollWnd, emptyWidget)
+  local _, height = scrollWnd:GetExtent()
+  local y = emptyWidget:GetHeight()
+  local totalHeight = y - height
+  scrollWnd:SetMinMaxValues("vert", 0, totalHeight)
+end

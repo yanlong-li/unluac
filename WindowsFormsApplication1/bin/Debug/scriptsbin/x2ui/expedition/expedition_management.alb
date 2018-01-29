@@ -1,0 +1,329 @@
+expedMgmt.RP = {
+  ROLE = 1,
+  NAME = 2,
+  INVITE = 3,
+  EXPEL = 4,
+  PROMOTE = 5,
+  JOIN_SIEGE = 6,
+  SIEGEMASTER = 7,
+  DOMINION_DECLARE = 8,
+  CHAT = 9,
+  MANAGER_CHAT = 10,
+  INVITE_RAID = 11,
+  MEMO = 12,
+  SET_POLICY = 13,
+  MAX = 14
+}
+expedMgmt.IR = {
+  "dungeon",
+  "war",
+  "sea",
+  "raid",
+  "adventure",
+  "production"
+}
+local VIEW = EXPEDITION_TAB_MENU_IDX
+expedMgmt.MEMBER_LIST_CURRENT_PAGE = -1
+expedMgmt:CreateTab("expedMgmt", expedMgmt)
+CreateInfomation("expedMgmt.infomation", expedMgmt.tab.window[GetExpeiditonTabIdx(VIEW.INFORMATION)])
+CreateInfomationSub("expedMgmt.infomation", expedMgmt.tab.window[GetExpeiditonTabIdx(VIEW.INFORMATION)])
+AssignInfomationSubHandler(expedMgmt.tab.window[GetExpeiditonTabIdx(VIEW.INFORMATION)])
+if GetExpeiditonTabIdx(VIEW.BARRACK) ~= nil then
+  CreateWebBrowser("expedMgmt.webbrowser", expedMgmt.tab.window[GetExpeiditonTabIdx(VIEW.BARRACK)])
+end
+CreateExpeditionTodayQuest("expedMgmt.todayQuest", expedMgmt.tab.window[GetExpeiditonTabIdx(VIEW.QUEST)])
+CreateMemberList("expedMgmt.memberList", expedMgmt.tab.window[GetExpeiditonTabIdx(VIEW.MEMBERS)])
+CreateRolePolicy("expedMgmt.rolePolicy", expedMgmt.tab.window[GetExpeiditonTabIdx(VIEW.ROLE_POLICY)])
+CreateSiegeSchedule("expedMgmt.siegeSchedule", expedMgmt.tab.window[GetExpeiditonTabIdx(VIEW.SIEGE)])
+CreateRecruit("expedMgmt.recruit", expedMgmt.tab.window[GetExpeiditonTabIdx(VIEW.RECRUIT)])
+expedMgmt:SetCloseOnEscape(true)
+DominionGuardTowerStateNoticeKey = {
+  "siege_alert_guard_tower_1st_attack",
+  "siege_alert_guard_tower_below_75",
+  "siege_alert_guard_tower_below_50",
+  "siege_alert_guard_tower_engravable",
+  "siege_alert_engraving_started",
+  "siege_alert_engraving_stopped",
+  "siege_alert_engraving_succeeded"
+}
+function ToggleExpedMgmtUI(show)
+  if X2Faction:GetMyExpeditionId() == 0 or X2Faction:GetMyExpeditionId() ~= 0 and X2Faction:IsExpedInfoLoaded() then
+    for i = 1, #expedMgmt.tab.window do
+      local enable = EXPEDITION_TAB_MENU_TABLE[i].enable or false
+      expedMgmt.tab.unselectedButton[i]:Enable(enable)
+      if X2Faction:GetMyExpeditionId() == 0 then
+        expedMgmt.tab.unselectedButton[i]:Enable(false)
+      end
+    end
+    if show == nil then
+      show = not expedMgmt:IsVisible()
+    end
+    expedMgmt:Show(show)
+    if show == true then
+      local idx = 1
+      if X2Faction:GetMyExpeditionId() == 0 then
+        idx = GetExpeiditonTabIdx(VIEW.RECRUIT)
+      else
+        local idx = expedMgmt.tab:GetSelectedTab()
+        while not EXPEDITION_TAB_MENU_TABLE[idx].enable do
+          idx = idx + 1 > #expedMgmt.tab.window and 1 or idx + 1
+        end
+      end
+      expedMgmt:ChangeTab(idx)
+    end
+  end
+end
+ADDON:RegisterContentTriggerFunc(UIC_EXPEDITION, ToggleExpedMgmtUI)
+function IsMyExpedition(expeditionName)
+  if expeditionName ~= "" and expeditionName == X2Faction:GetFactionName(X2Faction:GetMyExpeditionId(), false) then
+    return true
+  end
+  return false
+end
+function expedMgmt:GetRolePolicy(mode)
+  local RP = self.RP
+  local function RolePolicy(rolePolicy)
+    if rolePolicy == nil then
+      return
+    end
+    rolePolicy[RP.INVITE_RAID] = true
+    rolePolicy[RP.MEMO] = false
+    rolePolicy[RP.SET_POLICY] = rolePolicy[RP.ROLE] == 255 and true or false
+    return rolePolicy
+  end
+  if mode == "all" then
+    local rolePolicies = X2Faction:GetAllExpeditionRolePolicies()
+    if rolePolicies == nil then
+      return
+    end
+    for i = 1, #rolePolicies do
+      rolePolicies[i] = RolePolicy(rolePolicies[i])
+    end
+    return rolePolicies
+  elseif mode == "my" then
+    local rolePolicy = X2Faction:GetExpeditionMyRolePolicy()
+    return RolePolicy(rolePolicy)
+  elseif type(mode) == "number" then
+    local rolePolicy = X2Faction:GetExpeditionRolePolicy(mode)
+    return RolePolicy(rolePolicy)
+  end
+end
+function expedMgmt:CanInviteExpedition()
+  if X2Faction:GetMyExpeditionId() ~= 0 then
+    local policy = self:GetRolePolicy("my")
+    return policy[self.RP.INVITE]
+  end
+  return false
+end
+function expedMgmt:ChangeTab(idx)
+  local tab = self.tab
+  if idx == GetExpeiditonTabIdx(VIEW.INFORMATION) then
+    tab.window[idx]:FillInfoData()
+  elseif idx == GetExpeiditonTabIdx(VIEW.BARRACK) then
+    if X2:IsWebEnable() and localeView.useWebContent then
+      tab.window[idx].webBrowser:Show(true)
+      tab.window[idx].webBrowser:RequestExpeditionBBS()
+    end
+  elseif tab.window[idx].RefreshTab ~= nil then
+    tab.window[idx]:RefreshTab()
+  end
+  if idx ~= GetExpeiditonTabIdx(VIEW.MEMBERS) then
+    tab.window[GetExpeiditonTabIdx(VIEW.MEMBERS)].HideWindow()
+  end
+  if idx == GetExpeiditonTabIdx(VIEW.RECRUIT) then
+    tab.window[GetExpeiditonTabIdx(VIEW.RECRUIT)].ShowWindow()
+  else
+    tab.window[GetExpeiditonTabIdx(VIEW.RECRUIT)].HideWindow()
+  end
+  tab:SelectTab(idx)
+end
+function expedMgmt.tab:OnTabChanged(selected)
+  ReAnhorTabLine(expedMgmt.tab, selected)
+end
+expedMgmt.tab:SetHandler("OnTabChanged", expedMgmt.tab.OnTabChanged)
+function expedMgmt:OnHide()
+  local tab = self.tab
+  if X2:IsWebEnable() and localeView.useWebContent and GetExpeiditonTabIdx(VIEW.BARRACK) ~= nil then
+    tab.window[GetExpeiditonTabIdx(VIEW.BARRACK)].webBrowser:Show(false)
+  end
+  tab.window[GetExpeiditonTabIdx(VIEW.INFORMATION)].interestWindow:Show(false)
+  tab.window[GetExpeiditonTabIdx(VIEW.INFORMATION)].buffWindow:Show(false)
+  tab.window[GetExpeiditonTabIdx(VIEW.INFORMATION)].guideWindow:Show(false)
+  tab.window[GetExpeiditonTabIdx(VIEW.INFORMATION)].levelUpWindow:Show(false)
+  tab.window[GetExpeiditonTabIdx(VIEW.INFORMATION)].historyWnd:Show(false)
+  tab.window[GetExpeiditonTabIdx(VIEW.RECRUIT)].HideWindow()
+end
+expedMgmt:SetHandler("OnHide", expedMgmt.OnHide)
+function expedMgmt:SetTabHandler()
+  local tab = self.tab
+  for i = 1, #EXPEDITION_TAB_MENU_TABLE do
+    do
+      local selectedButton = tab.selectedButton[i]
+      local unselectedButton = tab.unselectedButton[i]
+      selectedButton.idx = i
+      unselectedButton.idx = i
+      function unselectedButton:OnClick(arg)
+        if arg == "LeftButton" then
+          expedMgmt:ChangeTab(i)
+        end
+      end
+      unselectedButton:SetHandler("OnClick", unselectedButton.OnClick)
+    end
+  end
+  local SetWebBrowserHandler = function(webBrowser1, webBrowser2)
+    local SetHandler = function(wb)
+      wb:SetHandler("OnEnter", function()
+        wb:SetFocus()
+      end)
+      wb:SetHandler("OnLeave", function()
+        wb:ClearFocus()
+      end)
+      local events = {
+        WEB_BROWSER_ESC_EVENT = function(browser)
+          if browser == wb then
+            ToggleExpedMgmtUI(false)
+          end
+        end
+      }
+      wb:SetHandler("OnEvent", function(this, event, ...)
+        events[event](...)
+      end)
+      wb:RegisterEvent("WEB_BROWSER_ESC_EVENT")
+    end
+    if webBrowser1 ~= nil then
+      SetHandler(webBrowser1)
+    end
+    if webBrowser2 ~= nil then
+      SetHandler(webBrowser2)
+    end
+  end
+  if GetExpeiditonTabIdx(VIEW.BARRACK) ~= nil then
+    SetWebBrowserHandler(tab.window[GetExpeiditonTabIdx(VIEW.BARRACK)].webBrowser)
+  end
+end
+expedMgmt:SetTabHandler()
+local events = {
+  EXPEDITION_MANAGEMENT_POLICY_CHANGED = function()
+    if X2Faction:GetMyExpeditionId() == 0 then
+      return
+    end
+    local memberListTab = expedMgmt.tab.window[GetExpeiditonTabIdx(VIEW.MEMBERS)]
+    local rolePolicyTab = expedMgmt.tab.window[GetExpeiditonTabIdx(VIEW.ROLE_POLICY)]
+    if memberListTab:IsVisible() then
+      memberListTab:OnChangePolicy()
+    elseif rolePolicyTab:IsVisible() then
+      rolePolicyTab:OnChangePolicy()
+    end
+  end,
+  EXPEDITION_MANAGEMENT_UPDATED = function()
+    if X2Faction:GetMyExpeditionId() == 0 then
+      return
+    end
+    if expedMgmt:IsVisible() == false then
+      return
+    end
+    if X2Player:GetFeatureSet().expeditionLevel == true then
+      local infoTab = expedMgmt.tab.window[GetExpeiditonTabIdx(VIEW.INFORMATION)]
+      if infoTab:IsVisible() == true then
+        infoTab:FillInfoData()
+        return
+      end
+    end
+    local memberListTab = expedMgmt.tab.window[GetExpeiditonTabIdx(VIEW.MEMBERS)]
+    if memberListTab:IsVisible() == false then
+      return
+    end
+    memberListTab:RequestMemberInfo(expedMgmt.MEMBER_LIST_CURRENT_PAGE, true)
+  end,
+  EXPEDITION_MANAGEMENT_MEMBERS_INFO = function(totalCount, startIndex, memberInfos)
+    if X2Faction:GetMyExpeditionId() == 0 then
+      return
+    end
+    local memberListTab = expedMgmt.tab.window[GetExpeiditonTabIdx(VIEW.MEMBERS)]
+    memberListTab:FillMemberData(totalCount, startIndex + 1, memberInfos)
+  end,
+  EXPEDITION_MANAGEMENT_ROLE_CHANGED = function()
+    if X2Faction:GetMyExpeditionId() == 0 then
+      return
+    end
+    local memberListTab = expedMgmt.tab.window[VIEW.MEMBERS]
+    local rolePolicyTab = expedMgmt.tab.window[VIEW.ROLE_POLICY]
+    if memberListTab:IsVisible() then
+      memberListTab:OnChangePolicy()
+    elseif rolePolicyTab:IsVisible() then
+      rolePolicyTab:OnChangePolicy()
+    end
+  end,
+  EXPEDITION_MANAGEMENT_MEMBER_NAME_CHANGED = function()
+    if X2Faction:GetMyExpeditionId() == 0 then
+      return
+    end
+    local memberListTab = expedMgmt.tab.window[GetExpeiditonTabIdx(VIEW.MEMBERS)]
+    if memberListTab:IsVisible() then
+      memberListTab:RequestMemberInfo(MEMBER_LIST_CURRENT_PAGE)
+    end
+  end,
+  ENTERED_WORLD = function(firstEnteredWorld)
+    local wnd = expedMgmt.tab.window[GetExpeiditonTabIdx(VIEW.SIEGE)]
+    wnd:UpdateAllSiegeSchedules(firstEnteredWorld)
+  end,
+  DOMINION_SIEGE_PERIOD_CHANGED = function(action, zoneGroupType, zoneGroupName, defenseName, offenseName, periodName, isMyInfo, team)
+    local wnd = expedMgmt.tab.window[GetExpeiditonTabIdx(VIEW.SIEGE)]
+    wnd:SiegePeriodChanged(action, zoneGroupType, zoneGroupName, defenseName, offenseName, periodName, isMyInfo, team)
+  end,
+  DOMINION_SIEGE_SYSTEM_NOTICE = function(zoneGroupType, isMyInfo)
+    local wnd = expedMgmt.tab.window[GetExpeiditonTabIdx(VIEW.SIEGE)]
+    wnd:SiegeSystemNotice(zoneGroupType, isMyInfo)
+  end,
+  DOMINION_GUARD_TOWER_STATE_NOTICE = function(key, name)
+    if key >= #DominionGuardTowerStateNoticeKey then
+      return
+    end
+    local index = key + 1
+    if index >= 1 and index <= 4 then
+      AddSiegeAlertGuardTowerMsg(DominionGuardTowerStateNoticeKey[index])
+    elseif index >= 5 and index <= 7 then
+      siegeSystemAlarmWindow.engravingName = nil
+      if siegeSystemAlarmWindow.periodName == "siege_period_peace" then
+        siegeSystemAlarmWindow.periodName = nil
+        return
+      end
+      if name == nil or name == "" then
+        return
+      end
+      siegeSystemAlarmWindow.engravingName = name
+      if DominionGuardTowerStateNoticeKey[index] == "siege_alert_engraving_succeeded" then
+        return
+      end
+      AddSiegeAlertEngravingMsg(DominionGuardTowerStateNoticeKey[index], name)
+    end
+  end,
+  DOMINION = function(action, zoneGroupName, expeditionName)
+    if action ~= "declared" then
+      return
+    end
+    local str = X2Locale:LocalizeUiText(DOMINION, "alarm_declare", expeditionName, zoneGroupName)
+    local imgEventInfo = MakeImgEventInfo("DOMINION", AddSiegeDeclareTerritoryMsg, {str})
+    AddImgEventQueue(imgEventInfo)
+  end,
+  DOMINION_SIEGE_UPDATE_TIMER = function()
+    local wnd = expedMgmt.tab.window[GetExpeiditonTabIdx(VIEW.SIEGE)]
+    wnd:UpdateRemainTimes()
+  end,
+  DOMINION_SIEGE_LIST_CHANGED = function()
+    local wnd = expedMgmt.tab.window[GetExpeiditonTabIdx(VIEW.SIEGE)]
+    wnd:UpdateAllSiegeSchedules(false)
+  end,
+  DOMINION_SIEGE_PARTICIPANT_COUNT_CHANGED = function(zoneGroupType)
+    local wnd = expedMgmt.tab.window[GetExpeiditonTabIdx(VIEW.SIEGE)]
+    wnd:ParticipantCountChanged(zoneGroupType)
+  end,
+  DOMINION_SIEGE_PARTICIPANT_BRIEF_CHANGED = function()
+    local wnd = expedMgmt.tab.window[GetExpeiditonTabIdx(VIEW.SIEGE)]
+    wnd:ParticipantBriefChanged()
+  end
+}
+expedMgmt:SetHandler("OnEvent", function(this, event, ...)
+  events[event](...)
+end)
+RegistUIEvent(expedMgmt, events)

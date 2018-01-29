@@ -1,0 +1,178 @@
+local PET_FRAME_WIDTH = 120
+function CreatePetFrame(id, parent, mateType)
+  local w = CreateUnitFrame(id, parent)
+  w:Show(false)
+  w.mateType = mateType
+  local playerFrame = ADDON:GetContent(UIC_PLAYER_UNITFRAME)
+  if playerFrame == nil then
+    return
+  end
+  if X2Player:GetFeatureSet().mateTypeSummon and mateType == MATE_TYPE_BATTLE then
+    local bg_left = w:CreateImageDrawable(TEXTURE_PATH.PET, "background")
+    bg_left:SetTextureInfo("unitframe_left")
+    bg_left:AddAnchor("RIGHT", w.hpBar, "LEFT", -1, 6)
+    local bg_right = w:CreateImageDrawable(TEXTURE_PATH.PET, "background")
+    bg_right:SetTextureInfo("unitframe_right")
+    bg_right:AddAnchor("LEFT", w.hpBar, "RIGHT", 1, 6)
+  end
+  function w:MakeOriginWindowPos(reset)
+    if w == nil then
+      return
+    end
+    w:RemoveAllAnchors()
+    local xPos = 20
+    local yPos = 0
+    if X2Player:GetFeatureSet().mateTypeSummon then
+      xPos = 354
+      yPos = 9
+      if mateType == MATE_TYPE_BATTLE then
+        yPos = 86
+      end
+    end
+    if reset then
+      xPos = F_LAYOUT:CalcDontApplyUIScale(xPos)
+      yPos = F_LAYOUT:CalcDontApplyUIScale(yPos)
+    end
+    if X2Player:GetFeatureSet().mateTypeSummon then
+      w:AddAnchor("TOPLEFT", "UIParent", xPos, yPos)
+    elseif playerFrame.qqTalkButton ~= nil then
+      w:AddAnchor("TOPLEFT", playerFrame, "TOPRIGHT", xPos + playerFrame.qqTalkButton:GetWidth(), yPos)
+    else
+      w:AddAnchor("TOPLEFT", playerFrame, "TOPRIGHT", xPos, yPos)
+    end
+    w:SetWidth(PET_FRAME_WIDTH)
+  end
+  w:MakeOriginWindowPos()
+  function w:ApplyFrameStyle()
+    self.hpBar:ApplyBarTexture(STATUSBAR_STYLE.S_HP_FRIENDLY)
+    self.mpBar:ApplyBarTexture(STATUSBAR_STYLE.S_MP)
+    self.name:SetExtent(90, FONT_SIZE.MIDDLE)
+    self.name:SetLimitWidth(true)
+    self.bg:RemoveAllAnchors()
+    self.bg:AddAnchor("TOPLEFT", self.hpBar, -1, -2)
+    self.bg:AddAnchor("BOTTOMRIGHT", self.mpBar, 3, 2)
+    self.line:SetCoords(305, 207, 152, 8)
+    self.line:RemoveAllAnchors()
+    self.line:AddAnchor("TOPLEFT", self.hpBar, "BOTTOMLEFT", -1, -3)
+    self.line:AddAnchor("TOPRIGHT", self.hpBar, "BOTTOMRIGHT", 1, -3)
+    self.hpBar:SetWidth(PET_FRAME_WIDTH)
+    self.mpBar:SetWidth(PET_FRAME_WIDTH)
+    self.buffWindow:SetLayout(5, 24, 2, 2, false)
+    self.buffWindow:AddAnchor("TOPLEFT", self.mpBar, "BOTTOMLEFT", 0, 4)
+    self.debuffWindow:SetLayout(5, 24, 2, 2, false)
+    self.leaderMark:Show(false)
+    self.lootIcon:Show(false)
+    self.marker:SetExtent(24, 24)
+    self.marker:AddAnchor("LEFT", self.name, "RIGHT", 0, 0)
+  end
+  w:ApplyFrameStyle()
+  w:SetTarget(GetPetTargetName(mateType))
+  function w:OnShow()
+    self:UpdateAll()
+  end
+  w:SetHandler("OnShow", w.OnShow)
+  function w:Click(arg)
+    if arg == "RightButton" then
+      ActivatePopupMenu(w, GetPetTargetName(mateType))
+    end
+  end
+  function w:OnHide()
+    petFrame[mateType] = nil
+  end
+  w:SetHandler("OnHide", w.OnHide)
+  w:EnableHidingIsRemove(true)
+  AddUISaveHandlerByKey("petFrame" .. tostring(mateType), w, false)
+  w:ApplyLastWindowOffset()
+  return w
+end
+petFrame = {}
+local petFrameEvents = {
+  DISMISS_PET = function(onePetFrame, mateType)
+    if onePetFrame.mateType == mateType then
+      TogglePetFrame(false, mateType)
+    end
+  end,
+  LEVEL_CHANGED = function(onePetFrame, _, stringId)
+    local mateType = X2Unit:GetUnitMateTypeById(stringId)
+    if mateType == MATE_TYPE_NONE or onePetFrame.mateType ~= mateType then
+      return
+    end
+    onePetFrame:UpdateLevel()
+    if X2Unit:GetUnitId(GetPetTargetName(mateType)) == stringId then
+      local level = X2Unit:UnitLevel(GetPetTargetName(mateType))
+      X2Chat:DispatchChatMessage(CMF_SYSTEM, locale.pet.GetLevelText(level))
+    end
+  end,
+  UNIT_COMBAT_STATE_CHANGED = function(onePetFrame, arg1, stringId)
+    local mateType = X2Unit:GetUnitMateTypeById(stringId)
+    if mateType == MATE_TYPE_NONE or onePetFrame.mateType ~= mateType then
+      return
+    end
+    if X2Unit:GetUnitId(GetPetTargetName(mateType)) == stringId then
+      onePetFrame:ShowCombatIcon(arg1)
+    end
+  end,
+  ENTERED_WORLD = function(onePetFrame)
+    onePetFrame:ShowCombatIcon(X2Unit:UnitCombatState(GetPetTargetName(onePetFrame.mateType)))
+    onePetFrame:SetMarker(X2Unit:GetUnitId(GetPetTargetName(onePetFrame.mateType)))
+  end,
+  LEFT_LOADING = function(onePetFrame)
+    onePetFrame:ShowCombatIcon(X2Unit:UnitCombatState(GetPetTargetName(onePetFrame.mateType)))
+  end,
+  UNIT_NAME_CHANGED = function(onePetFrame, stringId)
+    local mateType = X2Unit:GetUnitMateTypeById(stringId)
+    if mateType == MATE_TYPE_NONE or onePetFrame.mateType ~= mateType then
+      return
+    end
+    if X2Unit:GetUnitId(GetPetTargetName(mateType)) == stringId then
+      onePetFrame:UpdateName()
+    end
+  end,
+  SET_OVERHEAD_MARK = function(onePetFrame, stringId, markerIndex, visible)
+    local mateType = X2Unit:GetUnitMateTypeById(stringId)
+    if mateType == MATE_TYPE_NONE or onePetFrame.mateType ~= mateType then
+      return
+    end
+    if X2Unit:GetUnitId(GetPetTargetName(mateType)) ~= stringId then
+      return
+    end
+    if not visible then
+      onePetFrame.marker:SetVisible(false)
+      return
+    end
+    onePetFrame:SetMarker(stringId)
+  end,
+  TEAM_MEMBERS_CHANGED = function(onePetFrame, arg1, arg2, arg3, arg4)
+    if arg1 == "joined_by_self" then
+      onePetFrame.marker:SetVisible(false)
+    elseif arg1 == "leaved_by_self" then
+      onePetFrame.marker:SetVisible(false)
+    elseif arg1 == "dismissed" or arg1 == "kicked_by_self" then
+      onePetFrame:ShowLeaderMark(false)
+      onePetFrame:ShowLootIcon(false)
+      onePetFrame.marker:SetVisible(false)
+    end
+  end
+}
+function TogglePetFrame(isShow, mateType)
+  if isShow == true and petFrame[mateType] == nil then
+    petFrame[mateType] = CreatePetFrame("petFrame", "UIParent", mateType)
+    petFrame[mateType]:SetHandler("OnEvent", function(this, event, ...)
+      petFrameEvents[event](this, ...)
+    end)
+    RegistUIEvent(petFrame[mateType], petFrameEvents)
+  end
+  if petFrame[mateType] ~= nil then
+    petFrame[mateType]:Show(isShow)
+  end
+end
+if X2Mate:IsPlayerPetExists(MATE_TYPE_RIDE) == true then
+  TogglePetFrame(true, MATE_TYPE_RIDE)
+end
+if X2Mate:IsPlayerPetExists(MATE_TYPE_BATTLE) == true then
+  TogglePetFrame(true, MATE_TYPE_BATTLE)
+end
+local SpawnPet = function(mateType)
+  TogglePetFrame(true, mateType)
+end
+UIParent:SetEventHandler("SPAWN_PET", SpawnPet)

@@ -1,0 +1,237 @@
+local CreateHonorPointWarStateWindow = function(window, locationNameLabel)
+  local honorPointWarStateWnd = window:CreateChildWidget("emptywidget", "honorPointWarStateWnd", 0, true)
+  honorPointWarStateWnd:SetExtent(182, 25)
+  honorPointWarStateWnd:AddAnchor("TOPRIGHT", locationNameLabel, "BOTTOMRIGHT", 2, 8)
+  honorPointWarStateWnd:Show(false)
+  local bg = honorPointWarStateWnd:CreateImageDrawable(TEXTURE_PATH.HUD, "background")
+  bg:SetCoords(624, 381, 189, 52)
+  bg:SetHeight(52)
+  bg:AddAnchor("LEFT", honorPointWarStateWnd, -10, 0)
+  bg:AddAnchor("RIGHT", honorPointWarStateWnd, 0, 0)
+  bg:SetVisible(true)
+  bg:SetColor(ConvertColor(22), ConvertColor(24), ConvertColor(27), 0.8)
+  honorPointWarStateWnd.bg = bg
+  local GAGE_BAR_WIDTH = 100
+  local GAGE_STEP_WIDTH = 18
+  local stateGageBar = honorPointWarStateWnd:CreateChildWidget("emptywidget", "stateGageBar", 0, true)
+  stateGageBar:SetExtent(GAGE_BAR_WIDTH, 25)
+  stateGageBar:AddAnchor("RIGHT", honorPointWarStateWnd, "RIGHT", 0, 0)
+  stateGageBar:Show(false)
+  local stateGageBg = stateGageBar:CreateNinePartDrawable(TEXTURE_PATH.HUD, "background")
+  stateGageBg:SetTextureInfo("gauge_bg")
+  stateGageBg:SetExtent(GAGE_BAR_WIDTH, 13)
+  stateGageBg:AddAnchor("LEFT", stateGageBar, "LEFT", 0, 0)
+  stateGageBg:SetVisible(true)
+  local bgGage = {}
+  stateGageBar.gage = {}
+  for i = 1, 5 do
+    local startPosX = 3 + (i - 1) * (GAGE_STEP_WIDTH + 1)
+    bgGage[i] = stateGageBar:CreateImageDrawable(TEXTURE_PATH.HUD, "background")
+    bgGage[i]:SetTextureInfo("gauge_emty")
+    bgGage[i]:SetExtent(GAGE_STEP_WIDTH, 6)
+    bgGage[i]:AddAnchor("LEFT", stateGageBg, startPosX, 0)
+    bgGage[i]:SetVisible(true)
+    stateGageBar.gage[i] = stateGageBar:CreateImageDrawable(TEXTURE_PATH.HUD, "background")
+    stateGageBar.gage[i]:SetTextureInfo("gauge_full")
+    stateGageBar.gage[i]:SetExtent(GAGE_STEP_WIDTH, 6)
+    stateGageBar.gage[i]:AddAnchor("LEFT", stateGageBg, startPosX, 0)
+    stateGageBar.gage[i]:SetVisible(false)
+  end
+  local width, height = honorPointWarStateWnd:GetExtent()
+  local titleWidth = width - GAGE_BAR_WIDTH
+  local honorPointWarRemainTime = honorPointWarStateWnd:CreateChildWidget("label", "honorPointWarRemainTime", 0, true)
+  honorPointWarRemainTime:Show(true)
+  honorPointWarRemainTime:SetExtent(GAGE_BAR_WIDTH, FONT_SIZE.LARGE)
+  honorPointWarRemainTime:SetAutoResize(true)
+  honorPointWarRemainTime:AddAnchor("RIGHT", honorPointWarStateWnd, -2, 0)
+  honorPointWarRemainTime:SetInset(0, 0, 2, 0)
+  honorPointWarRemainTime.style:SetFontSize(FONT_SIZE.LARGE)
+  honorPointWarRemainTime.style:SetAlign(ALIGN_RIGHT)
+  honorPointWarRemainTime.style:SetShadow(false)
+  local honorPointWarTitle = honorPointWarStateWnd:CreateChildWidget("label", "honorPointWarTitle", 0, true)
+  honorPointWarTitle:Show(true)
+  honorPointWarTitle:SetExtent(titleWidth, FONT_SIZE.XLARGE)
+  honorPointWarTitle:SetAutoResize(true)
+  honorPointWarTitle:AddAnchor("LEFT", honorPointWarStateWnd, 5, 0)
+  honorPointWarTitle:SetInset(0, 0, 0, 0)
+  honorPointWarTitle.style:SetAlign(ALIGN_CENTER)
+  honorPointWarTitle.style:SetShadow(false)
+  honorPointWarTitle.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.XLARGE)
+end
+local CreateSextantWindow = function(id, parent)
+  local wnd = parent:CreateChildWidget("emptywidget", id, 0, true)
+  wnd:SetExtent(180, FONT_SIZE.MIDDLE)
+  wnd:Show(true)
+  local playerLabel = wnd:CreateChildWidget("textbox", "playerLabel", 0, true)
+  playerLabel:SetExtent(180, FONT_SIZE.MIDDLE)
+  playerLabel:AddAnchor("RIGHT", wnd, "RIGHT", 0, 0)
+  playerLabel.style:SetAlign(ALIGN_RIGHT)
+  playerLabel.style:SetShadow(true)
+  function wnd:Update(sextantInfo)
+    local color1 = {
+      ConvertColor(255),
+      ConvertColor(255),
+      ConvertColor(52),
+      1
+    }
+    local colorStr1 = GetHexColorForString(Dec2Hex(color1))
+    local colorStr2 = FONT_COLOR_HEX.WHITE
+    local longStr = locale.map.makeLongitudeStr(sextantInfo, colorStr1, colorStr2)
+    local latStr = locale.map.makeLatitudeStr(sextantInfo, colorStr1, colorStr2)
+    playerLabel:SetText(string.format("%s  %s", longStr, latStr))
+  end
+  function wnd:OnEnter()
+    SetTargetAnchorTooltip(GetCommonText("tooltip_my_sextant"), "RIGHT", self, "LEFT", -2, 0)
+  end
+  wnd:SetHandler("OnEnter", wnd.OnEnter)
+  function wnd:OnLeave()
+    HideTooltip()
+  end
+  wnd:SetHandler("OnLeave", wnd.OnLeave)
+  return wnd
+end
+function CreateClockBar(id, parent)
+  local window = CreateLabel(id, parent)
+  window = CreateEmptyWindow("clock", "UIParent")
+  window:Show(true)
+  window:SetExtent(182, 25)
+  window:AddAnchor("TOPRIGHT", "UIParent", -1, 0)
+  window:SetUILayer("game")
+  local amImg = window:CreateImageDrawable(TEXTURE_PATH.HUD, "background")
+  amImg:SetCoords(452, 119, 182, 25)
+  amImg:SetExtent(182, 25)
+  amImg:AddAnchor("TOPLEFT", window, 0, 0)
+  amImg:SetVisible(false)
+  window.amImg = amImg
+  local pmImg = window:CreateImageDrawable(TEXTURE_PATH.HUD, "background")
+  pmImg:SetCoords(452, 94, 182, 25)
+  pmImg:SetExtent(182, 25)
+  pmImg:AddAnchor("TOPLEFT", window, 0, 0)
+  pmImg:SetVisible(false)
+  window.pmImg = pmImg
+  local sun = window:CreateImageDrawable(TEXTURE_PATH.HUD, "background")
+  sun:SetCoords(635, 94, 35, 35)
+  sun:SetExtent(35, 35)
+  sun:AddAnchor("BOTTOMLEFT", window, 0, 0)
+  sun:SetVisible(false)
+  window.sun = sun
+  local moon = window:CreateImageDrawable(TEXTURE_PATH.HUD, "background")
+  moon:SetExtent(19, 20)
+  moon:SetCoords(671, 94, 19, 20)
+  moon:AddAnchor("BOTTOMLEFT", window, 0, 0)
+  moon:SetVisible(false)
+  window.moon = moon
+  local locationNameLabel = window:CreateChildWidget("label", "locationNameLabel", 0, true)
+  locationNameLabel:Show(true)
+  locationNameLabel:SetAutoResize(true)
+  locationNameLabel:SetHeight(FONT_SIZE.LARGE)
+  locationNameLabel:AddAnchor("TOPRIGHT", window, "BOTTOMRIGHT", -2, 0)
+  locationNameLabel.style:SetAlign(ALIGN_RIGHT)
+  locationNameLabel.style:SetShadow(true)
+  locationNameLabel.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.LARGE)
+  locationNameLabel.style:SetColor(0.99, 1, 0.62, 1)
+  local factionLabel = window:CreateChildWidget("label", "factionLabel", 0, true)
+  factionLabel:Show(true)
+  factionLabel:SetHeight(FONT_SIZE.SMALL)
+  factionLabel:SetAutoResize(true)
+  factionLabel:AddAnchor("TOPRIGHT", locationNameLabel, "BOTTOMRIGHT", 0, 3)
+  factionLabel:SetInset(0, 0, 2, 0)
+  factionLabel.style:SetFontSize(FONT_SIZE.SMALL)
+  factionLabel.style:SetAlign(ALIGN_RIGHT)
+  factionLabel.style:SetShadow(true)
+  CreateHonorPointWarStateWindow(window, locationNameLabel)
+  if baselibLocale.openedSextant == true then
+    window.sextantWindow = CreateSextantWindow("sextantWindow", window)
+  end
+  return window
+end
+clockBar = CreateClockBar("clockBar", "UIParent")
+function CreateFpsAlertInfo(id, parent)
+  fpslabelAnchor = {x = 0, y = 0}
+  local featureSet = X2Player:GetFeatureSet()
+  if featureSet.sensitiveOpeartion then
+    fpslabelAnchor.x = fpslabelAnchor.x - 20
+  end
+  local emptywidget = UIParent:CreateWidget("emptywidget", id, parent)
+  emptywidget:Show(GetOptionItemValue("ShowFps") == 1)
+  emptywidget:SetExtent(30, FONT_SIZE.LARGE)
+  emptywidget:AddAnchor("TOPRIGHT", "UIParent", -238 + fpslabelAnchor.x, 6 + fpslabelAnchor.y)
+  local bg = emptywidget:CreateImageDrawable(TEXTURE_PATH.DEFAULT, "background")
+  bg:SetVisible(false)
+  bg:SetTextureInfo("brush")
+  bg:SetColor(0, 0, 0, 0.8)
+  bg:SetExtent(60, 30)
+  bg:AddAnchor("CENTER", emptywidget, -2, 0)
+  emptywidget.bg = bg
+  local fpsLabel = emptywidget:CreateChildWidget("label", "fpsLabel", 0, true)
+  fpsLabel:SetAutoResize(true)
+  fpsLabel:SetText("FPS")
+  fpsLabel:SetHeight(FONT_SIZE.SMALL)
+  fpsLabel.style:SetFontSize(FONT_SIZE.SMALL)
+  fpsLabel.style:SetShadow(true)
+  fpsLabel:AddAnchor("RIGHT", emptywidget, -30, 0)
+  local fpsInfoLabel = emptywidget:CreateChildWidget("label", "fpsInfoLabel", 0, true)
+  fpsInfoLabel:SetAutoResize(true)
+  fpsInfoLabel:SetHeight(FONT_SIZE.LARGE)
+  fpsInfoLabel.style:SetFontSize(FONT_SIZE.LARGE)
+  fpsInfoLabel:AddAnchor("BOTTOMRIGHT", fpsLabel, "BOTTOMLEFT", -1, 0)
+  fpsInfoLabel.style:SetShadow(true)
+  fpsInfoLabel:SetText(tostring(UIParent:GetFrameRate()))
+  emptywidget.time = 0
+  function emptywidget:OnEnter()
+    self.bg:SetVisible(true)
+  end
+  emptywidget:SetHandler("OnEnter", emptywidget.OnEnter)
+  function emptywidget:OnLeave()
+    self.bg:SetVisible(false)
+  end
+  emptywidget:SetHandler("OnLeave", emptywidget.OnLeave)
+  function emptywidget:OnUpdate(dt)
+    emptywidget.time = emptywidget.time + dt
+    if emptywidget.time >= 1000 then
+      self.fpsInfoLabel:SetText(tostring(UIParent:GetFrameRate()))
+      self:SetWidth(fpsLabel:GetWidth() + fpsInfoLabel:GetWidth())
+      emptywidget.time = 0
+    end
+  end
+  emptywidget:SetHandler("OnUpdate", emptywidget.OnUpdate)
+  emptywidget:RegisterForDrag("LeftButton")
+  fpsLabel:RegisterForDrag("LeftButton")
+  fpsInfoLabel:RegisterForDrag("LeftButton")
+  function emptywidget:OnDragStart(arg)
+    if arg == "LeftButton" then
+      self:StartMoving()
+      self.moving = true
+    end
+  end
+  emptywidget:SetHandler("OnDragStart", emptywidget.OnDragStart)
+  function fpsLabel:OnDragStart(arg)
+    emptywidget:OnDragStart(arg)
+  end
+  fpsLabel:SetHandler("OnDragStart", fpsLabel.OnDragStart)
+  function fpsInfoLabel:OnDragStart(arg)
+    emptywidget:OnDragStart(arg)
+  end
+  fpsInfoLabel:SetHandler("OnDragStart", fpsInfoLabel.OnDragStart)
+  function emptywidget:OnDragStop(arg)
+    if arg == "LeftButton" then
+      self:StopMovingOrSizing()
+      self.moving = false
+    end
+  end
+  emptywidget:SetHandler("OnDragStop", emptywidget.OnDragStop)
+  function fpsLabel:OnDragStop(arg)
+    emptywidget:OnDragStop(arg)
+  end
+  fpsLabel:SetHandler("OnDragStop", fpsLabel.OnDragStop)
+  function fpsInfoLabel:OnDragStop(arg)
+    emptywidget:OnDragStop(arg)
+  end
+  fpsInfoLabel:SetHandler("OnDragStop", fpsInfoLabel.OnDragStop)
+  function emptywidget:OnScale()
+    self:AddAnchor("TOPRIGHT", localeView.fpsInfoAnchor[1], localeView.fpsInfoAnchor[2])
+  end
+  emptywidget:SetHandler("OnScale", emptywidget.OnScale)
+  return emptywidget
+end
+fpsInfo = CreateFpsAlertInfo("fpsInfo", clockBar)

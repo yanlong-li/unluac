@@ -1,0 +1,56 @@
+function SetViewOfWriteMailWindow(id, parent)
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local window = CreateWindow(id, parent)
+  window:SetExtent(430, 545)
+  window:SetTitle(locale.mail.writeMail)
+  CreateMailUpperFrame(window, "write")
+  CreateContentFrame(window, "write")
+  local buttonSetWindow = window:CreateChildWidget("window", "buttonSetWindow", 0, true)
+  buttonSetWindow:Show(true)
+  buttonSetWindow:SetExtent(390, BUTTON_SIZE.DEFAULT_SMALL.HEIGHT)
+  buttonSetWindow:AddAnchor("BOTTOMLEFT", window, sideMargin, -sideMargin)
+  local texts = {
+    locale.mail.expressMail,
+    locale.mail.normalMail
+  }
+  local firstOffset = {}
+  firstOffset.x = 0
+  firstOffset.y = 0
+  local checks = CreateRadioButton(window:GetId() .. ".checks", buttonSetWindow, 2, "vertical", firstOffset, 3, texts)
+  checks:Check(1)
+  window.checks = checks
+  for i = 1, #texts do
+    do
+      local textButton = checks[i].textButton
+      local check = checks[i]
+      local tip = ""
+      local costStr = ""
+      if i == 1 then
+        costStr = MakeMoneyText(tostring(X2Mail:GetExpressMailAttachmentCost()))
+        tip = locale.mail.expressDelivery(costStr)
+      else
+        costStr = MakeMoneyText(tostring(X2Mail:GetNormalMailAttachmentCost()))
+        tip = locale.mail.generalDelivery(costStr)
+      end
+      function textButton:OnEnter()
+        SetTargetAnchorTooltip(tip, "TOPLEFT", self, "BOTTOMRIGHT", 0, -2)
+      end
+      textButton:SetHandler("OnEnter", textButton.OnEnter)
+      function textButton:OnLeave()
+        HideTooltip()
+      end
+      textButton:SetHandler("OnLeave", textButton.OnLeave)
+      local moneyWindow = CreateDefaultMoneyWindow(window:GetId() .. ".checks.moneyWindow", check, 200, 10)
+      moneyWindow:AddAnchor("LEFT", textButton, mailBoxLocale.mail.sendCommission.offsetX, 0)
+      moneyWindow.style:SetAlign(ALIGN_LEFT)
+      moneyWindow.currency = X2Mail:GetCurrencyForFee()
+      textButton:Raise()
+      window.checks[i].moneyWindow = moneyWindow
+    end
+  end
+  local sendButton = window:CreateChildWidget("button", "sendButton", 0, true)
+  sendButton:AddAnchor("RIGHT", buttonSetWindow, 3, 0)
+  sendButton:SetText(locale.mail.send)
+  ApplyButtonSkin(sendButton, BUTTON_BASIC.DEFAULT)
+  return window
+end

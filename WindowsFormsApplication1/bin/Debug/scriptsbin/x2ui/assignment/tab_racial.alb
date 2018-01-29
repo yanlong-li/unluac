@@ -1,0 +1,324 @@
+local TracingBtnChecked = function(checkBtn, aType)
+  local checked = checkBtn:GetChecked()
+  if checked and not X2Achievement:IsTracingAchievement(AK_RACIAL, aType) then
+    local result = X2Achievement:AddTracingAchievement(AK_RACIAL, aType)
+    if not result then
+      checkBtn:SetChecked(false, false)
+    end
+  elseif not checked and X2Achievement:IsTracingAchievement(AK_RACIAL, aType) then
+    X2Achievement:RemoveTracingAchievement(AK_RACIAL, aType)
+  end
+end
+local TracingBtnEntered = function(checkBtn)
+  local tCount, tMax = X2Achievement:GetTracingAchievementCount(AK_RACIAL)
+  if tCount == tMax and not checkBtn:GetChecked() then
+    SetTooltip(GetCommonText("can_not_trace_achievement_tooltip", tostring(tMax)), checkBtn)
+  else
+    SetTooltip(GetCommonText("trace_achievement_tooltip"), checkBtn)
+  end
+end
+local function AchievementSubjectDataSetFunc(subItem, aType, setValue)
+  local function CheckFunc(checkBtn)
+    TracingBtnChecked(checkBtn, aType)
+  end
+  function subItem:handleClick()
+    return subItem.subjectWnd.checkBtn:IsMouseOver()
+  end
+  local subjectWnd = subItem.subjectWnd
+  if setValue then
+    subjectWnd:SetAchievement(A_SUBJECT_STYLE.ACHIEVEMENT_LIST, aType, CheckFunc, TracingBtnEntered)
+  else
+    subjectWnd:SetAchievement()
+  end
+end
+local function CreateAchievementListWnd(id, parent)
+  local wnd = parent:CreateChildWidget("emptywidget", id, 0, true)
+  local title = wnd:CreateChildWidget("label", "title", 0, true)
+  title:SetHeight(FONT_SIZE.XLARGE)
+  title:SetAutoResize(true)
+  title.style:SetAlign(ALIGN_LEFT)
+  title.style:SetFontSize(FONT_SIZE.XLARGE)
+  title:AddAnchor("TOPLEFT", wnd, MARGIN.WINDOW_SIDE / 4, MARGIN.WINDOW_SIDE / 4)
+  ApplyTextColor(title, FONT_COLOR.HIGH_TITLE)
+  local countLabel = wnd:CreateChildWidget("label", "countLabel", 0, true)
+  countLabel:SetHeight(FONT_SIZE.XLARGE)
+  countLabel:SetAutoResize(true)
+  countLabel.style:SetAlign(ALIGN_LEFT)
+  countLabel.style:SetFontSize(FONT_SIZE.XLARGE)
+  countLabel:AddAnchor("LEFT", title, "RIGHT", 5, 0)
+  ApplyTextColor(countLabel, FONT_COLOR.BLUE)
+  local filter = {
+    GetCommonText("show_all"),
+    GetCommonText("accomplishment"),
+    GetCommonText("not_accomplishment"),
+    GetCommonText("progressing")
+  }
+  local filterBtn = CreateComboBox(wnd)
+  filterBtn:AddAnchor("TOPRIGHT", wnd, 0, 3)
+  filterBtn:SetExtent(A_FILTER_BTN_WIDTH, 24)
+  filterBtn.dropdownItem = filter
+  filterBtn:Select(1)
+  wnd.filterBtn = filterBtn
+  local MAX_COMPLETE_LIST = 50
+  local subjectList = CreateASubjectListWnd("subjectList", wnd)
+  subjectList:SetExtent(A_STATUS_WND_WIDTH.TOTAL + MARGIN.WINDOW_SIDE * 2, 438)
+  subjectList:AddAnchor("TOP", wnd, 0, 35)
+  subjectList:SetListStyle(6, MAX_COMPLETE_LIST, AchievementSubjectDataSetFunc)
+  function wnd:SetListSelectFuc(func)
+    subjectList:SetListSelectFuc(func)
+  end
+  function filterBtn:SelectedProc()
+    wnd:SetCategory(wnd.mId, wnd.sId, nil, false)
+  end
+  function wnd:SetCategory(mId, sId, filter, refresh)
+    local usePageCtrl = false
+    if sId == 0 then
+      if filter == AF_COMPLETE then
+        title:SetText(GetCommonText("accomplishment"))
+        usePageCtrl = true
+      elseif filter == AF_TRACING then
+        title:SetText(GetCommonText("tracing"))
+        usePageCtrl = false
+      end
+      countLabel:Show(false)
+      filterBtn:Show(false)
+    else
+      local cName = GetAchievementCategoryStr(mId, sId)
+      local info = X2Achievement:GetSubcategoryInfo(mId, sId)
+      countLabel:Show(true)
+      filterBtn:Show(true)
+      title:SetText(cName)
+      countLabel:SetText(string.format("(%d/%d)", info.complete, info.total))
+      filter = filterBtn:GetSelectedIndex()
+      usePageCtrl = true
+    end
+    if refresh ~= true and self.mId == mId and self.sId == sId and self.filter == filter and subjectList.pageControl:GetCurrentPageIndex() == 1 then
+      return
+    end
+    wnd.mId = mId
+    wnd.sId = sId
+    wnd.filter = filter
+    local emptyStr = ""
+    if filter == AF_COMPLETE then
+      emptyStr = GetCommonText("no_accomplished_achievement")
+    elseif filter == AF_TRACING then
+      local tCount, tMax = X2Achievement:GetTracingAchievementCount(AK_RACIAL)
+      emptyStr = GetCommonText("no_tracing_achievement", tostring(tMax))
+    elseif filter == AF_UNCOMPLETE then
+      emptyStr = GetCommonText("no_uncompleted_achievement")
+    elseif filter == AF_PROGRESS then
+      emptyStr = GetCommonText("no_progressing_achievement")
+    elseif filter == AF_ALL then
+      emptyStr = GetCommonText("no_achievement")
+    end
+    if refresh then
+      subjectList:Update()
+    else
+      local list = X2Achievement:GetAchievementList(mId, sId, filter)
+      subjectList:SetWndStyle(usePageCtrl, emptyStr)
+      subjectList:SetInfo(list, filter)
+    end
+  end
+  function wnd:Update()
+    wnd:SetCategory(wnd.mId, wnd.sId, wnd.filter, true)
+  end
+  return wnd
+end
+local function CreateDescWnd(id, parent)
+  local wnd = parent:CreateChildWidget("emptywidget", id, 0, true)
+  local prevPageBtn = wnd:CreateChildWidget("button", "prevPageBtn", 0, true)
+  prevPageBtn:AddAnchor("TOPLEFT", wnd, 0, 0)
+  prevPageBtn:SetText(GetCommonText("prev_page"))
+  ApplyButtonSkin(prevPageBtn, BUTTON_CONTENTS.PREV_PAGE)
+  local subjectWnd = CreateASubjectWnd("subjectWnd", wnd)
+  subjectWnd:AddAnchor("TOPLEFT", prevPageBtn, "BOTTOMLEFT", 0, 5)
+  subjectWnd:AddAnchor("BOTTOMRIGHT", wnd, "TOPRIGHT", 0, 105)
+  local categoryLabel = wnd:CreateChildWidget("label", "categoryLabel", 0, true)
+  categoryLabel:SetHeight(FONT_SIZE.MIDDLE)
+  categoryLabel:SetAutoResize(true)
+  categoryLabel.style:SetAlign(ALIGN_RIGHT)
+  categoryLabel:AddAnchor("BOTTOMRIGHT", subjectWnd, "TOPRIGHT", -5, -10)
+  ApplyTextColor(categoryLabel, FONT_COLOR.DEFAULT)
+  local descWnd = CreateAAchievementDescWnd("descWnd", wnd)
+  descWnd:AddAnchor("TOPLEFT", subjectWnd, "BOTTOMLEFT", 0, 5)
+  descWnd:AddAnchor("BOTTOMRIGHT", wnd, "BOTTOMRIGHT", 0, -20)
+  local prevBtn = wnd:CreateChildWidget("button", "prevBtn", 0, true)
+  prevBtn:AddAnchor("RIGHT", wnd, "BOTTOM", -5, 0)
+  ApplyButtonSkin(prevBtn, BUTTON_BASIC.PAGE_PREV)
+  local nextBtn = wnd:CreateChildWidget("button", "nextBtn", 0, true)
+  nextBtn:AddAnchor("LEFT", wnd, "BOTTOM", 5, 0)
+  ApplyButtonSkin(nextBtn, BUTTON_BASIC.PAGE_NEXT)
+  local function ObjectiveSelectFunc(oType, oList)
+    wnd.backupView = wnd.viewInfo
+    wnd:SetInfo(oType, oList, wnd)
+  end
+  function wnd:SetInfo(aType, aList, prevPage)
+    local info = X2Achievement:GetAchievementInfo(aType)
+    if not info.canProgress then
+      return
+    end
+    wnd.viewInfo = {
+      aType = aType,
+      aList = aList,
+      prevPage = prevPage
+    }
+    local subStr = GetAchievementCategoryStr(info.mainCategory, info.subCategory)
+    categoryLabel:SetText(string.format("%s", subStr))
+    local function CheckFunc(checkBtn)
+      TracingBtnChecked(checkBtn, aType)
+    end
+    subjectWnd:SetAchievement(A_SUBJECT_STYLE.ACHIEVEMENT_DESC, aType, CheckFunc, TracingBtnEntered)
+    descWnd:SetAchievementInfo(aType, ObjectiveSelectFunc)
+    local function RefreshMoveBtn()
+      local index = 1
+      while aList[index] ~= aType do
+        index = index + 1
+      end
+      prevBtn:Enable(false)
+      for i = index - 1, 1, -1 do
+        local pInfo = X2Achievement:GetAchievementInfo(aList[i])
+        if pInfo.canProgress then
+          prevBtn.index = aList[i]
+          prevBtn:Enable(true)
+          break
+        end
+      end
+      nextBtn:Enable(false)
+      for i = index + 1, #aList do
+        local nInfo = X2Achievement:GetAchievementInfo(aList[i])
+        if nInfo.canProgress then
+          nextBtn.index = aList[i]
+          nextBtn:Enable(true)
+          break
+        end
+      end
+    end
+    RefreshMoveBtn()
+    if prevPage ~= wnd then
+      prevPage:Show(false)
+      wnd:Show(true)
+    end
+    X2Achievement:RemoveNewCompleteAchievement(aType)
+  end
+  function prevPageBtn:OnClick()
+    if wnd.viewInfo.prevPage == wnd then
+      wnd:SetInfo(wnd.backupView.aType, wnd.backupView.aList, wnd.backupView.prevPage)
+      wnd.backupView = nil
+    elseif wnd.viewInfo.prevPage ~= nil then
+      wnd.viewInfo.prevPage:Show(true)
+      wnd:Show(false)
+      wnd.viewInfo = nil
+    end
+  end
+  prevPageBtn:SetHandler("OnClick", prevPageBtn.OnClick)
+  function prevBtn:OnClick()
+    wnd:SetInfo(prevBtn.index, wnd.viewInfo.aList, wnd.viewInfo.prevPage)
+  end
+  prevBtn:SetHandler("OnClick", prevBtn.OnClick)
+  function nextBtn:OnClick()
+    wnd:SetInfo(nextBtn.index, wnd.viewInfo.aList, wnd.viewInfo.prevPage)
+  end
+  nextBtn:SetHandler("OnClick", nextBtn.OnClick)
+  function wnd:Update()
+    if wnd.viewInfo ~= nil then
+      wnd:SetInfo(wnd.viewInfo.aType, wnd.viewInfo.aList, wnd.viewInfo.prevPage)
+    end
+  end
+  function wnd:OnHide()
+    wnd.viewInfo = nil
+  end
+  wnd:SetHandler("OnHide", wnd.OnHide)
+  return wnd
+end
+function CreateARacialWnd(parent)
+  local categoryWnd = CreateACategoryListWnd("categoryWnd", parent)
+  categoryWnd:SetWidth(A_CATEGORY_LIST_WIDTH)
+  categoryWnd:AddAnchor("TOPLEFT", parent, 0, MARGIN.WINDOW_SIDE)
+  categoryWnd:AddAnchor("BOTTOMLEFT", parent, 0, -MARGIN.WINDOW_SIDE / 2)
+  categoryWnd:SetStyle(false, true, nil, nil, nil)
+  local listWnd = CreateAchievementListWnd("listWnd", parent)
+  listWnd:AddAnchor("TOPLEFT", categoryWnd, "TOPRIGHT", A_RIGHT_WND_OFFSET, 0)
+  listWnd:AddAnchor("BOTTOMRIGHT", parent, 0, -MARGIN.WINDOW_SIDE / 2)
+  local descWnd = CreateDescWnd("descWnd", parent)
+  descWnd:AddAnchor("TOPLEFT", categoryWnd, "TOPRIGHT", A_RIGHT_WND_OFFSET, 0)
+  descWnd:AddAnchor("BOTTOMRIGHT", parent, 0, -MARGIN.WINDOW_SIDE / 2)
+  local function ToggleDetailWnd(aType, aList)
+    descWnd:SetInfo(aType, aList, listWnd)
+  end
+  listWnd:SetListSelectFuc(ToggleDetailWnd)
+  local function MakeCategoryInfo(openState)
+    local categoryInfo = {}
+    local tCount, tMax = X2Achievement:GetTracingAchievementCount(AK_RACIAL)
+    categoryInfo[2] = {
+      text = GetCommonText("tracing"),
+      value = 0,
+      defaultColor = FONT_COLOR.GRAY_PURPLE,
+      selectColor = FONT_COLOR.BLUE,
+      overColor = FONT_COLOR.BLUE,
+      useColor = true,
+      subtext = string.format("(%d/%d)", tCount, tMax),
+      subColor = FONT_COLOR.BLUE
+    }
+    local index = 3
+    local complete = 0
+    local total = 0
+    local info
+    local count = X2Achievement:GetSubCategoryCount(AC_LEVEL)
+    for i = 1, count do
+      info = X2Achievement:GetSubcategoryInfo(AC_LEVEL, i)
+      complete = complete + info.complete
+      total = total + info.total
+      categoryInfo[index] = {
+        text = GetAchievementCategoryStr(AC_LEVEL, i),
+        value = i,
+        subtext = string.format("(%d/%d)", info.complete, info.total),
+        subColor = FONT_COLOR.BLUE
+      }
+      index = index + 1
+    end
+    categoryInfo[1] = {
+      text = GetCommonText("accomplishment"),
+      value = 0,
+      defaultColor = FONT_COLOR.GRAY_PURPLE,
+      selectColor = FONT_COLOR.BLUE,
+      overColor = FONT_COLOR.BLUE,
+      useColor = true,
+      subtext = string.format("(%d/%d)", complete, total),
+      subColor = FONT_COLOR.BLUE
+    }
+    categoryInfo.updateCountFunc = MakeCategoryInfo
+    return categoryInfo
+  end
+  local function CategorySelectFunc(index, value)
+    if index == 1 then
+      listWnd:Show(true)
+      listWnd:SetCategory(AC_LEVEL, 0, AF_COMPLETE)
+      descWnd:Show(false)
+    elseif index == 2 then
+      listWnd:Show(true)
+      listWnd:SetCategory(AC_LEVEL, 0, AF_TRACING)
+      descWnd:Show(false)
+    else
+      listWnd:Show(true)
+      listWnd:SetCategory(AC_LEVEL, value)
+      descWnd:Show(false)
+    end
+  end
+  local categoryInfo = MakeCategoryInfo()
+  categoryWnd:SetInfo(categoryInfo, CategorySelectFunc, 0)
+  function parent:ToggleWithAchievement(aType)
+    local info = X2Achievement:GetAchievementInfo(aType)
+    listWnd.filterBtn:Select(1)
+    categoryWnd.content:SelectWithValue(info.subCategory)
+    local top = categoryWnd.content:GetTop()
+    categoryWnd:SetValue(top)
+    listWnd.subjectList:ToggleWithAchievement(aType)
+  end
+  function parent:Update()
+    local openState = categoryWnd:GetOpenState()
+    local info = MakeCategoryInfo(openState)
+    categoryWnd:Update(info)
+    listWnd:Update()
+    descWnd:Update()
+  end
+end

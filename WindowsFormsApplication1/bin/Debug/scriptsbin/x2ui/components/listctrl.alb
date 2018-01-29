@@ -1,0 +1,177 @@
+function CreateListCtrl(id, parent)
+  local ROWDATA_COLUMN_OFFSET = 1
+  local frame = parent:CreateChildWidget("emptywidget", id, 0, true)
+  local listCtrl = frame:CreateChildWidget("listctrl", "listCtrl", 0, true)
+  listCtrl:AddAnchor("TOPLEFT", frame, 0, 0)
+  listCtrl:AddAnchor("BOTTOMRIGHT", frame, 0, 0)
+  frame.dataCount = 0
+  frame.datas = {}
+  function frame:DisableColumButton()
+    listCtrl:SetColumnHeight(0)
+  end
+  function frame:InsertColumn(columnName, width, itemType, layoutFunc, dataSetFunc)
+    self.listCtrl:InsertColumn(width, itemType)
+    local columnIndex = #self.listCtrl.column
+    local column = self.listCtrl.column[columnIndex]
+    column.layoutFunc = layoutFunc
+    column.dataSetFunc = dataSetFunc
+    column:SetText(columnName)
+    SettingListColumn(listCtrl, column)
+  end
+  function frame:InsertRows(count, useEventWindow)
+    self.listCtrl:InsertRows(count, useEventWindow)
+    local rowCount = #self.listCtrl.items
+    for i = 1, rowCount do
+      for j = 1, #self.listCtrl.column do
+        local column = self.listCtrl.column[j]
+        if column.layoutFunc ~= nil then
+          column.layoutFunc(self, i, j, self.listCtrl.items[i].subItems[j])
+        else
+          DefaultListItemSetting(self.listCtrl.items[i].subItems[j])
+        end
+      end
+    end
+  end
+  local function UpdateItem(rowIdx, colIdx)
+    local row = frame.listCtrl.items[rowIdx]
+    if row == nil then
+      return
+    end
+    local col = frame.listCtrl.column[colIdx]
+    if col == nil then
+      return
+    end
+    local data = frame:GetData(rowIdx, colIdx)
+    local subItem = row.subItems[colIdx]
+    if col.dataSetFunc ~= nil then
+      col.dataSetFunc(subItem, data, true)
+    else
+      subItem:SetText(data)
+    end
+  end
+  function frame:GetDataByViewIndex(row, col)
+    local rowData = self.datas[row]
+    if rowData == nil then
+      return
+    end
+    return rowData[col + ROWDATA_COLUMN_OFFSET]
+  end
+  function frame:UpdateView()
+    local rowCount = #self.listCtrl.items
+    local colCount = #self.listCtrl.column
+    local rowIndex = 1
+    for i = 1, #self.datas do
+      local rowData = self.datas[i]
+      if i <= rowCount then
+        local row = self.listCtrl.items[rowIndex]
+        if rowData ~= nil and row ~= nil then
+          for j = 1, colCount do
+            local subItem = row.subItems[j]
+            local curCol = self.listCtrl.column[j]
+            if rowData[j + ROWDATA_COLUMN_OFFSET] ~= nil and subItem ~= nil then
+              if curCol.dataSetFunc ~= nil then
+                curCol.dataSetFunc(subItem, rowData[j + ROWDATA_COLUMN_OFFSET], true)
+              else
+                subItem:SetText(tostring(rowData[j + ROWDATA_COLUMN_OFFSET]))
+              end
+            end
+          end
+        end
+        rowIndex = rowIndex + 1
+      end
+    end
+    for i = rowIndex, rowCount do
+      local row = self.listCtrl.items[i]
+      if row ~= nil then
+        for j = 1, colCount do
+          local subItem = row.subItems[j]
+          local curCol = self.listCtrl.column[j]
+          if subItem ~= nil then
+            if curCol.dataSetFunc ~= nil then
+              curCol.dataSetFunc(subItem, "", false)
+            else
+              subItem:SetText("")
+            end
+          end
+        end
+      end
+    end
+  end
+  function frame:InsertData(key, columnIndex, data)
+    local rowData
+    local findedDataIndex = 0
+    for i = 1, #self.datas do
+      rowData = self.datas[i]
+      if rowData[ROWDATA_COLUMN_OFFSET] == key then
+        findedDataIndex = i
+        break
+      end
+    end
+    if findedDataIndex == 0 then
+      rowData = {}
+      rowData[ROWDATA_COLUMN_OFFSET] = key
+      self.datas[#self.datas + 1] = rowData
+      findedDataIndex = #self.datas
+      self.dataCount = self.dataCount + 1
+    end
+    rowData[columnIndex + ROWDATA_COLUMN_OFFSET] = data
+    local column = self.listCtrl.column[columnIndex]
+    local subItem = self.listCtrl.items[self.dataCount].subItems[columnIndex]
+    if self.dataCount <= #self.listCtrl.items then
+      self.listCtrl:InsertData(self.dataCount, 1, "")
+    end
+    self:UpdateView()
+  end
+  function frame:UpdateData(key, columnIndex, newData)
+    local foundRow = 0
+    for i = 1, #self.datas do
+      local data = self.datas[i]
+      local itemKey = data[ROWDATA_COLUMN_OFFSET]
+      if itemKey == key then
+        data[ROWDATA_COLUMN_OFFSET + columnIndex] = newData
+        foundRow = i
+        break
+      end
+    end
+    if foundRow == 0 then
+      return
+    end
+    UpdateItem(foundRow, columnIndex)
+  end
+  function frame:GetData(row, col)
+    local rowData = self.datas[row]
+    if rowData == nil then
+      return
+    end
+    return rowData[col + ROWDATA_COLUMN_OFFSET]
+  end
+  function frame:GetKey(row, col)
+    local rowData = self.datas[row]
+    if rowData == nil then
+      return
+    end
+    return rowData[col]
+  end
+  function frame:DeleteAllDatas()
+    self.datas = {}
+    self.dataCount = 0
+    self.listCtrl:DeleteAllDatas()
+    self:UpdateView()
+  end
+  function frame:GetRowCount()
+    if self.listCtrl.items == nil then
+      return 0
+    end
+    return #self.listCtrl.items
+  end
+  function frame:GetListCtrlItems()
+    return self.listCtrl.items
+  end
+  function frame:GetDataCount()
+    return self.dataCount
+  end
+  function frame:GetDatas()
+    return self.datas
+  end
+  return frame
+end

@@ -1,0 +1,7 @@
+if customizingLocale == nil then
+  customizingLocale = {}
+end
+customizingLocale.buttonWidth = BUTTON_SIZE.DEFAULT_SMALL.WIDTH
+customizingLocale.customLoadWnd = {
+  overWriteBtnWidth = BUTTON_SIZE.DEFAULT_SMALL.WIDTH
+}

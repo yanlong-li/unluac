@@ -1,0 +1,446 @@
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+function CreateCustomMouseGuide(id, parent)
+  local window = parent:CreateChildWidget("emptywidget", id, 0, true)
+  window:Show(true)
+  window:SetExtent(62, 54)
+  local texture = window:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.REMNANTS, "overlay")
+  texture:SetCoords(674, 312, 62, 54)
+  texture:AddAnchor("TOPLEFT", window, 0, 0)
+  texture:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+  local guideContent = window:CreateChildWidget("emptywidget", "guideContent", 0, true)
+  guideContent:Show(false)
+  guideContent:Raise()
+  guideContent:SetExtent(185, 50)
+  guideContent:AddAnchor("RIGHT", window, "LEFT", 0, -3)
+  local bg = guideContent:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.REMNANTS, "background")
+  bg:SetCoords(787, 243, -347, 62)
+  bg:AddAnchor("TOPLEFT", guideContent, -35, 0)
+  bg:AddAnchor("BOTTOMRIGHT", guideContent, 40, 3)
+  local textbox = guideContent:CreateChildWidget("textbox", "textbox", 0, true)
+  textbox:AddAnchor("TOPLEFT", guideContent, 0, -2)
+  textbox:AddAnchor("BOTTOMRIGHT", guideContent, 0, 0)
+  textbox:SetLineSpace(TEXTBOX_LINE_SPACE.SMALL)
+  textbox:SetText(locale.characterCreate.mouseGuideDesc)
+  textbox:SetLineSpace(TEXTBOX_LINE_SPACE.SMALL)
+  textbox.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(textbox, FONT_COLOR.BLACK)
+  function window:OnEnter()
+    guideContent:Show(true)
+  end
+  window:SetHandler("OnEnter", window.OnEnter)
+  function window:OnLeave()
+    guideContent:Show(false)
+  end
+  window:SetHandler("OnLeave", window.OnLeave)
+  function guideContent:OnShow()
+    self:SetScaleAnimation(0.3, 1, 0.1, 0.1, "RIGHT")
+    self:SetAlphaAnimation(0, 1, 0.1, 0.1)
+    self:SetStartAnimation(true, true)
+  end
+  guideContent:SetHandler("OnShow", guideContent.OnShow)
+  return window
+end
+function CreateSaveWindow(id, parent)
+  local window = CreateEmptyWindow(id, parent)
+  window:Show(true)
+  window:SetExtent(205, 42)
+  local bg = window:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.REMNANTS, "background")
+  bg:SetCoords(384, 305, 290, 61)
+  bg:AddAnchor("TOPLEFT", window, -sideMargin / 2, -sideMargin / 2)
+  bg:AddAnchor("BOTTOMRIGHT", window, sideMargin / 2, sideMargin / 2)
+  bg:SetColor(1, 1, 1, 0.7)
+  local temporarilySave = window:CreateChildWidget("button", "temporarilySave", 0, true)
+  temporarilySave:AddAnchor("LEFT", window, 0, 0)
+  temporarilySave:SetText(locale.characterCreate.temporarilySave)
+  ApplyButtonSkin(temporarilySave, BUTTON_BASIC.DEFAULT)
+  temporarilySave.style:SetSnap(true)
+  window.saveButton = temporarilySave
+  window.cnt = 0
+  function temporarilySave:OnClick(arg)
+    if arg == "LeftButton" and window.cnt < 5 then
+      window.cnt = window.cnt + 1
+      X2Customizer:SaveCurrentParam(window.cnt)
+      SetBGHighlighted(window.stepButton[window.cnt], true)
+      window.stepButton[window.cnt]:Enable(true)
+    end
+  end
+  temporarilySave:SetHandler("OnClick", temporarilySave.OnClick)
+  function temporarilySave:OnEnter()
+    SetTargetAnchorTooltip(locale.characterCreate.descTemporarilySave, "BOTTOMRIGHT", self, "TOPLEFT", 10, 10)
+  end
+  temporarilySave:SetHandler("OnEnter", temporarilySave.OnEnter)
+  function temporarilySave:OnLeave()
+    HideTooltip()
+  end
+  temporarilySave:SetHandler("OnLeave", temporarilySave.OnLeave)
+  local stepWindow = window:CreateChildWidget("label", "stepWindow", 0, true)
+  stepWindow:SetExtent(120, 35)
+  stepWindow:AddAnchor("RIGHT", window, 0, 0)
+  window.stepButton = {}
+  for i = 1, 5 do
+    do
+      local stepButton = window:CreateChildWidget("button", "stepButton" .. i, 0, true)
+      stepButton:AddAnchor("LEFT", stepWindow, (i - 1) * 23, 0)
+      ApplyButtonSkin(stepButton, BUTTON_LOGINSTAGE.STEP_CIRCLE)
+      stepButton:SetExtent(20, 20)
+      window.stepButton[i] = stepButton
+      function stepButton:OnClick()
+        parent:ClearSelectedItem()
+        X2Customizer:LoadSavedParam(i)
+        SetCustomItemToParam(FACE, nil, false, false)
+        UpdateDetails()
+      end
+      stepButton:SetHandler("OnClick", stepButton.OnClick)
+    end
+  end
+  function window:ResetData()
+    window.cnt = 0
+    for i = 1, 5 do
+      SetBGHighlighted(window.stepButton[i], false)
+      window.stepButton[i]:Enable(false)
+    end
+  end
+  return window
+end
+local function CreateHideCostumeWnd(id, parent)
+  local wnd = parent:CreateChildWidget("emptywidget", id, 0, true)
+  wnd:SetHeight(50)
+  local bg = wnd:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.REMNANTS, "background")
+  bg:SetCoords(440, 243, 346, 62)
+  bg:SetColor(0, 0, 0, 1)
+  bg:AddAnchor("TOPLEFT", wnd, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", wnd, 0, 0)
+  local chk = CreateCheckButton("chk", wnd, X2Locale:LocalizeUiText(COMMON_TEXT, "hide_cosplay"))
+  chk:AddAnchor("LEFT", wnd, 30, 0)
+  chk.textButton.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.XLARGE)
+  chk.textButton:SetAutoResize(true)
+  SetButtonFontColor(chk.textButton, GetSoftCheckButtonFontColor())
+  wnd.chk = chk
+  wnd:SetWidth(chk:GetWidth() + chk.textButton:GetWidth() + sideMargin * 3)
+  return wnd
+end
+local function CreateBottomMemu(id, parent)
+  local window = parent:CreateChildWidget("emptywidget", id, 0, true)
+  local cancelBtn = window:CreateChildWidget("button", "cancelBtn", 0, true)
+  cancelBtn:AddAnchor("BOTTOMLEFT", window, 0, 0)
+  ApplyButtonSkinTable(cancelBtn, BUTTON_BEAUTYSHOP.EXIT)
+  local resetBtn = window:CreateChildWidget("button", "resetBtn", 0, true)
+  resetBtn:AddAnchor("LEFT", cancelBtn, "RIGHT", 0, 0)
+  ApplyButtonSkinTable(resetBtn, BUTTON_BEAUTYSHOP.RESET)
+  local confirmBtn = window:CreateChildWidget("button", "confirmBtn", 0, true)
+  confirmBtn:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+  ApplyButtonSkinTable(confirmBtn, BUTTON_BEAUTYSHOP.CONFIRM)
+  local hideCostumeWnd = CreateHideCostumeWnd("hideCostumeWnd", window)
+  hideCostumeWnd:AddAnchor("BOTTOM", window, 0, -sideMargin)
+  local guide = CreateCustomMouseGuide("guide", window)
+  guide:AddAnchor("BOTTOMRIGHT", hideCostumeWnd, "BOTTOMLEFT", -sideMargin / 2, 0)
+  return window
+end
+local CreateIconWindow = function(id, index, parent)
+  local window = parent:CreateChildWidget("emptywidget", id, index, true)
+  local iconImg = window:CreateImageDrawable("ui/no_select", "background")
+  iconImg:AddAnchor("TOPLEFT", window, 0, 0)
+  iconImg:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+  window.iconImg = iconImg
+  local colorImg = window:CreateColorDrawable(1, 1, 1, 1, "background")
+  colorImg:AddAnchor("TOPLEFT", window, 2, 2)
+  colorImg:AddAnchor("BOTTOMRIGHT", window, -2, -2)
+  window.colorImg = colorImg
+  local newIcon = window:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.BEAUTYSHOP, "overlay")
+  newIcon:SetTextureInfo("new")
+  newIcon:AddAnchor("TOPLEFT", window, 0, 0)
+  newIcon:SetVisible(false)
+  window.newIcon = newIcon
+  local hotIcon = window:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.BEAUTYSHOP, "overlay")
+  hotIcon:SetTextureInfo("special")
+  hotIcon:AddAnchor("TOPLEFT", window, 0, 0)
+  hotIcon:SetVisible(false)
+  window.hotIcon = hotIcon
+  return window
+end
+local function CreateCosmeticDetailsWindow(id, parent, width)
+  local window = parent:CreateChildWidget("emptywidget", id, 0, true)
+  window:SetExtent(width, 315)
+  window.child = {}
+  function CreateCosmeticDeatilsItem(id, index, parent)
+    local window = parent:CreateChildWidget("emptywidget", id, index, true)
+    window:SetExtent(78, 50)
+    local chk = CreateCheckButton("chk", window, nil)
+    chk:AddAnchor("LEFT", window, 0, 0)
+    chk:SetChecked(false)
+    window.chk = chk
+    window.icons = {}
+    for i = 1, 3 do
+      local icon = CreateIconWindow("icon", i, window)
+      SetCosmeticDetailsIconFunction(icon, parent)
+      if i == 1 then
+        icon:SetExtent(ICON_SIZE.DEFAULT, ICON_SIZE.DEFAULT)
+        local coords = beautyShopCommonLocale.slotBg.cosmetic
+        icon.iconImg:SetCoords(coords[1], coords[2], coords[3], coords[4])
+        icon:AddAnchor("LEFT", chk, "RIGHT", 0, 0)
+        icon.coords = coords
+      elseif i == 2 then
+        icon:SetExtent(20, 20)
+        local coords = beautyShopCommonLocale.slotBg.mini
+        icon.iconImg:SetCoords(coords[1], coords[2], coords[3], coords[4])
+        icon:AddAnchor("BOTTOMLEFT", window.icons[1], "BOTTOMRIGHT", -5, 2)
+        icon.coords = coords
+      else
+        icon:SetExtent(20, 20)
+        local coords = beautyShopCommonLocale.slotBg.mini
+        icon.iconImg:SetCoords(coords[1], coords[2], coords[3], coords[4])
+        icon:AddAnchor("TOPLEFT", window.icons[1], "TOPRIGHT", -5, -2)
+        icon.coords = coords
+      end
+      window.icons[i] = icon
+    end
+    function chk:CheckBtnCheckChagnedProc(checked)
+      for i = 1, #window.icons do
+        local icon = window.icons[i]
+        if icon.style ~= nil then
+          icon:SetValueToModel(checked)
+        end
+      end
+      parent:UpdateCheckBox()
+    end
+    function window:Update()
+      local changed = false
+      local result1 = self.icons[1]:Update()
+      local result2 = self.icons[2]:Update()
+      local result3 = self.icons[3]:Update()
+      if result1 or result2 or result3 then
+        self.chk:SetChecked(true, false)
+        self.chk:Show(true)
+      else
+        self.chk:SetChecked(false, false)
+        self.chk:Show(false)
+      end
+    end
+    return window
+  end
+  for i = 1, MAX_TAB_TYPE do
+    local wnd = window:CreateChildWidget("emptywidget", "child", i, true)
+    wnd:SetExtent(width, 60)
+    wnd.type = i
+    if i == 1 then
+      wnd:AddAnchor("TOPLEFT", window, 0, sideMargin / 3)
+    else
+      wnd:AddAnchor("TOPLEFT", window.child[i - 1], "BOTTOMLEFT", 0, 0)
+    end
+    local label = wnd:CreateChildWidget("label", "label", 0, true)
+    label:SetExtent(65, beautyShopCommonLocale.detailWndFontSize)
+    label:AddAnchor("LEFT", wnd, sideMargin / 2, 0)
+    label.style:SetFontSize(beautyShopCommonLocale.detailWndFontSize)
+    label.style:SetColor(FONT_COLOR.DEFAULT[1], FONT_COLOR.DEFAULT[2], FONT_COLOR.DEFAULT[3], FONT_COLOR.DEFAULT[4])
+    label.style:SetAlign(ALIGN_LEFT)
+    label:SetText(locale.characterCreate.adornStyleList[i])
+    if i ~= MAX_TAB_TYPE then
+      local line = CreateLine(wnd, "TYPE1")
+      line:SetColor(1, 1, 1, 0.5)
+      line:AddAnchor("TOPLEFT", wnd, "BOTTOMLEFT", sideMargin / 2, 0)
+      line:AddAnchor("TOPRIGHT", wnd, "BOTTOMRIGHT", -sideMargin / 2, 0)
+    end
+    wnd.items = {}
+    wnd.items[1] = CreateCosmeticDeatilsItem("item", 1, wnd)
+    wnd.items[1]:AddAnchor("LEFT", label, "RIGHT", 0, 0)
+    wnd.items[2] = CreateCosmeticDeatilsItem("item", 2, wnd)
+    wnd.items[2]:AddAnchor("LEFT", wnd.items[1], "RIGHT", 2, 0)
+    window.child[i] = wnd
+  end
+  return window
+end
+local PLASTIC_TEXTURE_COORD = {
+  beautyShopCommonLocale.plasticIcon.none,
+  beautyShopCommonLocale.plasticIcon.eye,
+  beautyShopCommonLocale.plasticIcon.nose,
+  beautyShopCommonLocale.plasticIcon.lip,
+  beautyShopCommonLocale.plasticIcon.face_shape
+}
+function CreatePlasticDetailsWindow(id, parent, width)
+  local window = parent:CreateChildWidget("emptywidget", id, 0, true)
+  window:SetExtent(width, 315)
+  window.child = {}
+  local function CreatePlasticDeatilsItem(id, parent)
+    local window = parent:CreateChildWidget("emptywidget", id, 0, true)
+    window:SetExtent(65, 50)
+    local chk = CreateCheckButton("chk", window, nil)
+    chk:AddAnchor("LEFT", window, 0, 0)
+    chk:SetChecked(false)
+    window.chk = chk
+    local wnd = window:CreateChildWidget("emptywidget", "iconWnd", 0, true)
+    wnd:SetExtent(ICON_SIZE.DEFAULT, ICON_SIZE.DEFAULT)
+    wnd:AddAnchor("LEFT", chk, "RIGHT", 0, 0)
+    local icon = wnd:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.BEAUTYSHOP, "background")
+    local coords = beautyShopCommonLocale.slotBg.plastic
+    icon:SetCoords(coords[1], coords[2], coords[3], coords[4])
+    icon:AddAnchor("TOPLEFT", wnd, 0, 0)
+    icon:AddAnchor("BOTTOMRIGHT", wnd, 0, 0)
+    window.icon = icon
+    function chk:CheckBtnCheckChagnedProc(checked)
+      SetModifierToModel(parent.type, checked)
+      parent:UpdateCheckBox()
+    end
+    function window:Update()
+      local type = parent.type
+      local result = IsModifierChanged(type)
+      if result then
+        local coord = PLASTIC_TEXTURE_COORD[type]
+        icon:SetTexture(LOGIN_STAGE_TEXTURE_PATH.BEAUTYSHOP)
+        icon:SetCoords(coord[1], coord[2], coord[3], coord[4])
+      else
+        icon:SetTexture(LOGIN_STAGE_TEXTURE_PATH.BEAUTYSHOP)
+        local coords = beautyShopCommonLocale.slotBg.plastic
+        icon:SetCoords(coords[1], coords[2], coords[3], coords[4])
+      end
+      chk:Show(result)
+      chk:SetChecked(result, false)
+    end
+    return window
+  end
+  for i = 1, 4 do
+    local wnd = window:CreateChildWidget("emptywidget", "child", i, true)
+    wnd:SetExtent(width, 60)
+    wnd.type = i + 1
+    if i == 1 then
+      wnd:AddAnchor("TOPLEFT", window, 0, sideMargin / 2)
+    else
+      wnd:AddAnchor("TOPLEFT", window.child[i - 1], "BOTTOMLEFT", 0, 0)
+    end
+    if i ~= 4 then
+      local line = CreateLine(wnd, "TYPE1")
+      line:SetColor(1, 1, 1, 0.5)
+      line:AddAnchor("TOPLEFT", wnd, "BOTTOMLEFT", sideMargin / 2, 0)
+      line:AddAnchor("TOPRIGHT", wnd, "BOTTOMRIGHT", -sideMargin / 2, 0)
+    end
+    local label = wnd:CreateChildWidget("label", "label", 0, true)
+    label:SetExtent(65, beautyShopCommonLocale.detailWndFontSize)
+    label:AddAnchor("LEFT", wnd, sideMargin / 2, 0)
+    label.style:SetFontSize(beautyShopCommonLocale.detailWndFontSize)
+    label.style:SetColor(FONT_COLOR.DEFAULT[1], FONT_COLOR.DEFAULT[2], FONT_COLOR.DEFAULT[3], FONT_COLOR.DEFAULT[4])
+    label.style:SetAlign(ALIGN_LEFT)
+    label:SetText(locale.characterCreate.customPartList[wnd.type])
+    wnd.item = CreatePlasticDeatilsItem("item", wnd)
+    wnd.item:AddAnchor("RIGHT", wnd, -5, 0)
+    window.child[i] = wnd
+  end
+  return window
+end
+local function CreateDetailsWindow(id, parent)
+  local window = CreateWindow(id, parent)
+  window:SetExtent(430, 550)
+  window:SetTitle(locale.beautyshop.detailsTitle)
+  window:SetSounds("cosmetic_details")
+  local childs = {}
+  local contentWidth = window:GetWidth() - sideMargin * 2
+  local cosmetic = CreateCosmeticDetailsWindow("cosmetic", window, contentWidth * 0.62)
+  cosmetic:AddAnchor("TOPLEFT", window, sideMargin, 70)
+  table.insert(childs, cosmetic)
+  local bg = CreateContentBackground(cosmetic, "TYPE2")
+  bg:AddAnchor("TOPLEFT", cosmetic, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", cosmetic, 0, 0)
+  ApplyTextureColor(bg, TEXTURE_COLOR.BOX_RED)
+  local cosmeticApply = CreateCheckButton("cosmeticApply", window, "")
+  cosmeticApply:AddAnchor("BOTTOMLEFT", cosmetic, "TOPLEFT", 5, -5)
+  cosmeticApply:SetChecked(false)
+  cosmeticApply.textButton.style:SetFontSize(FONT_SIZE.LARGE)
+  cosmeticApply.textButton:SetText(locale.beautyshop.cosmeticSwitch)
+  window.cosmeticApply = cosmeticApply
+  table.insert(childs, cosmeticApply.textButton)
+  local plastic = CreatePlasticDetailsWindow("plastic", window, contentWidth * 0.38)
+  plastic:AddAnchor("TOPLEFT", cosmetic, "TOPRIGHT", 0, 0)
+  local bg = CreateContentBackground(plastic, "TYPE2")
+  bg:AddAnchor("TOPLEFT", plastic, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", plastic, 0, 0)
+  ApplyTextureColor(bg, TEXTURE_COLOR.BOX_BLUE)
+  local plasticApply = CreateCheckButton("plasticApply", window, "")
+  plasticApply:AddAnchor("BOTTOMLEFT", plastic, "TOPLEFT", 5, -5)
+  plasticApply:SetChecked(false)
+  window.plasticApply = plasticApply
+  plasticApply.textButton.style:SetFontSize(FONT_SIZE.LARGE)
+  plasticApply.textButton:SetText(locale.beautyshop.plasticSwitch)
+  local itemNotice = window:CreateChildWidget("label", "itemNotice", 0, true)
+  itemNotice:SetExtent(contentWidth, FONT_SIZE.MIDDLE)
+  itemNotice:AddAnchor("TOPLEFT", cosmetic, "BOTTOMLEFT", 0, sideMargin / 2)
+  ApplyTextColor(itemNotice, FONT_COLOR.DEFAULT)
+  table.insert(childs, itemNotice)
+  local itemIconButton = CreateItemIconButton(window:GetId() .. ".itemIconButton", window)
+  itemIconButton:AddAnchor("TOP", itemNotice, "BOTTOM", 0, sideMargin / 2)
+  itemIconButton.stack.style:SetAlign(ALIGN_CENTER)
+  itemIconButton.stack.style:SetFontSize(FONT_SIZE.MIDDLE)
+  itemIconButton.stack:SetNumberOnly(false)
+  itemIconButton.stack:RemoveAllAnchors()
+  itemIconButton.stack:AddAnchor("BOTTOM", itemIconButton, 0, -10)
+  window.itemIconButton = itemIconButton
+  table.insert(childs, itemIconButton)
+  local warning = window:CreateChildWidget("textbox", "warning", 0, true)
+  warning:AddAnchor("TOP", itemIconButton, "BOTTOM", 0, 8)
+  warning:SetWidth(contentWidth)
+  warning:SetText(locale.beautyshop.warning)
+  warning:AddAnchor("TOP", itemIconButton, "BOTTOM", 0, sideMargin / 2)
+  warning.style:SetColor(FONT_COLOR.GRAY[1], FONT_COLOR.GRAY[2], FONT_COLOR.GRAY[3], FONT_COLOR.GRAY[4])
+  warning.style:SetAlign(ALIGN_CENTER)
+  warning:SetHeight(warning:GetTextHeight())
+  table.insert(childs, warning)
+  local continueBtn = window:CreateChildWidget("button", "continueBtn", 0, true)
+  continueBtn:AddAnchor("BOTTOMLEFT", window, sideMargin, -sideMargin)
+  continueBtn:SetText(locale.beautyshop.continue)
+  ApplyButtonSkin(continueBtn, BUTTON_BASIC.DEFAULT)
+  local confirmBtn = window:CreateChildWidget("button", "confirmBtn", 0, true)
+  confirmBtn:AddAnchor("BOTTOMRIGHT", window, -sideMargin, -sideMargin)
+  confirmBtn:SetText(locale.beautyshop.confirm)
+  ApplyButtonSkin(confirmBtn, BUTTON_BASIC.DEFAULT)
+  local buttonTable = {continueBtn, confirmBtn}
+  AdjustBtnLongestTextWidth(buttonTable)
+  table.insert(childs, confirmBtn)
+  local height = titleMargin + sideMargin
+  for i = 1, #childs do
+    height = height + childs[i]:GetHeight()
+    if i ~= #childs then
+      height = height + sideMargin / 2
+    end
+  end
+  window:SetHeight(height)
+  return window
+end
+function CreateBeautyShopWindow(id, parent)
+  local window = CreateEmptyWindow(id, "UIParent")
+  window:AddAnchor("TOPLEFT", "UIParent", 0, 0)
+  window:AddAnchor("BOTTOMRIGHT", "UIParent", 0, 0)
+  local modelView = window:CreateChildWidget("modelview", "modelView", 0, true)
+  modelView:AddAnchor("TOPLEFT", window, 0, 0)
+  modelView:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+  modelView:SetModelViewBackground("ui/beautyshop/bg.dds")
+  modelView:SetTextureSize(SCREEN_WIDTH, SCREEN_HEIGHT)
+  modelView:SetModelViewExtent(SCREEN_WIDTH, SCREEN_HEIGHT)
+  modelView:SetModelViewCoords(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
+  modelView:SetFov(20)
+  SetModelViewFunction(modelView, window)
+  local OnScale = function(self)
+    self:AddAnchor("TOPLEFT", "UIParent", 0, 0)
+    self:AddAnchor("BOTTOMRIGHT", "UIParent", 0, 0)
+  end
+  window:SetHandler("OnScale", OnScale)
+  local plasticWnd = CreatePlasticWindow("plasticWnd", window)
+  plasticWnd:AddAnchor("TOPRIGHT", window, 0, 0)
+  plasticWnd:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+  plasticWnd:SetBeautyShopStyle()
+  local cosmeticWnd = CreateCosmeticWindow("cosmeticWnd", window, true)
+  cosmeticWnd:AddAnchor("TOPLEFT", window, 0, 0)
+  cosmeticWnd:SetBeautyShopStyle()
+  local bottomMenu = CreateBottomMemu("bottomMenu", window)
+  bottomMenu:AddAnchor("BOTTOMLEFT", window, 0, 0)
+  bottomMenu:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+  SetBottomMenuFunction(bottomMenu, window)
+  local details = CreateDetailsWindow("details", window)
+  details:AddAnchor("CENTER", plasticWnd, 0, 0)
+  details:Show(false)
+  window.details = details
+  SetDetailsFunction(details, window)
+  local featureSet = X2Player:GetFeatureSet()
+  if featureSet.beautyshopBypass then
+    local customSaveLoadWnd = CreateCustomSaveLoadWindow("customSaveLoadWnd", plasticWnd)
+    customSaveLoadWnd:AddAnchor("BOTTOMRIGHT", window, -10, -80)
+    plasticWnd.customSaveWnd = customSaveLoadWnd
+  end
+  return window
+end

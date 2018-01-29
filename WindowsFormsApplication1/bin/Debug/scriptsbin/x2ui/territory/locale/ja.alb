@@ -1,0 +1,6 @@
+if X2Util:GetGameProvider() == GAMEON then
+  territoryLocale.territoryTab = {
+    listCtrlFontSize = FONT_SIZE.SMALL,
+    listCtrlFontAlign = ALIGN_TOP_LEFT
+  }
+end

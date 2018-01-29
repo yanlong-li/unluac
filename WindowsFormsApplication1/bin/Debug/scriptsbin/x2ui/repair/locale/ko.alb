@@ -1,0 +1,10 @@
+if repairLocale == nil then
+  repairLocale = {}
+end
+repairLocale.width = {partDesc = 150}
+repairLocale.anchor = {
+  partRepairButtonX = 0,
+  partRepairWindowX = 20,
+  allRepairCostX = 0,
+  leftMoneyY = 10
+}

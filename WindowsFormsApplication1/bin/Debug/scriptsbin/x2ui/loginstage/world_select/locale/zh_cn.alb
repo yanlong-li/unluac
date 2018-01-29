@@ -1,0 +1,104 @@
+if X2Util:GetGameProvider() == TENCENT then
+  worldSelectLocale.titleCoords = {
+    303,
+    434,
+    123,
+    26
+  }
+  worldSelectLocale.worldList = {
+    extent = {383, 300},
+    columnWidth = {
+      100,
+      80,
+      100,
+      80
+    },
+    columnInset = {
+      0,
+      0,
+      0,
+      13
+    },
+    raceCongestionIcon = {
+      check = {
+        252,
+        489,
+        46,
+        21
+      },
+      high = {
+        206,
+        468,
+        46,
+        21
+      },
+      middle = {
+        252,
+        468,
+        46,
+        21
+      },
+      low = {
+        206,
+        489,
+        46,
+        21
+      }
+    },
+    raceTypeIcon = {
+      {
+        298,
+        491,
+        22,
+        21
+      },
+      {
+        0,
+        0,
+        0,
+        0
+      },
+      {
+        0,
+        0,
+        0,
+        0
+      },
+      {
+        320,
+        491,
+        22,
+        21
+      },
+      {
+        364,
+        491,
+        22,
+        21
+      },
+      {
+        342,
+        491,
+        22,
+        21
+      },
+      {
+        0,
+        0,
+        0,
+        0
+      },
+      {
+        0,
+        0,
+        0,
+        0
+      }
+    }
+  }
+  worldSelectLocale.integrationWorldInfo = {}
+  worldSelectLocale.newWorldInfo = {}
+  worldSelectLocale.notifyIndex = nil
+  worldSelectLocale.combatWorldInfo = {}
+  worldSelectLocale.showWorldDescriptionInfo = {}
+end

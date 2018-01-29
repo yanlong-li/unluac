@@ -1,0 +1,155 @@
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+local WIDTH = housingLocale.maintainWndWidth
+PREPAY_ABLE_COUNT = 5
+function SetViewOfMaintainHousingFrame(id, parent)
+  local window = CreateWindow(id, parent)
+  window:Show(false)
+  window:EnableHidingIsRemove(true)
+  window:AddAnchor("CENTER", parent, 0, 0)
+  function window:UpdateTitle(name)
+    window:SetTitle(name)
+  end
+  local contentWidth = WIDTH - MARGIN.WINDOW_SIDE * 2
+  local contentUpper = window:CreateChildWidget("textbox", "contentUpper", 0, true)
+  contentUpper:Show(true)
+  contentUpper:SetExtent(contentWidth, 60)
+  contentUpper:AddAnchor("TOPLEFT", window, sideMargin, titleMargin)
+  contentUpper:SetInset(10, 0, 10, 0)
+  contentUpper:SetLineSpace(7)
+  contentUpper.style:SetAlign(ALIGN_LEFT)
+  contentUpper.style:SetSnap(true)
+  ApplyTextColor(contentUpper, FONT_COLOR.DEFAULT)
+  local furnitureCount = window:CreateChildWidget("textbox", "furnitureCount", 0, true)
+  furnitureCount:SetExtent(contentWidth, FONT_SIZE.MIDDLE)
+  furnitureCount:SetInset(10, 0, 10, 0)
+  furnitureCount:AddAnchor("TOPLEFT", contentUpper, "BOTTOMLEFT", 0, 7)
+  furnitureCount.style:SetAlign(ALIGN_LEFT)
+  furnitureCount.style:SetSnap(true)
+  ApplyTextColor(furnitureCount, FONT_COLOR.DEFAULT)
+  local guide = CreateGuideIconWidget(furnitureCount)
+  furnitureCount.guide = guide
+  local decoActabilityButton = furnitureCount:CreateChildWidget("button", "decoActabilityButton", 0, true)
+  decoActabilityButton:SetText(locale.housing.maintainWindow.acatbilityUp)
+  ApplyButtonSkin(decoActabilityButton, BUTTON_BASIC.DEFAULT)
+  decoActabilityButton:AddAnchor("BOTTOMRIGHT", furnitureCount, -5, 0)
+  local contentTaxInfo = window:CreateChildWidget("textbox", "contentTaxInfo", 0, true)
+  contentTaxInfo:Show(false)
+  contentTaxInfo:SetExtent(contentWidth, 50)
+  contentTaxInfo:AddAnchor("TOP", furnitureCount, "BOTTOM", 0, sideMargin)
+  contentTaxInfo:SetInset(10, 0, 10, 0)
+  contentTaxInfo:SetLineSpace(7)
+  contentTaxInfo.style:SetAlign(ALIGN_LEFT)
+  contentTaxInfo.style:SetSnap(true)
+  ApplyTextColor(contentTaxInfo, FONT_COLOR.DEFAULT)
+  local guideIcon = CreateTaxInfoGuideIcon(contentTaxInfo)
+  guideIcon:AddAnchor("TOPRIGHT", contentTaxInfo, -5, -3)
+  contentTaxInfo.guideIcon = guideIcon
+  local prepayButton = contentTaxInfo:CreateChildWidget("button", "prepayButton", 0, true)
+  prepayButton:Show(false)
+  prepayButton:SetText(GetUIText(COMMON_TEXT, "prepay"))
+  ApplyButtonSkin(prepayButton, BUTTON_BASIC.DEFAULT)
+  prepayButton:AddAnchor("TOPRIGHT", contentTaxInfo, -5, guideIcon:GetHeight() + 2)
+  local bg = CreateContentBackground(contentUpper, "TYPE2")
+  bg:AddAnchor("TOPLEFT", contentUpper, -5, -sideMargin / 1.5)
+  bg:AddAnchor("BOTTOMRIGHT", contentUpper, 5, sideMargin / 1.5)
+  ApplyTextureColor(bg, TEXTURE_COLOR.BOX_BROWN)
+  contentUpper.bg = bg
+  local deco_img = window:CreateImageDrawable("ui/housing/house.dds", "artwork")
+  window.deco_img = deco_img
+  local line = CreateLine(contentUpper, "TYPE1")
+  line:SetVisible(false)
+  line:SetExtent(contentWidth, 3)
+  line:SetColor(1, 1, 1, 0.4)
+  line:AddAnchor("CENTER", contentUpper, 0, 10)
+  window.line = line
+  local permissionsWindow = window:CreateChildWidget("window", "permissionsWindow", 0, true)
+  permissionsWindow:Show(true)
+  permissionsWindow:SetExtent(contentWidth, 60)
+  permissionsWindow:SetTitleInset(3, 0, 0, 0)
+  permissionsWindow:AddAnchor("TOPLEFT", contentTaxInfo, "BOTTOMLEFT", 0, sideMargin)
+  permissionsWindow:SetTitleText(locale.housing.choicePermission)
+  permissionsWindow.titleStyle:SetSnap(true)
+  permissionsWindow.titleStyle:SetAlign(ALIGN_TOP_LEFT)
+  permissionsWindow.titleStyle:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.LARGE)
+  ApplyTitleFontColor(permissionsWindow, FONT_COLOR.TITLE)
+  local checkButtonTexts = locale.housing.permissions
+  local firstOffset = {}
+  firstOffset.x = 5
+  firstOffset.y = 25
+  local checkBoxes = CreateRadioButton(window:GetId() .. ".checkBoxes", permissionsWindow, 4, "horizen", firstOffset, 130, checkButtonTexts)
+  for i = 1, #checkBoxes do
+    if i == 3 then
+      checkBoxes[i]:RemoveAllAnchors()
+      checkBoxes[i]:AddAnchor("TOPLEFT", permissionsWindow, 5, 45)
+    elseif i == 4 then
+      checkBoxes[i]:RemoveAllAnchors()
+      checkBoxes[i]:AddAnchor("TOPLEFT", permissionsWindow, 150, 45)
+    end
+  end
+  window.checkBoxes = checkBoxes
+  local function OnEnter()
+    ShowTextTooltip(window.checkBoxes[1].textButton, nil, X2Locale:LocalizeUiText(HOUSING_TEXT, "closed_condition_tip"))
+  end
+  window.checkBoxes[1].textButton:SetHandler("OnEnter", OnEnter)
+  local OnLeave = function()
+    HideTextTooltip()
+  end
+  window.checkBoxes[1].textButton:SetHandler("OnLeave", OnLeave)
+  local furnitureCheckbox = CreateCheckButton(window:GetId() .. ".furnitureCheckbox", window, locale.housing.furnitureLock)
+  furnitureCheckbox:Show(false)
+  furnitureCheckbox:AddAnchor("TOPLEFT", permissionsWindow, "BOTTOMLEFT", 6, sideMargin / 1.3)
+  window.furnitureCheckbox = furnitureCheckbox
+  local warningText = window:CreateChildWidget("textbox", "warningText", 0, true)
+  warningText:Show(false)
+  warningText:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  warningText:SetExtent(contentWidth, 30)
+  warningText:SetInset(3, 0, 10, 0)
+  warningText:AddAnchor("TOPLEFT", furnitureCheckbox, "BOTTOMLEFT", -6, sideMargin / 1.3)
+  warningText.style:SetSnap(true)
+  warningText.style:SetAlign(ALIGN_TOP_LEFT)
+  ApplyTextColor(warningText, FONT_COLOR.RED)
+  local changeNameButton = window:CreateChildWidget("button", "changeNameButton", 0, true)
+  changeNameButton:SetText(locale.housing.maintainWindow.changeName)
+  ApplyButtonSkin(changeNameButton, BUTTON_BASIC.DEFAULT)
+  changeNameButton:AddAnchor("BOTTOMLEFT", window, sideMargin, -sideMargin)
+  local buyButton = window:CreateChildWidget("button", "buyButton", 0, true)
+  buyButton:SetText(X2Locale:LocalizeUiText(STORE_TEXT, "buyAll"))
+  ApplyButtonSkin(buyButton, BUTTON_BASIC.DEFAULT)
+  buyButton:AddAnchor("BOTTOMLEFT", window, sideMargin, -sideMargin)
+  local okButton = window:CreateChildWidget("button", "okButton", 0, true)
+  okButton:SetText(locale.pet.okButton)
+  ApplyButtonSkin(okButton, BUTTON_BASIC.DEFAULT)
+  okButton:AddAnchor("BOTTOMRIGHT", window, -sideMargin, -sideMargin)
+  local demolishImgButton = window:CreateChildWidget("button", "demolishImgButton", 0, true)
+  demolishImgButton:Show(true)
+  ApplyButtonSkin(demolishImgButton, BUTTON_BASIC.HOUSING_DEMOLISH)
+  demolishImgButton:Enable(false)
+  if X2House:IsCastle() and X2House:IsMyHouse() then
+    demolishImgButton:Enable(true)
+  end
+  demolishImgButton:AddAnchor("BOTTOMRIGHT", window, -sideMargin, -sideMargin)
+  local registerSellImgButton = window:CreateChildWidget("button", "registerSellImgButton", 0, true)
+  registerSellImgButton:Show(true)
+  ApplyButtonSkin(registerSellImgButton, BUTTON_BASIC.HOUSING_SALE)
+  local featureSet = X2Player:GetFeatureSet()
+  if featureSet.packageDemolish then
+    local packageDemolishImgButton = window:CreateChildWidget("button", "packageDemolishImgButton", 0, true)
+    packageDemolishImgButton:Show(false)
+    ApplyButtonSkin(packageDemolishImgButton, BUTTON_BASIC.HOUSING_DEMOLISH_PACKAGE)
+    packageDemolishImgButton:AddAnchor("RIGHT", demolishImgButton, "LEFT", 1, 0)
+    registerSellImgButton:AddAnchor("RIGHT", packageDemolishImgButton, "LEFT", 1, 0)
+  else
+    registerSellImgButton:AddAnchor("RIGHT", demolishImgButton, "LEFT", 1, 0)
+  end
+  if featureSet.rebuildHouse then
+    local rebuildButton = window:CreateChildWidget("button", "rebuildButton", 0, true)
+    rebuildButton:SetText(GetUIText(COMMON_TEXT, "rebuild_housing"))
+    ApplyButtonSkin(rebuildButton, BUTTON_BASIC.DEFAULT)
+    rebuildButton:AddAnchor("BOTTOMLEFT", changeNameButton, "BOTTOMRIGHT", 0, 0)
+    local buttonTable = {changeNameButton, rebuildButton}
+    AdjustBtnLongestTextWidth(buttonTable)
+  end
+  local buttonTable = {buyButton, okButton}
+  AdjustBtnLongestTextWidth(buttonTable)
+  return window
+end

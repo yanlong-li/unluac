@@ -1,0 +1,228 @@
+function DrawMinusDingbat(money_window_widget)
+  local minusDingbat = money_window_widget:CreateImageDrawable(TEXTURE_PATH.MONEY_WINDOW, "overlay")
+  minusDingbat:SetCoords(219, 0, 20, 8)
+  minusDingbat:SetExtent(20, 8)
+  minusDingbat:AddAnchor("LEFT", money_window_widget, 5, -2)
+end
+function SetViewOfTwoLineMoneyWindow(id, parent)
+  local window = CreateEmptyWindow(id, parent)
+  window:SetExtent(108, 45)
+  local goldLabel = window:CreateChildWidget("label", "goldLabel", 0, true)
+  goldLabel:SetExtent(108, 20)
+  goldLabel:AddAnchor("TOPLEFT", window, 0, 0)
+  goldLabel:SetNumberOnly(true)
+  goldLabel:SetInset(0, 0, 31, 0)
+  ApplyTextColor(goldLabel, FONT_COLOR.BLACK)
+  goldLabel.style:SetAlign(ALIGN_RIGHT)
+  local bg = goldLabel:CreateImageDrawable(TEXTURE_PATH.MONEY_WINDOW, "background")
+  bg:SetCoords(0, 0, 190, 29)
+  bg:AddAnchor("TOPLEFT", goldLabel, 0, -2)
+  bg:AddAnchor("BOTTOMRIGHT", goldLabel, 0, 2)
+  local goldIcon = DrawMoneyIcon(goldLabel, "gold")
+  goldIcon:AddAnchor("RIGHT", goldLabel, -13, 0)
+  window.goldIcon = goldIcon
+  local silverLabel = window:CreateChildWidget("label", "silverLabel", 0, true)
+  silverLabel:SetExtent(54, 20)
+  silverLabel:AddAnchor("TOPLEFT", goldLabel, "BOTTOMLEFT", 0, 5)
+  silverLabel:SetNumberOnly(true)
+  silverLabel:SetInset(0, 0, 31, 0)
+  ApplyTextColor(silverLabel, FONT_COLOR.BLACK)
+  silverLabel.style:SetAlign(ALIGN_RIGHT)
+  local bg = goldLabel:CreateImageDrawable(TEXTURE_PATH.MONEY_WINDOW, "background")
+  bg:SetCoords(0, 0, 190, 29)
+  bg:AddAnchor("TOPLEFT", silverLabel, 0, -2)
+  bg:AddAnchor("BOTTOMRIGHT", silverLabel, 1, 2)
+  local silverIcon = DrawMoneyIcon(silverLabel, "silver")
+  silverIcon:AddAnchor("RIGHT", silverLabel, -13, 0)
+  window.silverIcon = silverIcon
+  local copperLabel = window:CreateChildWidget("label", "copperLabel", 0, true)
+  copperLabel:SetExtent(54, 20)
+  copperLabel:AddAnchor("TOPRIGHT", goldLabel, "BOTTOMRIGHT", 0, 5)
+  copperLabel:SetNumberOnly(true)
+  copperLabel:SetInset(0, 0, 31, 0)
+  ApplyTextColor(copperLabel, FONT_COLOR.BLACK)
+  copperLabel.style:SetAlign(ALIGN_RIGHT)
+  local bg = goldLabel:CreateImageDrawable(TEXTURE_PATH.MONEY_WINDOW, "background")
+  bg:SetCoords(0, 0, 190, 29)
+  bg:AddAnchor("TOPLEFT", copperLabel, -1, -2)
+  bg:AddAnchor("BOTTOMRIGHT", copperLabel, 0, 2)
+  local copperIcon = DrawMoneyIcon(copperLabel, "copper")
+  copperIcon:AddAnchor("RIGHT", copperLabel, -13, 0)
+  window.copperIcon = copperIcon
+  return window
+end
+function SetViewOfTwoLineAAPointWindow(id, parent)
+  local window = CreateEmptyWindow(id, parent)
+  window:SetExtent(108, 45)
+  local goldLabel = window:CreateChildWidget("label", "goldLabel", 0, true)
+  goldLabel:SetExtent(108, 20)
+  goldLabel:AddAnchor("TOPLEFT", window, 0, 0)
+  goldLabel:SetNumberOnly(true)
+  goldLabel:SetInset(0, 0, 31, 0)
+  ApplyTextColor(goldLabel, FONT_COLOR.BLACK)
+  goldLabel.style:SetAlign(ALIGN_RIGHT)
+  local bg = goldLabel:CreateImageDrawable(TEXTURE_PATH.MONEY_WINDOW, "background")
+  bg:SetCoords(0, 0, 190, 29)
+  bg:AddAnchor("TOPLEFT", goldLabel, 0, -2)
+  bg:AddAnchor("BOTTOMRIGHT", goldLabel, 0, 2)
+  local goldIcon = DrawMoneyIcon(goldLabel, "aapointGold")
+  goldIcon:AddAnchor("RIGHT", goldLabel, -13, 0)
+  window.goldIcon = goldIcon
+  local silverLabel = window:CreateChildWidget("label", "silverLabel", 0, true)
+  silverLabel:SetExtent(54, 20)
+  silverLabel:AddAnchor("TOPLEFT", goldLabel, "BOTTOMLEFT", 0, 5)
+  silverLabel:SetNumberOnly(true)
+  silverLabel:SetInset(0, 0, 31, 0)
+  ApplyTextColor(silverLabel, FONT_COLOR.BLACK)
+  silverLabel.style:SetAlign(ALIGN_RIGHT)
+  local bg = goldLabel:CreateImageDrawable(TEXTURE_PATH.MONEY_WINDOW, "background")
+  bg:SetCoords(0, 0, 190, 29)
+  bg:AddAnchor("TOPLEFT", silverLabel, 0, -2)
+  bg:AddAnchor("BOTTOMRIGHT", silverLabel, 1, 2)
+  local silverIcon = DrawMoneyIcon(silverLabel, "aapointSilver")
+  silverIcon:AddAnchor("RIGHT", silverLabel, -13, 0)
+  window.silverIcon = silverIcon
+  local copperLabel = window:CreateChildWidget("label", "copperLabel", 0, true)
+  copperLabel:SetExtent(54, 20)
+  copperLabel:AddAnchor("TOPRIGHT", goldLabel, "BOTTOMRIGHT", 0, 5)
+  copperLabel:SetNumberOnly(true)
+  copperLabel:SetInset(0, 0, 31, 0)
+  ApplyTextColor(copperLabel, FONT_COLOR.BLACK)
+  copperLabel.style:SetAlign(ALIGN_RIGHT)
+  local bg = goldLabel:CreateImageDrawable(TEXTURE_PATH.MONEY_WINDOW, "background")
+  bg:SetCoords(0, 0, 190, 29)
+  bg:AddAnchor("TOPLEFT", copperLabel, -1, -2)
+  bg:AddAnchor("BOTTOMRIGHT", copperLabel, 0, 2)
+  local copperIcon = DrawMoneyIcon(copperLabel, "aapointCopper")
+  copperIcon:AddAnchor("RIGHT", copperLabel, -13, 0)
+  window.copperIcon = copperIcon
+  return window
+end
+function SetViewOfMoneyWindow2(id, parent, useBackground)
+  local widget = UIParent:CreateWidget("gametooltip", id, parent)
+  widget.style:SetSnap(true)
+  ApplyTextColor(widget, FONT_COLOR.BLUE)
+  if useBackground == true then
+    local bg = widget:CreateImageDrawable(TEXTURE_PATH.MONEY_WINDOW, "background")
+    bg:SetCoords(0, 0, 190, 29)
+    bg:SetColor(1, 1, 1, 1)
+    bg:AddAnchor("TOPLEFT", widget, 0, 0)
+    bg:AddAnchor("BOTTOMRIGHT", widget, 0, 0)
+  end
+  return widget
+end
+function SetViewOfTitleMoneyWindow(id, parent, titleText, direction, newLayout)
+  local window = CreateEmptyWindow(id, parent)
+  window:Show(true)
+  local title = window:CreateChildWidget("label", "title", 0, true)
+  title:SetText(GetUIText(REPAIR_TEXT, "myMoney"))
+  title:SetHeight(FONT_SIZE.MIDDLE)
+  title.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(title, FONT_COLOR.TITLE)
+  local money = window:CreateChildWidget("textbox", "money", 0, true)
+  money:Show(true)
+  money:SetHeight(30)
+  money.style:SetAlign(ALIGN_RIGHT)
+  ApplyTextColor(money, FONT_COLOR.TITLE)
+  local bg
+  if newLayout then
+    bg = CreateContentBackground(window, "TYPE2")
+  else
+    bg = money:CreateImageDrawable(TEXTURE_PATH.MONEY_WINDOW, "background")
+    bg:SetHeight(29)
+    bg:SetCoords(0, 0, 190, 29)
+    bg:SetColor(1, 1, 1, 0.8)
+  end
+  window.bg = bg
+  function window:NotUseTitle()
+    self.bg:RemoveAllAnchors()
+    self.bg:AddAnchor("LEFT", window, -5, 0)
+    self.bg:AddAnchor("BOTTOMRIGHT", window, 20, 0)
+  end
+  function window:SetDirection(direction)
+    if direction == nil then
+      direction = "horizon"
+    end
+    self.direction = direction
+    if newLayout then
+      self.bg:RemoveAllAnchors()
+      self.bg:AddAnchor("TOPLEFT", window, 0, 0)
+      self.bg:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+      self.title:RemoveAllAnchors()
+      self.title:AddAnchor("LEFT", window, 10, 0)
+      self.money:RemoveAllAnchors()
+      self.money:AddAnchor("LEFT", self.title, "RIGHT", 0)
+      self.money:AddAnchor("RIGHT", self, -10, 0)
+      self:SetExtent(237, 30)
+      return
+    end
+    if direction == "horizon" then
+      self.money:RemoveAllAnchors()
+      self.money:AddAnchor("RIGHT", self, 0, 0)
+      self.title:RemoveAllAnchors()
+      self.title:AddAnchor("LEFT", window, 0, 0)
+      self.bg:AddAnchor("LEFT", title, 25, -5)
+      self.bg:AddAnchor("BOTTOMRIGHT", money, 20, 0)
+      self:SetExtent(215, 30)
+    elseif direction == "vertical" then
+      self.money:RemoveAllAnchors()
+      self.money:AddAnchor("TOPLEFT", self.title, "BOTTOMLEFT", 0, 2)
+      self.money:AddAnchor("BOTTOMRIGHT", self, 0, 0)
+      self.title:RemoveAllAnchors()
+      self.title:AddAnchor("TOPLEFT", window, 0, 0)
+      self:SetExtent(160, 45)
+      self.bg:AddAnchor("TOPLEFT", money, -5, 0)
+      self.bg:AddAnchor("BOTTOMRIGHT", money, 20, 0)
+    end
+  end
+  window:SetDirection(direction)
+  function window:SetTitle(titleText)
+    if titleText == "" then
+      self.title:Show(false)
+      return
+    end
+    if titleText == nil then
+      titleText = GetUIText(REPAIR_TEXT, "myMoney")
+    end
+    self.title:Show(true)
+    self.title:SetText(titleText)
+    self.titleText = titleText
+    if self.direction == "horizon" then
+      self.title.style:SetEllipsis(false)
+      self.title:SetWidth(self.title.style:GetTextWidth(titleText))
+    elseif self.direction == "vertical" then
+      self.title.style:SetEllipsis(true)
+      local titleWidth = self.title.style:GetTextWidth(titleText) + 5
+      if titleWidth > self:GetWidth() then
+        titleWidth = self:GetWidth()
+      end
+      self.title:SetWidth(titleWidth)
+    end
+  end
+  window:SetTitle(titleText)
+  return window
+end
+function SetViewOfTitlePeaceTaxMoneyWindow(id, parent, titleText)
+  local window = CreateEmptyWindow(id, parent)
+  window:Show(false)
+  local title = window:CreateChildWidget("label", "title", 0, true)
+  title:Show(true)
+  title:SetExtent(40, 29)
+  title:SetAutoResize(true)
+  title.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(title, FONT_COLOR.YELLOW)
+  if titleText == nil then
+    title:SetText(locale.territory.peaceMoney)
+  else
+    title:SetText(titleText)
+  end
+  local money = window:CreateChildWidget("textbox", "money", 0, true)
+  money:Show(true)
+  money:SetExtent(160, 29)
+  money:SetText("")
+  money.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(money, FONT_COLOR.YELLOW)
+  title:AddAnchor("TOPLEFT", window, 0, 0)
+  money:AddAnchor("LEFT", title, "RIGHT", 5, 0)
+  return window
+end

@@ -1,0 +1,123 @@
+function siegeSystemAlarmWindow:OnUpdate(dt)
+  self.showingTime = dt + self.showingTime
+  if self.showingTime > 5000 then
+    self:Show(false, 1000)
+    self:ReleaseHandler("OnUpdate")
+  end
+end
+function siegeSystemAlarmWindow:UpdateSiegeSchedule(zoneGroupType, periodName, zoneGroupName, defenseName, offenseName, team, onEvent, isMyInfo, action)
+  if X2Quest:IsQuestDirectingMode() == true then
+    return false
+  end
+  if isMyInfo == nil then
+    isMyInfo = false
+  end
+  local isPeacePeriod = periodName == "siege_period_peace" or periodName == "siege_period_auction"
+  if not isMyInfo and not isPeacePeriod then
+    return false
+  end
+  self.periodName = periodName
+  local isShowStatus = true
+  if onEvent == false and isPeacePeriod then
+    isShowStatus = false
+  end
+  local siegeInfoText = ""
+  local defenseWin
+  local function GetConfrontationStr()
+    if team == "defense_team" then
+      return string.format("%s%s %s%s %s%s", FONT_COLOR_HEX.SKYBLUE, defenseName, FONT_COLOR_HEX.WHITE, locale.dominion.spaceVs, FONT_COLOR_HEX.RED, offenseName)
+    elseif team == "offense_team" then
+      return string.format("%s%s %s%s %s%s", FONT_COLOR_HEX.RED, offenseName, FONT_COLOR_HEX.WHITE, locale.dominion.spaceVs, FONT_COLOR_HEX.SKYBLUE, defenseName)
+    end
+  end
+  if periodName == "siege_period_declare" then
+    if not onEvent then
+      return false
+    end
+    if action == "siege_period_declare" then
+      return false
+    end
+    siegeInfoText = locale.dominion.GetDeclareActionStatusMsg(action, offenseName, zoneGroupName)
+  elseif periodName == "siege_period_warmup" or periodName == "siege_period_siege" then
+    if isShowStatus then
+      siegeInfoText = locale.dominion.GetSiegeMsgForAlarm(periodName, zoneGroupName, onEvent)
+      siegeInfoText = string.format([[
+%s
+%s]], siegeInfoText, GetConfrontationStr())
+    end
+  elseif periodName == "siege_period_peace" then
+    local ownerExpedition = X2Dominion:GetOwnerExpeditionName(zoneGroupType)
+    if defenseName == ownerExpedition then
+      defenseWin = true
+      if isMyInfo then
+        siegeInfoText = ""
+      else
+        siegeInfoText = X2Locale:LocalizeUiText(DOMINION, "alarm_dominion_win_defense", defenseName)
+      end
+    elseif offenseName == ownerExpedition then
+      defenseWin = false
+      if isMyInfo then
+        siegeInfoText = locale.dominion.engravingSucceed(self.engravingName)
+      else
+        siegeInfoText = X2Locale:LocalizeUiText(DOMINION, "alarm_dominion_win_offense", offenseName)
+      end
+    end
+  else
+    return false
+  end
+  self:SetFontColor(period, team, defenseWin)
+  self:SetInfo(periodName, siegeInfoText)
+  self:SetLayoutSiegeSchedule(periodName, action, team, onEvent, isMyInfo, defenseWin)
+  self:Show(true)
+  self:SetHandler("OnUpdate", self.OnUpdate)
+  self.showingTime = 0
+  self.engravingName = nil
+  return true
+end
+function siegeSystemAlarmWindow:ReinforcementsArrived(reinforcementsExpeditionName)
+  if X2Quest:IsQuestDirectingMode() == true then
+    return false
+  end
+  local message = locale.dominion.GetReinforcementsArrived(reinforcementsExpeditionName)
+  self:SetInfoReinforcement(message)
+  self:SetLayoutReinforcement()
+  self:Show(true)
+  self:SetHandler("OnUpdate", self.OnUpdate)
+  self.showingTime = 0
+  return true
+end
+function siegeSystemAlarmWindow:AlertGuardTower(status)
+  if X2Quest:IsQuestDirectingMode() == true then
+    return false
+  end
+  local message = locale.dominion.GetGuardTowerStatusMsg(status)
+  self:SetInfoGuardTower(message)
+  self:SetLayoutGuardTower(status)
+  self:Show(true)
+  self:SetHandler("OnUpdate", self.OnUpdate)
+  self.showingTime = 0
+  return true
+end
+function siegeSystemAlarmWindow:AlertEngraving(status, name)
+  if X2Quest:IsQuestDirectingMode() == true then
+    return false
+  end
+  local message = locale.dominion.GetEngravingStatusMsg(status, name)
+  self:SetInfoEngraving(status, message)
+  self:SetLayoutEngraving(status)
+  self:Show(true)
+  self:SetHandler("OnUpdate", self.OnUpdate)
+  self.showingTime = 0
+  return true
+end
+function siegeSystemAlarmWindow:DeclareTerritory(str)
+  if X2Quest:IsQuestDirectingMode() == true then
+    return false
+  end
+  self:SetInfoDeclareTerritor(str)
+  self:SetLayoutDeclareTerritory()
+  self:Show(true)
+  self:SetHandler("OnUpdate", self.OnUpdate)
+  self.showingTime = 0
+  return true
+end

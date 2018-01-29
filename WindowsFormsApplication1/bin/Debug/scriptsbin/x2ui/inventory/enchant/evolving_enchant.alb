@@ -1,0 +1,570 @@
+function CreateEvolvingEnchantWindow(tabWindow)
+  local MAX_MATERIAL = 2
+  local TAB_INDEX = {EVOLVING = 1, EVOLVING_REROLL = 2}
+  SetViewOfEvolvingEnchantWindow(tabWindow)
+  local selAttrIndex = 1
+  local info = {
+    leftButtonStr = GetUIText(COMMON_TEXT, "evolving"),
+    leftButtonLeftClickFunc = function()
+      LockUnvisibleTab()
+      X2ItemEnchant:Execute(selAttrIndex)
+    end,
+    rightButtonLeftClickFunc = function()
+      if X2ItemEnchant:IsWorkingEnchant() then
+        X2ItemEnchant:StopEnchanting()
+      else
+        X2ItemEnchant:LeaveItemEnchantMode()
+      end
+    end
+  }
+  CreateWindowDefaultTextButtonSet(tabWindow, info)
+  tabWindow.leftButton:Enable(false)
+  tabWindow.attrListWindow = nil
+  local listCtrl = tabWindow.listCtrl
+  local radioButtons = tabWindow.listCtrl.radioButtons
+  local attrInfoStr = tabWindow.attrInfoStr
+  local listButton = tabWindow.listButton
+  local GetSubMenuChangedInfo = function(index)
+    if index == nil or index ~= 1 and index ~= 2 then
+      return
+    end
+    local info = {}
+    if index == 1 then
+      info.targetText = GetUIText(COMMON_TEXT, "growth_item")
+      info.targetAnchor = {26, 10}
+      info.enchantAnchor = {-20, 3}
+      info.leftButtonStr = GetUIText(COMMON_TEXT, "evolving")
+    elseif index == 2 then
+      info.targetText = GetUIText(COMMON_TEXT, "socket_enchant_equipment")
+      info.targetAnchor = {47, 10}
+      info.enchantAnchor = {-47, 10}
+      info.leftButtonStr = GetUIText(COMMON_TEXT, "replacement")
+    end
+    return info
+  end
+  function tabWindow.tabSubMenu:OnClickProc(index)
+    local info = GetSubMenuChangedInfo(index)
+    tabWindow.slotTargetItem.label:SetText(info.targetText)
+    tabWindow.evolvingDeco:SetVisible(false)
+    tabWindow.RerollDeco:SetVisible(false)
+    tabWindow.slotFirstMaterialItem.bg:SetVisible(false)
+    tabWindow.slotFirstMaterialItem.reRollBg:SetVisible(false)
+    tabWindow.slotSecondMaterialItem:Show(false)
+    tabWindow.slotFirstMaterialItem.label:Show(false)
+    tabWindow.slotSecondMaterialItem.label:Show(false)
+    tabWindow.slotTargetItem:RemoveAllAnchors()
+    tabWindow.slotFirstMaterialItem:RemoveAllAnchors()
+    tabWindow.leftButton:SetText(info.leftButtonStr)
+    if index == TAB_INDEX.EVOLVING then
+      X2ItemEnchant:SwitchItemEnchantEvolvingMode()
+      tabWindow.evolvingDeco:SetVisible(true)
+      tabWindow.slotFirstMaterialItem.bg:SetVisible(true)
+      tabWindow.slotSecondMaterialItem:Show(true)
+      tabWindow.slotSecondMaterialItem.label:Show(true)
+      tabWindow.slotTargetItem:AddAnchor("RIGHT", tabWindow.evolvingDeco, "LEFT", info.targetAnchor[1], info.targetAnchor[2])
+      tabWindow.slotFirstMaterialItem:AddAnchor("CENTER", tabWindow.slotFirstMaterialItem.bg, info.enchantAnchor[1], info.enchantAnchor[2])
+      tabWindow.guide:Show(true)
+    elseif index == TAB_INDEX.EVOLVING_REROLL then
+      X2ItemEnchant:SwitchItemEnchantEvolvingReRollMode()
+      tabWindow.RerollDeco:SetVisible(true)
+      tabWindow.slotFirstMaterialItem.reRollBg:SetVisible(true)
+      tabWindow.slotFirstMaterialItem.label:Show(true)
+      tabWindow.slotTargetItem:AddAnchor("RIGHT", tabWindow.RerollDeco, "LEFT", info.targetAnchor[1], info.targetAnchor[2])
+      tabWindow.slotFirstMaterialItem:AddAnchor("LEFT", tabWindow.RerollDeco, "RIGHT", info.enchantAnchor[1], info.enchantAnchor[2])
+      tabWindow.guide:Show(false)
+    end
+    tabWindow.index = index
+  end
+  local OnEnter = function(self)
+    SetTooltip(GetUIText(COMMON_TEXT, "evolving_guide"), self)
+  end
+  tabWindow.guide:SetHandler("OnEnter", OnEnter)
+  local function UpdateAttrList()
+    if tabWindow.attrListWindow == nil then
+      return
+    end
+    if not tabWindow.attrListWindow:IsVisible() then
+      return
+    end
+    local isEvolvingMode = tabWindow.index == TAB_INDEX.EVOLVING and true or false
+    tabWindow.attrListWindow:UpdateAttrList(isEvolvingMode, selAttrIndex)
+  end
+  local function ListButtonLeftClickFunc(button, show)
+    if show == nil then
+      if tabWindow.attrListWindow == nil then
+        show = true
+      else
+        show = not tabWindow.attrListWindow:IsVisible()
+      end
+    end
+    if show then
+      if tabWindow.attrListWindow == nil then
+        tabWindow.attrListWindow = CreateAttrListWindow("tabWindow.attrListWindow", "UIParent")
+      end
+      local function OnHide()
+        tabWindow.attrListWindow = nil
+      end
+      tabWindow.attrListWindow:SetHandler("OnHide", OnHide)
+      local target = GetEnchantWindow()
+      tabWindow.attrListWindow:AddAnchor("TOPLEFT", target, "TOPRIGHT", 0, 0)
+      local isEvolvingMode = tabWindow.index == TAB_INDEX.EVOLVING and true or false
+      tabWindow.attrListWindow:UpdateAttrList(isEvolvingMode, selAttrIndex)
+    end
+    if tabWindow.attrListWindow ~= nil then
+      tabWindow.attrListWindow:Show(show)
+    end
+  end
+  ButtonOnClickHandler(listButton, ListButtonLeftClickFunc)
+  local targetReqExp = 0
+  local targetCurExp = 0
+  local targetPercent = 0
+  local targetGrade = -1
+  local function UpdateTargetItemName(itemName)
+    if targetGrade == nil or itemName == nil then
+      tabWindow.name:SetHeight(FONT_SIZE.LARGE)
+      tabWindow.name:Show(false)
+      return
+    end
+    local gradeStr = GetTargetItemGradeStr(false)
+    if gradeStr == nil then
+      return
+    end
+    local str = string.format("%s %s", gradeStr, itemName)
+    tabWindow.name:Show(true)
+    tabWindow.name:SetText(str)
+    tabWindow.name:SetHeight(tabWindow.name:GetTextHeight())
+  end
+  function tabWindow.slotTargetItem:Update()
+    local itemInfo = X2ItemEnchant:GetTargetItemInfo()
+    UpdateSlot(self, itemInfo, true)
+    tabWindow.slotFirstMaterialItem:Enable(itemInfo ~= nil)
+    tabWindow.slotSecondMaterialItem:Enable(itemInfo ~= nil)
+    listCtrl:DeleteAllDatas()
+    tabWindow.targetCurExpGuage:SetValue(0)
+    if itemInfo ~= nil then
+      local evolvingInfo = itemInfo.evolvingInfo
+      targetReqExp = evolvingInfo.sectionExp
+      targetCurExp = evolvingInfo.curExp
+      targetGrade = itemInfo.itemGrade
+      targetPercent = evolvingInfo.percent
+      tabWindow.slotFirstMaterialItem:ApplyAlpha(1)
+      UpdateTargetItemName(itemInfo.name)
+      tabWindow.targetCurExpGuage:SetMinMaxValues(0, evolvingInfo.sectionExp)
+      tabWindow.targetCurExpGuage:SetValue(evolvingInfo.curExp)
+      local color = X2Item:GradeColor(itemInfo.itemGrade)
+      color = Hex2Dec(color)
+      tabWindow.targetCurExpGuage:SetBarColor(color)
+      return true
+    else
+      local alpha = 0
+      if tabWindow.index == 1 then
+        alpha = 0.5
+      elseif tabWindow.index == 2 then
+        alpha = 1
+      end
+      tabWindow.slotFirstMaterialItem:ApplyAlpha(alpha)
+      UpdateTargetItemName()
+      targetReqExp = 0
+      targetCurExp = 0
+      targetGrade = -1
+      return false
+    end
+  end
+  SetTargetItemClickFunc(tabWindow.slotTargetItem)
+  function tabWindow.slotFirstMaterialItem:Update()
+    local itemInfo
+    if tabWindow.index == 1 then
+      itemInfo = X2ItemEnchant:GetFirstMaterialItemInfo()
+    elseif tabWindow.index == 2 then
+      itemInfo = X2ItemEnchant:GetEnchantItemInfo()
+    end
+    UpdateSlot(self, itemInfo, true)
+    if itemInfo ~= nil then
+      tabWindow.slotTargetItem:Update()
+      return true
+    else
+      return false
+    end
+  end
+  local function SetFirstMaterialItemClickFunc(firstMaterialItemWidget)
+    local function SlotFirstMaterialItemLeftClickFunc(self)
+      if X2Cursor:GetCursorPickedBagItemIndex() ~= 0 then
+        if tabWindow.index == 1 then
+          X2ItemEnchant:SetFirstMaterialItemSlotFromPick()
+        elseif tabWindow.index == 2 then
+          X2ItemEnchant:SetEnchantItemSlotFromPick()
+        end
+      end
+    end
+    local function SlotFirstMaterialItemRightClickFunc(self)
+      if tabWindow.index == 1 then
+        X2ItemEnchant:ClearFirstMaterialItemSlot()
+      elseif tabWindow.index == 2 then
+        X2ItemEnchant:ClearEnchantItemSlot()
+      end
+    end
+    ButtonOnClickHandler(firstMaterialItemWidget, SlotFirstMaterialItemLeftClickFunc, SlotFirstMaterialItemRightClickFunc)
+  end
+  SetFirstMaterialItemClickFunc(tabWindow.slotFirstMaterialItem)
+  function tabWindow.slotSecondMaterialItem:Update()
+    local itemInfo = X2ItemEnchant:GetSecondMaterialItemInfo()
+    UpdateSlot(self, itemInfo, true)
+    if itemInfo ~= nil then
+      tabWindow.slotTargetItem:Update()
+      return true
+    else
+      return false
+    end
+  end
+  local SetSecondMaterialItemClickFunc = function(secondMaterialItemWidget)
+    local SlotSecondMaterialItemLeftClickFunc = function(self)
+      if X2Cursor:GetCursorPickedBagItemIndex() ~= 0 then
+        X2ItemEnchant:SetSecondMaterialItemSlotFromPick()
+      end
+    end
+    local SlotSecondMaterialItemRightClickFunc = function(self)
+      X2ItemEnchant:ClearSecondMaterialItemSlot()
+    end
+    ButtonOnClickHandler(secondMaterialItemWidget, SlotSecondMaterialItemLeftClickFunc, SlotSecondMaterialItemRightClickFunc)
+  end
+  SetSecondMaterialItemClickFunc(tabWindow.slotSecondMaterialItem)
+  local function UpdateAttrInfoString()
+    local str = ""
+    if tabWindow.index == 2 or selAttrIndex ~= 1 then
+      local fColdata = listCtrl:GetDataByViewIndex(selAttrIndex, 1)
+      if fColdata == nil then
+        return
+      end
+      local sColdata
+      if tabWindow.index == 1 then
+        sColdata = listCtrl:GetDataByViewIndex(selAttrIndex, 2)
+        if sColdata == nil then
+          return
+        end
+      elseif tabWindow.index == 2 then
+        sColdata = listCtrl:GetDataByViewIndex(selAttrIndex, 3)
+        if sColdata == nil then
+          return
+        end
+        sColdata = GetModifierCalcValue(sColdata.name, sColdata.value)
+      end
+      str = baselibLocale:ChangeSequenceOfWord("%s %s", string.format("%s %s", locale.attribute(fColdata.value), sColdata), GetUIText(COMMON_TEXT, "replacement"))
+    end
+    if tabWindow.index == 1 then
+      local addiableCount = X2ItemEnchant:GetEvolvingAddibleRndAttrCount()
+      if addiableCount > 0 then
+        str = SetEnterString(str, GetUIText(COMMON_TEXT, "expected_add_one_attr", tostring(addiableCount)))
+      end
+    end
+    attrInfoStr:SetText(str)
+    attrInfoStr:SetHeight(attrInfoStr:GetTextHeight())
+  end
+  function radioButtons:RadioBtnCheckChangedProc()
+    if tabWindow.index == 1 and X2ItemEnchant:GetEvolvingEnableGradeupCount() <= 0 then
+      return
+    end
+    local index = self:GetChecked()
+    selAttrIndex = index
+    UpdateAttrInfoString()
+    UpdateAttrList()
+  end
+  local function UpdateModifierListCtrl(enableLevelup)
+    if enableLevelup == nil then
+      enableLevelup = false
+    end
+    radioButtons:Show(false)
+    attrInfoStr:Show(false)
+    listCtrl:DeleteAllDatas()
+    local maxRow = listCtrl:GetRowCount()
+    for i = 1, maxRow do
+      local items = listCtrl:GetListCtrlItems()
+      if items[i].line ~= nil then
+        items[i].line:SetVisible(false)
+      end
+    end
+    ChangeButtonSkin(listButton, BUTTON_CONTENTS.SEARCH)
+    local itemInfo = X2ItemEnchant:GetTargetItemInfo()
+    if itemInfo == nil then
+      return false
+    end
+    local evolvingInfo = itemInfo.evolvingInfo
+    if evolvingInfo.modifier == nil then
+      return false
+    end
+    local evolvingDiffAttrs = X2ItemEnchant:GetEvolvingDiffAttrs()
+    local unitModifierGroupCount = 0
+    local modifierDiffList = {}
+    local modifierDatas = {}
+    local diffDatas = {}
+    if evolvingDiffAttrs ~= nil then
+      if evolvingDiffAttrs.unitModifierGroupCount ~= nil then
+        unitModifierGroupCount = evolvingDiffAttrs.unitModifierGroupCount
+      end
+      if evolvingDiffAttrs.modifierDiffList ~= nil then
+        modifierDiffList = evolvingDiffAttrs.modifierDiffList
+      end
+    end
+    enableLevelup = enableLevelup and unitModifierGroupCount > 1
+    if enableLevelup then
+      local modifierItem = {
+        name = nil,
+        value = nil,
+        type = nil
+      }
+      table.insert(modifierDatas, modifierItem)
+      for i = 1, #evolvingInfo.modifier do
+        table.insert(modifierDatas, evolvingInfo.modifier[i])
+      end
+      local diffItem = {name = "", value = ""}
+      table.insert(diffDatas, diffItem)
+      for i = 1, #modifierDiffList do
+        table.insert(diffDatas, modifierDiffList[i])
+      end
+      radioButtons:Check(selAttrIndex, true)
+    else
+      modifierDatas = evolvingInfo.modifier
+      diffDatas = modifierDiffList
+    end
+    local visibleCount = maxRow <= #modifierDatas and maxRow or #modifierDatas
+    for i = 1, visibleCount - 1 do
+      local items = listCtrl:GetListCtrlItems()
+      if items[i].line ~= nil then
+        items[i].line:SetVisible(true)
+      end
+    end
+    radioButtons:Show(enableLevelup, #modifierDatas)
+    attrInfoStr:Show(enableLevelup)
+    for i = 1, #modifierDatas do
+      local item = modifierDatas[i]
+      local colData = {
+        enableLevelup = enableLevelup,
+        value = item.name
+      }
+      listCtrl:InsertData(i, 1, colData)
+      if diffDatas ~= nil and #diffDatas > 0 then
+        local valueStr = GetModifierCalcValue(item.name, item.value)
+        listCtrl:InsertData(i, 2, valueStr)
+        local diffItem = diffDatas[i]
+        if diffItem ~= nil and item.name == diffItem.name then
+          local colData = {
+            isDiff = true,
+            name = diffItem.name,
+            value = math.abs(diffItem.value)
+          }
+          listCtrl:InsertData(i, 3, colData)
+        end
+      else
+        listCtrl:InsertData(i, 2, "")
+        local colData = {
+          isDiff = false,
+          name = item.name,
+          value = math.abs(item.value)
+        }
+        listCtrl:InsertData(i, 3, colData)
+      end
+    end
+    if diffDatas ~= nil and #diffDatas > 0 then
+      ChangeButtonSkin(listButton, BUTTON_CONTENTS.SEARCH_GREEN)
+    end
+    return enableLevelup
+  end
+  local function UpdateReRollModifierListCtrl()
+    radioButtons:Show(false)
+    attrInfoStr:Show(false)
+    listCtrl:DeleteAllDatas()
+    local maxRow = listCtrl:GetRowCount()
+    for i = 1, maxRow do
+      local items = listCtrl:GetListCtrlItems()
+      if items[i].line ~= nil then
+        items[i].line:SetVisible(false)
+      end
+    end
+    ChangeButtonSkin(listButton, BUTTON_CONTENTS.SEARCH)
+    local itemInfo = X2ItemEnchant:GetTargetItemInfo()
+    if itemInfo == nil then
+      selAttrIndex = 1
+      return
+    end
+    local evolvingInfo = itemInfo.evolvingInfo
+    if evolvingInfo.modifier == nil then
+      return
+    end
+    local modifierDatas = evolvingInfo.modifier
+    local diffDatas = {}
+    modifierDatas = {}
+    for i = 1, #evolvingInfo.modifier do
+      table.insert(modifierDatas, evolvingInfo.modifier[i])
+    end
+    radioButtons:Check(selAttrIndex, true)
+    local visibleCount = maxRow <= #modifierDatas and maxRow or #modifierDatas
+    for i = 1, visibleCount - 1 do
+      local items = listCtrl:GetListCtrlItems()
+      if items[i].line ~= nil then
+        items[i].line:SetVisible(true)
+      end
+    end
+    attrInfoStr:Show(true)
+    radioButtons:Show(true, #modifierDatas)
+    for i = 1, #modifierDatas do
+      local item = modifierDatas[i]
+      local colData = {
+        enableLevelup = true,
+        value = item.name
+      }
+      listCtrl:InsertData(i, 1, colData)
+      listCtrl:InsertData(i, 2, "")
+      local colData = {
+        isDiff = false,
+        name = item.name,
+        value = math.abs(item.value)
+      }
+      listCtrl:InsertData(i, 3, colData)
+    end
+    if diffDatas ~= nil and #diffDatas > 0 then
+      ChangeButtonSkin(listButton, BUTTON_CONTENTS.SEARCH_GREEN)
+    end
+  end
+  local function UpdateMaterialGuage(firstMaterialInfoExist, secondMaterialInfoExist)
+    tabWindow.materialExpGuage:SetValue(0)
+    tabWindow.nextExpGuage:SetValue(0)
+    tabWindow.expValue:Show(false)
+    if targetReqExp == 0 or targetGrade == -1 then
+      return
+    end
+    if not firstMaterialInfoExist and not secondMaterialInfoExist then
+      return
+    end
+    local GetTooltipStr = function(title, curExp, reqExp, grade, percent)
+      local percent = curExp == 0 and 0 or curExp / reqExp * 100
+      return string.format("%s %d/%d (%s %d%%)", title, curExp, reqExp, X2Item:GradeName(grade), percent)
+    end
+    local tooltip = GetTooltipStr(GetUIText(COMMON_TEXT, "current_exp"), targetCurExp, targetReqExp, targetGrade, targetPercent)
+    local expInfo = X2ItemEnchant:GetEvolvingExpInfo()
+    if expInfo ~= nil then
+      if targetGrade < expInfo.grade then
+        local color = GetTextureInfo(TEXTURE_PATH.COSPLAY_ENCHANT, string.format("grade_%02d", expInfo.grade)):GetColor()
+        tabWindow.nextExpGuage:SetBarColor(color)
+        tabWindow.nextExpGuage:SetMinMaxValues(0, expInfo.sectionExp)
+        tabWindow.nextExpGuage:SetValue(expInfo.calcExp)
+        tabWindow.materialExpGuage:SetMinMaxValues(0, 1)
+        tabWindow.materialExpGuage:SetValue(1)
+      else
+        tabWindow.materialExpGuage:SetMinMaxValues(0, targetReqExp)
+        tabWindow.materialExpGuage:SetValue(expInfo.calcExp)
+      end
+      tooltip = string.format([[
+%s
+%s]], tooltip, GetTooltipStr(GetUIText(COMMON_TEXT, "after_evolving_exp"), expInfo.calcExp, expInfo.sectionExp, expInfo.grade))
+      local color = GetTextureInfo(TEXTURE_PATH.COSPLAY_ENCHANT, string.format("grade_%02d", targetGrade)):GetColor()
+      tabWindow.materialExpGuage:SetBarColor(color)
+    end
+    tabWindow.expValue:Show(true)
+    tabWindow.expValue:SetText(string.format("+%d", expInfo.materialExp or 0))
+    tabWindow.nextExpGuage.tooltip = tooltip
+    if not tabWindow.nextExpGuage:HasHandler("OnEnter") then
+      local OnEnter = function(self)
+        if self.tooltip == nil or self.tooltip == "" then
+          return
+        end
+        SetTooltip(self.tooltip, self)
+      end
+      tabWindow.nextExpGuage:SetHandler("OnEnter", OnEnter)
+    end
+  end
+  function tabWindow:EvolvingModeSlotAllUpdate(isExcutable, isLock)
+    local targetInfoExist = self.slotTargetItem:Update()
+    local firstMaterialInfoExist = self.slotFirstMaterialItem:Update()
+    local secondMaterialInfoExist = self.slotSecondMaterialItem:Update()
+    if not targetInfoExist or not firstMaterialInfoExist and not secondMaterialInfoExist then
+      selAttrIndex = 1
+      self.nextExpGuage.tooltip = nil
+    end
+    local count = 0
+    if firstMaterialInfoExist and secondMaterialInfoExist then
+      count = 2
+    elseif firstMaterialInfoExist or secondMaterialInfoExist then
+      count = 1
+    end
+    local str = string.format("%s (%d/%d)", GetUIText(COMMON_TEXT, "material_item"), count, MAX_MATERIAL)
+    self.slotSecondMaterialItem.label:SetText(str)
+    listButton:Enable(targetInfoExist)
+    if not targetInfoExist then
+      ListButtonLeftClickFunc(listButton, false)
+    end
+    local enableGradeupCount = X2ItemEnchant:GetEvolvingEnableGradeupCount()
+    local enableLevelup = enableGradeupCount > 0
+    UpdateMaterialGuage(firstMaterialInfoExist, secondMaterialInfoExist)
+    enableLevelup = UpdateModifierListCtrl(enableLevelup)
+    self.tip:RemoveAllAnchors()
+    if enableLevelup then
+      ApplyTextColor(self.tip, FONT_COLOR.RED)
+      self.tip:SetText(GetUIText(COMMON_TEXT, "evolving_level_up_tip"))
+      self.tip:AddAnchor("TOP", self.attrInfoStr, "BOTTOM", 0, MARGIN.WINDOW_SIDE)
+    else
+      ApplyTextColor(self.tip, FONT_COLOR.GRAY)
+      self.tip:SetText(GetUIText(COMMON_TEXT, "evolving_tip"))
+      self.tip:AddAnchor("TOP", self.listCtrl, "BOTTOM", 0, MARGIN.WINDOW_SIDE * 3)
+    end
+    local addiableCount = X2ItemEnchant:GetEvolvingAddibleRndAttrCount()
+    if addiableCount > 0 then
+      local str = GetUIText(COMMON_TEXT, "expected_add_one_attr", tostring(addiableCount))
+      attrInfoStr:SetText(str)
+      attrInfoStr:SetHeight(attrInfoStr:GetTextHeight())
+      attrInfoStr:Show(true)
+      ChangeButtonSkin(listButton, BUTTON_CONTENTS.SEARCH_GREEN)
+    end
+    self.tip:SetHeight(self.tip:GetTextHeight())
+    self.slotTargetItem:Enable(not isLock)
+    self.slotFirstMaterialItem:Enable(not isLock)
+    self.slotSecondMaterialItem:Enable(not isLock)
+    radioButtons:Enable(not isLock)
+    self.leftButton:Enable(isExcutable)
+    UpdateAttrInfoString()
+    UpdateAttrList()
+    if isLock then
+      self.slotTargetItem:SetOverlayColor(ICON_BUTTON_OVERLAY_COLOR.BLACK)
+      self.slotFirstMaterialItem:SetOverlayColor(ICON_BUTTON_OVERLAY_COLOR.BLACK)
+      self.slotSecondMaterialItem:SetOverlayColor(ICON_BUTTON_OVERLAY_COLOR.BLACK)
+    else
+      self.slotTargetItem:SetOverlay(self.slotTargetItem:GetInfo())
+      self.slotFirstMaterialItem:SetOverlay(self.slotFirstMaterialItem:GetInfo())
+      self.slotSecondMaterialItem:SetOverlay(self.slotSecondMaterialItem:GetInfo())
+    end
+  end
+  function tabWindow:EvolvingReRollModeSlotAllUpdate(isExcutable, isLock)
+    local targetInfoExist = self.slotTargetItem:Update()
+    self.slotFirstMaterialItem:Update()
+    self.leftButton:Enable(isExcutable)
+    listButton:Enable(targetInfoExist)
+    if not targetInfoExist then
+      ListButtonLeftClickFunc(listButton, false)
+    end
+    UpdateMaterialGuage()
+    UpdateReRollModifierListCtrl(true)
+    self.tip:RemoveAllAnchors()
+    ApplyTextColor(self.tip, FONT_COLOR.GRAY)
+    self.tip:SetText(GetUIText(COMMON_TEXT, "evolving_re_roll_tip"))
+    self.tip:AddAnchor("TOP", self.listCtrl, "BOTTOM", 0, MARGIN.WINDOW_SIDE * 3)
+    self.tip:SetHeight(self.tip:GetTextHeight())
+    self.slotTargetItem:Enable(not isLock)
+    self.slotFirstMaterialItem:Enable(not isLock)
+    radioButtons:Enable(not isLock)
+    self.leftButton:Enable(isExcutable)
+    UpdateAttrInfoString()
+    UpdateAttrList()
+    if isLock then
+      self.slotTargetItem:SetOverlayColor(ICON_BUTTON_OVERLAY_COLOR.BLACK)
+      self.slotFirstMaterialItem:SetOverlayColor(ICON_BUTTON_OVERLAY_COLOR.BLACK)
+    else
+      self.slotTargetItem:SetOverlay(self.slotTargetItem:GetInfo())
+      self.slotFirstMaterialItem:SetOverlay(self.slotFirstMaterialItem:GetInfo())
+    end
+  end
+  function tabWindow:SlotAllUpdate(isExcutable, isLock)
+    if tabWindow.index == 1 then
+      tabWindow:EvolvingModeSlotAllUpdate(isExcutable, isLock)
+    elseif tabWindow.index == 2 then
+      tabWindow:EvolvingReRollModeSlotAllUpdate(isExcutable, isLock)
+    end
+  end
+end

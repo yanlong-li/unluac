@@ -1,0 +1,6017 @@
+LOGIN_BUTTON = {TEXT_IMG_HEIGHT = 35}
+BROWN_BACKGROUND_COORDS = {
+  NORMAL = {
+    811,
+    196,
+    209,
+    73
+  },
+  OVER = {
+    811,
+    275,
+    209,
+    73
+  },
+  CLICK = {
+    811,
+    353,
+    209,
+    73
+  },
+  DISABLE = {
+    811,
+    433,
+    209,
+    73
+  }
+}
+SMALL_BROWN_BACKGROUND_EXTENT = {WIDTH = 171, HEIGHT = 57}
+BIG_BROWN_BACKGROUND_EXTENT = {WIDTH = 238, HEIGHT = 96}
+local SELECT_BACKGROUND = {
+  440,
+  243,
+  347,
+  62
+}
+SELECT_FACE_BACKGROUND = {
+  670,
+  366,
+  124,
+  103
+}
+local SELECT_BACKGROUND_EXTENT = {
+  WIDTH = SELECT_BACKGROUND[3],
+  HEIGHT = SELECT_BACKGROUND[4]
+}
+SELECT_FACE_BACKGROUND_EXTENT = {
+  WIDTH = SELECT_FACE_BACKGROUND[3],
+  HEIGHT = SELECT_FACE_BACKGROUND[4]
+}
+local NUIAN_FEMALE_FACE_TEXUTRE = {
+  NORMAL = {
+    0,
+    0,
+    74,
+    88
+  },
+  OVER = {
+    75,
+    0,
+    74,
+    88
+  },
+  CLICK = {
+    150,
+    0,
+    74,
+    88
+  },
+  DISABLE = {
+    225,
+    0,
+    74,
+    88
+  }
+}
+local NUIAN_FEMALE_FACE_TEXUTRE_EXTENT = {
+  WIDTH = NUIAN_FEMALE_FACE_TEXUTRE.NORMAL[3],
+  HEIGHT = NUIAN_FEMALE_FACE_TEXUTRE.NORMAL[4]
+}
+local NUIAN_MALE_FACE_TEXUTRE = {
+  NORMAL = {
+    0,
+    372,
+    79,
+    89
+  },
+  OVER = {
+    80,
+    372,
+    79,
+    89
+  },
+  CLICK = {
+    160,
+    372,
+    79,
+    89
+  },
+  DISABLE = {
+    240,
+    372,
+    79,
+    89
+  }
+}
+local CHAR_LIST_DRAWABLE_COLOR = {
+  NORMAL = {
+    ConvertColor(151),
+    ConvertColor(189),
+    ConvertColor(215),
+    1
+  },
+  OVER = {
+    ConvertColor(125),
+    ConvertColor(185),
+    ConvertColor(225),
+    1
+  },
+  CLICK = {
+    ConvertColor(104),
+    ConvertColor(158),
+    ConvertColor(195),
+    1
+  },
+  DISABLE = {
+    0.6,
+    0.6,
+    0.6,
+    1
+  }
+}
+local CHAR_LIST_DELETE_DRAWABLE_COLOR = {
+  NORMAL = {
+    ConvertColor(204),
+    ConvertColor(121),
+    ConvertColor(121),
+    1
+  },
+  OVER = {
+    ConvertColor(204),
+    ConvertColor(121),
+    ConvertColor(121),
+    1
+  },
+  CLICK = {
+    ConvertColor(204),
+    ConvertColor(121),
+    ConvertColor(121),
+    1
+  },
+  DISABLE = {
+    0.6,
+    0.6,
+    0.6,
+    1
+  }
+}
+local CHAR_LIST_FACE_DRAWABLE_COLOR = {
+  NORMAL = {
+    ConvertColor(102),
+    ConvertColor(145),
+    ConvertColor(175),
+    1
+  },
+  OVER = {
+    ConvertColor(121),
+    ConvertColor(169),
+    ConvertColor(202),
+    1
+  },
+  CLICK = {
+    ConvertColor(111),
+    ConvertColor(150),
+    ConvertColor(178),
+    1
+  },
+  DISABLE = {
+    0.6,
+    0.6,
+    0.6,
+    1
+  }
+}
+local CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR = {
+  NORMAL = {
+    ConvertColor(175),
+    ConvertColor(102),
+    ConvertColor(102),
+    1
+  },
+  OVER = {
+    ConvertColor(175),
+    ConvertColor(102),
+    ConvertColor(102),
+    1
+  },
+  CLICK = {
+    ConvertColor(175),
+    ConvertColor(102),
+    ConvertColor(102),
+    1
+  },
+  DISABLE = {
+    0.6,
+    0.6,
+    0.6,
+    1
+  }
+}
+local CHAR_LIST_DELETE_FACE_COLOR = {
+  NORMAL = {
+    ConvertColor(175),
+    ConvertColor(102),
+    ConvertColor(102),
+    1
+  },
+  OVER = {
+    ConvertColor(175),
+    ConvertColor(102),
+    ConvertColor(102),
+    1
+  },
+  CLICK = {
+    ConvertColor(175),
+    ConvertColor(102),
+    ConvertColor(102),
+    1
+  },
+  DISABLE = {
+    0.6,
+    0.6,
+    0.6,
+    1
+  }
+}
+local NUIAN_MALE_FACE_TEXUTRE_EXTENT = {
+  WIDTH = NUIAN_MALE_FACE_TEXUTRE.NORMAL[3],
+  HEIGHT = NUIAN_MALE_FACE_TEXUTRE.NORMAL[4]
+}
+local ELF_FEMALE_FACE_TEXUTRE = {
+  NORMAL = {
+    0,
+    89,
+    73,
+    92
+  },
+  OVER = {
+    74,
+    89,
+    73,
+    92
+  },
+  CLICK = {
+    148,
+    89,
+    73,
+    92
+  },
+  DISABLE = {
+    222,
+    89,
+    73,
+    92
+  }
+}
+local ELF_FEMALE_FACE_TEXUTRE_EXTENT = {
+  WIDTH = ELF_FEMALE_FACE_TEXUTRE.NORMAL[3],
+  HEIGHT = ELF_FEMALE_FACE_TEXUTRE.NORMAL[4]
+}
+local ELF_MALE_FACE_TEXUTRE = {
+  NORMAL = {
+    0,
+    462,
+    70,
+    84
+  },
+  OVER = {
+    71,
+    462,
+    70,
+    84
+  },
+  CLICK = {
+    142,
+    462,
+    70,
+    84
+  },
+  DISABLE = {
+    213,
+    462,
+    70,
+    84
+  }
+}
+local ELF_MALE_FACE_TEXUTRE_EXTENT = {
+  WIDTH = ELF_MALE_FACE_TEXUTRE.NORMAL[3],
+  HEIGHT = ELF_MALE_FACE_TEXUTRE.NORMAL[4]
+}
+local FERRE_FEMALE_FACE_TEXUTRE = {
+  NORMAL = {
+    0,
+    182,
+    83,
+    90
+  },
+  OVER = {
+    84,
+    182,
+    83,
+    90
+  },
+  CLICK = {
+    168,
+    182,
+    83,
+    90
+  },
+  DISABLE = {
+    252,
+    182,
+    83,
+    90
+  }
+}
+local FERRE_FEMALE_FACE_TEXUTRE_EXTENT = {
+  WIDTH = FERRE_FEMALE_FACE_TEXUTRE.NORMAL[3],
+  HEIGHT = FERRE_FEMALE_FACE_TEXUTRE.NORMAL[4]
+}
+local FERRE_MALE_FACE_TEXUTRE = {
+  NORMAL = {
+    0,
+    547,
+    79,
+    93
+  },
+  OVER = {
+    80,
+    547,
+    79,
+    93
+  },
+  CLICK = {
+    160,
+    547,
+    79,
+    93
+  },
+  DISABLE = {
+    240,
+    547,
+    79,
+    93
+  }
+}
+local FERRE_MALE_FACE_TEXUTRE_EXTENT = {
+  WIDTH = FERRE_MALE_FACE_TEXUTRE.NORMAL[3],
+  HEIGHT = FERRE_MALE_FACE_TEXUTRE.NORMAL[4]
+}
+local HARIHARAN_FEMALE_FACE_TEXUTRE = {
+  NORMAL = {
+    0,
+    273,
+    72,
+    98
+  },
+  OVER = {
+    73,
+    273,
+    72,
+    98
+  },
+  CLICK = {
+    146,
+    273,
+    72,
+    98
+  },
+  DISABLE = {
+    219,
+    273,
+    72,
+    98
+  }
+}
+local HARIHARAN_FEMALE_FACE_TEXUTRE_EXTENT = {
+  WIDTH = HARIHARAN_FEMALE_FACE_TEXUTRE.NORMAL[3],
+  HEIGHT = HARIHARAN_FEMALE_FACE_TEXUTRE.NORMAL[4]
+}
+local HARIHARAN_MALE_FACE_TEXUTRE = {
+  NORMAL = {
+    0,
+    641,
+    79,
+    93
+  },
+  OVER = {
+    80,
+    641,
+    79,
+    93
+  },
+  CLICK = {
+    160,
+    641,
+    79,
+    93
+  },
+  DISABLE = {
+    240,
+    641,
+    79,
+    93
+  }
+}
+local HARIHARAN_MALE_FACE_TEXUTRE_EXTENT = {
+  WIDTH = HARIHARAN_MALE_FACE_TEXUTRE.NORMAL[3],
+  HEIGHT = HARIHARAN_MALE_FACE_TEXUTRE.NORMAL[4]
+}
+RACE_FACE_BUTTON_EXTENT = {WIDTH = 100, HEIGHT = 123}
+RACE_FACE_BACKGROUND_OFFSET = {X = 5, Y = 6}
+local RACE_FACE_BACKGROUND_NUIAN_COLOR = {
+  NORMAL = {
+    ConvertColor(73),
+    ConvertColor(101),
+    ConvertColor(13),
+    0.5
+  },
+  OVER = {
+    ConvertColor(73),
+    ConvertColor(101),
+    ConvertColor(13),
+    0.7
+  },
+  CLICK = {
+    ConvertColor(73),
+    ConvertColor(101),
+    ConvertColor(13),
+    0.8
+  },
+  DISABLE = {
+    0.5,
+    0.5,
+    0.5,
+    1
+  }
+}
+local RACE_FACE_BACKGROUND_ELF_COLOR = {
+  NORMAL = {
+    ConvertColor(122),
+    ConvertColor(63),
+    ConvertColor(188),
+    0.5
+  },
+  OVER = {
+    ConvertColor(122),
+    ConvertColor(63),
+    ConvertColor(188),
+    0.7
+  },
+  CLICK = {
+    ConvertColor(122),
+    ConvertColor(63),
+    ConvertColor(188),
+    0.8
+  },
+  DISABLE = {
+    0.5,
+    0.5,
+    0.5,
+    1
+  }
+}
+local RACE_FACE_BACKGROUND_FERE_COLOR = {
+  NORMAL = {
+    ConvertColor(57),
+    ConvertColor(115),
+    ConvertColor(175),
+    0.5
+  },
+  OVER = {
+    ConvertColor(10),
+    ConvertColor(115),
+    ConvertColor(175),
+    0.7
+  },
+  CLICK = {
+    ConvertColor(10),
+    ConvertColor(115),
+    ConvertColor(175),
+    0.8
+  },
+  DISABLE = {
+    0.5,
+    0.5,
+    0.5,
+    1
+  }
+}
+local RACE_FACE_BACKGROUND_HARIHARAN_COLOR = {
+  NORMAL = {
+    ConvertColor(231),
+    ConvertColor(195),
+    ConvertColor(49),
+    0.6
+  },
+  OVER = {
+    ConvertColor(231),
+    ConvertColor(195),
+    ConvertColor(49),
+    0.7
+  },
+  CLICK = {
+    ConvertColor(231),
+    ConvertColor(195),
+    ConvertColor(49),
+    0.8
+  },
+  DISABLE = {
+    0.5,
+    0.5,
+    0.5,
+    1
+  }
+}
+PREV_ARROW_TEXUTRE_COORDS = {
+  NORMAL = {
+    691,
+    0,
+    35,
+    57
+  },
+  OVER = {
+    725,
+    0,
+    35,
+    57
+  },
+  CLICK = {
+    691,
+    57,
+    35,
+    57
+  },
+  DISABLE = {
+    725,
+    57,
+    35,
+    57
+  }
+}
+NEXT_ARROW_TEXUTRE_COORDS = {
+  NORMAL = {
+    726,
+    0,
+    -35,
+    57
+  },
+  OVER = {
+    760,
+    0,
+    -35,
+    57
+  },
+  CLICK = {
+    726,
+    57,
+    -35,
+    57
+  },
+  DISABLE = {
+    760,
+    57,
+    -35,
+    57
+  }
+}
+SMALL_ARROW_TEXTURE_EXTENT = {WIDTH = 24, HEIGHT = 27}
+local BIG_ARROW_TEXTURE_EXTENT = {WIDTH = 35, HEIGHT = 57}
+NEXT_ARROW_TEXTURE_OFFSET = {X = 10, Y = 4}
+PREV_ARROW_TEXTURE_OFFSET = {X = 42, Y = -5}
+local CHAR_LIST_FONT_INSET = {LEFT = 105}
+local BRUSH_SHAPE_RACE_COORDS = {
+  0,
+  298,
+  290,
+  169
+}
+local BRUSH_SHAPE_TEXTURE_COORDS = {
+  387,
+  307,
+  288,
+  60
+}
+local GENDER_BACKGROUND_COORDS = {
+  736,
+  305,
+  63,
+  54
+}
+local GENDER_BACKGROUND_EXTENT = {
+  WIDTH = GENDER_BACKGROUND_COORDS[3],
+  HEIGHT = GENDER_BACKGROUND_COORDS[4]
+}
+local GENDER_BACKGROUND_COLOR = {
+  NORMAL = {
+    ConvertColor(48),
+    ConvertColor(176),
+    ConvertColor(236),
+    0.5
+  },
+  OVER = {
+    ConvertColor(48),
+    ConvertColor(176),
+    ConvertColor(236),
+    0.7
+  },
+  CLICK = {
+    ConvertColor(48),
+    ConvertColor(176),
+    ConvertColor(236),
+    1
+  },
+  DISABLE = {
+    0.55,
+    0.55,
+    0.55,
+    1
+  }
+}
+local PRESET_BACKGROUND_TEXTURE_COORDS = {
+  0,
+  0,
+  175,
+  133
+}
+local PRESET_BACKGROUND_TEXTURE_EXTENT = {
+  WIDTH = 175,
+  HEIGHT = PRESET_BACKGROUND_TEXTURE_COORDS[4]
+}
+local PAGE_BUTTON_COLOR = {
+  NORMAL = {
+    ConvertColor(255),
+    ConvertColor(255),
+    ConvertColor(255),
+    1
+  },
+  OVER = {
+    ConvertColor(255),
+    ConvertColor(233),
+    ConvertColor(180),
+    1
+  },
+  CLICK = {
+    ConvertColor(178),
+    ConvertColor(157),
+    ConvertColor(109),
+    1
+  },
+  DISABLE = {
+    ConvertColor(70),
+    ConvertColor(70),
+    ConvertColor(70),
+    1
+  }
+}
+local BEAUTYSHOP_SELECT_TEXTURE_COLOR = {
+  ConvertColor(0),
+  ConvertColor(58),
+  ConvertColor(62),
+  1
+}
+BUTTON_LOGINSTAGE = {
+  EXIT = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coords = {
+        normal = {
+          0,
+          0,
+          109,
+          35
+        },
+        over = {
+          0,
+          35,
+          109,
+          35
+        },
+        click = {
+          0,
+          70,
+          109,
+          35
+        },
+        disable = {
+          0,
+          105,
+          109,
+          35
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 20,
+        y = -1
+      },
+      drawableExtent = {
+        width = 109,
+        height = LOGIN_BUTTON.TEXT_IMG_HEIGHT
+      }
+    }
+  },
+  OPTION = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coords = {
+        normal = {
+          109,
+          0,
+          110,
+          35
+        },
+        over = {
+          109,
+          35,
+          110,
+          35
+        },
+        click = {
+          109,
+          70,
+          110,
+          35
+        },
+        disable = {
+          109,
+          105,
+          110,
+          35
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 15,
+        y = 0
+      },
+      drawableExtent = {
+        width = 110,
+        height = LOGIN_BUTTON.TEXT_IMG_HEIGHT
+      }
+    }
+  },
+  STAFF = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coords = {
+        normal = {
+          365,
+          0,
+          128,
+          35
+        },
+        over = {
+          365,
+          35,
+          128,
+          35
+        },
+        click = {
+          365,
+          70,
+          128,
+          35
+        },
+        disable = {
+          365,
+          105,
+          128,
+          35
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 10,
+        y = -1
+      },
+      drawableExtent = {
+        width = 128,
+        height = LOGIN_BUTTON.TEXT_IMG_HEIGHT
+      }
+    }
+  },
+  REVIEW_MOVIE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coords = {
+        normal = {
+          219,
+          0,
+          146,
+          35
+        },
+        over = {
+          219,
+          35,
+          146,
+          35
+        },
+        click = {
+          219,
+          70,
+          146,
+          35
+        },
+        disable = {
+          219,
+          105,
+          146,
+          35
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 5,
+        y = 0
+      },
+      drawableExtent = {
+        width = 146,
+        height = LOGIN_BUTTON.TEXT_IMG_HEIGHT
+      }
+    }
+  },
+  LOGIN = {
+    drawableType = "drawable",
+    path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+    coords = {
+      normal = BRUSH_SHAPE_TEXTURE_COORDS,
+      over = BRUSH_SHAPE_TEXTURE_COORDS,
+      click = BRUSH_SHAPE_TEXTURE_COORDS,
+      disable = BRUSH_SHAPE_TEXTURE_COORDS
+    },
+    drawableColor = {
+      normal = {
+        ConvertColor(130),
+        ConvertColor(145),
+        ConvertColor(34),
+        0.8
+      },
+      over = {
+        ConvertColor(155),
+        ConvertColor(177),
+        ConvertColor(19),
+        0.7
+      },
+      click = {
+        ConvertColor(125),
+        ConvertColor(144),
+        ConvertColor(15),
+        0.8
+      },
+      disable = {
+        0.6,
+        0.6,
+        0.6,
+        1
+      }
+    },
+    width = 200,
+    height = 65,
+    fontSize = FONT_SIZE.XLARGE,
+    fontPath = FONT_PATH.SNAIL,
+    fontColor = GetLoginStageDefaultFontColor()
+  },
+  WAITING_TO_START = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = 250,
+      height = 100
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = {
+          0,
+          0,
+          0,
+          0
+        },
+        over = {
+          0,
+          0,
+          0,
+          0
+        },
+        click = {
+          0,
+          0,
+          0,
+          0
+        },
+        disable = {
+          0,
+          0,
+          0,
+          0
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 0,
+        y = 0
+      },
+      drawableExtent = {width = 0, height = 0}
+    }
+  },
+  SERVER_SELECT = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coords = {
+        normal = {
+          494,
+          140,
+          85,
+          35
+        },
+        over = {
+          494,
+          175,
+          85,
+          35
+        },
+        click = {
+          494,
+          210,
+          85,
+          35
+        },
+        disable = {
+          494,
+          245,
+          85,
+          35
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 20,
+        y = 0
+      },
+      drawableExtent = {
+        width = 85,
+        height = LOGIN_BUTTON.TEXT_IMG_HEIGHT
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = PREV_ARROW_TEXUTRE_COORDS.NORMAL,
+        over = PREV_ARROW_TEXUTRE_COORDS.OVER,
+        click = PREV_ARROW_TEXUTRE_COORDS.CLICK,
+        disable = PREV_ARROW_TEXUTRE_COORDS.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "BOTTOMLEFT",
+        x = PREV_ARROW_TEXTURE_OFFSET.X,
+        y = PREV_ARROW_TEXTURE_OFFSET.Y
+      },
+      drawableExtent = {
+        width = SMALL_ARROW_TEXTURE_EXTENT.WIDTH,
+        height = SMALL_ARROW_TEXTURE_EXTENT.HEIGHT
+      }
+    }
+  },
+  UI_ADDON = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coords = {
+        normal = {
+          0,
+          140,
+          111,
+          35
+        },
+        over = {
+          0,
+          175,
+          111,
+          35
+        },
+        click = {
+          0,
+          210,
+          111,
+          35
+        },
+        disable = {
+          0,
+          245,
+          111,
+          35
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 15,
+        y = -1
+      },
+      drawableExtent = {
+        width = 111,
+        height = LOGIN_BUTTON.TEXT_IMG_HEIGHT
+      }
+    }
+  },
+  CHARACTER_DELETE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coords = {
+        normal = {
+          619,
+          0,
+          131,
+          35
+        },
+        over = {
+          619,
+          35,
+          131,
+          35
+        },
+        click = {
+          619,
+          70,
+          131,
+          35
+        },
+        disable = {
+          619,
+          105,
+          131,
+          35
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 10,
+        y = -2
+      },
+      drawableExtent = {
+        width = 131,
+        height = LOGIN_BUTTON.TEXT_IMG_HEIGHT
+      }
+    }
+  },
+  CHARACTER_DELETE_CANCEL = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coords = {
+        normal = {
+          750,
+          0,
+          112,
+          35
+        },
+        over = {
+          750,
+          35,
+          112,
+          35
+        },
+        click = {
+          750,
+          70,
+          112,
+          35
+        },
+        disable = {
+          750,
+          105,
+          112,
+          35
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 15,
+        y = -2
+      },
+      drawableExtent = {
+        width = 112,
+        height = LOGIN_BUTTON.TEXT_IMG_HEIGHT
+      }
+    }
+  },
+  GAME_START = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = BIG_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = BIG_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coords = {
+        normal = {
+          0,
+          280,
+          115,
+          41
+        },
+        over = {
+          115,
+          280,
+          115,
+          41
+        },
+        click = {
+          230,
+          280,
+          115,
+          41
+        },
+        disable = {
+          345,
+          280,
+          115,
+          41
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 35,
+        y = -4
+      },
+      drawableExtent = {width = 115, height = 41}
+    }
+  },
+  RECUSTOMIZING = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = 250,
+      height = 100
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.GRADE,
+      coords = {
+        normal = {
+          0,
+          384,
+          146,
+          44
+        },
+        over = {
+          0,
+          428,
+          146,
+          44
+        },
+        click = {
+          146,
+          384,
+          146,
+          44
+        },
+        disable = {
+          146,
+          428,
+          146,
+          44
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 30,
+        y = -4
+      },
+      drawableExtent = {width = 146, height = 44}
+    }
+  },
+  CHAR_LIST_NUIAN_FEMALE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_BACKGROUND,
+        over = SELECT_BACKGROUND,
+        click = SELECT_BACKGROUND,
+        disable = SELECT_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_DRAWABLE_COLOR.DISABLE
+      },
+      drawableExtent = {
+        width = SELECT_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_BACKGROUND_EXTENT.HEIGHT
+      },
+      drawableAnchor = {
+        anchor = "RIGHT",
+        x = 0,
+        y = 0
+      },
+      width = 391,
+      height = 70,
+      fontSize = FONT_SIZE.XXLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontAlign = ALIGN_LEFT,
+      fontInset = {
+        left = CHAR_LIST_FONT_INSET.LEFT,
+        top = 15,
+        right = 0,
+        bottom = 0
+      },
+      fontColor = GetLoginStageCharListFontColor()
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_FACE_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_FACE_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_FACE_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_FACE_DRAWABLE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 0,
+        y = 0
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.CHARACTER,
+      coords = {
+        normal = NUIAN_FEMALE_FACE_TEXUTRE.NORMAL,
+        over = NUIAN_FEMALE_FACE_TEXUTRE.OVER,
+        click = NUIAN_FEMALE_FACE_TEXUTRE.CLICK,
+        disable = NUIAN_FEMALE_FACE_TEXUTRE.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 20,
+        y = -22
+      },
+      drawableExtent = {
+        width = NUIAN_FEMALE_FACE_TEXUTRE_EXTENT.WIDTH,
+        height = NUIAN_FEMALE_FACE_TEXUTRE_EXTENT.HEIGHT
+      }
+    }
+  },
+  CHAR_LIST_NUIAN_MALE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_BACKGROUND,
+        over = SELECT_BACKGROUND,
+        click = SELECT_BACKGROUND,
+        disable = SELECT_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_DRAWABLE_COLOR.DISABLE
+      },
+      drawableExtent = {
+        width = SELECT_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_BACKGROUND_EXTENT.HEIGHT
+      },
+      drawableAnchor = {
+        anchor = "RIGHT",
+        x = 0,
+        y = 0
+      },
+      width = 391,
+      height = 70,
+      fontSize = FONT_SIZE.XXLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontAlign = ALIGN_LEFT,
+      fontInset = {
+        left = CHAR_LIST_FONT_INSET.LEFT,
+        top = 15,
+        right = 0,
+        bottom = 0
+      },
+      fontColor = GetLoginStageCharListFontColor()
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_FACE_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_FACE_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_FACE_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_FACE_DRAWABLE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 0,
+        y = 0
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.CHARACTER,
+      coords = {
+        normal = NUIAN_MALE_FACE_TEXUTRE.NORMAL,
+        over = NUIAN_MALE_FACE_TEXUTRE.OVER,
+        click = NUIAN_MALE_FACE_TEXUTRE.CLICK,
+        disable = NUIAN_MALE_FACE_TEXUTRE.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 17,
+        y = -20
+      },
+      drawableExtent = {
+        width = NUIAN_MALE_FACE_TEXUTRE_EXTENT.WIDTH,
+        height = NUIAN_MALE_FACE_TEXUTRE_EXTENT.HEIGHT
+      }
+    }
+  },
+  CHAR_LIST_DELETE_NUIAN_FEMALE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_BACKGROUND,
+        over = SELECT_BACKGROUND,
+        click = SELECT_BACKGROUND,
+        disable = SELECT_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DELETE_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_DELETE_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_DELETE_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_DELETE_DRAWABLE_COLOR.DISABLE
+      },
+      drawableExtent = {
+        width = SELECT_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_BACKGROUND_EXTENT.HEIGHT
+      },
+      drawableAnchor = {
+        anchor = "RIGHT",
+        x = 0,
+        y = 0
+      },
+      width = 391,
+      height = 70,
+      fontSize = FONT_SIZE.XXLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontAlign = ALIGN_LEFT,
+      fontInset = {
+        left = CHAR_LIST_FONT_INSET.LEFT,
+        top = 15,
+        right = 0,
+        bottom = 0
+      },
+      fontColor = GetLoginStageDeleteCharListFontColor()
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 0,
+        y = 0
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.CHARACTER,
+      coords = {
+        normal = NUIAN_FEMALE_FACE_TEXUTRE.NORMAL,
+        over = NUIAN_FEMALE_FACE_TEXUTRE.NORMAL,
+        click = NUIAN_FEMALE_FACE_TEXUTRE.NORMAL,
+        disable = NUIAN_FEMALE_FACE_TEXUTRE.NORMAL
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DELETE_FACE_COLOR.NORMAL,
+        over = CHAR_LIST_DELETE_FACE_COLOR.OVER,
+        click = CHAR_LIST_DELETE_FACE_COLOR.CLICK,
+        disable = CHAR_LIST_DELETE_FACE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 20,
+        y = -22
+      },
+      drawableExtent = {
+        width = NUIAN_FEMALE_FACE_TEXUTRE_EXTENT.WIDTH,
+        height = NUIAN_FEMALE_FACE_TEXUTRE_EXTENT.HEIGHT
+      }
+    }
+  },
+  CHAR_LIST_DELETE_NUIAN_MALE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_BACKGROUND,
+        over = SELECT_BACKGROUND,
+        click = SELECT_BACKGROUND,
+        disable = SELECT_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DELETE_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_DELETE_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_DELETE_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_DELETE_DRAWABLE_COLOR.DISABLE
+      },
+      drawableExtent = {
+        width = SELECT_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_BACKGROUND_EXTENT.HEIGHT
+      },
+      drawableAnchor = {
+        anchor = "RIGHT",
+        x = 0,
+        y = 0
+      },
+      width = 391,
+      height = 70,
+      fontSize = FONT_SIZE.XXLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontAlign = ALIGN_LEFT,
+      fontInset = {
+        left = CHAR_LIST_FONT_INSET.LEFT,
+        top = 15,
+        right = 0,
+        bottom = 0
+      },
+      fontColor = GetLoginStageDeleteCharListFontColor()
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 0,
+        y = 0
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.CHARACTER,
+      coords = {
+        normal = NUIAN_MALE_FACE_TEXUTRE.NORMAL,
+        over = NUIAN_MALE_FACE_TEXUTRE.NORMAL,
+        click = NUIAN_MALE_FACE_TEXUTRE.NORMAL,
+        disable = NUIAN_MALE_FACE_TEXUTRE.NORMAL
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DELETE_FACE_COLOR.NORMAL,
+        over = CHAR_LIST_DELETE_FACE_COLOR.OVER,
+        click = CHAR_LIST_DELETE_FACE_COLOR.CLICK,
+        disable = CHAR_LIST_DELETE_FACE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 17,
+        y = -20
+      },
+      drawableExtent = {
+        width = NUIAN_MALE_FACE_TEXUTRE_EXTENT.WIDTH,
+        height = NUIAN_MALE_FACE_TEXUTRE_EXTENT.HEIGHT
+      }
+    }
+  },
+  CHAR_LIST_ELF_FEMALE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_BACKGROUND,
+        over = SELECT_BACKGROUND,
+        click = SELECT_BACKGROUND,
+        disable = SELECT_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_DRAWABLE_COLOR.DISABLE
+      },
+      drawableExtent = {
+        width = SELECT_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_BACKGROUND_EXTENT.HEIGHT
+      },
+      drawableAnchor = {
+        anchor = "RIGHT",
+        x = 0,
+        y = 0
+      },
+      width = 391,
+      height = 70,
+      fontSize = FONT_SIZE.XXLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontAlign = ALIGN_LEFT,
+      fontInset = {
+        left = CHAR_LIST_FONT_INSET.LEFT,
+        top = 15,
+        right = 0,
+        bottom = 0
+      },
+      fontColor = GetLoginStageCharListFontColor()
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_FACE_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_FACE_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_FACE_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_FACE_DRAWABLE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 0,
+        y = 0
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.CHARACTER,
+      coords = {
+        normal = ELF_FEMALE_FACE_TEXUTRE.NORMAL,
+        over = ELF_FEMALE_FACE_TEXUTRE.OVER,
+        click = ELF_FEMALE_FACE_TEXUTRE.CLICK,
+        disable = ELF_FEMALE_FACE_TEXUTRE.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 23,
+        y = -23
+      },
+      drawableExtent = {
+        width = ELF_FEMALE_FACE_TEXUTRE_EXTENT.WIDTH,
+        height = ELF_FEMALE_FACE_TEXUTRE_EXTENT.HEIGHT
+      }
+    }
+  },
+  CHAR_LIST_ELF_MALE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_BACKGROUND,
+        over = SELECT_BACKGROUND,
+        click = SELECT_BACKGROUND,
+        disable = SELECT_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_DRAWABLE_COLOR.DISABLE
+      },
+      drawableExtent = {
+        width = SELECT_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_BACKGROUND_EXTENT.HEIGHT
+      },
+      drawableAnchor = {
+        anchor = "RIGHT",
+        x = 0,
+        y = 0
+      },
+      width = 391,
+      height = 70,
+      fontSize = FONT_SIZE.XXLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontAlign = ALIGN_LEFT,
+      fontInset = {
+        left = CHAR_LIST_FONT_INSET.LEFT,
+        top = 15,
+        right = 0,
+        bottom = 0
+      },
+      fontColor = GetLoginStageCharListFontColor()
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_FACE_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_FACE_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_FACE_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_FACE_DRAWABLE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 0,
+        y = 0
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.CHARACTER,
+      coords = {
+        normal = ELF_MALE_FACE_TEXUTRE.NORMAL,
+        over = ELF_MALE_FACE_TEXUTRE.OVER,
+        click = ELF_MALE_FACE_TEXUTRE.CLICK,
+        disable = ELF_MALE_FACE_TEXUTRE.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 17,
+        y = -20
+      },
+      drawableExtent = {
+        width = ELF_MALE_FACE_TEXUTRE_EXTENT.WIDTH,
+        height = ELF_MALE_FACE_TEXUTRE_EXTENT.HEIGHT
+      }
+    }
+  },
+  CHAR_LIST_DELETE_ELF_FEMALE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_BACKGROUND,
+        over = SELECT_BACKGROUND,
+        click = SELECT_BACKGROUND,
+        disable = SELECT_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DELETE_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_DELETE_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_DELETE_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_DELETE_DRAWABLE_COLOR.DISABLE
+      },
+      drawableExtent = {
+        width = SELECT_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_BACKGROUND_EXTENT.HEIGHT
+      },
+      drawableAnchor = {
+        anchor = "RIGHT",
+        x = 0,
+        y = 0
+      },
+      width = 391,
+      height = 70,
+      fontSize = FONT_SIZE.XXLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontAlign = ALIGN_LEFT,
+      fontInset = {
+        left = CHAR_LIST_FONT_INSET.LEFT,
+        top = 15,
+        right = 0,
+        bottom = 0
+      },
+      fontColor = GetLoginStageDeleteCharListFontColor()
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 0,
+        y = 0
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.CHARACTER,
+      coords = {
+        normal = ELF_FEMALE_FACE_TEXUTRE.NORMAL,
+        over = ELF_FEMALE_FACE_TEXUTRE.NORMAL,
+        click = ELF_FEMALE_FACE_TEXUTRE.NORMAL,
+        disable = ELF_FEMALE_FACE_TEXUTRE.NORMAL
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DELETE_FACE_COLOR.NORMAL,
+        over = CHAR_LIST_DELETE_FACE_COLOR.OVER,
+        click = CHAR_LIST_DELETE_FACE_COLOR.CLICK,
+        disable = CHAR_LIST_DELETE_FACE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 23,
+        y = -23
+      },
+      drawableExtent = {
+        width = ELF_FEMALE_FACE_TEXUTRE_EXTENT.WIDTH,
+        height = ELF_FEMALE_FACE_TEXUTRE_EXTENT.HEIGHT
+      }
+    }
+  },
+  CHAR_LIST_DELETE_ELF_MALE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_BACKGROUND,
+        over = SELECT_BACKGROUND,
+        click = SELECT_BACKGROUND,
+        disable = SELECT_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DELETE_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_DELETE_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_DELETE_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_DELETE_DRAWABLE_COLOR.DISABLE
+      },
+      drawableExtent = {
+        width = SELECT_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_BACKGROUND_EXTENT.HEIGHT
+      },
+      drawableAnchor = {
+        anchor = "RIGHT",
+        x = 0,
+        y = 0
+      },
+      width = 391,
+      height = 70,
+      fontSize = FONT_SIZE.XXLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontAlign = ALIGN_LEFT,
+      fontInset = {
+        left = CHAR_LIST_FONT_INSET.LEFT,
+        top = 15,
+        right = 0,
+        bottom = 0
+      },
+      fontColor = GetLoginStageDeleteCharListFontColor()
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 0,
+        y = 0
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.CHARACTER,
+      coords = {
+        normal = ELF_MALE_FACE_TEXUTRE.NORMAL,
+        over = ELF_MALE_FACE_TEXUTRE.NORMAL,
+        click = ELF_MALE_FACE_TEXUTRE.NORMAL,
+        disable = ELF_MALE_FACE_TEXUTRE.NORMAL
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DELETE_FACE_COLOR.NORMAL,
+        over = CHAR_LIST_DELETE_FACE_COLOR.OVER,
+        click = CHAR_LIST_DELETE_FACE_COLOR.CLICK,
+        disable = CHAR_LIST_DELETE_FACE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 17,
+        y = -20
+      },
+      drawableExtent = {
+        width = ELF_MALE_FACE_TEXUTRE_EXTENT.WIDTH,
+        height = ELF_MALE_FACE_TEXUTRE_EXTENT.HEIGHT
+      }
+    }
+  },
+  CHAR_LIST_FERE_FEMALE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_BACKGROUND,
+        over = SELECT_BACKGROUND,
+        click = SELECT_BACKGROUND,
+        disable = SELECT_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_DRAWABLE_COLOR.DISABLE
+      },
+      drawableExtent = {
+        width = SELECT_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_BACKGROUND_EXTENT.HEIGHT
+      },
+      drawableAnchor = {
+        anchor = "RIGHT",
+        x = 0,
+        y = 0
+      },
+      width = 391,
+      height = 70,
+      fontSize = FONT_SIZE.XXLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontAlign = ALIGN_LEFT,
+      fontInset = {
+        left = CHAR_LIST_FONT_INSET.LEFT,
+        top = 15,
+        right = 0,
+        bottom = 0
+      },
+      fontColor = GetLoginStageCharListFontColor()
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_FACE_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_FACE_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_FACE_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_FACE_DRAWABLE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 0,
+        y = 0
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.CHARACTER,
+      coords = {
+        normal = FERRE_FEMALE_FACE_TEXUTRE.NORMAL,
+        over = FERRE_FEMALE_FACE_TEXUTRE.OVER,
+        click = FERRE_FEMALE_FACE_TEXUTRE.CLICK,
+        disable = FERRE_FEMALE_FACE_TEXUTRE.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 18,
+        y = -20
+      },
+      drawableExtent = {
+        width = FERRE_FEMALE_FACE_TEXUTRE_EXTENT.WIDTH,
+        height = FERRE_FEMALE_FACE_TEXUTRE_EXTENT.HEIGHT
+      }
+    }
+  },
+  CHAR_LIST_FERE_MALE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_BACKGROUND,
+        over = SELECT_BACKGROUND,
+        click = SELECT_BACKGROUND,
+        disable = SELECT_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_DRAWABLE_COLOR.DISABLE
+      },
+      drawableExtent = {
+        width = SELECT_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_BACKGROUND_EXTENT.HEIGHT
+      },
+      drawableAnchor = {
+        anchor = "RIGHT",
+        x = 0,
+        y = 0
+      },
+      width = 391,
+      height = 70,
+      fontSize = FONT_SIZE.XXLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontAlign = ALIGN_LEFT,
+      fontInset = {
+        left = CHAR_LIST_FONT_INSET.LEFT,
+        top = 15,
+        right = 0,
+        bottom = 0
+      },
+      fontColor = GetLoginStageCharListFontColor()
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_FACE_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_FACE_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_FACE_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_FACE_DRAWABLE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 0,
+        y = 0
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.CHARACTER,
+      coords = {
+        normal = FERRE_MALE_FACE_TEXUTRE.NORMAL,
+        over = FERRE_MALE_FACE_TEXUTRE.OVER,
+        click = FERRE_MALE_FACE_TEXUTRE.CLICK,
+        disable = FERRE_MALE_FACE_TEXUTRE.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 18,
+        y = -24
+      },
+      drawableExtent = {
+        width = FERRE_MALE_FACE_TEXUTRE_EXTENT.WIDTH,
+        height = FERRE_MALE_FACE_TEXUTRE_EXTENT.HEIGHT
+      }
+    }
+  },
+  CHAR_LIST_DELETE_FERE_FEMALE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_BACKGROUND,
+        over = SELECT_BACKGROUND,
+        click = SELECT_BACKGROUND,
+        disable = SELECT_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DELETE_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_DELETE_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_DELETE_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_DELETE_DRAWABLE_COLOR.DISABLE
+      },
+      drawableExtent = {
+        width = SELECT_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_BACKGROUND_EXTENT.HEIGHT
+      },
+      drawableAnchor = {
+        anchor = "RIGHT",
+        x = 0,
+        y = 0
+      },
+      width = 391,
+      height = 70,
+      fontSize = FONT_SIZE.XXLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontAlign = ALIGN_LEFT,
+      fontInset = {
+        left = CHAR_LIST_FONT_INSET.LEFT,
+        top = 15,
+        right = 0,
+        bottom = 0
+      },
+      fontColor = GetLoginStageDeleteCharListFontColor()
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 0,
+        y = 0
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.CHARACTER,
+      coords = {
+        normal = FERRE_FEMALE_FACE_TEXUTRE.NORMAL,
+        over = FERRE_FEMALE_FACE_TEXUTRE.NORMAL,
+        click = FERRE_FEMALE_FACE_TEXUTRE.NORMAL,
+        disable = FERRE_FEMALE_FACE_TEXUTRE.NORMAL
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DELETE_FACE_COLOR.NORMAL,
+        over = CHAR_LIST_DELETE_FACE_COLOR.OVER,
+        click = CHAR_LIST_DELETE_FACE_COLOR.CLICK,
+        disable = CHAR_LIST_DELETE_FACE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 18,
+        y = -20
+      },
+      drawableExtent = {
+        width = FERRE_FEMALE_FACE_TEXUTRE_EXTENT.WIDTH,
+        height = FERRE_FEMALE_FACE_TEXUTRE_EXTENT.HEIGHT
+      }
+    }
+  },
+  CHAR_LIST_DELETE_FERE_MALE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_BACKGROUND,
+        over = SELECT_BACKGROUND,
+        click = SELECT_BACKGROUND,
+        disable = SELECT_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DELETE_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_DELETE_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_DELETE_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_DELETE_DRAWABLE_COLOR.DISABLE
+      },
+      drawableExtent = {
+        width = SELECT_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_BACKGROUND_EXTENT.HEIGHT
+      },
+      drawableAnchor = {
+        anchor = "RIGHT",
+        x = 0,
+        y = 0
+      },
+      width = 391,
+      height = 70,
+      fontSize = FONT_SIZE.XXLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontAlign = ALIGN_LEFT,
+      fontInset = {
+        left = CHAR_LIST_FONT_INSET.LEFT,
+        top = 15,
+        right = 0,
+        bottom = 0
+      },
+      fontColor = GetLoginStageDeleteCharListFontColor()
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 0,
+        y = 0
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.CHARACTER,
+      coords = {
+        normal = FERRE_MALE_FACE_TEXUTRE.NORMAL,
+        over = FERRE_MALE_FACE_TEXUTRE.NORMAL,
+        click = FERRE_MALE_FACE_TEXUTRE.NORMAL,
+        disable = FERRE_MALE_FACE_TEXUTRE.NORMAL
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DELETE_FACE_COLOR.NORMAL,
+        over = CHAR_LIST_DELETE_FACE_COLOR.OVER,
+        click = CHAR_LIST_DELETE_FACE_COLOR.CLICK,
+        disable = CHAR_LIST_DELETE_FACE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 18,
+        y = -24
+      },
+      drawableExtent = {
+        width = FERRE_MALE_FACE_TEXUTRE_EXTENT.WIDTH,
+        height = FERRE_MALE_FACE_TEXUTRE_EXTENT.HEIGHT
+      }
+    }
+  },
+  CHAR_LIST_HARIHARAN_FEMALE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_BACKGROUND,
+        over = SELECT_BACKGROUND,
+        click = SELECT_BACKGROUND,
+        disable = SELECT_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_DRAWABLE_COLOR.DISABLE
+      },
+      drawableExtent = {
+        width = SELECT_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_BACKGROUND_EXTENT.HEIGHT
+      },
+      drawableAnchor = {
+        anchor = "RIGHT",
+        x = 0,
+        y = 0
+      },
+      width = 391,
+      height = 70,
+      fontSize = FONT_SIZE.XXLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontAlign = ALIGN_LEFT,
+      fontInset = {
+        left = CHAR_LIST_FONT_INSET.LEFT,
+        top = 15,
+        right = 0,
+        bottom = 0
+      },
+      fontColor = GetLoginStageCharListFontColor()
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_FACE_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_FACE_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_FACE_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_FACE_DRAWABLE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 0,
+        y = 0
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.CHARACTER,
+      coords = {
+        normal = HARIHARAN_FEMALE_FACE_TEXUTRE.NORMAL,
+        over = HARIHARAN_FEMALE_FACE_TEXUTRE.OVER,
+        click = HARIHARAN_FEMALE_FACE_TEXUTRE.CLICK,
+        disable = HARIHARAN_FEMALE_FACE_TEXUTRE.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 18,
+        y = -22
+      },
+      drawableExtent = {
+        width = HARIHARAN_FEMALE_FACE_TEXUTRE_EXTENT.WIDTH,
+        height = HARIHARAN_FEMALE_FACE_TEXUTRE_EXTENT.HEIGHT
+      }
+    }
+  },
+  CHAR_LIST_HARIHARAN_MALE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_BACKGROUND,
+        over = SELECT_BACKGROUND,
+        click = SELECT_BACKGROUND,
+        disable = SELECT_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_DRAWABLE_COLOR.DISABLE
+      },
+      drawableExtent = {
+        width = SELECT_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_BACKGROUND_EXTENT.HEIGHT
+      },
+      drawableAnchor = {
+        anchor = "RIGHT",
+        x = 0,
+        y = 0
+      },
+      width = 391,
+      height = 70,
+      fontSize = FONT_SIZE.XXLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontAlign = ALIGN_LEFT,
+      fontInset = {
+        left = CHAR_LIST_FONT_INSET.LEFT,
+        top = 15,
+        right = 0,
+        bottom = 0
+      },
+      fontColor = GetLoginStageCharListFontColor()
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_FACE_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_FACE_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_FACE_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_FACE_DRAWABLE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 0,
+        y = 0
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.CHARACTER,
+      coords = {
+        normal = HARIHARAN_MALE_FACE_TEXUTRE.NORMAL,
+        over = HARIHARAN_MALE_FACE_TEXUTRE.OVER,
+        click = HARIHARAN_MALE_FACE_TEXUTRE.CLICK,
+        disable = HARIHARAN_MALE_FACE_TEXUTRE.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 18,
+        y = -21
+      },
+      drawableExtent = {
+        width = HARIHARAN_MALE_FACE_TEXUTRE_EXTENT.WIDTH,
+        height = HARIHARAN_MALE_FACE_TEXUTRE_EXTENT.HEIGHT
+      }
+    }
+  },
+  CHAR_LIST_DELETE_HARIHARAN_FEMALE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_BACKGROUND,
+        over = SELECT_BACKGROUND,
+        click = SELECT_BACKGROUND,
+        disable = SELECT_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DELETE_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_DELETE_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_DELETE_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_DELETE_DRAWABLE_COLOR.DISABLE
+      },
+      drawableExtent = {
+        width = SELECT_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_BACKGROUND_EXTENT.HEIGHT
+      },
+      drawableAnchor = {
+        anchor = "RIGHT",
+        x = 0,
+        y = 0
+      },
+      width = 391,
+      height = 70,
+      fontSize = FONT_SIZE.XXLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontAlign = ALIGN_LEFT,
+      fontInset = {
+        left = CHAR_LIST_FONT_INSET.LEFT,
+        top = 15,
+        right = 0,
+        bottom = 0
+      },
+      fontColor = GetLoginStageDeleteCharListFontColor()
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 0,
+        y = 0
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.CHARACTER,
+      coords = {
+        normal = HARIHARAN_FEMALE_FACE_TEXUTRE.NORMAL,
+        over = HARIHARAN_FEMALE_FACE_TEXUTRE.NORMAL,
+        click = HARIHARAN_FEMALE_FACE_TEXUTRE.NORMAL,
+        disable = HARIHARAN_FEMALE_FACE_TEXUTRE.NORMAL
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DELETE_FACE_COLOR.NORMAL,
+        over = CHAR_LIST_DELETE_FACE_COLOR.OVER,
+        click = CHAR_LIST_DELETE_FACE_COLOR.CLICK,
+        disable = CHAR_LIST_DELETE_FACE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 18,
+        y = -22
+      },
+      drawableExtent = {
+        width = HARIHARAN_FEMALE_FACE_TEXUTRE_EXTENT.WIDTH,
+        height = HARIHARAN_FEMALE_FACE_TEXUTRE_EXTENT.HEIGHT
+      }
+    }
+  },
+  CHAR_LIST_DELETE_HARIHARAN_MALE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_BACKGROUND,
+        over = SELECT_BACKGROUND,
+        click = SELECT_BACKGROUND,
+        disable = SELECT_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DELETE_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_DELETE_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_DELETE_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_DELETE_DRAWABLE_COLOR.DISABLE
+      },
+      drawableExtent = {
+        width = SELECT_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_BACKGROUND_EXTENT.HEIGHT
+      },
+      drawableAnchor = {
+        anchor = "RIGHT",
+        x = 0,
+        y = 0
+      },
+      width = 391,
+      height = 70,
+      fontSize = FONT_SIZE.XXLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontAlign = ALIGN_LEFT,
+      fontInset = {
+        left = CHAR_LIST_FONT_INSET.LEFT,
+        top = 15,
+        right = 0,
+        bottom = 0
+      },
+      fontColor = GetLoginStageDeleteCharListFontColor()
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.NORMAL,
+        over = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.OVER,
+        click = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.CLICK,
+        disable = CHAR_LIST_DELETE_FACE_DRAWABLE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 0,
+        y = 0
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.CHARACTER,
+      coords = {
+        normal = HARIHARAN_MALE_FACE_TEXUTRE.NORMAL,
+        over = HARIHARAN_MALE_FACE_TEXUTRE.NORMAL,
+        click = HARIHARAN_MALE_FACE_TEXUTRE.NORMAL,
+        disable = HARIHARAN_MALE_FACE_TEXUTRE.NORMAL
+      },
+      drawableColor = {
+        normal = CHAR_LIST_DELETE_FACE_COLOR.NORMAL,
+        over = CHAR_LIST_DELETE_FACE_COLOR.OVER,
+        click = CHAR_LIST_DELETE_FACE_COLOR.CLICK,
+        disable = CHAR_LIST_DELETE_FACE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 18,
+        y = -21
+      },
+      drawableExtent = {
+        width = HARIHARAN_MALE_FACE_TEXUTRE_EXTENT.WIDTH,
+        height = HARIHARAN_MALE_FACE_TEXUTRE_EXTENT.HEIGHT
+      }
+    }
+  },
+  CHAR_LIST_CREATE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_BACKGROUND,
+        over = SELECT_BACKGROUND,
+        click = SELECT_BACKGROUND,
+        disable = SELECT_BACKGROUND
+      },
+      drawableColor = {
+        normal = {
+          ConvertColor(205),
+          ConvertColor(172),
+          ConvertColor(144),
+          1
+        },
+        over = {
+          ConvertColor(220),
+          ConvertColor(168),
+          ConvertColor(122),
+          1
+        },
+        click = {
+          ConvertColor(191),
+          ConvertColor(147),
+          ConvertColor(108),
+          1
+        },
+        disable = CHAR_LIST_DRAWABLE_COLOR.DISABLE
+      },
+      drawableExtent = {
+        width = SELECT_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_BACKGROUND_EXTENT.HEIGHT
+      },
+      drawableAnchor = {
+        anchor = "RIGHT",
+        x = 0,
+        y = 0
+      },
+      width = 391,
+      height = 70,
+      fontSize = FONT_SIZE.XLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontAlign = ALIGN_LEFT,
+      fontInset = {
+        left = CHAR_LIST_FONT_INSET.LEFT,
+        top = 0,
+        right = 0,
+        bottom = 0
+      },
+      fontColor = {
+        normal = {
+          ConvertColor(85),
+          ConvertColor(84),
+          ConvertColor(84),
+          1
+        },
+        highlight = {
+          ConvertColor(143),
+          ConvertColor(86),
+          ConvertColor(30),
+          1
+        },
+        pushed = {
+          ConvertColor(113),
+          ConvertColor(71),
+          ConvertColor(30),
+          1
+        },
+        disabled = {
+          ConvertColor(195),
+          ConvertColor(195),
+          ConvertColor(195),
+          1
+        }
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = {
+          ConvertColor(205),
+          ConvertColor(172),
+          ConvertColor(144),
+          1
+        },
+        over = {
+          ConvertColor(220),
+          ConvertColor(168),
+          ConvertColor(122),
+          1
+        },
+        click = {
+          ConvertColor(191),
+          ConvertColor(147),
+          ConvertColor(108),
+          1
+        },
+        disable = CHAR_LIST_DRAWABLE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 0,
+        y = 0
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = {
+          0,
+          133,
+          59,
+          59
+        },
+        over = {
+          0,
+          133,
+          59,
+          59
+        },
+        click = {
+          0,
+          133,
+          59,
+          59
+        },
+        disable = {
+          0,
+          192,
+          59,
+          59
+        }
+      },
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 25,
+        y = 0
+      },
+      drawableExtent = {width = 59, height = 59}
+    }
+  },
+  CUSTOM_SAVE_LOAD = {
+    drawableType = "drawable",
+    path = LOGIN_STAGE_TEXTURE_PATH.SAVE_LOAD,
+    coords = {
+      click = {
+        0,
+        0,
+        287,
+        53
+      },
+      over = {
+        0,
+        53,
+        287,
+        53
+      },
+      normal = {
+        0,
+        106,
+        287,
+        53
+      },
+      disable = {
+        0,
+        159,
+        287,
+        53
+      }
+    },
+    width = 287,
+    height = 53,
+    fontInset = {
+      left = 70,
+      top = 0,
+      right = 0,
+      bottom = 0
+    },
+    fontAlign = ALIGN_LEFT,
+    fontColor = GetButtonDefaultFontColor()
+  },
+  RACE_NUIAN_FEMALE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = RACE_FACE_BACKGROUND_NUIAN_COLOR.NORMAL,
+        over = RACE_FACE_BACKGROUND_NUIAN_COLOR.OVER,
+        click = RACE_FACE_BACKGROUND_NUIAN_COLOR.CLICK,
+        disable = RACE_FACE_BACKGROUND_NUIAN_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = RACE_FACE_BACKGROUND_OFFSET.X,
+        y = RACE_FACE_BACKGROUND_OFFSET.Y
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      },
+      width = RACE_FACE_BUTTON_EXTENT.WIDTH,
+      height = RACE_FACE_BUTTON_EXTENT.HEIGHT,
+      fontInset = {
+        left = -13,
+        top = -2,
+        right = 0,
+        bottom = 0
+      },
+      fontSize = FONT_SIZE.XLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontAlign = ALIGN_TOP,
+      fontColor = GetRaceNuianButtonFontColor()
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.CHARACTER,
+      coords = {
+        normal = NUIAN_FEMALE_FACE_TEXUTRE.NORMAL,
+        over = NUIAN_FEMALE_FACE_TEXUTRE.OVER,
+        click = NUIAN_FEMALE_FACE_TEXUTRE.CLICK,
+        disable = NUIAN_FEMALE_FACE_TEXUTRE.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = -4,
+        y = -12
+      },
+      drawableExtent = {
+        width = NUIAN_FEMALE_FACE_TEXUTRE_EXTENT.WIDTH,
+        height = NUIAN_FEMALE_FACE_TEXUTRE_EXTENT.HEIGHT
+      }
+    }
+  },
+  RACE_NUIAN_MALE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = RACE_FACE_BACKGROUND_NUIAN_COLOR.NORMAL,
+        over = RACE_FACE_BACKGROUND_NUIAN_COLOR.OVER,
+        click = RACE_FACE_BACKGROUND_NUIAN_COLOR.CLICK,
+        disable = RACE_FACE_BACKGROUND_NUIAN_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = RACE_FACE_BACKGROUND_OFFSET.X,
+        y = RACE_FACE_BACKGROUND_OFFSET.Y
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      },
+      width = RACE_FACE_BUTTON_EXTENT.WIDTH,
+      height = RACE_FACE_BUTTON_EXTENT.HEIGHT,
+      fontInset = {
+        left = -13,
+        top = -2,
+        right = 0,
+        bottom = 0
+      },
+      fontSize = FONT_SIZE.XLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontColor = GetRaceNuianButtonFontColor(),
+      fontAlign = ALIGN_TOP
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.CHARACTER,
+      coords = {
+        normal = NUIAN_MALE_FACE_TEXUTRE.NORMAL,
+        over = NUIAN_MALE_FACE_TEXUTRE.OVER,
+        click = NUIAN_MALE_FACE_TEXUTRE.CLICK,
+        disable = NUIAN_MALE_FACE_TEXUTRE.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = -4,
+        y = -15
+      },
+      drawableExtent = {
+        width = NUIAN_MALE_FACE_TEXUTRE_EXTENT.WIDTH,
+        height = NUIAN_MALE_FACE_TEXUTRE_EXTENT.HEIGHT
+      }
+    }
+  },
+  RACE_ELF_FEMALE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = RACE_FACE_BACKGROUND_OFFSET.X,
+        y = RACE_FACE_BACKGROUND_OFFSET.Y
+      },
+      drawableColor = {
+        normal = RACE_FACE_BACKGROUND_ELF_COLOR.NORMAL,
+        over = RACE_FACE_BACKGROUND_ELF_COLOR.OVER,
+        click = RACE_FACE_BACKGROUND_ELF_COLOR.CLICK,
+        disable = RACE_FACE_BACKGROUND_ELF_COLOR.DISABLE
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      },
+      width = RACE_FACE_BUTTON_EXTENT.WIDTH,
+      height = RACE_FACE_BUTTON_EXTENT.HEIGHT,
+      fontInset = {
+        left = -13,
+        top = -2,
+        right = 0,
+        bottom = 0
+      },
+      fontSize = FONT_SIZE.XLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontColor = GetRaceElfButtonFontColor(),
+      fontAlign = ALIGN_TOP
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.CHARACTER,
+      coords = {
+        normal = ELF_FEMALE_FACE_TEXUTRE.NORMAL,
+        over = ELF_FEMALE_FACE_TEXUTRE.OVER,
+        click = ELF_FEMALE_FACE_TEXUTRE.CLICK,
+        disable = ELF_FEMALE_FACE_TEXUTRE.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 1,
+        y = -13
+      },
+      drawableExtent = {
+        width = ELF_FEMALE_FACE_TEXUTRE_EXTENT.WIDTH,
+        height = ELF_FEMALE_FACE_TEXUTRE_EXTENT.HEIGHT
+      }
+    }
+  },
+  RACE_ELF_MALE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = RACE_FACE_BACKGROUND_ELF_COLOR.NORMAL,
+        over = RACE_FACE_BACKGROUND_ELF_COLOR.OVER,
+        click = RACE_FACE_BACKGROUND_ELF_COLOR.CLICK,
+        disable = RACE_FACE_BACKGROUND_ELF_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = RACE_FACE_BACKGROUND_OFFSET.X,
+        y = RACE_FACE_BACKGROUND_OFFSET.Y
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      },
+      width = RACE_FACE_BUTTON_EXTENT.WIDTH,
+      height = RACE_FACE_BUTTON_EXTENT.HEIGHT,
+      fontInset = {
+        left = -13,
+        top = -2,
+        right = 0,
+        bottom = 0
+      },
+      fontSize = FONT_SIZE.XLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontColor = GetRaceElfButtonFontColor(),
+      fontAlign = ALIGN_TOP
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.CHARACTER,
+      coords = {
+        normal = ELF_MALE_FACE_TEXUTRE.NORMAL,
+        over = ELF_MALE_FACE_TEXUTRE.OVER,
+        click = ELF_MALE_FACE_TEXUTRE.CLICK,
+        disable = ELF_MALE_FACE_TEXUTRE.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = -6,
+        y = -15
+      },
+      drawableExtent = {
+        width = ELF_MALE_FACE_TEXUTRE_EXTENT.WIDTH,
+        height = ELF_MALE_FACE_TEXUTRE_EXTENT.HEIGHT
+      }
+    }
+  },
+  RACE_FERRE_FEMALE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = RACE_FACE_BACKGROUND_FERE_COLOR.NORMAL,
+        over = RACE_FACE_BACKGROUND_FERE_COLOR.OVER,
+        click = RACE_FACE_BACKGROUND_FERE_COLOR.CLICK,
+        disable = RACE_FACE_BACKGROUND_FERE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = RACE_FACE_BACKGROUND_OFFSET.X,
+        y = RACE_FACE_BACKGROUND_OFFSET.Y
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      },
+      width = RACE_FACE_BUTTON_EXTENT.WIDTH,
+      height = RACE_FACE_BUTTON_EXTENT.HEIGHT,
+      fontInset = {
+        left = -8,
+        top = -2,
+        right = 0,
+        bottom = 0
+      },
+      fontSize = FONT_SIZE.XLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontColor = GetRaceFerreButtonFontColor(),
+      fontAlign = ALIGN_TOP
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.CHARACTER,
+      coords = {
+        normal = FERRE_FEMALE_FACE_TEXUTRE.NORMAL,
+        over = FERRE_FEMALE_FACE_TEXUTRE.OVER,
+        click = FERRE_FEMALE_FACE_TEXUTRE.CLICK,
+        disable = FERRE_FEMALE_FACE_TEXUTRE.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = -3,
+        y = -12
+      },
+      drawableExtent = {
+        width = FERRE_FEMALE_FACE_TEXUTRE_EXTENT.WIDTH,
+        height = FERRE_FEMALE_FACE_TEXUTRE_EXTENT.HEIGHT
+      }
+    }
+  },
+  RACE_FERRE_MALE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = RACE_FACE_BACKGROUND_FERE_COLOR.NORMAL,
+        over = RACE_FACE_BACKGROUND_FERE_COLOR.OVER,
+        click = RACE_FACE_BACKGROUND_FERE_COLOR.CLICK,
+        disable = RACE_FACE_BACKGROUND_FERE_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = RACE_FACE_BACKGROUND_OFFSET.X,
+        y = RACE_FACE_BACKGROUND_OFFSET.Y
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      },
+      width = RACE_FACE_BUTTON_EXTENT.WIDTH,
+      height = RACE_FACE_BUTTON_EXTENT.HEIGHT,
+      fontInset = {
+        left = -8,
+        top = -2,
+        right = 0,
+        bottom = 0
+      },
+      fontSize = FONT_SIZE.XLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontColor = GetRaceFerreButtonFontColor(),
+      fontAlign = ALIGN_TOP
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.CHARACTER,
+      coords = {
+        normal = FERRE_MALE_FACE_TEXUTRE.NORMAL,
+        over = FERRE_MALE_FACE_TEXUTRE.OVER,
+        click = FERRE_MALE_FACE_TEXUTRE.CLICK,
+        disable = FERRE_MALE_FACE_TEXUTRE.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = -1,
+        y = -12
+      },
+      drawableExtent = {
+        width = FERRE_MALE_FACE_TEXUTRE_EXTENT.WIDTH,
+        height = FERRE_MALE_FACE_TEXUTRE_EXTENT.HEIGHT
+      }
+    }
+  },
+  RACE_HARIHARAN_FEMALE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = RACE_FACE_BACKGROUND_HARIHARAN_COLOR.NORMAL,
+        over = RACE_FACE_BACKGROUND_HARIHARAN_COLOR.OVER,
+        click = RACE_FACE_BACKGROUND_HARIHARAN_COLOR.CLICK,
+        disable = RACE_FACE_BACKGROUND_HARIHARAN_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = RACE_FACE_BACKGROUND_OFFSET.X,
+        y = RACE_FACE_BACKGROUND_OFFSET.Y
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      },
+      width = RACE_FACE_BUTTON_EXTENT.WIDTH,
+      height = RACE_FACE_BUTTON_EXTENT.HEIGHT,
+      fontInset = {
+        left = 0,
+        top = -2,
+        right = 0,
+        bottom = 0
+      },
+      fontSize = FONT_SIZE.XLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontColor = GetRaceHariharanButtonFontColor(),
+      fontAlign = ALIGN_TOP
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.CHARACTER,
+      coords = {
+        normal = HARIHARAN_FEMALE_FACE_TEXUTRE.NORMAL,
+        over = HARIHARAN_FEMALE_FACE_TEXUTRE.OVER,
+        click = HARIHARAN_FEMALE_FACE_TEXUTRE.CLICK,
+        disable = HARIHARAN_FEMALE_FACE_TEXUTRE.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = -5,
+        y = -11
+      },
+      drawableExtent = {
+        width = HARIHARAN_FEMALE_FACE_TEXUTRE_EXTENT.WIDTH,
+        height = HARIHARAN_FEMALE_FACE_TEXUTRE_EXTENT.HEIGHT
+      }
+    }
+  },
+  RACE_HARIHARAN_MALE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = RACE_FACE_BACKGROUND_HARIHARAN_COLOR.NORMAL,
+        over = RACE_FACE_BACKGROUND_HARIHARAN_COLOR.OVER,
+        click = RACE_FACE_BACKGROUND_HARIHARAN_COLOR.CLICK,
+        disable = RACE_FACE_BACKGROUND_HARIHARAN_COLOR.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = RACE_FACE_BACKGROUND_OFFSET.X,
+        y = RACE_FACE_BACKGROUND_OFFSET.Y
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      },
+      width = RACE_FACE_BUTTON_EXTENT.WIDTH,
+      height = RACE_FACE_BUTTON_EXTENT.HEIGHT,
+      fontInset = {
+        left = 0,
+        top = -2,
+        right = 0,
+        bottom = 0
+      },
+      fontSize = FONT_SIZE.XLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontColor = GetRaceHariharanButtonFontColor(),
+      fontAlign = ALIGN_TOP
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.CHARACTER,
+      coords = {
+        normal = HARIHARAN_MALE_FACE_TEXUTRE.NORMAL,
+        over = HARIHARAN_MALE_FACE_TEXUTRE.OVER,
+        click = HARIHARAN_MALE_FACE_TEXUTRE.CLICK,
+        disable = HARIHARAN_MALE_FACE_TEXUTRE.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = -1,
+        y = -12
+      },
+      drawableExtent = {
+        width = HARIHARAN_MALE_FACE_TEXUTRE_EXTENT.WIDTH,
+        height = HARIHARAN_MALE_FACE_TEXUTRE_EXTENT.HEIGHT
+      }
+    }
+  },
+  TO_NEXT_CUSTOMIZE_PAGE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coords = {
+        normal = {
+          579,
+          140,
+          84,
+          35
+        },
+        over = {
+          579,
+          175,
+          84,
+          35
+        },
+        click = {
+          579,
+          210,
+          84,
+          35
+        },
+        disable = {
+          579,
+          245,
+          84,
+          35
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 15,
+        y = 0
+      },
+      drawableExtent = {
+        width = 84,
+        height = LOGIN_BUTTON.TEXT_IMG_HEIGHT
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = NEXT_ARROW_TEXUTRE_COORDS.NORMAL,
+        over = NEXT_ARROW_TEXUTRE_COORDS.OVER,
+        click = NEXT_ARROW_TEXUTRE_COORDS.CLICK,
+        disable = NEXT_ARROW_TEXUTRE_COORDS.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "BOTTOMRIGHT",
+        x = -NEXT_ARROW_TEXTURE_OFFSET.X,
+        y = -NEXT_ARROW_TEXTURE_OFFSET.Y
+      },
+      drawableExtent = {
+        width = SMALL_ARROW_TEXTURE_EXTENT.WIDTH,
+        height = SMALL_ARROW_TEXTURE_EXTENT.HEIGHT
+      }
+    }
+  },
+  TO_CHARACTER_SELECT_PAGE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coords = {
+        normal = {
+          306,
+          140,
+          103,
+          35
+        },
+        over = {
+          306,
+          175,
+          103,
+          35
+        },
+        click = {
+          306,
+          210,
+          103,
+          35
+        },
+        disable = {
+          306,
+          245,
+          103,
+          35
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 25,
+        y = 0
+      },
+      drawableExtent = {
+        width = 103,
+        height = LOGIN_BUTTON.TEXT_IMG_HEIGHT
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = PREV_ARROW_TEXUTRE_COORDS.NORMAL,
+        over = PREV_ARROW_TEXUTRE_COORDS.OVER,
+        click = PREV_ARROW_TEXUTRE_COORDS.CLICK,
+        disable = PREV_ARROW_TEXUTRE_COORDS.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "BOTTOMLEFT",
+        x = PREV_ARROW_TEXTURE_OFFSET.X,
+        y = PREV_ARROW_TEXTURE_OFFSET.Y
+      },
+      drawableExtent = {
+        width = SMALL_ARROW_TEXTURE_EXTENT.WIDTH,
+        height = SMALL_ARROW_TEXTURE_EXTENT.HEIGHT
+      }
+    }
+  },
+  COMPLETE_SELECT_RACE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coords = {
+        normal = {
+          862,
+          0,
+          126,
+          35
+        },
+        over = {
+          862,
+          35,
+          126,
+          35
+        },
+        click = {
+          862,
+          70,
+          126,
+          35
+        },
+        disable = {
+          862,
+          105,
+          126,
+          35
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 15,
+        y = 0
+      },
+      drawableExtent = {
+        width = 126,
+        height = LOGIN_BUTTON.TEXT_IMG_HEIGHT
+      }
+    }
+  },
+  GENDER_FEMALE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = GENDER_BACKGROUND_COORDS,
+        over = GENDER_BACKGROUND_COORDS,
+        click = GENDER_BACKGROUND_COORDS,
+        disable = GENDER_BACKGROUND_COORDS
+      },
+      drawableColor = {
+        normal = GENDER_BACKGROUND_COLOR.NORMAL,
+        over = GENDER_BACKGROUND_COLOR.OVER,
+        click = GENDER_BACKGROUND_COLOR.CLICK,
+        disable = GENDER_BACKGROUND_COLOR.DISABLE
+      },
+      width = GENDER_BACKGROUND_EXTENT.WIDTH,
+      height = GENDER_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = {
+          96,
+          251,
+          24,
+          38
+        },
+        over = {
+          144,
+          251,
+          24,
+          38
+        },
+        click = {
+          120,
+          251,
+          24,
+          38
+        },
+        disable = {
+          168,
+          251,
+          24,
+          38
+        }
+      },
+      drawableExtent = {width = 24, height = 38},
+      drawableAnchor = {
+        anchor = "CENTER",
+        x = 1,
+        y = 1
+      }
+    }
+  },
+  GENDER_MALE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = GENDER_BACKGROUND_COORDS,
+        over = GENDER_BACKGROUND_COORDS,
+        click = GENDER_BACKGROUND_COORDS,
+        disable = GENDER_BACKGROUND_COORDS
+      },
+      drawableColor = {
+        normal = GENDER_BACKGROUND_COLOR.NORMAL,
+        over = GENDER_BACKGROUND_COLOR.OVER,
+        click = GENDER_BACKGROUND_COLOR.CLICK,
+        disable = GENDER_BACKGROUND_COLOR.DISABLE
+      },
+      width = GENDER_BACKGROUND_EXTENT.WIDTH,
+      height = GENDER_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = {
+          0,
+          251,
+          24,
+          36
+        },
+        over = {
+          48,
+          251,
+          24,
+          36
+        },
+        click = {
+          24,
+          251,
+          24,
+          36
+        },
+        disable = {
+          72,
+          251,
+          24,
+          36
+        }
+      },
+      drawableExtent = {width = 24, height = 38},
+      drawableAnchor = {
+        anchor = "CENTER",
+        x = 1,
+        y = -1
+      }
+    }
+  },
+  TO_SELECT_RACE_PAGE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coords = {
+        normal = {
+          409,
+          140,
+          85,
+          35
+        },
+        over = {
+          409,
+          140,
+          85,
+          35
+        },
+        click = {
+          409,
+          140,
+          85,
+          35
+        },
+        disable = {
+          409,
+          140,
+          85,
+          35
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 20,
+        y = -1
+      },
+      drawableExtent = {
+        width = 85,
+        height = LOGIN_BUTTON.TEXT_IMG_HEIGHT
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = PREV_ARROW_TEXUTRE_COORDS.NORMAL,
+        over = PREV_ARROW_TEXUTRE_COORDS.OVER,
+        click = PREV_ARROW_TEXUTRE_COORDS.CLICK,
+        disable = PREV_ARROW_TEXUTRE_COORDS.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "BOTTOMLEFT",
+        x = PREV_ARROW_TEXTURE_OFFSET.X,
+        y = PREV_ARROW_TEXTURE_OFFSET.Y
+      },
+      drawableExtent = {
+        width = SMALL_ARROW_TEXTURE_EXTENT.WIDTH,
+        height = SMALL_ARROW_TEXTURE_EXTENT.HEIGHT
+      }
+    }
+  },
+  COMPLETE_CUSTOMIZING = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coords = {
+        normal = {
+          493,
+          0,
+          126,
+          35
+        },
+        over = {
+          493,
+          35,
+          126,
+          35
+        },
+        click = {
+          493,
+          70,
+          126,
+          35
+        },
+        disable = {
+          493,
+          105,
+          126,
+          35
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 15,
+        y = 0
+      },
+      drawableExtent = {
+        width = 126,
+        height = LOGIN_BUTTON.TEXT_IMG_HEIGHT
+      }
+    }
+  },
+  TO_NEXT_SELECT_ABILITY_PAGE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coords = {
+        normal = {
+          111,
+          140,
+          85,
+          35
+        },
+        over = {
+          111,
+          175,
+          85,
+          35
+        },
+        click = {
+          111,
+          210,
+          85,
+          35
+        },
+        disable = {
+          111,
+          245,
+          85,
+          35
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 15,
+        y = -1
+      },
+      drawableExtent = {
+        width = 85,
+        height = LOGIN_BUTTON.TEXT_IMG_HEIGHT
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = NEXT_ARROW_TEXUTRE_COORDS.NORMAL,
+        over = NEXT_ARROW_TEXUTRE_COORDS.OVER,
+        click = NEXT_ARROW_TEXUTRE_COORDS.CLICK,
+        disable = NEXT_ARROW_TEXUTRE_COORDS.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "BOTTOMRIGHT",
+        x = -NEXT_ARROW_TEXTURE_OFFSET.X,
+        y = -NEXT_ARROW_TEXTURE_OFFSET.Y
+      },
+      drawableExtent = {
+        width = SMALL_ARROW_TEXTURE_EXTENT.WIDTH,
+        height = SMALL_ARROW_TEXTURE_EXTENT.HEIGHT
+      }
+    }
+  },
+  MIX = {
+    drawableType = "drawable",
+    path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+    coords = {
+      normal = BRUSH_SHAPE_TEXTURE_COORDS,
+      over = BRUSH_SHAPE_TEXTURE_COORDS,
+      click = BRUSH_SHAPE_TEXTURE_COORDS,
+      disable = BRUSH_SHAPE_TEXTURE_COORDS
+    },
+    drawableColor = {
+      normal = {
+        ConvertColor(134),
+        ConvertColor(110),
+        ConvertColor(52),
+        0.8
+      },
+      over = {
+        ConvertColor(134),
+        ConvertColor(110),
+        ConvertColor(52),
+        1
+      },
+      click = {
+        ConvertColor(134),
+        ConvertColor(110),
+        ConvertColor(52),
+        0.7
+      },
+      disable = {
+        0.6,
+        0.6,
+        0.6,
+        1
+      }
+    },
+    width = 200,
+    height = 65,
+    fontSize = FONT_SIZE.XLARGE,
+    fontPath = FONT_PATH.SNAIL,
+    fontColor = GetLoginStageDefaultFontColor()
+  },
+  RACE_CINEMA = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BRUSH_SHAPE_TEXTURE_COORDS,
+        over = BRUSH_SHAPE_TEXTURE_COORDS,
+        click = BRUSH_SHAPE_TEXTURE_COORDS,
+        disable = BRUSH_SHAPE_TEXTURE_COORDS
+      },
+      drawableColor = {
+        normal = {
+          ConvertColor(70),
+          ConvertColor(52),
+          ConvertColor(29),
+          0.8
+        },
+        over = {
+          ConvertColor(92),
+          ConvertColor(72),
+          ConvertColor(47),
+          1
+        },
+        click = {
+          ConvertColor(54),
+          ConvertColor(38),
+          ConvertColor(17),
+          0.7
+        },
+        disable = {
+          0.6,
+          0.6,
+          0.6,
+          1
+        }
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT,
+      fontInset = {
+        left = 45,
+        top = 0,
+        right = 8,
+        bottom = 0
+      },
+      fontSize = FONT_SIZE.XLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontColor = {
+        normal = {
+          ConvertColor(231),
+          ConvertColor(205),
+          ConvertColor(173),
+          1
+        },
+        highlight = {
+          ConvertColor(245),
+          ConvertColor(179),
+          ConvertColor(94),
+          1
+        },
+        pushed = {
+          ConvertColor(190),
+          ConvertColor(160),
+          ConvertColor(122),
+          1
+        },
+        disabled = {
+          ConvertColor(183),
+          ConvertColor(183),
+          ConvertColor(183),
+          1
+        }
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.CUTSCENE_REPLAY,
+      coordsKey = "cutscene_replay",
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 15,
+        y = 0
+      }
+    }
+  },
+  CUTSCENE_PLAY = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = {
+          384,
+          305,
+          290,
+          61
+        },
+        over = {
+          384,
+          305,
+          290,
+          61
+        },
+        click = {
+          384,
+          305,
+          290,
+          61
+        },
+        disable = {
+          384,
+          305,
+          290,
+          61
+        }
+      },
+      drawableColor = {
+        normal = {
+          ConvertColor(42),
+          ConvertColor(28),
+          ConvertColor(23),
+          0.8
+        },
+        over = {
+          ConvertColor(92),
+          ConvertColor(72),
+          ConvertColor(47),
+          1
+        },
+        click = {
+          ConvertColor(54),
+          ConvertColor(38),
+          ConvertColor(17),
+          0.7
+        },
+        disable = {
+          0.6,
+          0.6,
+          0.6,
+          1
+        }
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT,
+      fontInset = {
+        left = 45,
+        top = 0,
+        right = 8,
+        bottom = 0
+      },
+      fontSize = FONT_SIZE.XLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontColor = {
+        normal = FONT_COLOR.SOFT_BROWN,
+        highlight = {
+          ConvertColor(245),
+          ConvertColor(179),
+          ConvertColor(94),
+          1
+        },
+        pushed = {
+          ConvertColor(190),
+          ConvertColor(160),
+          ConvertColor(122),
+          1
+        },
+        disabled = {
+          ConvertColor(183),
+          ConvertColor(183),
+          ConvertColor(183),
+          1
+        }
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.CUTSCENE_REPLAY,
+      coordsKey = "cutscene_replay",
+      drawableAnchor = {
+        anchor = "LEFT",
+        x = 15,
+        y = 0
+      }
+    }
+  },
+  CHARACTER_CREATE_GUIDE_CUTSCENE = {
+    drawableType = "drawable",
+    path = BUTTON_TEXTURE_PATH.CHARACTER_CREATE_GUIDE_CUTSCENE,
+    coordsKey = "btn_guide",
+    drawableColor = {
+      normal = {
+        ConvertColor(42),
+        ConvertColor(28),
+        ConvertColor(23),
+        0.8
+      },
+      over = {
+        ConvertColor(92),
+        ConvertColor(72),
+        ConvertColor(47),
+        1
+      },
+      click = {
+        ConvertColor(54),
+        ConvertColor(38),
+        ConvertColor(17),
+        0.7
+      },
+      disable = {
+        0.6,
+        0.6,
+        0.6,
+        1
+      }
+    },
+    fontInset = {
+      left = 45,
+      top = 0,
+      right = 8,
+      bottom = 0
+    },
+    fontSize = FONT_SIZE.XLARGE,
+    fontPath = FONT_PATH.SNAIL,
+    fontColor = {
+      normal = FONT_COLOR.SOFT_BROWN,
+      highlight = {
+        ConvertColor(245),
+        ConvertColor(179),
+        ConvertColor(94),
+        1
+      },
+      pushed = {
+        ConvertColor(190),
+        ConvertColor(160),
+        ConvertColor(122),
+        1
+      },
+      disabled = {
+        ConvertColor(183),
+        ConvertColor(183),
+        ConvertColor(183),
+        1
+      }
+    }
+  },
+  TAB_UNSELECT = {
+    drawableType = "drawable",
+    path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+    coordsKey = "login_right",
+    autoResize = true,
+    fontAlign = ALIGN_BOTTOM_LEFT,
+    fontInset = {
+      left = 10,
+      top = 0,
+      right = 36,
+      bottom = 15
+    },
+    fontSize = FONT_SIZE.XLARGE,
+    fontPath = FONT_PATH.SNAIL,
+    fontColor = GetLoginStageButtonMenuFontColor()
+  },
+  TAB_SELECT_LEFT = {
+    drawableType = "drawable",
+    path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+    coordsKey = "login_left_selected",
+    autoResize = true,
+    fontAlign = ALIGN_BOTTOM_RIGHT,
+    fontInset = {
+      left = 37,
+      top = 0,
+      right = 10,
+      bottom = 15
+    },
+    fontSize = FONT_SIZE.XLARGE,
+    fontPath = FONT_PATH.SNAIL,
+    fontColor = {
+      normal = {
+        ConvertColor(36),
+        ConvertColor(129),
+        ConvertColor(255),
+        1
+      },
+      highlight = {
+        ConvertColor(36),
+        ConvertColor(129),
+        ConvertColor(255),
+        1
+      },
+      pushed = {
+        ConvertColor(36),
+        ConvertColor(129),
+        ConvertColor(255),
+        1
+      },
+      disabled = {
+        ConvertColor(89),
+        ConvertColor(89),
+        ConvertColor(89),
+        1
+      }
+    }
+  },
+  TAB_UNSELECT_LEFT = {
+    drawableType = "drawable",
+    path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+    coordsKey = "login_left_unselected",
+    autoResize = true,
+    fontAlign = ALIGN_BOTTOM_RIGHT,
+    fontInset = {
+      left = 37,
+      top = 0,
+      right = 10,
+      bottom = 15
+    },
+    fontSize = FONT_SIZE.XLARGE,
+    fontPath = FONT_PATH.SNAIL,
+    fontColor = GetLoginStageButtonMenuFontColor()
+  },
+  STYLE_CLOSE = {
+    drawableType = "drawable",
+    path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+    coords = {
+      normal = PREV_ARROW_TEXUTRE_COORDS.NORMAL,
+      over = PREV_ARROW_TEXUTRE_COORDS.OVER,
+      click = PREV_ARROW_TEXUTRE_COORDS.CLICK,
+      disable = PREV_ARROW_TEXUTRE_COORDS.DISABLE
+    },
+    width = BIG_ARROW_TEXTURE_EXTENT.WIDTH,
+    height = BIG_ARROW_TEXTURE_EXTENT.HEIGHT
+  },
+  POS_CIRCLE = {
+    drawableType = "drawable",
+    path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+    coords = {
+      normal = {
+        362,
+        445,
+        21,
+        21
+      },
+      over = {
+        362,
+        445,
+        21,
+        21
+      },
+      click = {
+        362,
+        445,
+        21,
+        21
+      },
+      disable = {
+        383,
+        445,
+        21,
+        21
+      }
+    },
+    width = 21,
+    height = 21
+  },
+  PALLECT_PICKER = {
+    drawableType = "drawable",
+    path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+    coords = {
+      normal = {
+        404,
+        457,
+        12,
+        12
+      },
+      over = {
+        404,
+        457,
+        12,
+        12
+      },
+      click = {
+        404,
+        457,
+        12,
+        12
+      },
+      disable = {
+        404,
+        457,
+        12,
+        12
+      }
+    },
+    width = 12,
+    height = 12
+  },
+  LUMINANCE_PICKER = {
+    drawableType = "drawable",
+    path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+    coords = {
+      normal = {
+        404,
+        445,
+        14,
+        12
+      },
+      over = {
+        404,
+        445,
+        14,
+        12
+      },
+      click = {
+        404,
+        445,
+        14,
+        12
+      },
+      disable = {
+        404,
+        445,
+        14,
+        12
+      }
+    },
+    drawableAnchor = {
+      anchor = "RIGHT",
+      x = 7,
+      y = 0
+    },
+    drawableExtent = {width = 14, height = 12},
+    width = 18,
+    height = 12
+  },
+  STEP_CIRCLE = {
+    drawableType = "drawable",
+    path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+    coords = {
+      normal = {
+        290,
+        445,
+        18,
+        17
+      },
+      over = {
+        308,
+        445,
+        18,
+        17
+      },
+      click = {
+        326,
+        445,
+        18,
+        17
+      },
+      disable = {
+        344,
+        445,
+        18,
+        17
+      }
+    },
+    width = 18,
+    height = 17
+  },
+  PRESET = {
+    [RACE_NUIAN] = {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = {
+          266,
+          298,
+          17,
+          22
+        },
+        over = PRESET_BACKGROUND_TEXTURE_COORDS,
+        click = PRESET_BACKGROUND_TEXTURE_COORDS,
+        disable = {
+          266,
+          298,
+          17,
+          22
+        }
+      },
+      drawableColor = {
+        normal = {
+          0,
+          0,
+          0,
+          0
+        },
+        over = {
+          ConvertColor(253),
+          ConvertColor(255),
+          ConvertColor(213),
+          0.6
+        },
+        click = {
+          ConvertColor(253),
+          ConvertColor(255),
+          ConvertColor(213),
+          0.8
+        },
+        disable = {
+          0,
+          0,
+          0,
+          0
+        }
+      },
+      drawableExtent = {
+        width = PRESET_BACKGROUND_TEXTURE_EXTENT.WIDTH,
+        height = PRESET_BACKGROUND_TEXTURE_EXTENT.HEIGHT
+      },
+      drawableAnchor = {
+        anchor = "CENTER",
+        x = 0,
+        y = -8
+      },
+      width = 120,
+      height = 120
+    },
+    [RACE_ELF] = {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = {
+          266,
+          298,
+          17,
+          22
+        },
+        over = PRESET_BACKGROUND_TEXTURE_COORDS,
+        click = PRESET_BACKGROUND_TEXTURE_COORDS,
+        disable = {
+          266,
+          298,
+          17,
+          22
+        }
+      },
+      drawableColor = {
+        normal = {
+          0,
+          0,
+          0,
+          0
+        },
+        over = {
+          ConvertColor(243),
+          ConvertColor(235),
+          ConvertColor(255),
+          0.7
+        },
+        click = {
+          ConvertColor(243),
+          ConvertColor(235),
+          ConvertColor(255),
+          1
+        },
+        disable = {
+          0,
+          0,
+          0,
+          0
+        }
+      },
+      drawableExtent = {
+        width = PRESET_BACKGROUND_TEXTURE_EXTENT.WIDTH,
+        height = PRESET_BACKGROUND_TEXTURE_EXTENT.HEIGHT
+      },
+      drawableAnchor = {
+        anchor = "CENTER",
+        x = 0,
+        y = -8
+      },
+      width = 120,
+      height = 120
+    },
+    [RACE_FERRE] = {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = {
+          266,
+          298,
+          17,
+          22
+        },
+        over = PRESET_BACKGROUND_TEXTURE_COORDS,
+        click = PRESET_BACKGROUND_TEXTURE_COORDS,
+        disable = {
+          266,
+          298,
+          17,
+          22
+        }
+      },
+      drawableColor = {
+        normal = {
+          0,
+          0,
+          0,
+          0
+        },
+        over = {
+          ConvertColor(226),
+          ConvertColor(246),
+          ConvertColor(255),
+          0.7
+        },
+        click = {
+          ConvertColor(226),
+          ConvertColor(246),
+          ConvertColor(255),
+          1
+        },
+        disable = {
+          0,
+          0,
+          0,
+          0
+        }
+      },
+      drawableExtent = {
+        width = PRESET_BACKGROUND_TEXTURE_EXTENT.WIDTH,
+        height = PRESET_BACKGROUND_TEXTURE_EXTENT.HEIGHT
+      },
+      drawableAnchor = {
+        anchor = "CENTER",
+        x = 2,
+        y = -8
+      },
+      width = 120,
+      height = 120
+    },
+    [RACE_HARIHARAN] = {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = {
+          266,
+          298,
+          17,
+          22
+        },
+        over = PRESET_BACKGROUND_TEXTURE_COORDS,
+        click = PRESET_BACKGROUND_TEXTURE_COORDS,
+        disable = {
+          266,
+          298,
+          17,
+          22
+        }
+      },
+      drawableColor = {
+        normal = {
+          0,
+          0,
+          0,
+          0
+        },
+        over = {
+          ConvertColor(255),
+          ConvertColor(248),
+          ConvertColor(214),
+          0.5
+        },
+        click = {
+          ConvertColor(255),
+          ConvertColor(248),
+          ConvertColor(214),
+          0.7
+        },
+        disable = {
+          0,
+          0,
+          0,
+          0
+        }
+      },
+      drawableExtent = {
+        width = PRESET_BACKGROUND_TEXTURE_EXTENT.WIDTH,
+        height = PRESET_BACKGROUND_TEXTURE_EXTENT.HEIGHT
+      },
+      drawableAnchor = {
+        anchor = "CENTER",
+        x = -2,
+        y = -10
+      },
+      width = 120,
+      height = 120
+    },
+    [RACE_DWARF] = {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = {
+          266,
+          298,
+          17,
+          22
+        },
+        over = PRESET_BACKGROUND_TEXTURE_COORDS,
+        click = PRESET_BACKGROUND_TEXTURE_COORDS,
+        disable = {
+          266,
+          298,
+          17,
+          22
+        }
+      },
+      drawableColor = {
+        normal = {
+          0,
+          0,
+          0,
+          0
+        },
+        over = {
+          ConvertColor(253),
+          ConvertColor(255),
+          ConvertColor(213),
+          0.6
+        },
+        click = {
+          ConvertColor(253),
+          ConvertColor(255),
+          ConvertColor(213),
+          0.8
+        },
+        disable = {
+          0,
+          0,
+          0,
+          0
+        }
+      },
+      drawableExtent = {
+        width = PRESET_BACKGROUND_TEXTURE_EXTENT.WIDTH,
+        height = PRESET_BACKGROUND_TEXTURE_EXTENT.HEIGHT
+      },
+      drawableAnchor = {
+        anchor = "CENTER",
+        x = 0,
+        y = -8
+      },
+      width = 120,
+      height = 120
+    },
+    [RACE_WARBORN] = {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = {
+          266,
+          298,
+          17,
+          22
+        },
+        over = PRESET_BACKGROUND_TEXTURE_COORDS,
+        click = PRESET_BACKGROUND_TEXTURE_COORDS,
+        disable = {
+          266,
+          298,
+          17,
+          22
+        }
+      },
+      drawableColor = {
+        normal = {
+          0,
+          0,
+          0,
+          0
+        },
+        over = {
+          ConvertColor(253),
+          ConvertColor(255),
+          ConvertColor(213),
+          0.6
+        },
+        click = {
+          ConvertColor(253),
+          ConvertColor(255),
+          ConvertColor(213),
+          0.8
+        },
+        disable = {
+          0,
+          0,
+          0,
+          0
+        }
+      },
+      drawableExtent = {
+        width = PRESET_BACKGROUND_TEXTURE_EXTENT.WIDTH,
+        height = PRESET_BACKGROUND_TEXTURE_EXTENT.HEIGHT
+      },
+      drawableAnchor = {
+        anchor = "CENTER",
+        x = 0,
+        y = -8
+      },
+      width = 120,
+      height = 120
+    }
+  },
+  CUSTOM_ITEM = {
+    drawableType = "ninePart",
+    path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+    layer = "overlay",
+    coords = {
+      normal = {
+        0,
+        0,
+        0,
+        0
+      },
+      over = {
+        442,
+        445,
+        21,
+        23
+      },
+      click = {
+        442,
+        445,
+        21,
+        23
+      },
+      disable = {
+        0,
+        0,
+        0,
+        0
+      }
+    },
+    inset = {
+      10,
+      12,
+      10,
+      12
+    },
+    drawableColor = {
+      normal = {
+        0,
+        0,
+        0,
+        0
+      },
+      over = {
+        1,
+        1,
+        1,
+        0.7
+      },
+      click = {
+        1,
+        1,
+        1,
+        1
+      },
+      disable = {
+        0,
+        0,
+        0,
+        0
+      }
+    },
+    width = 84,
+    height = 84
+  },
+  CUSTOM_DETAIL = {
+    drawableType = "drawable",
+    path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+    layer = "overlay",
+    coords = {
+      normal = {
+        217,
+        344,
+        55,
+        71
+      },
+      over = {
+        217,
+        415,
+        55,
+        71
+      },
+      click = {
+        272,
+        321,
+        55,
+        71
+      },
+      disable = {
+        272,
+        392,
+        55,
+        71
+      }
+    },
+    width = 55,
+    height = 71
+  },
+  TO_PREV_CUSTOMIZE_PAGE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coords = {
+        normal = {
+          579,
+          140,
+          84,
+          35
+        },
+        over = {
+          579,
+          175,
+          84,
+          35
+        },
+        click = {
+          579,
+          210,
+          84,
+          35
+        },
+        disable = {
+          579,
+          245,
+          84,
+          35
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 20,
+        y = -1
+      },
+      drawableExtent = {
+        width = 84,
+        height = LOGIN_BUTTON.TEXT_IMG_HEIGHT
+      }
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = PREV_ARROW_TEXUTRE_COORDS.NORMAL,
+        over = PREV_ARROW_TEXUTRE_COORDS.OVER,
+        click = PREV_ARROW_TEXUTRE_COORDS.CLICK,
+        disable = PREV_ARROW_TEXUTRE_COORDS.DISABLE
+      },
+      drawableAnchor = {
+        anchor = "BOTTOMLEFT",
+        x = PREV_ARROW_TEXTURE_OFFSET.X,
+        y = PREV_ARROW_TEXTURE_OFFSET.Y
+      },
+      drawableExtent = {
+        width = SMALL_ARROW_TEXTURE_EXTENT.WIDTH,
+        height = SMALL_ARROW_TEXTURE_EXTENT.HEIGHT
+      }
+    }
+  },
+  ABILITY_FIGHT = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = {
+          ConvertColor(192),
+          ConvertColor(105),
+          ConvertColor(47),
+          0.7
+        },
+        over = {
+          ConvertColor(192),
+          ConvertColor(105),
+          ConvertColor(47),
+          0.9
+        },
+        click = {
+          ConvertColor(192),
+          ConvertColor(105),
+          ConvertColor(47),
+          0.9
+        },
+        disable = {
+          0.5,
+          0.5,
+          0.5,
+          1
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = RACE_FACE_BACKGROUND_OFFSET.X,
+        y = 0
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      },
+      width = RACE_FACE_BUTTON_EXTENT.WIDTH,
+      height = RACE_FACE_BUTTON_EXTENT.HEIGHT,
+      fontSize = FONT_SIZE.XLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontAlign = ALIGN_TOP,
+      fontColor = GetLoginStageAbilityFightButtonFontColor()
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.ABILITY,
+      coords = {
+        normal = {
+          0,
+          0,
+          66,
+          65
+        },
+        over = {
+          66,
+          0,
+          66,
+          65
+        },
+        click = {
+          132,
+          0,
+          66,
+          65
+        },
+        disable = {
+          198,
+          0,
+          66,
+          65
+        }
+      },
+      drawableAnchor = {
+        anchor = "CENTER",
+        x = -1,
+        y = 1
+      },
+      drawableExtent = {width = 66, height = 65}
+    }
+  },
+  ABILITY_MAGIC = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = {
+          ConvertColor(164),
+          ConvertColor(121),
+          ConvertColor(172),
+          0.9
+        },
+        over = {
+          ConvertColor(164),
+          ConvertColor(121),
+          ConvertColor(172),
+          1
+        },
+        click = {
+          ConvertColor(164),
+          ConvertColor(121),
+          ConvertColor(172),
+          1
+        },
+        disable = {
+          0.5,
+          0.5,
+          0.5,
+          1
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = RACE_FACE_BACKGROUND_OFFSET.X,
+        y = 0
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      },
+      width = RACE_FACE_BUTTON_EXTENT.WIDTH,
+      height = RACE_FACE_BUTTON_EXTENT.HEIGHT,
+      fontSize = FONT_SIZE.XLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontAlign = ALIGN_TOP,
+      fontColor = GetLoginStageAbilityMagicButtonFontColor()
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.ABILITY,
+      coords = {
+        normal = {
+          0,
+          123,
+          74,
+          68
+        },
+        over = {
+          74,
+          123,
+          74,
+          68
+        },
+        click = {
+          148,
+          123,
+          74,
+          68
+        },
+        disable = {
+          222,
+          123,
+          74,
+          68
+        }
+      },
+      drawableAnchor = {
+        anchor = "CENTER",
+        x = -1,
+        y = -3
+      },
+      drawableExtent = {width = 74, height = 68}
+    }
+  },
+  ABILITY_WILD = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = {
+          ConvertColor(73),
+          ConvertColor(101),
+          ConvertColor(13),
+          0.6
+        },
+        over = {
+          ConvertColor(73),
+          ConvertColor(101),
+          ConvertColor(13),
+          1
+        },
+        click = {
+          ConvertColor(73),
+          ConvertColor(101),
+          ConvertColor(13),
+          1
+        },
+        disable = {
+          0.5,
+          0.5,
+          0.5,
+          1
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = RACE_FACE_BACKGROUND_OFFSET.X,
+        y = 0
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      },
+      width = RACE_FACE_BUTTON_EXTENT.WIDTH,
+      height = RACE_FACE_BUTTON_EXTENT.HEIGHT,
+      fontSize = FONT_SIZE.XLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontAlign = ALIGN_TOP,
+      fontColor = GetLoginStageAbilityWildButtonFontColor()
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.ABILITY,
+      coords = {
+        normal = {
+          0,
+          65,
+          66,
+          58
+        },
+        over = {
+          66,
+          65,
+          66,
+          58
+        },
+        click = {
+          132,
+          65,
+          66,
+          58
+        },
+        disable = {
+          198,
+          65,
+          66,
+          58
+        }
+      },
+      drawableAnchor = {
+        anchor = "CENTER",
+        x = 1,
+        y = 3
+      },
+      drawableExtent = {width = 66, height = 64}
+    }
+  },
+  ABILITY_LOVE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = {
+          ConvertColor(221),
+          ConvertColor(180),
+          ConvertColor(81),
+          0.7
+        },
+        over = {
+          ConvertColor(221),
+          ConvertColor(180),
+          ConvertColor(81),
+          1
+        },
+        click = {
+          ConvertColor(221),
+          ConvertColor(180),
+          ConvertColor(81),
+          1
+        },
+        disable = {
+          0.5,
+          0.5,
+          0.5,
+          1
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = RACE_FACE_BACKGROUND_OFFSET.X,
+        y = 0
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      },
+      width = RACE_FACE_BUTTON_EXTENT.WIDTH,
+      height = RACE_FACE_BUTTON_EXTENT.HEIGHT,
+      fontSize = FONT_SIZE.XLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontAlign = ALIGN_TOP,
+      fontColor = GetLoginStageAbilityLoveButtonFontColor()
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.ABILITY,
+      coords = {
+        normal = {
+          264,
+          0,
+          58,
+          60
+        },
+        over = {
+          264,
+          60,
+          58,
+          60
+        },
+        click = {
+          296,
+          120,
+          58,
+          60
+        },
+        disable = {
+          354,
+          120,
+          58,
+          60
+        }
+      },
+      drawableAnchor = {
+        anchor = "CENTER",
+        x = -2,
+        y = 3
+      },
+      drawableExtent = {width = 58, height = 60}
+    }
+  },
+  ABILITY_VOCATION = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = {
+          ConvertColor(120),
+          ConvertColor(164),
+          ConvertColor(173),
+          0.7
+        },
+        over = {
+          ConvertColor(120),
+          ConvertColor(164),
+          ConvertColor(173),
+          1
+        },
+        click = {
+          ConvertColor(120),
+          ConvertColor(164),
+          ConvertColor(173),
+          1
+        },
+        disable = {
+          0.5,
+          0.5,
+          0.5,
+          1
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = RACE_FACE_BACKGROUND_OFFSET.X,
+        y = 0
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      },
+      width = RACE_FACE_BUTTON_EXTENT.WIDTH,
+      height = RACE_FACE_BUTTON_EXTENT.HEIGHT,
+      fontSize = FONT_SIZE.XLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontAlign = ALIGN_TOP,
+      fontColor = GetLoginStageAbilityVocationButtonFontColor()
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.ABILITY,
+      coords = {
+        normal = {
+          0,
+          191,
+          93,
+          64
+        },
+        over = {
+          93,
+          191,
+          93,
+          64
+        },
+        click = {
+          186,
+          191,
+          93,
+          64
+        },
+        disable = {
+          279,
+          191,
+          93,
+          64
+        }
+      },
+      drawableAnchor = {
+        anchor = "CENTER",
+        x = -1,
+        y = 4
+      },
+      drawableExtent = {width = 93, height = 64}
+    }
+  },
+  ABILITY_DEATH = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = SELECT_FACE_BACKGROUND,
+        over = SELECT_FACE_BACKGROUND,
+        click = SELECT_FACE_BACKGROUND,
+        disable = SELECT_FACE_BACKGROUND
+      },
+      drawableColor = {
+        normal = {
+          ConvertColor(182),
+          ConvertColor(84),
+          ConvertColor(84),
+          0.7
+        },
+        over = {
+          ConvertColor(182),
+          ConvertColor(84),
+          ConvertColor(84),
+          1
+        },
+        click = {
+          ConvertColor(182),
+          ConvertColor(84),
+          ConvertColor(84),
+          1
+        },
+        disable = {
+          0.5,
+          0.5,
+          0.5,
+          1
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = RACE_FACE_BACKGROUND_OFFSET.X,
+        y = 0
+      },
+      drawableExtent = {
+        width = SELECT_FACE_BACKGROUND_EXTENT.WIDTH,
+        height = SELECT_FACE_BACKGROUND_EXTENT.HEIGHT
+      },
+      width = RACE_FACE_BUTTON_EXTENT.WIDTH,
+      height = RACE_FACE_BUTTON_EXTENT.HEIGHT,
+      fontSize = FONT_SIZE.XLARGE,
+      fontPath = FONT_PATH.SNAIL,
+      fontAlign = ALIGN_TOP,
+      fontColor = GetLoginStageAbilityDeathButtonFontColor()
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.ABILITY,
+      coords = {
+        normal = {
+          465,
+          0,
+          47,
+          66
+        },
+        over = {
+          465,
+          65,
+          47,
+          66
+        },
+        click = {
+          465,
+          132,
+          47,
+          66
+        },
+        disable = {
+          418,
+          0,
+          47,
+          66
+        }
+      },
+      drawableAnchor = {
+        anchor = "CENTER",
+        x = -3,
+        y = 3
+      },
+      drawableExtent = {width = 47, height = 66}
+    }
+  },
+  COMPLETE_CREATE = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = BIG_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = BIG_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coords = {
+        normal = {
+          327,
+          321,
+          115,
+          42
+        },
+        over = {
+          327,
+          363,
+          115,
+          42
+        },
+        click = {
+          327,
+          405,
+          115,
+          42
+        },
+        disable = {
+          327,
+          447,
+          115,
+          42
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 35,
+        y = -4
+      },
+      drawableExtent = {width = 115, height = 42}
+    }
+  },
+  COMPLETE_RECUSTOMIZING = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = 250,
+      height = 100
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.GRADE,
+      coords = {
+        normal = {
+          292,
+          384,
+          124,
+          44
+        },
+        over = {
+          292,
+          428,
+          124,
+          44
+        },
+        click = {
+          416,
+          384,
+          124,
+          44
+        },
+        disable = {
+          416,
+          428,
+          124,
+          44
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 38,
+        y = -4
+      },
+      drawableExtent = {width = 124, height = 44}
+    }
+  },
+  CREATE_CANCEL = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coords = {
+        normal = {
+          196,
+          140,
+          110,
+          35
+        },
+        over = {
+          196,
+          175,
+          110,
+          35
+        },
+        click = {
+          196,
+          210,
+          110,
+          35
+        },
+        disable = {
+          196,
+          245,
+          110,
+          35
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 15,
+        y = 0
+      },
+      drawableExtent = {
+        width = 110,
+        height = LOGIN_BUTTON.TEXT_IMG_HEIGHT
+      }
+    }
+  },
+  EDIT_CANCEL = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.GRADE,
+      coords = {
+        normal = {
+          0,
+          472,
+          110,
+          36
+        },
+        over = {
+          0,
+          472,
+          110,
+          36
+        },
+        click = {
+          0,
+          472,
+          110,
+          36
+        },
+        disable = {
+          0,
+          472,
+          110,
+          36
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 15,
+        y = 0
+      },
+      drawableExtent = {width = 110, height = 36}
+    }
+  },
+  HAIR_COLOR_SELECTED_TAB = {
+    drawableType = "drawable",
+    path = LOGIN_STAGE_TEXTURE_PATH.TAB,
+    coordsKey = "tab_selected",
+    autoResize = true,
+    fontInset = {
+      left = 15,
+      top = 0,
+      right = 15,
+      bottom = 0
+    },
+    fontSize = FONT_SIZE.LARGE,
+    fontColor = {
+      normal = FONT_COLOR.MIDDLE_TITLE,
+      highlight = FONT_COLOR.MIDDLE_TITLE,
+      pushed = FONT_COLOR.MIDDLE_TITLE,
+      disabled = FONT_COLOR.GRAY
+    }
+  },
+  HAIR_COLOR_UNSELECTED_TAB = {
+    drawableType = "drawable",
+    path = LOGIN_STAGE_TEXTURE_PATH.TAB,
+    coordsKey = "tab_unselected",
+    autoResize = true,
+    fontInset = {
+      left = 15,
+      top = 0,
+      right = 15,
+      bottom = 0
+    },
+    fontSize = FONT_SIZE.LARGE,
+    fontColor = {
+      normal = FONT_COLOR.GRAY,
+      highlight = FONT_COLOR.GRAY,
+      pushed = FONT_COLOR.MIDDLE_TITLE,
+      disabled = FONT_COLOR.GRAY
+    }
+  }
+}
+BUTTON_BEAUTYSHOP = {
+  RESET = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.BEAUTYSHOP,
+      coords = {
+        normal = {
+          0,
+          84,
+          105,
+          33
+        },
+        over = {
+          105,
+          84,
+          105,
+          33
+        },
+        click = {
+          0,
+          117,
+          105,
+          33
+        },
+        disable = {
+          105,
+          117,
+          105,
+          33
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 15,
+        y = 0
+      },
+      drawableExtent = {width = 105, height = 33}
+    }
+  },
+  EXIT = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.BEAUTYSHOP,
+      coords = {
+        normal = {
+          80,
+          183,
+          86,
+          33
+        },
+        over = {
+          166,
+          183,
+          86,
+          33
+        },
+        click = {
+          0,
+          216,
+          86,
+          33
+        },
+        disable = {
+          86,
+          216,
+          86,
+          33
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 15,
+        y = 0
+      },
+      drawableExtent = {width = 86, height = 33}
+    }
+  },
+  CONFIRM = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.BEAUTYSHOP,
+      coords = {
+        normal = {
+          0,
+          150,
+          80,
+          33
+        },
+        over = {
+          80,
+          150,
+          80,
+          33
+        },
+        click = {
+          160,
+          150,
+          80,
+          33
+        },
+        disable = {
+          0,
+          183,
+          80,
+          33
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 15,
+        y = 0
+      },
+      drawableExtent = {width = 80, height = 33}
+    }
+  },
+  PAGE_FIRST = {
+    drawableType = "drawable",
+    path = BUTTON_TEXTURE_PATH.PAGE,
+    coords = {
+      normal = {
+        28,
+        0,
+        -12,
+        24
+      },
+      over = {
+        28,
+        0,
+        -12,
+        24
+      },
+      click = {
+        28,
+        0,
+        -12,
+        24
+      },
+      disable = {
+        28,
+        0,
+        -12,
+        24
+      }
+    },
+    drawableColor = {
+      normal = PAGE_BUTTON_COLOR.NORMAL,
+      over = PAGE_BUTTON_COLOR.OVER,
+      click = PAGE_BUTTON_COLOR.CLICK,
+      disable = PAGE_BUTTON_COLOR.DISABLE
+    },
+    width = 12,
+    height = 24
+  },
+  PAGE_PREV = {
+    drawableType = "drawable",
+    path = BUTTON_TEXTURE_PATH.PAGE,
+    coords = {
+      normal = {
+        16,
+        0,
+        -16,
+        32
+      },
+      over = {
+        16,
+        0,
+        -16,
+        32
+      },
+      click = {
+        16,
+        0,
+        -16,
+        32
+      },
+      disable = {
+        16,
+        0,
+        -16,
+        32
+      }
+    },
+    drawableColor = {
+      normal = PAGE_BUTTON_COLOR.NORMAL,
+      over = PAGE_BUTTON_COLOR.OVER,
+      click = PAGE_BUTTON_COLOR.CLICK,
+      disable = PAGE_BUTTON_COLOR.DISABLE
+    },
+    width = 16,
+    height = 32
+  },
+  PAGE_NEXT = {
+    drawableType = "drawable",
+    path = BUTTON_TEXTURE_PATH.PAGE,
+    coords = {
+      normal = {
+        0,
+        0,
+        16,
+        32
+      },
+      over = {
+        0,
+        0,
+        16,
+        32
+      },
+      click = {
+        0,
+        0,
+        16,
+        32
+      },
+      disable = {
+        0,
+        0,
+        16,
+        32
+      }
+    },
+    drawableColor = {
+      normal = PAGE_BUTTON_COLOR.NORMAL,
+      over = PAGE_BUTTON_COLOR.OVER,
+      click = PAGE_BUTTON_COLOR.CLICK,
+      disable = PAGE_BUTTON_COLOR.DISABLE
+    },
+    width = 16,
+    height = 32
+  },
+  PAGE_LAST = {
+    drawableType = "drawable",
+    path = BUTTON_TEXTURE_PATH.PAGE,
+    coords = {
+      normal = {
+        16,
+        0,
+        12,
+        24
+      },
+      over = {
+        16,
+        0,
+        12,
+        24
+      },
+      click = {
+        16,
+        0,
+        12,
+        24
+      },
+      disable = {
+        16,
+        0,
+        12,
+        24
+      }
+    },
+    drawableColor = {
+      normal = PAGE_BUTTON_COLOR.NORMAL,
+      over = PAGE_BUTTON_COLOR.OVER,
+      click = PAGE_BUTTON_COLOR.CLICK,
+      disable = PAGE_BUTTON_COLOR.DISABLE
+    },
+    width = 12,
+    height = 24
+  },
+  TAB_SELECT_LEFT = {
+    drawableType = "drawable",
+    path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+    coordsKey = "beauty_left_selected",
+    autoResize = true,
+    fontAlign = ALIGN_BOTTOM_RIGHT,
+    fontInset = {
+      left = 37,
+      top = 0,
+      right = 10,
+      bottom = 15
+    },
+    fontSize = FONT_SIZE.XLARGE,
+    fontPath = FONT_PATH.SNAIL,
+    fontColor = {
+      normal = {
+        ConvertColor(36),
+        ConvertColor(237),
+        ConvertColor(249),
+        1
+      },
+      highlight = {
+        ConvertColor(36),
+        ConvertColor(237),
+        ConvertColor(249),
+        1
+      },
+      pushed = {
+        ConvertColor(36),
+        ConvertColor(237),
+        ConvertColor(249),
+        1
+      },
+      disabled = {
+        ConvertColor(89),
+        ConvertColor(89),
+        ConvertColor(89),
+        1
+      }
+    }
+  },
+  TAB_UNSELECT_LEFT = {
+    drawableType = "drawable",
+    path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+    coordsKey = "login_left_unselected",
+    autoResize = true,
+    fontAlign = ALIGN_BOTTOM_RIGHT,
+    fontInset = {
+      left = 37,
+      top = 0,
+      right = 10,
+      bottom = 15
+    },
+    fontSize = FONT_SIZE.XLARGE,
+    fontPath = FONT_PATH.SNAIL,
+    fontColor = GetBeautyShopButtonMenuFontColor()
+  },
+  TAB_UNSELECT = {
+    drawableType = "drawable",
+    path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+    coordsKey = "beauty_right",
+    fontAlign = ALIGN_BOTTOM_LEFT,
+    fontInset = {
+      left = 10,
+      top = 0,
+      right = 36,
+      bottom = 15
+    },
+    fontSize = FONT_SIZE.XLARGE,
+    fontPath = FONT_PATH.SNAIL,
+    fontColor = GetBeautyShopButtonMenuFontColor()
+  }
+}

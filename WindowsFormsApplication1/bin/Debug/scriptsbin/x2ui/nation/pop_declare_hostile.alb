@@ -1,0 +1,22 @@
+local wnd
+function ShowDeclareHostile(param)
+  if wnd == nil then
+    wnd = SetViewOfHostileDeclare("ShowHostileDeclare", "UIParent")
+    function wnd.okBtn:OnClick()
+      X2Nation:SendRelationHostile(wnd.factionId, wnd.input:GetText())
+      wnd:Show(false)
+    end
+    wnd.okBtn:SetHandler("OnClick", wnd.okBtn.OnClick)
+    function wnd.noBtn:OnClick()
+      wnd:Show(false)
+    end
+    wnd.noBtn:SetHandler("OnClick", wnd.noBtn.OnClick)
+  end
+  wnd:Show(true)
+  wnd.factionId = param.factionId
+  wnd.targetName:SetText(param.name)
+  if param.nation == false then
+    wnd.explain:SetText(GetCommonText("nation_hostile_explain_system"))
+  end
+end
+UIParent:SetEventHandler("NATION_RELATION_HOSTILE", ShowDeclareHostile)

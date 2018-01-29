@@ -1,0 +1,113 @@
+function CreateTaxInfoGuideIcon(parent)
+  local guide = CreateGuideIconWidget(parent)
+  function guide:FillInfo(taxItemType, taxItemCount)
+    if taxItemType == nil or taxItemCount == nil then
+      return
+    end
+    self.taxItemType = taxItemType
+    self.taxItemCount = taxItemCount
+  end
+  local OnEnter = function(self)
+    if self.taxItemType == nil or self.taxItemCount == nil then
+      return
+    end
+    local anchorInfo = {
+      myAnchor = "TOPLEFT",
+      targetAnchor = "BOTTOMLEFT",
+      x = 0,
+      y = 0
+    }
+    local itemInfo = X2Item:GetItemInfoByType(self.taxItemType)
+    local str = X2Locale:LocalizeUiText(COMMON_TEXT, "guide_icon_tooltip_housing_tax_info", FONT_COLOR_HEX.SOFT_YELLOW, itemInfo.name, FONT_COLOR_HEX.SOFT_YELLOW, itemInfo.name, tostring(self.taxItemCount))
+    SetTooltip(str, self)
+  end
+  guide:SetHandler("OnEnter", OnEnter)
+  return guide
+end
+function CreateBuildingMaterialPart(parent)
+  local section = parent:CreateChildWidget("emptywidget", "materialSection", 0, false)
+  section.icons = {}
+  function section:SetInfo(info)
+    if info == nil or #info == 0 then
+      self:Show(false)
+      if #self.icons ~= 0 then
+        for i = 1, #self.icons do
+          if self.icons[i] ~= nil then
+            self.icons[i]:Show(false)
+          end
+        end
+        if self.icons[0] ~= nil then
+          self.icons[0]:Show(false)
+        end
+      end
+    end
+    local arrowWidth = 20
+    local arrowInset = 3
+    local SetLaborItemIcon = function(icon)
+      SetItemIcons(icon, "Game\\ui\\icon\\labor.dds")
+      local function OnEnter()
+        SetTooltip(locale.attribute("labor_power"), icon)
+      end
+      icon:SetHandler("OnEnter", OnEnter)
+    end
+    local function GetSectionWidth(step)
+      if step >= 4 then
+        step = 4
+      end
+      if step == 1 then
+        return ICON_SIZE.DEFAULT
+      end
+      return ICON_SIZE.DEFAULT * step + arrowWidth * 1.4 * (step - 1)
+    end
+    local GetRowCount = function(step)
+      if step % 4 == 0 then
+        return step / 4
+      else
+        return math.floor(step / 4 + 1)
+      end
+    end
+    local function GetSectionHeight(step)
+      return GetRowCount(step) * ICON_SIZE.DEFAULT + GetRowCount(step) * FONT_SIZE.SMALL + 5
+    end
+    for i = 1, #info do
+      local itemInfo = info[i]
+      if section.icons[itemInfo.step] == nil then
+        local icon = CreateItemIconButton("icon_" .. tostring(i), self)
+        section.icons[itemInfo.step] = icon
+        local label = icon:CreateChildWidget("label", "label", 0, true)
+        label:SetHeight(FONT_SIZE.SMALL)
+        label:SetAutoResize(true)
+        label:AddAnchor("TOP", icon, "BOTTOM", 0, 4)
+        label.style:SetFontSize(FONT_SIZE.SMALL)
+        ApplyTextColor(label, FONT_COLOR.DEFAULT)
+      end
+      local icon = section.icons[itemInfo.step]
+      local index = math.floor((i - 1) % 4)
+      local col = index * icon:GetWidth() + index * arrowWidth * 1.4
+      local row = math.floor((i - 1) / 4) * (icon:GetWidth() + 20)
+      icon:Show(true)
+      icon:RemoveAllAnchors()
+      icon:AddAnchor("TOPLEFT", self, col, row)
+      if itemInfo.isLaborPower then
+        SetLaborItemIcon(icon)
+      else
+        icon:SetItemInfo(itemInfo)
+      end
+      if self.UpdateLabel ~= nil then
+        self:UpdateLabel(itemInfo)
+      end
+      if i < #info then
+        local arrow = CreateIcon(icon, "arrow")
+        arrow:SetExtent(arrowWidth, 14)
+        arrow:AddAnchor("LEFT", icon, "RIGHT", arrowInset, 1)
+        ApplyTextureColor(arrow, TEXTURE_COLOR.ARROW_DARK_BROWN)
+        if arrowWidth == 0 then
+          arrowWidth = arrow:GetWidth()
+        end
+      end
+    end
+    self:SetExtent(GetSectionWidth(#info), GetSectionHeight(#info))
+    self:Show(true)
+  end
+  return section
+end

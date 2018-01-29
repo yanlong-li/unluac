@@ -1,0 +1,50 @@
+characterCreate = {}
+characterCreate.bgWindow = CreateEmptyWindow("characterCreate.bgWindow", "UIParent")
+characterCreate.bgWindow:Show(true)
+characterCreate.bgWindow:AddAnchor("TOPLEFT", "UIParent", 0, 0)
+characterCreate.bgWindow:AddAnchor("BOTTOMRIGHT", "UIParent", 0, 0)
+characterCreate.bgWindow:EnableFocus(false)
+characterCreate.bg = {}
+for i = 1, #RACE_TYPE do
+  local race = RACE_TYPE[i]
+  characterCreate.bg[race] = CreateLoginStageBgWindow(STEP2_BG_PATH[race])
+  characterCreate.bg[race]:Show(false)
+end
+local authMessage = CreateAuthMessageWindow(characterCreate.bgWindow)
+authMessage:AddAnchor("TOP", characterCreate.bgWindow, 0, 200)
+authMessage:SetExtent(250, 20)
+characterCreate.bgWindow.authMessage = authMessage
+function characterCreate.bgWindow:OnMouseDown()
+  return false
+end
+characterCreate.bgWindow:SetHandler("OnMouseDown", characterCreate.bgWindow.OnMouseDown)
+function characterCreate.bgWindow:OnScale()
+  characterCreate.bgWindow:AddAnchor("TOPLEFT", "UIParent", 0, 0)
+  characterCreate.bgWindow:AddAnchor("BOTTOMRIGHT", "UIParent", 0, 0)
+end
+characterCreate.bgWindow:SetHandler("OnScale", characterCreate.bgWindow.OnScale)
+characterCreate.bottomPanel = CreateBottomPanel("characterCreate.bottomPanel", characterCreate.bgWindow)
+local cancelCreateBtn = characterCreate.bgWindow:CreateChildWidget("button", "cancelCreateBtn", 0, true)
+cancelCreateBtn:Raise()
+cancelCreateBtn:AddAnchor("BOTTOMLEFT", characterCreate.bgWindow, 1, 1)
+cancelCreateBtn:IgnoreInputOnFading(true)
+if X2LoginCharacter:IsRecustomizing() then
+  ApplyButtonSkinTable(cancelCreateBtn, BUTTON_LOGINSTAGE.EDIT_CANCEL)
+else
+  ApplyButtonSkinTable(cancelCreateBtn, BUTTON_LOGINSTAGE.CREATE_CANCEL)
+end
+local nextStepBtn = characterCreate.bgWindow:CreateChildWidget("button", "nextStepBtn", 0, true)
+nextStepBtn:Raise()
+nextStepBtn:AddAnchor("BOTTOMRIGHT", characterCreate.bottomPanel, -30, 0)
+nextStepBtn:IgnoreInputOnFading(true)
+ApplyButtonSkinTable(nextStepBtn, BUTTON_LOGINSTAGE.TO_NEXT_CUSTOMIZE_PAGE)
+local prevStepBtn = characterCreate.bgWindow:CreateChildWidget("button", "prevStepBtn", 0, true)
+prevStepBtn:Raise()
+prevStepBtn:AddAnchor("LEFT", cancelCreateBtn, "RIGHT", 8, 0)
+prevStepBtn:IgnoreInputOnFading(true)
+ApplyButtonSkinTable(prevStepBtn, BUTTON_LOGINSTAGE.TO_CHARACTER_SELECT_PAGE)
+local stepCompleteButton = characterCreate.bgWindow:CreateChildWidget("button", "stepCompleteButton", 0, true)
+stepCompleteButton:Raise()
+stepCompleteButton:AddAnchor("BOTTOM", characterCreate.bottomPanel, 0, 0)
+stepCompleteButton:IgnoreInputOnFading(true)
+ApplyButtonSkinTable(stepCompleteButton, BUTTON_LOGINSTAGE.COMPLETE_SELECT_RACE)

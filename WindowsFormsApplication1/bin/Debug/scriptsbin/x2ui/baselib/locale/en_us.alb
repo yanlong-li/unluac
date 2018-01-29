@@ -1,0 +1,71 @@
+if X2Util:GetGameProvider() == TRION then
+  TEXTBOX_LINE_SPACE = {
+    SMALL = 0,
+    MIDDLE = 3,
+    TOOLTIP = 0
+  }
+  baselibLocale.button = {
+    skillAbilityButton = {
+      extent = {w = 210, h = 38}
+    }
+  }
+  baselibLocale.chatOption = {
+    menuList = {menuButtonWidth = 160}
+  }
+  function baselibLocale.GetDate(year, month, day, hour, minute, second, filter)
+    filter = filter or DEFAULT_FORMAT_FILTER
+    local function Get(value, key)
+      if value <= 0 then
+        value = 0
+      end
+      local x = math.floor(filter / key)
+      if x % 2 ~= 1 then
+        return ""
+      end
+      filter = filter - key
+      local separator = ""
+      if key == FORMAT_FILTER.MINUTE or key == FORMAT_FILTER.SECOND then
+        separator = ":"
+      elseif key == FORMAT_FILTER.MONTH or key == FORMAT_FILTER.YEAR then
+        separator = "."
+      end
+      return string.format("%s%02d", separator, value)
+    end
+    local timeStr = math.floor(filter / FORMAT_FILTER.HOUR) % 2 == 1 or math.floor(filter / FORMAT_FILTER.MINUTE) % 2 == 1 or math.floor(filter / FORMAT_FILTER.SECOND) % 2 == 1
+    local dateStr = math.floor(filter / FORMAT_FILTER.DAY) % 2 == 1 or math.floor(filter / FORMAT_FILTER.MONTH) % 2 == 1 or math.floor(filter / FORMAT_FILTER.YEAR) % 2 == 1
+    local space = ""
+    if timeStr and dateStr then
+      space = " "
+    end
+    return string.format("%s%s%s%s%s%s%s", Get(hour, FORMAT_FILTER.HOUR), Get(minute, FORMAT_FILTER.MINUTE), Get(second, FORMAT_FILTER.SECOND), space, Get(day, FORMAT_FILTER.DAY), Get(month, FORMAT_FILTER.MONTH), Get(year, FORMAT_FILTER.YEAR))
+  end
+  function baselibLocale.GetSimpleDate(year, month, day, hour, minute, second)
+    local timeStr = string.format("%02d:%02d", hour, minute)
+    if second > 0 then
+      timeStr = timeStr .. string.format(":%02d", second)
+    end
+    local output = string.format("%s %02d.%02d.%d", timeStr, day, month, year)
+    return output
+  end
+  baselibLocale.useMileage = true
+  baselibLocale.premiumService.usePremiumGrade = false
+  baselibLocale.premiumService.endTimeTooltipLine = true
+  baselibLocale.premiumService.showTooltip = true
+  baselibLocale.useWebMessenger = false
+  baselibLocale.useWebInquire = true
+  baselibLocale.useWebDiary = false
+  baselibLocale.useWebQuickDiary = false
+  baselibLocale.useWebWiki = true
+  baselibLocale.visibleRefundInfo = false
+  baselibLocale.visibleAddedRefundInfo = false
+  function baselibLocale:GetDefaultDateString(year, month, day)
+    if year == nil and month == nil and day == nil then
+      return
+    end
+    if year ~= nil then
+      return string.format("%02d. %02d. %d", day, month, year)
+    else
+      return string.format("%02d. %02d", day, month)
+    end
+  end
+end

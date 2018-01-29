@@ -1,0 +1,278 @@
+local CreateDropdown = function()
+  local dropdown = CreateSliderList("dropDownSliderList", "UIParent")
+  dropdown:SetMinMaxValues(0, 0)
+  function dropdown:OnHide()
+    self.OnSelChanged = nil
+    self:SetHeight(0)
+    self:ClearItem()
+    self.scroll:Show(false)
+    self:SetUseScrollThumb(false)
+  end
+  dropdown:SetHandler("OnHide", dropdown.OnHide)
+  function dropdown:OnWheelUp()
+    self.scroll.upButton:OnClick()
+  end
+  dropdown:SetHandler("OnWheelUp", dropdown.OnWheelUp)
+  function dropdown:OnWheelDown()
+    self.scroll.downButton:OnClick()
+  end
+  dropdown:SetHandler("OnWheelDown", dropdown.OnWheelDown)
+  return dropdown
+end
+commonDropdown = CreateDropdown()
+commonDropdown:SetUILayer("dialog")
+commonDropdown:SetCloseOnEscape(true)
+ADDON:RegisterContentWidget(UIC_DROPDOWN_LIST, commonDropdown)
+function CreateComboBox(parent)
+  local comboBox = parent:CreateChildWidget("button", "comboBox", 0, true)
+  comboBox:Show(true)
+  comboBox:SetHeight(DEFAULT_SIZE.COMBOBOX_HEIGHT)
+  ButtonInit(comboBox)
+  comboBox:SetInset(7, 1, 21, 0)
+  comboBox.style:SetAlign(ALIGN_LEFT)
+  comboBox.style:SetShadow(false)
+  local bg = comboBox:CreateNinePartDrawable(TEXTURE_PATH.MONEY_WINDOW, "background")
+  bg:AddAnchor("TOPLEFT", comboBox, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", comboBox, 0, 0)
+  bg:SetInset(6, 6, 6, 6)
+  bg:SetCoords(191, 0, 13, 13)
+  comboBox.bg = bg
+  local button = CreateEmptyButton(comboBox:GetId() .. ".button", comboBox)
+  button:Show(true)
+  button:Raise()
+  button:AddAnchor("RIGHT", comboBox, -2, 2)
+  ApplyButtonSkin(button, BUTTON_BASIC.FOLDER_CLOSE)
+  comboBox.button = button
+  comboBox.prevSelectedIndex = 0
+  comboBox.unselectedText = nil
+  comboBox.skipSelectedProc = false
+  comboBox.selctedIndex = 0
+  function comboBox:SetGuideText(str)
+    if self:GetSelectedIndex() ~= nil then
+      return
+    end
+    self:SetText(str)
+  end
+  function comboBox:SetEnable(enable)
+    self:Enable(enable)
+    button:Enable(enable)
+    if enable then
+      self.bg:SetColor(1, 1, 1, 1)
+      self:SetAlpha(1)
+    else
+      self.bg:SetColor(0.5, 0.5, 0.5, 0.7)
+      self:SetAlpha(0.7)
+    end
+  end
+  function comboBox:GetSelectedIndex()
+    return self.selctedIndex
+  end
+  function comboBox:GetPrevSelectedIndex()
+    return self.prevSelectedIndex
+  end
+  function comboBox:IsSelected()
+    if self.selctedIndex == nil or self.selctedIndex <= 0 then
+      return false
+    end
+    return true
+  end
+  function comboBox:OnSelChanged()
+    local selIndex = commonDropdown:GetSelectedIndex()
+    comboBox:Select(selIndex)
+    commonDropdown:Show(false)
+    if comboBox.SelectedProc ~= nil then
+      comboBox:SelectedProc(selIndex)
+    end
+  end
+  function comboBox:Select(index)
+    if self:GetAttachedWidget() == commonDropdown then
+      commonDropdown:Select(index - 1)
+    end
+    if self.dropdownItem ~= nil then
+      self.prevSelectedIndex = self.selctedIndex
+      self.selctedIndex = index
+      if self:IsSelected() then
+        self:SetText(tostring(self.dropdownItem[index]))
+        if self.dropdownItemColor ~= nil and self.dropdownItemColor[index] ~= nil then
+          local color = comboBox.dropdownItemColor[index]
+          SetButtonFontOneColor(self, color)
+        end
+      elseif self.unselectedText ~= nil then
+        self:SetText(self.unselectedText)
+      end
+    end
+    if self:GetText() == "nil" then
+      self:SetText("")
+    end
+    if comboBox.SelectProc ~= nil then
+      comboBox:SelectProc(index)
+    end
+  end
+  function comboBox:SetEllipsis(isEllipsis, attachParam)
+    comboBox.style:SetEllipsis(isEllipsis)
+    commonDropdown.list.itemStyle:SetEllipsis(isEllipsis)
+    if isEllipsis then
+      if attachParam == nil then
+        attachParam = {
+          "LEFT",
+          self,
+          "RIGHT",
+          -25,
+          0
+        }
+      end
+      ApplyEllipsisText(self, self:GetWidth(), attachParam)
+    end
+  end
+  comboBox.showDropdownTooltip = false
+  function comboBox:ShowDropdownTooltip(show)
+    self.showDropdownTooltip = show
+  end
+  function comboBox:OnClick(arg)
+    if arg == "LeftButton" then
+      if comboBox:GetAttachedWidget() == commonDropdown then
+        commonDropdown:Show(not commonDropdown:IsVisible())
+        if comboBox.hideDropDown ~= nil then
+          comboBox:hideDropDown()
+        end
+      else
+        comboBox:AttachWidget(commonDropdown)
+        commonDropdown:Show(true)
+      end
+      if commonDropdown:IsVisible() then
+        commonDropdown:AddAnchor("TOPLEFT", comboBox, "BOTTOMLEFT", 0, 0)
+        commonDropdown:AddAnchor("TOPRIGHT", comboBox, "BOTTOMRIGHT", 0, 0)
+        local left, top, right, bottom = commonDropdown.list:GetInset()
+        if comboBox.dropdownItem ~= nil then
+          for i = 1, #comboBox.dropdownItem do
+            if comboBox.dropdownItemColor ~= nil and comboBox.dropdownItemColor[i] ~= nil then
+              local color = comboBox.dropdownItemColor[i]
+              commonDropdown:AppendItemWithColor(comboBox.dropdownItem[i], i, color)
+            else
+              commonDropdown:AppendItem(comboBox.dropdownItem[i], i)
+            end
+          end
+        end
+        if comboBox.limitItemCount ~= nil then
+          commonDropdown:SetHeight(comboBox.limitItemCount * commonDropdown.list:GetHeight() + top + bottom)
+          commonDropdown.scroll:Show(0 < commonDropdown:GetMaxTop())
+          commonDropdown:SetUseScrollThumb(true)
+          commonDropdown:SetMinMaxValues(0, commonDropdown:GetMaxTop())
+        else
+          commonDropdown.scroll:Show(false)
+          commonDropdown:SetUseScrollThumb(false)
+          if comboBox.dropdownItem ~= nil then
+            commonDropdown:SetHeight(#comboBox.dropdownItem * commonDropdown.list:GetHeight() + top + bottom)
+          end
+        end
+        if comboBox.selctedIndex ~= nil then
+          if comboBox.ClickFunc ~= nil then
+            comboBox:ClickFunc()
+          end
+          comboBox:Select(comboBox.selctedIndex)
+        end
+        commonDropdown.OnSelChanged = comboBox.OnSelChanged
+        commonDropdown.list:ShowTooltip(comboBox.showDropdownTooltip)
+      end
+    end
+  end
+  button:SetHandler("OnClick", comboBox.OnClick)
+  comboBox:SetHandler("OnClick", comboBox.OnClick)
+  local comboBoxEvents = {
+    MOUSE_DOWN = function(widgetId)
+      if comboBox:GetAttachedWidget() == commonDropdown and comboBox:GetId() ~= widgetId and comboBox:IsDescendantWidget(widgetId) == false and commonDropdown:IsVisible() and commonDropdown:IsDescendantWidget(widgetId) == false then
+        commonDropdown:Show(false)
+      end
+    end
+  }
+  comboBox:SetHandler("OnEvent", function(this, event, ...)
+    comboBoxEvents[event](...)
+  end)
+  comboBox:RegisterEvent("MOUSE_DOWN")
+  return comboBox
+end
+function CreateGradeCombobox(parent)
+  local comboBox = CreateComboBox(parent)
+  comboBox.dropdownItem = {
+    X2Locale:LocalizeUiText(ITEM_GRADE, "item_grade_all"),
+    X2Locale:LocalizeUiText(ITEM_GRADE, "item_grade_uncommon"),
+    X2Locale:LocalizeUiText(ITEM_GRADE, "item_grade_rare"),
+    X2Locale:LocalizeUiText(ITEM_GRADE, "item_grade_acient"),
+    X2Locale:LocalizeUiText(ITEM_GRADE, "item_grade_heroic"),
+    X2Locale:LocalizeUiText(ITEM_GRADE, "item_grade_unique"),
+    X2Locale:LocalizeUiText(ITEM_GRADE, "item_grade_artifact"),
+    X2Locale:LocalizeUiText(ITEM_GRADE, "item_grade_wonder"),
+    X2Locale:LocalizeUiText(ITEM_GRADE, "item_grade_epic"),
+    X2Locale:LocalizeUiText(ITEM_GRADE, "item_grade_legendary"),
+    X2Locale:LocalizeUiText(ITEM_GRADE, "item_grade_mythic")
+  }
+  comboBox.dropdownItemColor = {
+    {
+      ConvertColor(114),
+      ConvertColor(63),
+      ConvertColor(5),
+      1
+    },
+    {
+      ConvertColor(119),
+      ConvertColor(176),
+      ConvertColor(100),
+      1
+    },
+    {
+      ConvertColor(85),
+      ConvertColor(143),
+      ConvertColor(215),
+      1
+    },
+    {
+      ConvertColor(203),
+      ConvertColor(114),
+      ConvertColor(216),
+      1
+    },
+    {
+      ConvertColor(215),
+      ConvertColor(139),
+      ConvertColor(6),
+      1
+    },
+    {
+      ConvertColor(221),
+      ConvertColor(121),
+      ConvertColor(67),
+      1
+    },
+    {
+      ConvertColor(249),
+      ConvertColor(82),
+      ConvertColor(82),
+      1
+    },
+    {
+      ConvertColor(207),
+      ConvertColor(125),
+      ConvertColor(93),
+      1
+    },
+    {
+      ConvertColor(143),
+      ConvertColor(165),
+      ConvertColor(202),
+      1
+    },
+    {
+      ConvertColor(191),
+      ConvertColor(121),
+      ConvertColor(0),
+      1
+    },
+    {
+      ConvertColor(201),
+      ConvertColor(11),
+      ConvertColor(11),
+      1
+    }
+  }
+  return comboBox
+end

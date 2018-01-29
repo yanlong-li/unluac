@@ -1,0 +1,6 @@
+RAID_TEAM_MANAGER_PARTY_WIDTH = 100
+RAID_TEAM_MANAGER_PARTY_HEIGHT = 105
+RAID_TEAM_ROLE_SELECTION_WIDTH = 75
+RAID_TEAM_ROLE_SELECTION_HEIGHT = 65
+raidteam_moving_member_party = nil
+raidteam_moving_member_index = nil

@@ -1,0 +1,31 @@
+if X2Util:GetGameProvider() == MAILRU then
+  questLocale.notifier = {
+    gridWidth = 390,
+    titleDefaultWidth = 345,
+    objectWidth = 340
+  }
+  questLocale.directing = {
+    message = {
+      lineSpace = 2,
+      width = function(inputWidth)
+        return inputWidth * 0.65
+      end
+    }
+  }
+  questLocale.guideTipHeight = 5
+  questLocale.guideTipIcon = {
+    coords = {
+      5,
+      0,
+      -2,
+      -1,
+      -1
+    }
+  }
+  function questLocale:GetLeaderShipPointText()
+    return GetUIText(COMMON_TEXT, "accumulated_leadership_point")
+  end
+  function questLocale:GetActabilityText(actAbilityName, actAbilityStr)
+    return string.format("%s %s", actAbilityStr, actAbilityName)
+  end
+end

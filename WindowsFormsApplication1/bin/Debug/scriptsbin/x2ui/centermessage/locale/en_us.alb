@@ -1,0 +1,86 @@
+if X2Util:GetGameProvider() == TRION and X2Locale:GetLocale() == "en_us" then
+  centerMessageLocale.killEffect = {
+    killEffectCoords = {
+      {
+        0,
+        219,
+        204,
+        33
+      },
+      {
+        297,
+        0,
+        209,
+        33
+      },
+      {
+        297,
+        33,
+        185,
+        39
+      },
+      {
+        0,
+        84,
+        231,
+        39
+      },
+      {
+        120,
+        89,
+        215,
+        33
+      },
+      {
+        189,
+        200,
+        213,
+        39
+      }
+    },
+    firstKilBloodlHelmetCoords = {
+      0,
+      108,
+      100,
+      108
+    },
+    deco = {
+      347,
+      100,
+      134,
+      100
+    }
+  }
+  centerMessageLocale.killEffect.killEffectCoords[10] = {
+    0,
+    200,
+    189,
+    39
+  }
+  centerMessageLocale.killEffect.killEffectCoords[15] = {
+    0,
+    156,
+    347,
+    34
+  }
+  FORM_CENTER_MESSAGE = {
+    NATION_INDEPENDENCE_COORDS = {
+      FLAG = {
+        0,
+        46,
+        67,
+        77
+      },
+      DECLARE = {
+        0,
+        0,
+        323,
+        46
+      }
+    },
+    ACHIEVEMENT_IMG_EXTENT = {
+      LOW_COMPLETE_TEXT = {124, 36},
+      LOW_RANK_LEFT_DECO = {80, 36}
+    }
+  }
+end

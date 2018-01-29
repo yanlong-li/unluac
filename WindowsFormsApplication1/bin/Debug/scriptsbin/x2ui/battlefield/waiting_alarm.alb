@@ -1,0 +1,527 @@
+local CreateAlarmBattleWaiting = function(id, parent)
+  local widget = UIParent:CreateWidget("window", id, parent)
+  widget:SetExtent(756, 145)
+  widget:AddAnchor("TOP", parent, 0, 50)
+  widget:SetUILayer("system")
+  local bottomBg = widget:CreateEffectDrawable(TEXTURE_PATH.ALARM_DECO, "background")
+  bottomBg:SetCoords(0, 0, 782, 128)
+  bottomBg:SetExtent(757, 106)
+  bottomBg:AddAnchor("BOTTOM", widget, 0, 0)
+  bottomBg:SetRepeatCount(1)
+  widget.bottomBg = bottomBg
+  local decoBg = widget:CreateEffectDrawable(TEXTURE_PATH.ALARM_DECO, "background")
+  decoBg:SetCoords(782, 0, 129, 83)
+  decoBg:SetExtent(90.299995, 58.1)
+  decoBg:AddAnchor("TOP", widget, 0, 0)
+  decoBg:SetRepeatCount(1)
+  widget.decoBg = decoBg
+  local decoIcon = widget:CreateEffectDrawable(TEXTURE_PATH.BATTLEFIELD_ALARM_READY, "artwork")
+  decoIcon:SetCoords(0, 0, 68, 64)
+  decoIcon:SetExtent(81.600006, 76.8)
+  decoIcon:AddAnchor("CENTER", decoBg, -2, -3)
+  decoIcon:SetRepeatCount(1)
+  widget.decoIcon = decoIcon
+  local effectDrawable = widget:CreateEffectDrawable(TEXTURE_PATH.BATTLEFIELD_ALARM_READY, "artwork")
+  effectDrawable:SetVisible(false)
+  effectDrawable:SetRepeatCount(1)
+  widget.effectDrawable = effectDrawable
+  local effectRound = widget:CreateEffectDrawable(TEXTURE_PATH.BATTLEFIELD_ROUND, "artwork")
+  effectRound:SetVisible(false)
+  effectRound:SetRepeatCount(1)
+  widget.effectRound = effectRound
+  local effectRoundResult = widget:CreateEffectDrawable(TEXTURE_PATH.BATTLEFIELD_ROUND_DRAW, "artwork")
+  effectRoundResult:SetVisible(false)
+  effectRoundResult:SetRepeatCount(1)
+  widget.effectRoundResult = effectRoundResult
+  local endReasonText = widget:CreateChildWidget("label", "endReasonText", 0, true)
+  endReasonText:Show(false)
+  endReasonText:SetAutoResize(true)
+  endReasonText:SetHeight(FONT_SIZE.LARGE)
+  endReasonText:AddAnchor("TOP", effectDrawable, "BOTTOM", 0, -5)
+  endReasonText.style:SetFontSize(FONT_SIZE.LARGE)
+  endReasonText.style:SetShadow(true)
+  ApplyTextColor(endReasonText, FONT_COLOR.GRAY)
+  widget.animState = nil
+  function widget:PeopleWaiting()
+    self.endReasonText:Show(false)
+    self.bottomBg:SetEffectPriority(1, "alpha", 0.1, 0.1)
+    self.bottomBg:SetEffectInitialColor(1, 1, 1, 1, 1)
+    self.bottomBg:SetEffectFinalColor(1, 1, 1, 1, 1)
+    self.decoBg:SetEffectPriority(1, "alpha", 0.1, 0.1)
+    self.decoBg:SetEffectInitialColor(1, 1, 1, 1, 1)
+    self.decoBg:SetEffectFinalColor(1, 1, 1, 1, 1)
+    self.decoIcon:SetTexture(TEXTURE_PATH.BATTLEFIELD_ALARM_READY)
+    self.decoIcon:SetCoords(0, 0, 68, 64)
+    self.decoIcon:SetEffectPriority(1, "alpha", 0.1, 0.1)
+    self.decoIcon:SetEffectInitialColor(1, 1, 1, 1, 1)
+    self.decoIcon:SetEffectFinalColor(1, 1, 1, 1, 1)
+    local coords = FORM_WAITING_ALARM.BATTLEFIELD_STATE_COORDS.PEOPLE_WAITING
+    self.effectDrawable:SetTexture(TEXTURE_PATH.BATTLEFIELD_ALARM_READY)
+    self.effectDrawable:SetCoords(coords[1], coords[2], coords[3], coords[4])
+    self.effectDrawable:SetExtent(coords[3], coords[4])
+    self.effectDrawable:SetEffectPriority(1, "alpha", 0.3, 0.3)
+    self.effectDrawable:SetEffectInitialColor(1, 1, 1, 1, 1)
+    self.effectDrawable:SetEffectFinalColor(1, 1, 1, 1, 1)
+    self.effectDrawable:RemoveAllAnchors()
+    self.effectDrawable:AddAnchor("CENTER", bottomBg, -3, -15)
+    self.effectDrawable:SetVisible(true)
+    self.effectDrawable:SetStartEffect(true)
+    self:SetAlphaAnimation(0, 1, 0.1, 0.1)
+    self:SetStartAnimation(true, false)
+  end
+  function widget:BattlefieldEnd()
+    local info = X2BattleField:GetProgressEntireInfo()
+    if info == nil then
+      return
+    end
+    self.effectRound:RemoveAllAnchors()
+    self.effectRound:SetVisible(false)
+    self.effectRoundResult:RemoveAllAnchors()
+    self.effectRoundResult:SetVisible(false)
+    self.endReasonText:Show(true)
+    self.bottomBg:SetEffectPriority(1, "alpha", 0.1, 0.1)
+    self.bottomBg:SetEffectInitialColor(1, 1, 1, 1, 1)
+    self.bottomBg:SetEffectFinalColor(1, 1, 1, 1, 1)
+    self.decoBg:SetEffectPriority(1, "alpha", 0.1, 0.1)
+    self.decoBg:SetEffectInitialColor(1, 1, 1, 1, 1)
+    self.decoBg:SetEffectFinalColor(1, 1, 1, 1, 1)
+    self.decoIcon:SetTexture(TEXTURE_PATH.BATTLEFIELD_ALARM_READY)
+    self.decoIcon:SetCoords(0, 0, 68, 64)
+    self.decoIcon:SetEffectPriority(1, "alpha", 0.1, 0.1)
+    self.decoIcon:SetEffectInitialColor(1, 1, 1, 1, 1)
+    self.decoIcon:SetEffectFinalColor(1, 1, 1, 1, 1)
+    local coords = FORM_WAITING_ALARM.BATTLEFIELD_STATE_COORDS.END
+    self.effectDrawable:SetTexture(TEXTURE_PATH.BATTLEFIELD_ALARM_READY)
+    self.effectDrawable:SetCoords(coords[1], coords[2], coords[3], coords[4])
+    self.effectDrawable:SetExtent(coords[3], coords[4])
+    self.effectDrawable:SetEffectPriority(1, "alpha", 0.3, 0.3)
+    self.effectDrawable:SetEffectInitialColor(1, 1, 1, 1, 1)
+    self.effectDrawable:SetEffectFinalColor(1, 1, 1, 1, 1)
+    self.effectDrawable:RemoveAllAnchors()
+    self.effectDrawable:AddAnchor("CENTER", bottomBg, -3, -15)
+    self.effectDrawable:SetVisible(true)
+    self.effectDrawable:SetStartEffect(true)
+    self:SetAlphaAnimation(0, 1, 0.5, 0.5)
+    self:SetStartAnimation(true, false)
+    self.animState = "end_anim_start"
+    if info.endReason == BFER_TIMEOVER_COMPARE_KILL_COUNT or info.endReason == BFER_TIMEOVER_COMPARE_ROUND_WIN_COUNT or info.endReason == BFER_TIMEOVER_COMPARE_ALIVE or info.endReason == BFER_TIMEOVER_DRAW or info.endReason == BFER_UNEARNED_WIN then
+      local str = locale.battlefield.alarmEndReason.timeover
+      self.endReasonText:SetText(str)
+      X2Chat:DispatchChatMessage(CMF_SYSTEM, str)
+      return
+    elseif info.endReason == BFER_ACHIEVEMENT_KILL_COUNT then
+      local winTeamName, count = GetWinTeamName(info)
+      local str = locale.battlefield.alarmEndReason.killCount(winTeamName, count)
+      self.endReasonText:SetText(str)
+      return
+    elseif info.endReason == BFER_ACHIEVEMENT_ROUND_WIN_COUNT then
+      local winTeamName, count = GetWinTeamName(info)
+      local str = locale.battlefield.alarmEndReason.roundWinCount(winTeamName, count)
+      self.endReasonText:SetText(str)
+      return
+    elseif info.endReason == BFER_ACHIEVEMENT_KILL_CORPS_HEAD then
+      local winTeamName = GetWinTeamName(info)
+      local str = locale.battlefield.alarmEndReason.killCorpsHead(winTeamName)
+      self.endReasonText:SetText(str)
+    else
+      self.endReasonText:SetText("")
+      return
+    end
+  end
+  function widget:GameRoundResult(state, endRound)
+    self.endReasonText:Show(false)
+    self.bottomBg:SetEffectPriority(1, "alpha", 0.1, 0.1)
+    self.bottomBg:SetEffectInitialColor(1, 1, 1, 1, 1)
+    self.bottomBg:SetEffectFinalColor(1, 1, 1, 1, 1)
+    self.decoBg:SetEffectPriority(1, "alpha", 0.1, 0.1)
+    self.decoBg:SetEffectInitialColor(1, 1, 1, 1, 1)
+    self.decoBg:SetEffectFinalColor(1, 1, 1, 1, 1)
+    self.decoIcon:SetTexture(TEXTURE_PATH.BATTLEFIELD_ALARM_IN_PROGRESS)
+    self.decoIcon:SetCoords(0, 0, 68, 64)
+    self.decoIcon:SetEffectPriority(1, "alpha", 0.1, 0.1)
+    self.decoIcon:SetEffectInitialColor(1, 1, 1, 1, 1)
+    self.decoIcon:SetEffectFinalColor(1, 1, 1, 1, 1)
+    self.effectDrawable:SetTexture(TEXTURE_PATH.IMAGE_TEXT)
+    local color = {
+      ConvertColor(174),
+      ConvertColor(67),
+      ConvertColor(53)
+    }
+    local countCoords = BATTLE_FIELD_ROUND_COUNT[endRound]
+    self.effectDrawable:SetCoords(countCoords[1], countCoords[2], countCoords[3], countCoords[4])
+    self.effectDrawable:SetExtent(countCoords[3], countCoords[4])
+    self.effectDrawable:SetEffectPriority(1, "alpha", 0.3, 0.3)
+    self.effectDrawable:SetEffectInitialColor(1, color[1], color[2], color[3], 1)
+    self.effectDrawable:SetEffectFinalColor(1, color[1], color[2], color[3], 1)
+    self.effectRound:SetTexture(TEXTURE_PATH.BATTLEFIELD_ROUND)
+    local roundCoords = FORM_WAITING_ALARM.GAME_ROUND_RESULT.ROUND
+    self.effectRound:SetCoords(roundCoords[1], roundCoords[2], roundCoords[3], roundCoords[4])
+    self.effectRound:SetExtent(roundCoords[3], roundCoords[4])
+    self.effectRound:SetEffectPriority(1, "alpha", 0.3, 0.3)
+    self.effectRound:SetEffectInitialColor(1, 1, 1, 1, 1)
+    self.effectRound:SetEffectFinalColor(1, 1, 1, 1, 1)
+    local resultCoords
+    if state == 1 then
+      self.effectRoundResult:SetTexture(TEXTURE_PATH.BATTLEFIELD_ROUND_LOSE)
+      resultCoords = FORM_WAITING_ALARM.GAME_ROUND_RESULT.LOSE
+    elseif state == 2 then
+      self.effectRoundResult:SetTexture(TEXTURE_PATH.BATTLEFIELD_ROUND_WIN)
+      resultCoords = FORM_WAITING_ALARM.GAME_ROUND_RESULT.WIN
+    else
+      self.effectRoundResult:SetTexture(TEXTURE_PATH.BATTLEFIELD_ROUND_DRAW)
+      resultCoords = FORM_WAITING_ALARM.GAME_ROUND_RESULT.DRAW
+    end
+    self.effectRoundResult:SetCoords(resultCoords[1], resultCoords[2], resultCoords[3], resultCoords[4])
+    self.effectRoundResult:SetExtent(resultCoords[3], resultCoords[4])
+    self.effectRoundResult:SetEffectPriority(1, "alpha", 0.3, 0.3)
+    self.effectRoundResult:SetEffectInitialColor(1, 1, 1, 1, 1)
+    self.effectRoundResult:SetEffectFinalColor(1, 1, 1, 1, 1)
+    local startPos = self.bottomBg:GetWidth() / 2 - (self.effectDrawable:GetWidth() + self.effectRound:GetWidth() + self.effectRoundResult:GetWidth()) / 2
+    local countPos = 0
+    local rountPos = 0
+    if ROUND_RESULT_STRING_ORDER.COUNT == 1 then
+      countPos = startPos
+      rountPos = countPos + self.effectDrawable:GetWidth()
+    else
+      rountPos = startPos
+      countPos = rountPos + self.effectRound:GetWidth()
+    end
+    self.effectDrawable:RemoveAllAnchors()
+    self.effectDrawable:AddAnchor("LEFT", bottomBg, countPos, -2)
+    self.effectDrawable:SetVisible(true)
+    self.effectDrawable:SetStartEffect(true)
+    self.effectRound:RemoveAllAnchors()
+    self.effectRound:AddAnchor("LEFT", bottomBg, rountPos, 0)
+    self.effectRound:SetVisible(true)
+    self.effectRound:SetStartEffect(true)
+    self.effectRoundResult:RemoveAllAnchors()
+    self.effectRoundResult:AddAnchor("RIGHT", bottomBg, "RIGHT", -startPos, 0)
+    self.effectRoundResult:SetVisible(true)
+    self.effectRoundResult:SetStartEffect(true)
+    self:SetAlphaAnimation(0, 1, 0.5, 0.5)
+    self:SetStartAnimation(true, false)
+    self.animState = "round_result_start"
+  end
+  local OnAlphaAnimeEnd = function(self)
+    if self.animState == nil then
+      return
+    end
+    if self.animState == "end_anim_start" then
+      do
+        local visibleTime = 0
+        local function ShowEndBattlfieldAlarm(self, dt)
+          visibleTime = visibleTime + dt
+          if visibleTime >= 10000 then
+            self:ReleaseHandler("OnUpdate")
+            self:SetAlphaAnimation(1, 0, 0.5, 0.5)
+            self:SetStartAnimation(true, false)
+            self.animState = "end_anim_end"
+            visibleTime = 0
+          end
+        end
+        self:SetHandler("OnUpdate", ShowEndBattlfieldAlarm)
+      end
+    elseif self.animState == "end_anim_end" then
+      ShowScoreBoard(true, true)
+      self.animState = nil
+      self:Show(false)
+    elseif self.animState == "round_result_start" then
+      do
+        local visibleTime = 0
+        local function ShowRoundResultAlarm(self, dt)
+          visibleTime = visibleTime + dt
+          if visibleTime >= 4000 then
+            self:ReleaseHandler("OnUpdate")
+            self:SetAlphaAnimation(1, 0, 0.5, 0.5)
+            self:SetStartAnimation(true, false)
+            self.animState = "round_result_end"
+            visibleTime = 0
+          end
+        end
+        self:SetHandler("OnUpdate", ShowRoundResultAlarm)
+      end
+    elseif self.animState == "round_result_end" then
+      self.animState = nil
+      self:Show(false)
+    end
+  end
+  widget:SetHandler("OnAlphaAnimeEnd", OnAlphaAnimeEnd)
+  function widget:SetCountDownTime(nowTime)
+    if nowTime > 6 then
+      return
+    end
+    self.endReasonText:Show(false)
+    self.decoIcon:SetTexture(TEXTURE_PATH.BATTLEFIELD_ALARM_IN_PROGRESS)
+    self.decoIcon:SetCoords(0, 0, 68, 64)
+    self.effectDrawable:RemoveAllAnchors()
+    self.effectDrawable:SetVisible(true)
+    self.effectDrawable:AddAnchor("CENTER", bottomBg, -3, -2)
+    local color = {
+      ConvertColor(174),
+      ConvertColor(67),
+      ConvertColor(53)
+    }
+    local function SmallerAnim()
+      self.effectDrawable:SetEffectPriority(1, "alpha", 0.3, 0.3)
+      self.effectDrawable:SetEffectInitialColor(1, color[1], color[2], color[3], 0)
+      self.effectDrawable:SetEffectFinalColor(1, color[1], color[2], color[3], 1)
+      self.effectDrawable:SetEffectScale(1, 1.5, 1, 1.5, 1)
+      self.effectDrawable:SetEffectInterval(1, 0.1)
+      self.effectDrawable:SetEffectPriority(2, "alpha", 0.1, 0.1)
+      self.effectDrawable:SetEffectInitialColor(2, color[1], color[2], color[3], 1)
+      self.effectDrawable:SetEffectFinalColor(2, color[1], color[2], color[3], 0)
+    end
+    local function BiggerAnim()
+      self.effectDrawable:SetEffectPriority(1, "alpha", 0.3, 0.3)
+      self.effectDrawable:SetEffectInitialColor(1, color[1], color[2], color[3], 0)
+      self.effectDrawable:SetEffectFinalColor(1, color[1], color[2], color[3], 1)
+      self.effectDrawable:SetEffectScale(1, 0, 1, 0, 1)
+      self.effectDrawable:SetEffectInterval(1, 0.6)
+      self.effectDrawable:SetEffectPriority(2, "alpha", 0.3, 0.3)
+      self.effectDrawable:SetEffectInitialColor(2, color[1], color[2], color[3], 1)
+      self.effectDrawable:SetEffectFinalColor(2, color[1], color[2], color[3], 0)
+      self.effectDrawable:SetEffectScale(2, 1, 1.2, 1, 1.1)
+    end
+    local function HideAnim()
+      local delay = 1
+      local hideTime = 0.3
+      self.bottomBg:SetEffectPriority(1, "alpha", 0.3, 0.3)
+      self.bottomBg:SetEffectInitialColor(1, 1, 1, 1, 1)
+      self.bottomBg:SetEffectFinalColor(1, 1, 1, 1, 1)
+      self.bottomBg:SetEffectInterval(1, delay)
+      self.bottomBg:SetEffectPriority(2, "alpha", hideTime, hideTime)
+      self.bottomBg:SetEffectInitialColor(2, 1, 1, 1, 1)
+      self.bottomBg:SetEffectFinalColor(2, 1, 1, 1, 0)
+      self.bottomBg:SetEffectScale(2, 1, 1.1, 1, 1.1)
+      self.decoBg:SetEffectPriority(1, "alpha", 0.3, 0.3)
+      self.decoBg:SetEffectInitialColor(1, 1, 1, 1, 1)
+      self.decoBg:SetEffectFinalColor(1, 1, 1, 1, 1)
+      self.decoBg:SetEffectInterval(1, delay)
+      self.decoBg:SetEffectPriority(2, "alpha", hideTime, hideTime)
+      self.decoBg:SetEffectInitialColor(2, 1, 1, 1, 1)
+      self.decoBg:SetEffectFinalColor(2, 1, 1, 1, 0)
+      self.decoBg:SetEffectScale(2, 1, 1.1, 1, 1.1)
+      self.decoIcon:SetEffectPriority(1, "alpha", 0.3, 0.3)
+      self.decoIcon:SetEffectInitialColor(1, 1, 1, 1, 1)
+      self.decoIcon:SetEffectFinalColor(1, 1, 1, 1, 1)
+      self.decoIcon:SetEffectInterval(1, delay)
+      self.decoIcon:SetEffectPriority(2, "alpha", hideTime, hideTime)
+      self.decoIcon:SetEffectInitialColor(2, 1, 1, 1, 1)
+      self.decoIcon:SetEffectFinalColor(2, 1, 1, 1, 0)
+      self.decoIcon:SetEffectScale(2, 1, 1.1, 1, 1.1)
+    end
+    local function KeepVisible()
+      self.bottomBg:SetEffectPriority(1, "alpha", 0.1, 0.1)
+      self.bottomBg:SetEffectInitialColor(1, 1, 1, 1, 1)
+      self.bottomBg:SetEffectFinalColor(1, 1, 1, 1, 1)
+      self.decoBg:SetEffectPriority(1, "alpha", 0.1, 0.1)
+      self.decoBg:SetEffectInitialColor(1, 1, 1, 1, 1)
+      self.decoBg:SetEffectFinalColor(1, 1, 1, 1, 1)
+      self.decoIcon:SetEffectPriority(1, "alpha", 0.1, 0.1)
+      self.decoIcon:SetEffectInitialColor(1, 1, 1, 1, 1)
+      self.decoIcon:SetEffectFinalColor(1, 1, 1, 1, 1)
+    end
+    local function AlreadyStartedAnim()
+      self.effectDrawable:SetInterval(0.5)
+      self.effectDrawable:SetEffectPriority(1, "alpha", 0.3, 0.3)
+      self.effectDrawable:SetEffectInitialColor(1, 1, 1, 1, 0)
+      self.effectDrawable:SetEffectFinalColor(1, 1, 1, 1, 1)
+      self.effectDrawable:SetEffectScale(1, 0, 1, 0, 1)
+      self.effectDrawable:SetEffectInterval(1, 0.6)
+      self.effectDrawable:SetEffectPriority(2, "alpha", 0.3, 0.3)
+      self.effectDrawable:SetEffectInitialColor(2, 1, 1, 1, 1)
+      self.effectDrawable:SetEffectFinalColor(2, 1, 1, 1, 0)
+      self.effectDrawable:SetEffectScale(2, 1, 1.2, 1, 1.1)
+    end
+    KeepVisible()
+    local soundType
+    if nowTime == 6 then
+      self:SetAlphaAnimation(0, 1, 0.3, 0.3)
+      self:SetStartAnimation(true, false)
+      self.effectDrawable:SetEffectPriority(1, "alpha", 0.1, 0.1)
+      self.effectDrawable:SetEffectInitialColor(1, 1, 1, 1, 0)
+      self.effectDrawable:SetEffectFinalColor(1, 1, 1, 1, 0)
+    elseif nowTime == 5 then
+      self.effectDrawable:SetTexture(TEXTURE_PATH.COUNT_DOWN)
+      local coords = FORM_WAITING_ALARM.COUNT_DOWN.fiveCoord
+      self.effectDrawable:SetCoords(coords[1], coords[2], coords[3], coords[4])
+      self.effectDrawable:SetExtent(coords[3], coords[4])
+      SmallerAnim()
+      soundType = "battlefield_5_secound"
+    elseif nowTime == 4 then
+      self.effectDrawable:SetTexture(TEXTURE_PATH.COUNT_DOWN)
+      local coords = FORM_WAITING_ALARM.COUNT_DOWN.fourCoord
+      self.effectDrawable:SetCoords(coords[1], coords[2], coords[3], coords[4])
+      self.effectDrawable:SetExtent(coords[3], coords[4])
+      SmallerAnim()
+      soundType = "battlefield_4_secound"
+    elseif nowTime == 3 then
+      self.effectDrawable:SetTexture(TEXTURE_PATH.COUNT_DOWN)
+      local coords = FORM_WAITING_ALARM.COUNT_DOWN.threeCoord
+      self.effectDrawable:SetCoords(coords[1], coords[2], coords[3], coords[4])
+      self.effectDrawable:SetExtent(coords[3], coords[4])
+      SmallerAnim()
+      soundType = "battlefield_3_secound"
+    elseif nowTime == 2 then
+      self.effectDrawable:SetTexture(TEXTURE_PATH.COUNT_DOWN)
+      local coords = FORM_WAITING_ALARM.COUNT_DOWN.twoCoord
+      self.effectDrawable:SetCoords(coords[1], coords[2], coords[3], coords[4])
+      self.effectDrawable:SetExtent(coords[3], coords[4])
+      SmallerAnim()
+      soundType = "battlefield_2_secound"
+    elseif nowTime == 1 then
+      self.effectDrawable:SetTexture(TEXTURE_PATH.COUNT_DOWN)
+      local coords = FORM_WAITING_ALARM.COUNT_DOWN.oneCoord
+      self.effectDrawable:SetCoords(coords[1], coords[2], coords[3], coords[4])
+      self.effectDrawable:SetExtent(coords[3], coords[4])
+      SmallerAnim()
+      soundType = "battlefield_1_secound"
+    elseif nowTime == 0 then
+      local coords = FORM_WAITING_ALARM.BATTLEFIELD_STATE_COORDS.START
+      self.effectDrawable:SetTexture(TEXTURE_PATH.COUNT_DOWN)
+      self.effectDrawable:SetCoords(coords[1], coords[2], coords[3], coords[4])
+      self.effectDrawable:SetExtent(coords[3], coords[4])
+      BiggerAnim()
+      HideAnim()
+      soundType = "battlefield_start"
+    elseif nowTime == -1 then
+      widget:SetAlphaAnimation(0, 1, 0.3, 0.3)
+      widget:SetStartAnimation(true, false)
+      local coords = FORM_WAITING_ALARM.BATTLEFIELD_STATE_COORDS.IN_PROGRESS
+      self.effectDrawable:SetTexture(TEXTURE_PATH.BATTLEFIELD_ALARM_IN_PROGRESS)
+      self.effectDrawable:SetCoords(coords[1], coords[2], coords[3], coords[4])
+      self.effectDrawable:SetExtent(coords[3], coords[4])
+      AlreadyStartedAnim()
+      HideAnim()
+      soundType = "battlefield_already_start"
+    end
+    self.effectDrawable:SetStartEffect(true)
+    if soundType ~= nil then
+      F_SOUND:PlayUISound(soundType, true)
+    end
+  end
+  local animTime = 0
+  local function OnUpdateAlreadyStart(self, dt)
+    animTime = animTime + dt
+    if animTime >= 4000 then
+      widget:ReleaseHandler("OnUpdate")
+      widget:Show(false)
+    end
+  end
+  local oldTime = 0
+  local function OnUpdateTime(self, dt)
+    widget.nowTime = widget.nowTime + dt
+    local nowTime = math.floor((widget.endTime - widget.nowTime) / 1000)
+    if nowTime == 0 then
+      widget:ReleaseHandler("OnUpdate")
+      return
+    end
+    if oldTime ~= nowTime then
+      oldTime = nowTime
+      widget:SetCountDownTime(nowTime)
+    end
+  end
+  function widget:FillInstantTimeInfo()
+    local timeInfo = X2BattleField:GetProgressTimeInfo()
+    widget.startTime = tonumber(timeInfo.startTime)
+    widget.endTime = tonumber(timeInfo.endTime)
+    widget.nowTime = tonumber(timeInfo.nowtime)
+    if widget:HasHandler("OnUpdate") == false then
+      widget:SetHandler("OnUpdate", OnUpdateTime)
+    end
+  end
+  function widget:AnimAlreadyStart()
+    self:SetCountDownTime(-1)
+    self:SetHandler("OnUpdate", OnUpdateAlreadyStart)
+  end
+  function widget:HideWaitingAlarm()
+    self:ReleaseHandler("OnUpdate")
+    self:Show(false)
+  end
+  local OnHide = function()
+    battlefield.waitingAlarm = nil
+  end
+  widget:SetHandler("OnHide", OnHide)
+  local events = {
+    INSTANT_GAME_START = function()
+      widget:SetHandler("OnUpdate", OnUpdateAlreadyStart)
+      widget:SetCountDownTime(0)
+    end
+  }
+  widget:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(widget, events)
+  return widget
+end
+local function ShowBattlefieldWaitingAlarm(isShow)
+  if battlefield.waitingAlarm == nil then
+    if isShow then
+      battlefield.waitingAlarm = CreateAlarmBattleWaiting("battlefield.waitingAlarm", "UIParent")
+      battlefield.waitingAlarm:Show(true)
+      battlefield.waitingAlarm:EnableHidingIsRemove(true)
+      battlefield.waitingAlarm:Raise()
+    else
+      return
+    end
+  elseif isShow then
+    battlefield.waitingAlarm:Show(true)
+  else
+    battlefield.waitingAlarm:HideWaitingAlarm()
+  end
+end
+local function InstantGameWait()
+  ShowBattlefieldWaitingAlarm(true)
+  battlefield.waitingAlarm:FillInstantTimeInfo()
+end
+UIParent:SetEventHandler("INSTANT_GAME_WAIT", InstantGameWait)
+local function EnteredInstantGameZone()
+  local timeInfo = X2BattleField:GetProgressTimeInfo()
+  if timeInfo == nil then
+    ShowBattlefieldWaitingAlarm(false)
+    return
+  elseif timeInfo.state ~= "ENDED" then
+    if timeInfo.state == "JOINED" then
+      ShowBattlefieldWaitingAlarm(true)
+      battlefield.waitingAlarm:PeopleWaiting()
+      return
+    end
+    ShowBattlefieldWaitingAlarm(false)
+    return
+  end
+  ShowBattlefieldWaitingAlarm(true)
+  if timeInfo.state == "STARTED" then
+    battlefield.waitingAlarm:AnimAlreadyStart()
+  elseif timeInfo.state == "COUNTDOWN" then
+    battlefield.waitingAlarm:FillInstantTimeInfo()
+  end
+end
+UIParent:SetEventHandler("ENTERED_INSTANT_GAME_ZONE", EnteredInstantGameZone)
+local function EnteredWorld()
+  local timeInfo = X2BattleField:GetProgressTimeInfo()
+  if timeInfo == nil then
+    ShowBattlefieldWaitingAlarm(false)
+    return
+  elseif timeInfo.state ~= "COUNTDOWN" then
+    if timeInfo.state == "JOINED" then
+      ShowBattlefieldWaitingAlarm(true)
+      battlefield.waitingAlarm:PeopleWaiting()
+      return
+    end
+    ShowBattlefieldWaitingAlarm(false)
+    return
+  end
+  ShowBattlefieldWaitingAlarm(true)
+  battlefield.waitingAlarm:FillInstantTimeInfo()
+end
+UIParent:SetEventHandler("ENTERED_WORLD", EnteredWorld)
+local function InstantGameEnd()
+  ShowBattlefieldWaitingAlarm(true)
+  battlefield.waitingAlarm:BattlefieldEnd()
+end
+UIParent:SetEventHandler("INSTANT_GAME_END", InstantGameEnd)
+local function InstantGameRoundResult(state, endRound)
+  ShowBattlefieldWaitingAlarm(true)
+  battlefield.waitingAlarm:GameRoundResult(state, endRound)
+end
+UIParent:SetEventHandler("INSTANT_GAME_ROUND_RESULT", InstantGameRoundResult)

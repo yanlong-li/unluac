@@ -1,0 +1,538 @@
+SCROLLLIST_COMMON_COL = {NAME = 1, LV = 2}
+ROWDATA_COLUMN_OFFSET = 1
+function CreateScrollListCtrl(parent, ownId, index)
+  local frame = parent:CreateChildWidget("emptywidget", ownId, index, true)
+  frame:Show(true)
+  frame.useDoubleClick = false
+  frame.topDataIndex = 1
+  frame.selectedDataIndex = 0
+  frame.selectedDataKey = nil
+  frame.dataCount = 0
+  frame.datas = {}
+  frame.WheelUp = 1
+  frame.WheelDown = 1
+  frame.buttonUp = 1
+  frame.buttonDown = 1
+  frame.lastClickColumn = nil
+  frame.lastSortFunc = nil
+  frame.callbackColumnClicked = nil
+  local testCount = 0
+  local AscendingSortMark = frame:CreateImageDrawable(TEXTURE_PATH.TAB_LIST, "overlay")
+  AscendingSortMark:SetVisible(false)
+  AscendingSortMark:SetCoords(153, 65, 18, 18)
+  AscendingSortMark:SetExtent(23, 23)
+  frame.AscendingSortMark = AscendingSortMark
+  local DescendingSortMark = frame:CreateImageDrawable(TEXTURE_PATH.TAB_LIST, "overlay")
+  DescendingSortMark:SetVisible(false)
+  DescendingSortMark:SetCoords(153, 83, 18, -18)
+  DescendingSortMark:SetExtent(23, 23)
+  frame.DescendingSortMark = DescendingSortMark
+  frame.mark_yOffset = 2
+  function frame:ChangeSortMartTexture_serverSelectPage()
+    self.AscendingSortMark:SetCoords(172, 65, 10, 7)
+    self.AscendingSortMark:SetExtent(10, 7)
+    self.AscendingSortMark:SetVisible(false)
+    self.DescendingSortMark:SetCoords(172, 72, 10, -7)
+    self.DescendingSortMark:SetExtent(10, 7)
+    self.DescendingSortMark:SetVisible(false)
+    self.mark_yOffset = -3
+  end
+  local listCtrl = frame:CreateChildWidget("listctrl", "listCtrl", 0, true)
+  listCtrl:EnableScroll(true)
+  listCtrl:Show(true)
+  frame.listCtrl = listCtrl
+  function frame:DisableColumButton()
+    listCtrl:SetColumnHeight(0)
+  end
+  local scroll = CreateScroll("scroll", frame)
+  frame.scroll = scroll
+  function frame:SetScrollAnchor(anchorType)
+    scroll:RemoveAllAnchors()
+    if anchorType == "TYPE1" then
+      scroll:AddAnchor("TOPRIGHT", frame, 0, 40)
+      scroll:AddAnchor("BOTTOMRIGHT", frame, 0, 0)
+    elseif anchorType == "TYPE2" then
+      scroll:AddAnchor("TOPRIGHT", frame, 0, 0)
+      scroll:AddAnchor("BOTTOMRIGHT", frame, 0, 0)
+    end
+  end
+  frame:SetScrollAnchor("TYPE1")
+  listCtrl:AddAnchor("TOPLEFT", frame, 0, 0)
+  listCtrl:AddAnchor("BOTTOM", frame, 0, 0)
+  listCtrl:AddAnchor("RIGHT", scroll, "LEFT", -3, 0)
+  function frame:SetEventCallbackColumnClicked(callback)
+    frame.callbackColumnClicked = callback
+  end
+  function frame:DisableColumButton(inset)
+    if inset == nil then
+      inset = 0
+    end
+    listCtrl:SetColumnHeight(0)
+    scroll:RemoveAllAnchors()
+    scroll:AddAnchor("TOPRIGHT", frame, 0, inset)
+    scroll:AddAnchor("BOTTOMRIGHT", frame, 0, 0)
+  end
+  function frame:GetSelectedRowViewIndex(selectedDataIndex)
+    local rowCount = #self.listCtrl.items
+    local selectedIndex = 0
+    if selectedDataIndex >= self.topDataIndex and selectedDataIndex < self.topDataIndex + rowCount then
+      selectedIndex = selectedDataIndex - self.topDataIndex + 1
+    end
+    return selectedIndex
+  end
+  function listCtrl:OnSelChanged(selectedIndex, doubleClick)
+    frame.selectedDataIndex = 0
+    frame.selectedDataKey = nil
+    local temp = frame.topDataIndex + selectedIndex - 1
+    if temp > frame.dataCount then
+      self:Select(-1, false)
+      return
+    end
+    local rowData = frame.datas[temp]
+    frame.selectedDataIndex = temp
+    if rowData ~= nil then
+      frame.selectedDataKey = rowData[ROWDATA_COLUMN_OFFSET]
+    end
+    if frame.SelChangedProc ~= nil then
+      frame:SelChangedProc(frame:GetSelectedRowViewIndex(frame.selectedDataIndex), frame.selectedDataIndex, frame.selectedDataKey, doubleClick)
+    end
+  end
+  listCtrl:SetHandler("OnSelChanged", listCtrl.OnSelChanged)
+  local function UpButtonLeftClickFunc()
+    scroll.vs:Up(frame.buttonUp)
+  end
+  ButtonOnClickHandler(scroll.upButton, UpButtonLeftClickFunc)
+  local function DownButtonLeftClickFunc()
+    scroll.vs:Down(frame.buttonDown)
+  end
+  ButtonOnClickHandler(scroll.downButton, DownButtonLeftClickFunc)
+  local function OnSliderChanged(self, _value)
+    frame.topDataIndex = math.floor(_value) + 1
+    local selectedIndex = frame:GetSelectedRowViewIndex(frame.selectedDataIndex)
+    if selectedIndex ~= frame.listCtrl:GetSelectedIdx() then
+      frame.listCtrl:Select(selectedIndex - 1, false)
+    end
+    if frame.OnSliderChangedProc ~= nil then
+      frame:OnSliderChangedProc()
+    end
+    frame:UpdateView()
+  end
+  scroll.vs:SetHandler("OnSliderChanged", OnSliderChanged)
+  function frame:OnWheelUp()
+    if not scroll.vs.thumb:IsEnabled() then
+      return
+    end
+    scroll.vs:Up(frame.WheelUp)
+  end
+  frame:SetHandler("OnWheelUp", frame.OnWheelUp)
+  function frame:OnWheelDown()
+    if not scroll.vs.thumb:IsEnabled() then
+      return
+    end
+    scroll.vs:Down(frame.WheelDown)
+  end
+  frame:SetHandler("OnWheelDown", frame.OnWheelDown)
+  function frame:SetMinMaxValues(_min, _max)
+    if _min < 0 then
+      _min = 0
+    end
+    if _max < 0 then
+      _max = 0
+    end
+    local showThumb = true
+    if _max - _min <= 0 then
+      showThumb = false
+    end
+    scroll.vs:SetMinMaxValues(_min, _max)
+    scroll:SetEnable(showThumb)
+  end
+  function frame:ChangeFirstSorting(index, firstSortFunc_useAscending)
+    self.lastClickColumn = self.listCtrl.column[index]
+    if firstSortFunc_useAscending then
+      self.lastSortFunc = self.lastClickColumn.sortFunc1
+      self.lastClickColumn.curSortFunc = self.lastClickColumn.sortFunc2
+    else
+      self.lastSortFunc = self.lastClickColumn.sortFunc2
+      self.lastClickColumn.curSortFunc = self.lastClickColumn.sortFunc1
+    end
+  end
+  function frame:InsertColumn(columnName, width, itemType, dataSetFunc, sortFunc1, sortFunc2, layoutFunc)
+    self.listCtrl:InsertColumn(width, itemType)
+    local columnIndex = #self.listCtrl.column
+    local column = self.listCtrl.column[columnIndex]
+    column.index = columnIndex
+    column.dataSetFunc = dataSetFunc
+    column.sortFunc1 = sortFunc1 or function()
+    end
+    column.sortFunc2 = sortFunc2 or function()
+    end
+    column.curSortFunc = sortFunc1 or function()
+    end
+    column.layoutFunc = layoutFunc
+    column:SetText(columnName)
+    column.sortMark_xOffset = column.style:GetTextWidth(columnName) + 10
+    if self.lastClickColumn == nil and sortFunc1 ~= nil and sortFunc2 ~= nil then
+      self.lastClickColumn = self.listCtrl.column[1]
+      self.lastSortFunc = self.lastClickColumn.sortFunc1
+      self.AscendingSortMark:SetVisible(true)
+      self.DescendingSortMark:SetVisible(false)
+      self.AscendingSortMark:RemoveAllAnchors()
+      self.AscendingSortMark:AddAnchor("LEFT", self.lastClickColumn, "CENTER", self.lastClickColumn.sortMark_xOffset / 2, frame.mark_yOffset)
+      self.lastClickColumn.curSortFunc = self.lastClickColumn.sortFunc2
+    end
+    function column:OnClick()
+      local isViewUpdateRequired = false
+      if frame.callbackColumnClicked ~= nil then
+        isViewUpdateRequired = frame.callbackColumnClicked(columnIndex)
+      elseif self.curSortFunc ~= nil then
+        table.sort(frame.datas, self.curSortFunc)
+        isViewUpdateRequired = true
+        frame.lastClickColumn = self
+        frame.lastSortFunc = self.curSortFunc
+        if self.curSortFunc == self.sortFunc1 and self.sortFunc2 ~= nil then
+          self.curSortFunc = self.sortFunc2
+          frame.AscendingSortMark:SetVisible(true)
+          frame.DescendingSortMark:SetVisible(false)
+          frame.AscendingSortMark:RemoveAllAnchors()
+          frame.AscendingSortMark:AddAnchor("LEFT", frame.listCtrl.column[columnIndex], "CENTER", self.sortMark_xOffset / 2, frame.mark_yOffset)
+        elseif self.curSortFunc == self.sortFunc2 and self.sortFunc1 ~= nil then
+          self.curSortFunc = self.sortFunc1
+          frame.AscendingSortMark:SetVisible(false)
+          frame.DescendingSortMark:SetVisible(true)
+          frame.DescendingSortMark:RemoveAllAnchors()
+          frame.DescendingSortMark:AddAnchor("LEFT", frame.listCtrl.column[columnIndex], "CENTER", self.sortMark_xOffset / 2, frame.mark_yOffset)
+        end
+        if frame.selectedDataKey ~= nil then
+          for i = 1, #frame.datas do
+            local rowData = frame.datas[i]
+            if rowData[ROWDATA_COLUMN_OFFSET] == frame.selectedDataKey then
+              frame.selectedDataIndex = i
+              frame:ScrollToDataIndex(frame.selectedDataKey, 1)
+              break
+            end
+          end
+        end
+      end
+      if isViewUpdateRequired == false then
+        return
+      end
+      frame:UpdateView()
+    end
+    column:SetHandler("OnClick", column.OnClick)
+  end
+  function frame:ScrollToDataIndex(dataKey, viewIndex)
+    for i = 1, #frame.datas do
+      local rowData = frame.datas[i]
+      if rowData[ROWDATA_COLUMN_OFFSET] == dataKey then
+        local dataIndex = i - viewIndex + 1
+        local _min, _max = scroll.vs:GetMinMaxValues()
+        local scrollValue
+        if _min > dataIndex - 1 then
+          scrollValue = _min
+        elseif _max < dataIndex - 1 then
+          scrollValue = _max
+        else
+          scrollValue = dataIndex - 1
+        end
+        self.scroll.vs:SetValue(scrollValue, true)
+        return
+      end
+    end
+  end
+  function frame:SetColumnHeight(height)
+    self.listCtrl:SetColumnHeight(height)
+    scroll:AddAnchor("TOPRIGHT", frame, 0, height)
+  end
+  function frame:GetColumnHeight()
+    return self.listCtrl.column[1]:GetHeight()
+  end
+  function frame:GetListCtrlWidth()
+    return self.listCtrl:GetWidth()
+  end
+  function frame:GetListCtrlHeight()
+    return self.listCtrl:GetHeight()
+  end
+  function frame:InsertRows(count, useEventWindow)
+    self.listCtrl:InsertRows(count, useEventWindow)
+    local rowCount = #self.listCtrl.items
+    for i = 1, rowCount do
+      for j = 1, #self.listCtrl.column do
+        local column = self.listCtrl.column[j]
+        if column.layoutFunc ~= nil then
+          column.layoutFunc(frame, i, j, self.listCtrl.items[i].subItems[j])
+        else
+          DefaultListItemSetting(self.listCtrl.items[i].subItems[j])
+        end
+      end
+    end
+    self:SetMinMaxValues(0, self.dataCount - rowCount)
+  end
+  function frame:CreateOveredImage(r, g, b, a)
+    if r == nil or g == nil or b == nil or a == nil then
+      self.overedImage = self.listCtrl:CreateOveredImage()
+    else
+      self.listCtrl:CreateOveredImage(r, g, b, a)
+    end
+  end
+  function frame:CreateSelectedImage(r, g, b, a)
+    if r == nil or g == nil or b == nil or a == nil then
+      self.selectedImage = self.listCtrl:CreateSelectedImage()
+    else
+      self.listCtrl:CreateSelectedImage(r, g, b, a)
+    end
+  end
+  function frame:UpdateView()
+    local rowCount = #self.listCtrl.items
+    local colCount = #self.listCtrl.column
+    local rowIndex = 1
+    for i = 1, #self.datas do
+      local rowData = self.datas[i]
+      if i >= self.topDataIndex and i < self.topDataIndex + rowCount then
+        local row = self.listCtrl.items[rowIndex]
+        if rowData ~= nil and row ~= nil then
+          for j = 1, colCount do
+            local subItem = row.subItems[j]
+            local curCol = self.listCtrl.column[j]
+            if rowData[j + ROWDATA_COLUMN_OFFSET] ~= nil and subItem ~= nil and curCol.dataSetFunc ~= nil then
+              curCol.dataSetFunc(subItem, rowData[j + ROWDATA_COLUMN_OFFSET], true)
+            end
+          end
+        end
+        rowIndex = rowIndex + 1
+      end
+    end
+    for i = rowIndex, rowCount do
+      local row = self.listCtrl.items[i]
+      if row ~= nil then
+        for j = 1, colCount do
+          local subItem = row.subItems[j]
+          local curCol = self.listCtrl.column[j]
+          if subItem ~= nil and curCol.dataSetFunc ~= nil then
+            curCol.dataSetFunc(subItem, "", false)
+          end
+        end
+      end
+    end
+  end
+  function frame:FirstSorting()
+    if self.lastSortFunc == self.lastClickColumn.sortFunc1 then
+      self.AscendingSortMark:SetVisible(true)
+      self.DescendingSortMark:SetVisible(false)
+      self.AscendingSortMark:RemoveAllAnchors()
+      self.AscendingSortMark:AddAnchor("CENTER", self.lastClickColumn, self.lastClickColumn.sortMark_xOffset, frame.mark_yOffset)
+      self.lastClickColumn.curSortFunc = self.lastClickColumn.sortFunc2
+    elseif self.lastSortFunc == self.lastClickColumn.sortFunc2 then
+      self.AscendingSortMark:SetVisible(false)
+      self.DescendingSortMark:SetVisible(true)
+      self.DescendingSortMark:RemoveAllAnchors()
+      self.DescendingSortMark:AddAnchor("CENTER", self.lastClickColumn, self.lastClickColumn.sortMark_xOffset, frame.mark_yOffset)
+      self.lastClickColumn.curSortFunc = self.lastClickColumn.sortFunc1
+    end
+    table.sort(self.datas, self.lastSortFunc)
+    if frame.selectedDataKey ~= nil then
+      for i = 1, #frame.datas do
+        local rowData = frame.datas[i]
+        if rowData[ROWDATA_COLUMN_OFFSET] == frame.selectedDataKey then
+          frame.selectedDataIndex = i
+          frame:ScrollToDataIndex(frame.selectedDataKey, 1)
+          break
+        end
+      end
+    end
+  end
+  function frame:InsertRowData(key, columnCount, data)
+    local rowData = {}
+    for i = 1, columnCount do
+      rowData[i + ROWDATA_COLUMN_OFFSET] = data
+    end
+    self.datas[#self.datas + 1] = rowData
+    self.dataCount = self.dataCount + 1
+    if self.dataCount <= #self.listCtrl.items then
+      self.listCtrl:InsertData(self.dataCount, 1, "")
+    end
+    local rowCount = #self.listCtrl.items
+    self:SetMinMaxValues(0, self.dataCount - rowCount)
+  end
+  function frame:InsertData(key, columnIndex, data, enableFirstSorting)
+    if enableFirstSorting == nil then
+      enableFirstSorting = false
+    end
+    local rowData
+    local findedDataIndex = 0
+    for i = 1, #self.datas do
+      rowData = self.datas[i]
+      if rowData[ROWDATA_COLUMN_OFFSET] == key then
+        findedDataIndex = i
+        break
+      end
+    end
+    if findedDataIndex == 0 then
+      rowData = {}
+      rowData[ROWDATA_COLUMN_OFFSET] = key
+      self.datas[#self.datas + 1] = rowData
+      findedDataIndex = #self.datas
+      self.dataCount = self.dataCount + 1
+    end
+    if self.dataCount <= #self.listCtrl.items then
+      self.listCtrl:InsertData(self.dataCount, 1, "")
+    end
+    rowData[columnIndex + ROWDATA_COLUMN_OFFSET] = data
+    local rowCount = #self.listCtrl.items
+    self:SetMinMaxValues(0, self.dataCount - rowCount)
+    if enableFirstSorting then
+      self:FirstSorting()
+    end
+    self:UpdateView()
+  end
+  function frame:GetDataCount()
+    return self.dataCount
+  end
+  function frame:GetTopDataIndex()
+    return self.topDataIndex
+  end
+  function frame:SetTopDataIndex(index)
+    self.topDataIndex = index
+  end
+  function frame:GetRowCount()
+    if self.listCtrl.items == nil then
+      return 0
+    end
+    return #self.listCtrl.items
+  end
+  function frame:GetDataByViewIndex(row, col)
+    local rowData = self.datas[row + self.topDataIndex - 1]
+    if rowData == nil then
+      return
+    end
+    return rowData[col + ROWDATA_COLUMN_OFFSET]
+  end
+  function frame:GetDataByDataIndex(row, col)
+    local rowData = self.datas[row]
+    return rowData[col + ROWDATA_COLUMN_OFFSET]
+  end
+  function frame:DeleteData(key)
+    for i = 1, #self.datas do
+      local rowData = self.datas[i]
+      if rowData[ROWDATA_COLUMN_OFFSET] == key then
+        self.listCtrl:DeleteData(i)
+        return
+      end
+    end
+  end
+  function frame:DeleteDataByIndex(index)
+    if self.datas[index] == nil then
+      return
+    end
+    if index == self.selectedDataIndex then
+      self.selectedDataIndex = 0
+      self.selectedDataKey = nil
+    elseif index < self.selectedDataIndex then
+      self.selectedDataIndex = self.selectedDataIndex - 1
+    end
+    table.remove(self.datas, index)
+    self.dataCount = self.dataCount - 1
+    if self.dataCount < #self.listCtrl.items then
+      self.listCtrl:DeleteData(self.dataCount + 1)
+    end
+    local selectedIndex = frame:GetSelectedRowViewIndex(self.selectedDataIndex)
+    if selectedIndex ~= self.listCtrl:GetSelectedIdx() then
+      self.listCtrl:Select(selectedIndex - 1, false)
+    end
+    local rowCount = #self.listCtrl.items
+    self:SetMinMaxValues(0, self.dataCount - rowCount)
+    self:UpdateView()
+  end
+  function frame:DeleteAllDatas()
+    self.datas = {}
+    self.dataCount = 0
+    self.listCtrl:DeleteAllDatas()
+    self:SetMinMaxValues(0, 0)
+    self:UpdateView()
+  end
+  function frame:GetSelectedDataIndex()
+    return self.selectedDataIndex
+  end
+  function frame:GetSelectedDataKey()
+    return self.selectedDataKey
+  end
+  function frame:SelectByDataKey(dataKey)
+    for i = 1, #self.datas do
+      if dataKey == self.datas[i][1] then
+        local selectedIndex = frame:GetSelectedRowViewIndex(i)
+        if selectedIndex ~= self.listCtrl:GetSelectedIdx() then
+          self.listCtrl:Select(selectedIndex - 1)
+        else
+          self.selectedDataIndex = i
+          self.selectedDataKey = dataKey
+          if self.SelChangedProc ~= nil then
+            self:SelChangedProc(self:GetSelectedRowViewIndex(self.selectedDataIndex), self.selectedDataIndex, self.selectedDataKey, false)
+          end
+        end
+      end
+    end
+  end
+  function frame:GetSelectedData(col)
+    if self.selectedDataIndex > 0 and col > 0 and #self.listCtrl.column >= 1 then
+      return self.datas[self.selectedDataIndex][col + ROWDATA_COLUMN_OFFSET]
+    end
+    return nil
+  end
+  function frame:GetDataCount()
+    return #self.datas
+  end
+  function frame:ClearSelection()
+    self.listCtrl:ClearSelection()
+  end
+  function frame:SetUseDoubleClick(use)
+    self.useDoubleClick = use
+    self.listCtrl:SetUseDoubleClick(use)
+  end
+  function frame:Enable(isEnable)
+    frame.scroll:Enable(isEnable)
+    frame.listCtrl:Enable(isEnable)
+  end
+  function frame:GetColumns()
+    return frame.listCtrl.column
+  end
+  function frame:GetListCtrlItem(rowIndex)
+    if self.listCtrl.items == nil then
+      return
+    end
+    if rowIndex > #self.listCtrl.items then
+      return
+    end
+    return self.listCtrl.items[rowIndex]
+  end
+  function frame:GetListCtrlSubItem(rowIndex, colIndex)
+    if self.listCtrl.items == nil then
+      return
+    end
+    if rowIndex > #self.listCtrl.items then
+      return
+    end
+    if colIndex > #self.listCtrl.items[rowIndex].subItems then
+      return
+    end
+    return self.listCtrl.items[rowIndex].subItems[colIndex]
+  end
+  return frame
+end
+function ChangeSubItemTextColorForOnline(subItem, isOnline)
+  if isOnline then
+    ApplyTextColor(subItem, FONT_COLOR.DEFAULT)
+  else
+    ApplyTextColor(subItem, FONT_COLOR.GRAY)
+  end
+end
+function LevelAscendingSortFunc(a, b)
+  return a[ROWDATA_COLUMN_OFFSET + 1][SCROLLLIST_COMMON_COL.LV] < b[ROWDATA_COLUMN_OFFSET + 1][SCROLLLIST_COMMON_COL.LV] and true or false
+end
+function LevelDescendingSortFunc(a, b)
+  return a[ROWDATA_COLUMN_OFFSET + 1][SCROLLLIST_COMMON_COL.LV] > b[ROWDATA_COLUMN_OFFSET + 1][SCROLLLIST_COMMON_COL.LV] and true or false
+end
+function NameAscendingSortFunc(a, b)
+  return a[ROWDATA_COLUMN_OFFSET + 1][SCROLLLIST_COMMON_COL.NAME] < b[ROWDATA_COLUMN_OFFSET + 1][SCROLLLIST_COMMON_COL.NAME] and true or false
+end
+function NameDescendingSortFunc(a, b)
+  return a[ROWDATA_COLUMN_OFFSET + 1][SCROLLLIST_COMMON_COL.NAME] > b[ROWDATA_COLUMN_OFFSET + 1][SCROLLLIST_COMMON_COL.NAME] and true or false
+end

@@ -1,0 +1,560 @@
+local ReplaceMaxValue = function(strNum, maxNumber)
+  if maxNumber ~= nil and maxNumber < tonumber(strNum) then
+    strNum = string.format("%d", maxNumber)
+  end
+  return strNum
+end
+local TRADE_ITEMSLOT_COUNT_X = 5
+local TRADE_ITEMSLOT_COUNT_Y = 2
+local targetTradeLock = false
+local myTradeLock = false
+function IsVisibleTradeWindow()
+  return trade.window and trade.window:IsVisible() or false
+end
+local SetTradeLockBtnEnable = function(enable)
+  trade.window.buttonLock:Enable(enable, true)
+  if enable then
+    trade.window.buttonLock:ReleaseHandler("OnUpdate")
+    trade.window.buttonLock:SetAlpha(1)
+  else
+    trade.window.buttonLock:SetHandler("OnUpdate", trade.window.buttonLock.OnUpdate)
+    trade.window.buttonLock:SetAlpha(0.5)
+  end
+end
+function trade.window.buttonLock:OnUpdate(dt)
+  if X2Trade:CanLock() then
+    SetTradeLockBtnEnable(true)
+  end
+end
+local LockMoney = function(lock)
+  local enable = not lock
+  trade.window.myWindow.moneyEditsWindow.goldEdit:Enable(enable)
+  trade.window.myWindow.moneyEditsWindow.silverEdit:Enable(enable)
+  trade.window.myWindow.moneyEditsWindow.copperEdit:Enable(enable)
+end
+local CLEAR_TRADE_ITEM = function(my, index)
+  if my == true then
+    if trade.window.myWindow.slotWindow.item[index].inventoryIdx ~= nil then
+      X2Bag:UnlockSlot(trade.window.myWindow.slotWindow.item[index].inventoryIdx)
+    end
+    trade.window.myWindow.slotWindow.item[index].inventoryIdx = nil
+    trade.window.myWindow.slotWindow.item[index].tradeStack = 0
+    trade.window.myWindow.slotWindow.item[index].tooltip = nil
+    trade.window.myWindow.slotWindow.item[index]:Init()
+    trade.window.myWindow.slotWindow.item[index]:SetStack("")
+  else
+    trade.window.targetWindow.slotWindow.item[index].otherIdx = nil
+    trade.window.targetWindow.slotWindow.item[index].tradeType = nil
+    trade.window.targetWindow.slotWindow.item[index].tradeStack = 0
+    trade.window.targetWindow.slotWindow.item[index].tooltip = nil
+    trade.window.targetWindow.slotWindow.item[index]:Init()
+    trade.window.targetWindow.slotWindow.item[index]:SetStack("")
+  end
+end
+local function CLEAR_TRADE_UI()
+  for i = 1, #trade.window.targetWindow.slotWindow.item do
+    CLEAR_TRADE_ITEM(false, i)
+  end
+  trade.window.targetWindow.moneyWindow:Update("0")
+  for i = 1, #trade.window.myWindow.slotWindow.item do
+    CLEAR_TRADE_ITEM(true, i)
+  end
+  trade.window.myWindow.moneyEditsWindow:SetAmountStr("0")
+  SetTradeLockBtnEnable(true)
+end
+local function TradeStarted(targetName)
+  if CheckExclusiveUI(GROUP_BAG_SHARE, UI_KIND_TRADE, IsVisibleTradeWindow, false) then
+    X2Trade:CancelTrade(TCR_OPEND_MONEY_WINDOW)
+    return
+  end
+  CLEAR_TRADE_UI()
+  trade.window.targetWindow:SetTitleText(targetName)
+  trade.window:ChangeMyLockTexture(false)
+  trade.window:ChangeTargetLockTexture(false)
+  trade.window.buttonOk:Enable(false)
+  trade.window:Show(true)
+  targetTradeLock = false
+  myTradeLock = false
+  LockMoney(false)
+end
+local TradeCanStart = function(unitIdStr)
+  if CheckExclusiveUI(GROUP_BAG_SHARE, UI_KIND_TRADE, IsVisibleTradeWindow, false) then
+    X2Trade:CannotStartTrade(unitIdStr, TCR_OPEND_MONEY_WINDOW)
+    return
+  end
+  X2Trade:StartTrade(unitIdStr)
+end
+local function TradeCanceled(showMsg)
+  trade.window:Show(false)
+  CLEAR_TRADE_UI()
+  if showMsg == true then
+    X2Chat:DispatchChatMessage(CMF_TRADE_STORE_MSG, locale.trade.canceled)
+  end
+  LockMoney(false)
+end
+local CheckLockingState = function()
+  if X2Trade:IsTradeLocked() and X2Trade:IsOtherTradeLocked() then
+    trade.window.buttonOk:Enable(true)
+  else
+    trade.window.buttonOk:Enable(false)
+  end
+end
+local function TradeLocked()
+  trade.window:ChangeMyLockTexture(true)
+  X2Chat:DispatchChatMessage(CMF_TRADE_STORE_MSG, locale.trade.lockedMsg)
+  LockMoney(true)
+  CheckLockingState()
+end
+local function TradeOtherLocked()
+  trade.window:ChangeTargetLockTexture(true)
+  X2Chat:DispatchChatMessage(CMF_TRADE_STORE_MSG, locale.trade.otherLockedMsg)
+  CheckLockingState()
+end
+local function TradeUnlocked()
+  trade.window:ChangeMyLockTexture(false)
+  trade.window:ChangeTargetLockTexture(false)
+  LockMoney(false)
+  X2Chat:DispatchChatMessage(CMF_TRADE_STORE_MSG, locale.trade.unlockedMsg)
+  CheckLockingState()
+  SetTradeLockBtnEnable(false)
+end
+local function TradeOk()
+  X2Chat:DispatchChatMessage(CMF_TRADE_STORE_MSG, locale.trade.tradeOk)
+  LockMoney(true)
+end
+local function TradeOtherOK()
+  X2Chat:DispatchChatMessage(CMF_TRADE_STORE_MSG, locale.trade.tradeOtherOk)
+  LockMoney(true)
+end
+local function TradeMade()
+  trade.window:Show(false)
+  CLEAR_TRADE_UI()
+  X2Chat:DispatchChatMessage(CMF_TRADE_STORE_MSG, locale.trade.tradeAccomplishd)
+  LockMoney(false)
+end
+local ToggleTradeUi = function()
+  local show = not trade.window:IsVisible()
+  if show and CheckExclusiveUI(GROUP_BAG_SHARE, UI_KIND_TRADE, IsVisibleTradeWindow) then
+    return
+  end
+  trade.window:Show(show)
+end
+local TradeItemPutup = function(inventoryIdx, amount)
+  for k = 1, #trade.window.myWindow.slotWindow.item do
+    if trade.window.myWindow.slotWindow.item[k].inventoryIdx == inventoryIdx then
+      X2Chat:DispatchChatMessage(CMF_TRADE_STORE_MSG, locale.trade.registedItem)
+      return
+    end
+  end
+  for k = 1, #trade.window.myWindow.slotWindow.item do
+    if trade.window.myWindow.slotWindow.item[k].inventoryIdx == nil then
+      itemInfo = X2Bag:GetBagItemInfo(1, inventoryIdx)
+      if itemInfo ~= nil then
+        trade.window.myWindow.slotWindow.item[k].inventoryIdx = inventoryIdx
+        trade.window.myWindow.slotWindow.item[k].tooltip = itemInfo
+        trade.window.myWindow.slotWindow.item[k]:SetItemInfo(itemInfo)
+        if amount > 1 then
+          trade.window.myWindow.slotWindow.item[k].tradeStack = amount
+          trade.window.myWindow.slotWindow.item[k]:SetStack(tostring(amount))
+        elseif amount ~= 1 then
+          trade.window.myWindow.slotWindow.item[k].tradeStack = itemInfo.stack
+          if itemInfo.stack ~= nil and 1 < itemInfo.stack then
+            trade.window.myWindow.slotWindow.item[k]:SetStack(tostring(itemInfo.stack))
+          end
+        end
+        X2Bag:LockSlot(inventoryIdx)
+      end
+      return
+    end
+  end
+end
+local TradeOtherItemPutup = function(otherIdx, type, stackCount, tooltip)
+  for k = 1, #trade.window.targetWindow.slotWindow.item do
+    if trade.window.targetWindow.slotWindow.item[k].tradeType == nil then
+      trade.window.targetWindow.slotWindow.item[k].otherIdx = otherIdx
+      trade.window.targetWindow.slotWindow.item[k].tradeType = type
+      trade.window.targetWindow.slotWindow.item[k].tradeStack = stackCount
+      trade.window.targetWindow.slotWindow.item[k].tooltip = tooltip
+      trade.window.targetWindow.slotWindow.item[k]:SetItemInfo(tooltip)
+      if stackCount > 1 then
+        trade.window.targetWindow.slotWindow.item[k]:SetStack(tostring(stackCount))
+      end
+      return
+    end
+  end
+end
+local function TradeItemTookDown(inventoryIdx)
+  for k = 1, #trade.window.myWindow.slotWindow.item do
+    if trade.window.myWindow.slotWindow.item[k].inventoryIdx == inventoryIdx then
+      CLEAR_TRADE_ITEM(true, k)
+      return
+    end
+  end
+end
+local function TradeOtherItemTookDown(otherIdx)
+  for k = 1, #trade.window.targetWindow.slotWindow.item do
+    if trade.window.targetWindow.slotWindow.item[k].otherIdx == otherIdx then
+      CLEAR_TRADE_ITEM(false, k)
+      for i = 1, #trade.window.targetWindow.slotWindow.item do
+        local otherItemIdx = trade.window.targetWindow.slotWindow.item[i].otherIdx
+        if otherItemIdx ~= nil and otherIdx < otherItemIdx then
+          trade.window.targetWindow.slotWindow.item[i].otherIdx = otherItemIdx - 1
+        end
+      end
+      return
+    end
+  end
+end
+function trade.window:OnHide()
+  X2Trade:CancelTrade(TCR_NORMAL)
+end
+trade.window:SetHandler("OnHide", trade.window.OnHide)
+local SetViewOfItemSlot = function(parent, x, y, gapX, gapY)
+  for k = 1, x do
+    for j = 1, y do
+      local index = y * k - y + j
+      parent.item[index] = CreateItemIconButton("$parent" .. ".item[" .. index .. "]", parent)
+      parent.item[index]:AddAnchor("TOPLEFT", parent, (j - 1) * gapX, (k - 1) * gapY)
+      parent.item[index]:Show(true)
+      if parent == trade.window.myWindow.slotWindow then
+        ApplySlotSkin(parent.item[index], parent.item[index].back, SLOT_STYLE.BAG_DEFAULT)
+      end
+    end
+  end
+end
+local function CreateTargetItemSlot(parent, x, y, gapX, gapY)
+  parent.item = {}
+  SetViewOfItemSlot(parent, x, y, gapX, gapY)
+  for k = 1, x do
+    for j = 1, y do
+      local index = y * k - y + j
+      parent.item[index].index = index
+      parent.item[index]:RegisterForDrag("LeftButton")
+      parent.item[index].otherIdx = nil
+      parent.item[index].tradeType = nil
+      parent.item[index].tradeStack = 0
+      parent.item[index].tooltip = nil
+      itemIcon = parent.item[index]
+      function itemIcon:AppendItem(item)
+        if item == nil then
+          self.tooltip = nil
+          self:Init()
+        else
+          self.tooltip = item
+          self:SetItemInfo(item)
+        end
+      end
+    end
+  end
+end
+local function CreateMyItemSlot(parent, x, y, gapX, gapY)
+  if locX == nil then
+    locX = 0
+  end
+  if locY == nil then
+    locY = 0
+  end
+  parent.item = {}
+  SetViewOfItemSlot(parent, x, y, gapX, gapY)
+  for k = 1, x do
+    for j = 1, y do
+      local index = y * k - y + j
+      parent.item[index].index = index
+      parent.item[index]:RegisterForDrag("LeftButton")
+      parent.item[index].inventoryIdx = nil
+      parent.item[index].tradeStack = 0
+      parent.item[index].tooltip = nil
+      itemIcon = parent.item[index]
+      function itemIcon:OnDragStart(arg)
+        if X2Trade:IsTradeLocked() == false and arg == "LeftButton" then
+          X2Trade:TakeDownTradeItemByInventoryIdx(self.inventoryIdx - 1)
+        end
+      end
+      itemIcon:SetHandler("OnDragStart", itemIcon.OnDragStart)
+      function itemIcon:OnDragReceive(arg)
+        if X2Trade:IsTradeLocked() == false and arg == "LeftButton" then
+          local cursorInfo = X2Cursor:GetCursorInfo()
+          if cursorInfo == "Item" then
+            PutupTradeItem(X2Cursor:GetCursorPickedBagItemIndex(), X2Cursor:GetCursorPickedBagItemAmount())
+            X2Cursor:ClearCursor()
+          end
+        end
+      end
+      itemIcon:SetHandler("OnDragReceive", itemIcon.OnDragReceive)
+      function itemIcon:OnClickProc(arg)
+        if X2Trade:IsTradeLocked() == false then
+          if arg == "LeftButton" then
+            local cursorInfo = X2Cursor:GetCursorInfo()
+            if cursorInfo == "Item" or cursorInfo == "Item_Id" then
+              PutupTradeItem(X2Cursor:GetCursorPickedBagItemIndex(), X2Cursor:GetCursorPickedBagItemAmount())
+              X2Cursor:ClearCursor()
+            end
+          elseif arg == "RightButton" and self.inventoryIdx ~= nil then
+            X2Trade:TakeDownTradeItemByInventoryIdx(self.inventoryIdx - 1)
+            HideTooltip()
+          end
+        end
+      end
+      function itemIcon:AppendItem(item)
+        if item == nil then
+          self.tooltip = nil
+          self:Init()
+        else
+          self.tooltip = item
+          self:SetItemInfo(item)
+        end
+      end
+    end
+  end
+end
+function trade.window.myWindow.slotWindow:OnDragReceive(arg)
+  if X2Trade:IsTradeLocked() == false and arg == "LeftButton" then
+    local cursorInfo = X2Cursor:GetCursorInfo()
+    if cursorInfo == "Item" then
+      PutupTradeItem(X2Cursor:GetCursorPickedBagItemIndex(), X2Cursor:GetCursorPickedBagItemAmount())
+      X2Cursor:ClearCursor()
+    end
+  end
+end
+trade.window.myWindow.slotWindow:SetHandler("OnDragReceive", trade.window.myWindow.slotWindow.OnDragReceive)
+function trade.window.myWindow.slotWindow:OnClick(arg)
+  if X2Trade:IsTradeLocked() == false and arg == "LeftButton" then
+    local cursorInfo = X2Cursor:GetCursorInfo()
+    if cursorInfo == "Item" then
+      PutupTradeItem(X2Cursor:GetCursorPickedBagItemIndex(), X2Cursor:GetCursorPickedBagItemAmount())
+      X2Cursor:ClearCursor()
+    end
+  end
+end
+trade.window.myWindow.slotWindow:SetHandler("OnClick", trade.window.myWindow.slotWindow.OnClick)
+local goldEdit = trade.window.myWindow.moneyEditsWindow.goldEdit
+local silverEdit = trade.window.myWindow.moneyEditsWindow.silverEdit
+local copperEdit = trade.window.myWindow.moneyEditsWindow.copperEdit
+function OnChangedHandler()
+  if trade.window:IsVisible() == false then
+    return
+  end
+  local gold = goldEdit:GetText()
+  local silver = silverEdit:GetText()
+  local copper = copperEdit:GetText()
+  PutupTradeMoney(gold, silver, copper)
+end
+local function SetMaxMoneyHandlerLimitMyMoney(goldWidget, silverWidget, copperWidget, goldlimit, OnChangedHander)
+  local function IsOverMoney()
+    local gold = goldWidget:GetText()
+    local silver = silverWidget:GetText()
+    local copper = copperWidget:GetText()
+    local moneyStr = X2Util:MakeMoneyString(gold, silver, copper)
+    if moneyStr == "invalid_money" then
+      return true
+    end
+    if X2Util:CompareMoneyString(X2Util:GetMyMoneyString(), moneyStr) == -1 then
+      return true
+    end
+    return false
+  end
+  local function SetMaxMoney()
+    local moneyStr = X2Util:GetMyMoneyString()
+    local limitStr = X2Util:MakeMoneyString(string.format("%i", goldlimit), "0", "0")
+    local gold, silver, copper
+    if X2Util:CompareMoneyString(limitStr, moneyStr) == -1 then
+      gold, silver, copper = GoldSilverCopperStringFromMoneyStr(limitStr)
+    else
+      gold, silver, copper = GoldSilverCopperStringFromMoneyStr(moneyStr)
+    end
+    goldWidget:SetText(gold)
+    silverWidget:SetText(silver)
+    copperWidget:SetText(copper)
+  end
+  local function IsLimitOver()
+    local limitStr = X2Util:MakeMoneyString(string.format("%i", goldlimit), "0", "0")
+    local gold = goldWidget:GetText()
+    local silver = silverWidget:GetText()
+    local copper = copperWidget:GetText()
+    local moneyStr = X2Util:MakeMoneyString(gold, silver, copper)
+    if moneyStr == "invalid_money" then
+      return true
+    end
+    if X2Util:CompareMoneyString(limitStr, moneyStr) == -1 then
+      return true
+    end
+    return false
+  end
+  local function Process(widget)
+    local num = widget:GetText()
+    local strNum = ""
+    strNum = RemoveNonDigit(num)
+    strNum = ReplaceMaxValue(strNum, maxNumberByGold)
+    strNum = F_MONEY:RemoveHeadZero(strNum)
+    widget:SetText(strNum)
+    if IsOverMoney() or IsLimitOver() then
+      SetMaxMoney()
+    end
+    if OnChangedHander ~= nil then
+      OnChangedHander()
+    end
+  end
+  function goldWidget:OnTextChanged()
+    Process(self)
+  end
+  goldWidget:SetHandler("OnTextChanged", goldWidget.OnTextChanged)
+  function silverWidget:OnTextChanged()
+    Process(self)
+  end
+  silverWidget:SetHandler("OnTextChanged", silverWidget.OnTextChanged)
+  function copperWidget:OnTextChanged()
+    Process(self)
+  end
+  copperWidget:SetHandler("OnTextChanged", copperWidget.OnTextChanged)
+end
+local function SetMaxMoneyHandlerLimitMyAAPoint(goldWidget, silverWidget, copperWidget, goldlimit, OnChangedHander)
+  local function IsOverAAPoint()
+    local gold = goldWidget:GetText()
+    local silver = silverWidget:GetText()
+    local copper = copperWidget:GetText()
+    local aapointStr = X2Util:MakeAAPointString(gold, silver, copper)
+    if aapointStr == "invalid_money" then
+      return true
+    end
+    if X2Util:CompareAAPointString(X2Util:GetMyAAPointString(), aapointStr) == -1 then
+      return true
+    end
+    return false
+  end
+  local function SetMaxAAPoint()
+    local aapointStr = X2Util:GetMyAAPointString()
+    local limitStr = X2Util:MakeAAPointString(string.format("%i", goldlimit), "0", "0")
+    local gold, silver, copper
+    if X2Util:CompareAAPointString(limitStr, aapointStr) == -1 then
+      gold, silver, copper = GoldSilverCopperStringFromMoneyStr(limitStr)
+    else
+      gold, silver, copper = GoldSilverCopperStringFromMoneyStr(aapointStr)
+    end
+    goldWidget:SetText(gold)
+    silverWidget:SetText(silver)
+    copperWidget:SetText(copper)
+  end
+  local function IsLimitOver()
+    local limitStr = X2Util:MakeAAPointString(string.format("%i", goldlimit), "0", "0")
+    local gold = goldWidget:GetText()
+    local silver = silverWidget:GetText()
+    local copper = copperWidget:GetText()
+    local aapointStr = X2Util:MakeAAPointString(gold, silver, copper)
+    if aapointStr == "invalid_aapoint" then
+      return true
+    end
+    if X2Util:CompareAAPointString(limitStr, aapointStr) == -1 then
+      return true
+    end
+    return false
+  end
+  local function Process(widget)
+    local num = widget:GetText()
+    local strNum = ""
+    strNum = RemoveNonDigit(num)
+    strNum = ReplaceMaxValue(strNum, maxNumberByGold)
+    strNum = F_MONEY:RemoveHeadZero(strNum)
+    widget:SetText(strNum)
+    if IsOverAAPoint() or IsLimitOver() then
+      SetMaxAAPoint()
+    end
+    if OnChangedHander ~= nil then
+      OnChangedHander()
+    end
+  end
+  function goldWidget:OnTextChanged()
+    Process(self)
+  end
+  goldWidget:SetHandler("OnTextChanged", goldWidget.OnTextChanged)
+  function silverWidget:OnTextChanged()
+    Process(self)
+  end
+  silverWidget:SetHandler("OnTextChanged", silverWidget.OnTextChanged)
+  function copperWidget:OnTextChanged()
+    Process(self)
+  end
+  copperWidget:SetHandler("OnTextChanged", copperWidget.OnTextChanged)
+end
+if X2Trade:GetCurrencyForUserTrade() == CURRENCY_AA_POINT then
+  SetMaxMoneyHandlerLimitMyAAPoint(goldEdit, silverEdit, copperEdit, 200000, OnChangedHandler)
+else
+  SetMaxMoneyHandlerLimitMyMoney(goldEdit, silverEdit, copperEdit, 200000, OnChangedHandler)
+end
+function trade.window.buttonLock:OnClick()
+  X2Trade:LockTrade()
+end
+trade.window.buttonLock:SetHandler("OnClick", trade.window.buttonLock.OnClick)
+function trade.window.buttonOk:OnClick()
+  X2Trade:OkTrade()
+end
+trade.window.buttonOk:SetHandler("OnClick", trade.window.buttonOk.OnClick)
+function trade.window:ShowProc()
+  trade.window.myWindow.moneyEditsWindow:SetAmountStr("0")
+  ADDON:ShowContent(UIC_BAG, true)
+end
+local tradeEvents = {
+  TRADE_STARTED = function(targetName)
+    TradeStarted(targetName)
+  end,
+  TRADE_CAN_START = function(unitIdStr)
+    TradeCanStart(unitIdStr)
+  end,
+  TRADE_CANCELED = function()
+    TradeCanceled(true)
+  end,
+  TRADE_LOCKED = function()
+    TradeLocked()
+    F_SOUND:PlayUISound("event_trade_lock")
+  end,
+  TRADE_OTHER_LOCKED = function()
+    TradeOtherLocked()
+    F_SOUND:PlayUISound("event_trade_lock")
+  end,
+  TRADE_UNLOCKED = function()
+    TradeUnlocked()
+    F_SOUND:PlayUISound("event_trade_unlock")
+  end,
+  TRADE_OK = function()
+    TradeOk()
+  end,
+  TRADE_OTHER_OK = function()
+    TradeOtherOK()
+  end,
+  TRADE_MADE = function()
+    TradeMade()
+  end,
+  TRADE_UI_TOGGLE = function()
+    ToggleTradeUi()
+  end,
+  TRADE_ITEM_PUTUP = function(inventoryIdx, amount)
+    TradeItemPutup(inventoryIdx, amount)
+    F_SOUND:PlayUISound("event_trade_item_putup", true)
+  end,
+  TRADE_OTHER_ITEM_PUTUP = function(otherIdx, type, stackCount, tooltip)
+    TradeOtherItemPutup(otherIdx, type, stackCount, tooltip)
+    F_SOUND:PlayUISound("event_trade_item_putup", true)
+  end,
+  TRADE_MONEY_PUTUP = function(money)
+  end,
+  TRADE_OTHER_MONEY_PUTUP = function(money)
+    trade.window.targetWindow.moneyWindow:Update(money)
+  end,
+  TRADE_ITEM_TOOKDOWN = function(inventoryIdx)
+    TradeItemTookDown(inventoryIdx)
+    F_SOUND:PlayUISound("event_trade_item_tookdown", true)
+  end,
+  TRADE_OTHER_ITEM_TOOKDOWN = function(otherIdx)
+    TradeOtherItemTookDown(otherIdx)
+    F_SOUND:PlayUISound("event_trade_item_tookdown", true)
+  end,
+  ENTERED_LOADING = function()
+    TradeCanceled(false)
+  end
+}
+trade.window:SetHandler("OnEvent", function(this, event, ...)
+  tradeEvents[event](...)
+end)
+RegistUIEvent(trade.window, tradeEvents)
+CreateMyItemSlot(trade.window.myWindow.slotWindow, 5, 2, 50, 50)
+CreateTargetItemSlot(trade.window.targetWindow.slotWindow, 5, 2, 50, 50)
+trade.window:SetCloseOnEscape(true)

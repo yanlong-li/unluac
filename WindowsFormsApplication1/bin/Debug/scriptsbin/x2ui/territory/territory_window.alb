@@ -1,0 +1,38 @@
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin("popup")
+local CreateTerritoryWindow = function(id, parent)
+  local frame = SetViewOfTerritoryWindow(id, parent)
+  local OnTabChanged = function(self, selected)
+    ReAnhorTabLine(self, selected)
+  end
+  frame.tab:SetHandler("OnTabChanged", OnTabChanged)
+  return frame
+end
+territoryFrame = CreateTerritoryWindow("territoryFrame", "UIParent")
+territoryFrame:SetCloseOnEscape(true)
+local guardTowerPage
+local function UpdateGuardTowerPageInfo()
+  if territoryFrame:IsVisible() then
+    guardTowerPage:UpdateGuardTowerStepInfos()
+  end
+end
+function ToggleTerritoryFrame(show, interactionNum, zoneGroup)
+  territoryFrame.zoneGroup = zoneGroup
+  local guardTowerPage = territoryFrame.tab.window[1]
+  guardTowerPage:UpdateGuardTowerStepInfos()
+  territoryFrame:Show(true)
+end
+local territoryEvents = {
+  NPC_INTERACTION_END = function()
+    territoryFrame:Show(false)
+  end,
+  HOUSE_UNIT_CREATED = function()
+    UpdateGuardTowerPageInfo()
+  end,
+  HOUSE_UNIT_REMOVED = function()
+    UpdateGuardTowerPageInfo()
+  end
+}
+territoryFrame:SetHandler("OnEvent", function(this, event, ...)
+  territoryEvents[event](...)
+end)
+RegistUIEvent(territoryFrame, territoryEvents)

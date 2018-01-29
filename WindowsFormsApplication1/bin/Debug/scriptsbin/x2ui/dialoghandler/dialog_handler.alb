@@ -1,0 +1,1383 @@
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+local SetDialogTexts = function(wnd, infoTexts)
+  if infoTexts.resize == nil then
+    infoTexts.resize = true
+  end
+  if infoTexts.title ~= nil then
+    wnd:SetTitle(infoTexts.title)
+  end
+  if infoTexts.content ~= nil then
+    wnd:SetContent(infoTexts.content, infoTexts.resize)
+  end
+end
+local MakeItemDesc = function(gradeColor, name, count)
+  if count > 1 then
+    return string.format("|c%s[%s]|rx%s", gradeColor, name, count)
+  else
+    return string.format("|c%s[%s]", gradeColor, name)
+  end
+end
+local function DialogJoinFamilyHandler(wnd, infoTable)
+  infoTable.title = X2Locale:LocalizeUiText(MSG_BOX_TITLE_TEXT, "ask_family_invite")
+  infoTable.content = X2Locale:LocalizeUiText(MSG_BOX_BODY_TEXT, "ask_family_invite", string.format("%s%s|r", FONT_COLOR_HEX.BLUE, infoTable.invitorName), string.format("%s", infoTable.familyTitle))
+  SetDialogTexts(wnd, infoTable)
+end
+X2DialogManager:SetHandler(DLG_TASK_JOIN_FAMILY, DialogJoinFamilyHandler)
+local function DialogJoinBattleFieldHandler(wnd, infoTable)
+  infoTable.title = X2Locale:LocalizeUiText(MSG_BOX_TITLE_TEXT, "ask_to_join_instant_game")
+  infoTable.content = X2Locale:LocalizeUiText(MSG_BOX_BODY_TEXT, "ask_to_join_instant_game", infoTable.name, infoTable.corpsName)
+  SetDialogTexts(wnd, infoTable)
+end
+X2DialogManager:SetHandler(DLG_TASK_JOIN_BATTLE_FIELD, DialogJoinBattleFieldHandler)
+local DialogBattleFieldEntranceUseItem = function(wnd, infoTable)
+  ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_ITEM_ICON)
+  local color = infoTable.haveItemCount >= 1 and FONT_COLOR_HEX.BLUE or FONT_COLOR_HEX.RED
+  local content = GetUIText(COMMON_TEXT, "Battlefield_entrance_question")
+  local itemDesc = string.format([[
+[%s]
+%s%d/1]], infoTable.itemInfo.name, color, infoTable.haveItemCount)
+  wnd:SetTitle(GetUIText(COMMON_TEXT, "Battlefield_entrance_title"))
+  wnd:SetContentEx(content, infoTable.itemInfo, infoTable.useItemCount, itemDesc)
+end
+X2DialogManager:SetHandler(DLG_TASK_BATTLE_FIELD_ENTRANCE_USE_ITEM, DialogBattleFieldEntranceUseItem)
+local function DialogInviteJuryHandler(wnd, infoTable)
+  infoTable.title = X2Locale:LocalizeUiText(MSG_BOX_TITLE_TEXT, "ask_invite_jury")
+  infoTable.content = X2Locale:LocalizeUiText(MSG_BOX_BODY_TEXT, "ask_invite_jury", string.format("|cFFFF8C00%s|r", infoTable.defendantName))
+  SetDialogTexts(wnd, infoTable)
+end
+X2DialogManager:SetHandler(DLG_TASK_INVITE_JURY, DialogInviteJuryHandler)
+local function DialogImprisionOrTrialHandler(wnd, infoTable)
+  infoTable.title = X2Locale:LocalizeUiText(MSG_BOX_TITLE_TEXT, "ask_imprison_trial")
+  infoTable.content = X2Locale:LocalizeUiText(MSG_BOX_BODY_TEXT, "ask_imprison_trial", tostring(infoTable.crimeValue), string.format("%s%d|r", FONT_COLOR_HEX.RED, infoTable.jailMinutes))
+  SetDialogTexts(wnd, infoTable)
+end
+X2DialogManager:SetHandler(DLG_TASK_IMPRISION_OR_TRIAL, DialogImprisionOrTrialHandler)
+local DialogLearnSkillHandler = function(wnd, infoTable)
+  ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_VALUE_TEXT)
+  local MakeLearnStr = function(abilityName, name)
+    abilityName = locale.common.abilityCategory[abilityName] or abilityName
+    local str1 = locale.skillTrainingMsg.Get_training_msg_2(abilityName, name)
+    return str1
+  end
+  local title = locale.learning.title
+  local skillInfo = X2Skill:Info(infoTable.skillType)
+  local content = MakeLearnStr(skillInfo.abilityName, skillInfo.name)
+  local valueText = string.format("%s %d", locale.learning.point, skillInfo.skillPoints)
+  wnd:SetTitle(title)
+  wnd:SetContentEx(content, valueText)
+end
+X2DialogManager:SetHandler(DLG_TASK_LEARN_SKILL, DialogLearnSkillHandler)
+local DialogLearnBuffHandler = function(wnd, infoTable)
+  ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_VALUE_TEXT)
+  local MakeLearnStr = function(abilityName, name)
+    abilityName = locale.common.abilityCategory[abilityName] or abilityName
+    local str1 = locale.skillTrainingMsg.Get_training_msg_2(abilityName, name)
+    return str1
+  end
+  local title = locale.learning.title
+  local passiveBuffInfo = X2Ability:GetPassiveBuffInfo(infoTable.passiveBuffType)
+  local buffInfo = X2Ability:GetBuffTooltip(passiveBuffInfo.buffType, 1)
+  local content = MakeLearnStr(passiveBuffInfo.abilityName, buffInfo.name)
+  local valueText = string.format("%s %s", locale.learning.point, "1")
+  wnd:SetTitle(title)
+  wnd:SetContentEx(content, valueText)
+end
+X2DialogManager:SetHandler(DLG_TASK_LEARN_BUFF, DialogLearnBuffHandler)
+local DialogResetSkillsHandler = function(wnd, infoTable)
+  ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_VALUE_TEXT)
+  local title = locale.icon_shape_button_tooltip.resetSkill
+  local content = locale.skillTrainingMsg.skill_init_msg_2
+  local valueText = string.format(F_MONEY.currency.pipeString[F_MONEY.currency.skillsReset], tostring(infoTable.cost))
+  wnd:SetTitle(title)
+  wnd:SetContentEx(content, valueText)
+end
+X2DialogManager:SetHandler(DLG_TASK_RESET_SKILLS, DialogResetSkillsHandler)
+local function DialogBuildShipyardHandler(wnd, infoTable)
+  local body = X2Locale:LocalizeUiText(MSG_BOX_BODY_TEXT, "confirm_locate_shipyard_body", infoTable.name or "")
+  infoTable.title = X2Locale:LocalizeUiText(MSG_BOX_TITLE_TEXT, "confirm_locate_shipyard_title")
+  infoTable.content = string.format("%s\n" .. F_MONEY.currency.pipeString[F_MONEY.currency.houseTax], body, infoTable.tax)
+  SetDialogTexts(wnd, infoTable)
+end
+X2DialogManager:SetHandler(DLG_TASK_BUILD_SHIPYARD, DialogBuildShipyardHandler)
+local DialogPerchaseHandler = function(wnd, infoTable)
+  ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_ITEM_ICON)
+  local title = X2Locale:LocalizeUiText(MSG_BOX_TITLE_TEXT, "confirm_purchase_title")
+  local content = X2Locale:LocalizeUiText(MSG_BOX_BODY_TEXT, "confirm_purchase_body", infoTable.itemInfo.name, tostring(infoTable.itemCount))
+  local cost = string.format(F_MONEY.currency.pipeString[infoTable.currency], infoTable.moneyString)
+  wnd:SetTitle(title)
+  wnd:SetContentEx(content, infoTable.itemInfo, infoTable.itemCount, cost)
+  local events = {
+    INTERACTION_END = function()
+      X2DialogManager:OnCancel(wnd:GetId())
+    end
+  }
+  wnd:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(wnd, events)
+end
+X2DialogManager:SetHandler(DLG_TASK_PURCHASE, DialogPerchaseHandler)
+local DialogPerchaseCoinHandler = function(wnd, infoTable)
+  ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_ITEM_ICON)
+  local title = X2Locale:LocalizeUiText(MSG_BOX_TITLE_TEXT, "confirm_purchase_title")
+  local content = X2Locale:LocalizeUiText(MSG_BOX_BODY_TEXT, "confirm_purchase_coin_body", infoTable.itemInfo.name, tostring(infoTable.itemCount))
+  local cost = X2Locale:LocalizeUiText(MSG_BOX_BODY_TEXT, "confirm_purchase_coin_amount", infoTable.coinName, tostring(infoTable.coinCount))
+  wnd:SetTitle(title)
+  wnd:SetContentEx(content, infoTable.itemInfo, infoTable.itemCount, cost)
+  local events = {
+    INTERACTION_END = function()
+      X2DialogManager:OnCancel(wnd:GetId())
+    end
+  }
+  wnd:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(wnd, events)
+end
+X2DialogManager:SetHandler(DLG_TASK_PURCHASE_COIN, DialogPerchaseCoinHandler)
+local function DialogDoodadPhaseChangeByItemHandler(wnd, infoTable)
+  if infoTable.title ~= nil then
+    wnd:SetTitle(infoTable.title)
+  end
+  local strTable = {}
+  local list = infoTable.list
+  for i = 1, #list do
+    strTable[i] = string.format(string.format("[%s]x%d", list[i].itemInfo.name, list[i].count))
+  end
+  local desc = wnd:CreateChildWidget("textbox", "desc", 0, false)
+  desc:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, 30)
+  desc:AddAnchor("TOP", wnd, 0, titleMargin)
+  desc:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  ApplyTextColor(desc, FONT_COLOR.DEFAULT)
+  if infoTable.desc ~= nil then
+    desc:SetText(infoTable.desc)
+    desc:SetHeight(desc:GetTextHeight())
+  end
+  local itemIcon = CreateItemIconButton("itemIcon", wnd)
+  itemIcon:AddAnchor("TOP", desc, "BOTTOM", 0, sideMargin / 2)
+  local comboBox = CreateComboBox(wnd)
+  comboBox:AddAnchor("TOP", itemIcon, "BOTTOM", 0, sideMargin / 2)
+  comboBox:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, DEFAULT_SIZE.COMBOBOX_HEIGHT)
+  comboBox.dropdownItem = strTable
+  comboBox.limitItemCount = 10
+  comboBox:SetGuideText(GetUIText(TOOLTIP_TEXT, "selectMaterialItem"))
+  local requireLaborPower = wnd:CreateChildWidget("label", "requireLaborPower", 0, false)
+  requireLaborPower:Show(false)
+  requireLaborPower:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, FONT_SIZE.MIDDLE)
+  requireLaborPower:AddAnchor("TOP", comboBox, "BOTTOM", 0, sideMargin / 2)
+  ApplyTextColor(requireLaborPower, FONT_COLOR.DEFAULT)
+  local function FillRequireLaborPower(amount)
+    if amount == 0 then
+      requireLaborPower:Show(false)
+      return
+    end
+    requireLaborPower:Show(true)
+    requireLaborPower:SetText(string.format("%s%d", GetUIText(CRAFT_TEXT, "require_labor_power"), amount))
+  end
+  wnd.btnOk:AddAnchor("BOTTOM", wnd, -BUTTON_COMMON_INSET.TWO_BUTTON_BETEEN, BUTTON_COMMON_INSET.MESSAGEBOX_BOTTOM)
+  wnd.btnOk:Enable(false)
+  local btnCancel = wnd:CreateChildWidget("button", "btnCancel", 0, true)
+  btnCancel:SetText(GetUIText(COMMON_TEXT, "cancel"))
+  ApplyButtonSkin(btnCancel, BUTTON_BASIC.DEFAULT)
+  btnCancel:AddAnchor("BOTTOM", wnd, BUTTON_COMMON_INSET.TWO_BUTTON_BETEEN, BUTTON_COMMON_INSET.MESSAGEBOX_BOTTOM)
+  local _, height = F_LAYOUT:GetExtentWidgets(desc, requireLaborPower)
+  height = height + sideMargin + titleMargin + wnd.btnOk:GetHeight() + -BUTTON_COMMON_INSET.MESSAGEBOX_BOTTOM
+  wnd:SetHeight(height)
+  local selIdx = 0
+  function comboBox:SelectedProc(selIndex)
+    selIdx = selIndex
+    if infoTable.list[selIdx] ~= nil then
+      local list = infoTable.list[selIdx]
+      FillRequireLaborPower(list.consume_lp)
+      local haveCount = X2Bag:CountBagItemByItemType(list.itemInfo.itemType)
+      itemIcon:SetItemInfo(list.itemInfo)
+      itemIcon:SetStack(haveCount, list.count)
+      local haveLp = X2Player:GetLaborPower()
+      wnd.btnOk:Enable(haveCount >= list.count and haveLp >= list.consume_lp)
+    end
+  end
+  local function OkBtnClickFunc()
+    X2DialogManager:OnCustom(wnd:GetId(), selIdx)
+  end
+  wnd.btnOk:SetHandler("OnClick", OkBtnClickFunc)
+  local function CancelBtnClickFunc()
+    X2DialogManager:OnCustom(wnd:GetId(), 0)
+  end
+  btnCancel:SetHandler("OnClick", CancelBtnClickFunc)
+  local events = {
+    INTERACTION_END = function()
+      CancelBtnClickFunc()
+    end
+  }
+  wnd:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(wnd, events)
+end
+X2DialogManager:SetHandler(DLG_TASK_DOODAD_PHASE_CHANGE_BY_ITEM, DialogDoodadPhaseChangeByItemHandler)
+local DialogBuyFishHandler = function(wnd, infoTable)
+  ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_ITEM_ICON)
+  local title = X2Locale:LocalizeUiText(MSG_BOX_TITLE_TEXT, "confirm_buy_fish_title")
+  local content = X2Locale:LocalizeUiText(MSG_BOX_BODY_TEXT, "confirm_buy_fish_body", infoTable.itemInfo.name)
+  local cost = string.format("|m%d;", infoTable.itemInfo.refund)
+  wnd:SetTitle(title)
+  wnd:SetContentEx(content, infoTable.itemInfo, infoTable.itemCount, cost)
+  local events = {
+    INTERACTION_END = function()
+      X2DialogManager:OnCancel(wnd:GetId())
+    end
+  }
+  wnd:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(wnd, events)
+end
+X2DialogManager:SetHandler(DLG_TASK_BUY_FISH, DialogBuyFishHandler)
+local function DialogExpandInventoryHandler(wnd, infoTable)
+  local title = ""
+  local body = ""
+  if infoTable.kind == "bag" then
+    title = X2Locale:LocalizeUiText(MSG_BOX_TITLE_TEXT, "ask_expand_bag")
+    body = X2Locale:LocalizeUiText(MSG_BOX_BODY_TEXT, "ask_expand_bag")
+  elseif infoTable.kind == "bank" then
+    title = X2Locale:LocalizeUiText(MSG_BOX_TITLE_TEXT, "ask_expand_bank")
+    body = X2Locale:LocalizeUiText(MSG_BOX_BODY_TEXT, "ask_expand_bank")
+  else
+    return
+  end
+  wnd:SetTitle(title)
+  if infoTable.dialog == "money" then
+    ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_VALUE_TEXT)
+    if infoTable.currency == CURRENCY_AA_POINT then
+      wnd:SetContentEx(body, string.format("|p%d;", infoTable.cost))
+    else
+      wnd:SetContentEx(body, string.format("|m%d;", infoTable.cost))
+    end
+  elseif infoTable.dialog == "item" then
+    ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_ITEM_ICON)
+    local itemInfo = X2Item:GetItemInfoByType(infoTable.itemType)
+    local itemDesc = MakeItemDesc(itemInfo.gradeColor, itemInfo.name, infoTable.itemCount)
+    wnd:SetTitle(title)
+    wnd:SetContentEx(body, itemInfo, infoTable.itemCount, itemDesc)
+  elseif infoTable.dialog == "item_money" then
+    ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_ITEM_ICON_VALUE_TEXT)
+    local itemInfo = X2Item:GetItemInfoByType(infoTable.itemType)
+    local itemDesc = MakeItemDesc(itemInfo.gradeColor, itemInfo.name, infoTable.itemCount)
+    local money
+    if infoTable.currency == CURRENCY_AA_POINT then
+      money = string.format("|p%d;", infoTable.cost)
+    else
+      money = string.format("|m%d;", infoTable.cost)
+    end
+    wnd:SetTitle(title)
+    wnd:SetContentEx(body, itemInfo, infoTable.itemCount, itemDesc, money)
+  end
+end
+X2DialogManager:SetHandler(DLG_TASK_EXPAND_INVENTORY, DialogExpandInventoryHandler)
+local function DialogDestroyItemHandler(wnd, infoTable)
+  ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_ITEM_ICON)
+  local title = X2Locale:LocalizeUiText(MSG_BOX_TITLE_TEXT, "ask_item_destroy")
+  local content = X2Locale:LocalizeUiText(MSG_BOX_BODY_TEXT, "ask_item_destroy")
+  if infoTable.affectQuest ~= 0 then
+    local questTitle = X2Quest:GetQuestContextMainTitle(infoTable.affectQuest)
+    content = string.format([[
+%s
+%s]], content, X2Locale:LocalizeUiText(MSG_BOX_BODY_TEXT, "ask_quest_item_destroy", questTitle))
+  end
+  local itemDesc = MakeItemDesc(infoTable.itemInfo.gradeColor, infoTable.itemInfo.name, infoTable.itemCount)
+  wnd:SetTitle(title)
+  wnd:SetContentEx(content, infoTable.itemInfo, infoTable.itemCount, itemDesc)
+  function wnd:GetOkSound()
+    return "event_message_box_item_destroy_onok"
+  end
+end
+X2DialogManager:SetHandler(DLG_TASK_DESTROY_ITEM, DialogDestroyItemHandler)
+local DialogConvertItemHandler = function(wnd, infoTable)
+  ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_ITEM_ICON)
+  local title = ""
+  local content = ""
+  local itemDesc = string.format("|c%s[%s]", infoTable.itemInfo.gradeColor, infoTable.itemInfo.name)
+  wnd:SetTitle(infoTable.title)
+  wnd:SetContentEx(infoTable.content, infoTable.itemInfo, 1, itemDesc)
+  function wnd:GetOkSound()
+    return "message_box_convert_item"
+  end
+end
+X2DialogManager:SetHandler(DLG_TASK_CONVERT_ITEM, DialogConvertItemHandler)
+local function DialogRechargeItemHandler(wnd, infoTable)
+  ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_ITEM_ICON)
+  wnd:SetSounds("wash")
+  local title = GetUIText(MSG_BOX_TITLE_TEXT, "ask_recharge_item")
+  local content = GetUIText(MSG_BOX_BODY_TEXT, "ask_recharge_item")
+  local itemDesc = string.format("|c%s[%s]", infoTable.itemInfo.gradeColor, infoTable.itemInfo.name)
+  local periodOffsetY = 5
+  local skillPeriod = wnd:CreateChildWidget("label", "skillPeriod", 0, true)
+  skillPeriod:Show(true)
+  skillPeriod:SetHeight(FONT_SIZE.MIDDLE)
+  skillPeriod:SetAutoResize(true)
+  skillPeriod:AddAnchor("TOP", wnd.itemTextbox, "BOTTOM", 0, periodOffsetY)
+  ApplyTextColor(skillPeriod, FONT_COLOR.DEFAULT)
+  local buffPeriod = wnd:CreateChildWidget("label", "buffPeriod", 0, true)
+  buffPeriod:Show(true)
+  buffPeriod:SetHeight(FONT_SIZE.MIDDLE)
+  buffPeriod:SetAutoResize(true)
+  buffPeriod:AddAnchor("TOP", wnd.itemTextbox, "BOTTOM", 0, periodOffsetY)
+  ApplyTextColor(buffPeriod, FONT_COLOR.DEFAULT)
+  local checkTime = 30000
+  local function OnUpdate(self, dt)
+    checkTime = checkTime + dt
+    if checkTime < 30000 then
+      return
+    end
+    local info
+    if infoTable.itemSlotTypeNum == ISLOT_BAG then
+      info = X2Bag:GetBagItemInfo(1, infoTable.itemSlotNum)
+    elseif infoTable.itemSlotTypeNum == ISLOT_BANK then
+      info = X2Bank:GetBagItemInfo(infoTable.itemSlotNum)
+    elseif infoTable.itemSlotTypeNum == ISLOT_COFFER then
+      info = X2Coffer:GetBagItemInfo(infoTable.itemSlotNum)
+    end
+    if info == nil or info.rechargeSkill == nil and info.rechargeBuff == nil then
+      return
+    end
+    local existSkillTime = false
+    if info.rechargeSkill ~= nil then
+      existSkillTime = true
+      local rSkillInfo = info.rechargeSkill
+      local outputSkillTime = rSkillInfo.remainTime
+      local skillTimeDisplayType = "remain"
+      if info.needsUnpack == true then
+        outputSkillTime = rSkillInfo.chargeLifetime
+        skillTimeDisplayType = "period"
+      end
+      local skillTimeString
+      if locale.time.IsEmptyDateFormat(outputSkillTime) then
+        skillTimeString = string.format("%s: %s", locale.tooltip.use_effect, X2Locale:LocalizeUiText(TOOLTIP_TEXT, "expiration"))
+        self.skillPeriod:SetText(skillTimeString)
+        ApplyTextColor(self.skillPeriod, FONT_COLOR.GRAY)
+      else
+        local skillInfo = X2Skill:GetSkillTooltip(rSkillInfo.skillType, info.itemType, SIK_DESCRIPTION)
+        if skillInfo == nil or skillInfo.description == nil then
+          existSkillTime = false
+        else
+          skillTimeString = locale.time.GetRemainDateToDateFormat(outputSkillTime)
+          if timeDisplayType == "period" then
+            skillTimeString = locale.tooltip.chargeLifetime(skillTimeString)
+          else
+            skillTimeString = string.format("%s: %s %s", locale.tooltip.use_effect, skillTimeString, locale.housing.left)
+          end
+          self.skillPeriod:SetText(skillTimeString)
+          ApplyTextColor(self.skillPeriod, FONT_COLOR.DEFAULT)
+        end
+      end
+    end
+    local existBuffTime = false
+    if info.rechargeBuff ~= nil then
+      existBuffTime = true
+      local rBuffInfo = info.rechargeBuff
+      local outputBuffTime = rBuffInfo.remainTime
+      local buffTimeDisplayType = "remain"
+      if info.needsUnpack == true then
+        outputBuffTime = rBuffInfo.chargeLifetime
+        buffTimeDisplayType = "period"
+      end
+      local buffTimeString
+      if locale.time.IsEmptyDateFormat(outputBuffTime) then
+        local buffTimeString = string.format("%s: %s", locale.tooltip.equip_effect, X2Locale:LocalizeUiText(TOOLTIP_TEXT, "expiration"))
+        self.buffPeriod:SetText(buffTimeString)
+        ApplyTextColor(self.buffPeriod, FONT_COLOR.GRAY)
+      else
+        local buffInfo = X2Ability:GetBuffTooltip(rBuffInfo.buffType, info.level, BIK_DESCRIPTION)
+        if buffInfo == nil or buffInfo.description == nil then
+          existBuffTime = false
+        else
+          buffTimeString = locale.time.GetRemainDateToDateFormat(outputBuffTime)
+          if timeDisplayType == "period" then
+            buffTimeString = locale.tooltip.chargeLifetime(buffTimeString)
+          else
+            buffTimeString = string.format("%s: %s %s", locale.tooltip.equip_effect, buffTimeString, locale.housing.left)
+          end
+          self.buffPeriod:SetText(buffTimeString)
+          ApplyTextColor(self.buffPeriod, FONT_COLOR.DEFAULT)
+        end
+      end
+    end
+    if existSkillTime or existBuffTime then
+      checkTime = 0
+      self.skillPeriod:RemoveAllAnchors()
+      self.buffPeriod:RemoveAllAnchors()
+      if existSkillTime and existBuffTime then
+        self.skillPeriod:AddAnchor("TOP", wnd.itemTextbox, "BOTTOM", 0, -periodOffsetY)
+        self.buffPeriod:AddAnchor("TOP", self.skillPeriod, "BOTTOM", 0, periodOffsetY)
+      else
+        self.skillPeriod:AddAnchor("TOP", wnd.itemTextbox, "BOTTOM", 0, periodOffsetY)
+        self.buffPeriod:AddAnchor("TOP", wnd.itemTextbox, "BOTTOM", 0, periodOffsetY)
+      end
+    end
+  end
+  wnd:SetHandler("OnUpdate", OnUpdate)
+  function wnd:Resize()
+    local height = sideMargin * 1.5 + self.itemIcon:GetHeight() + self.itemTextbox.bg:GetHeight()
+    self:SetExtent(POPUP_WINDOW_WIDTH, height + self:GetFrameHeight())
+  end
+  wnd:SetTitle(title)
+  wnd:SetContentEx(content, infoTable.itemInfo, 1, itemDesc)
+end
+X2DialogManager:SetHandler(DLG_TASK_RECHARGE_ITEM, DialogRechargeItemHandler)
+local function DialogDyeingItemHandler(wnd, infoTable)
+  wnd:SetSounds("dyeing")
+  local function SetLayout()
+    wnd:SetExtent(300, 650)
+    local decoBg = wnd:CreateImageDrawable("ui/dialog/dyeing.dds", "artwork")
+    decoBg:SetCoords(0, 0, 256, 512)
+    decoBg:SetExtent(wnd:GetWidth(), 512)
+    wnd.btnOk:RemoveAllAnchors()
+    wnd.btnOk:AddAnchor("BOTTOM", wnd, -BUTTON_COMMON_INSET.TWO_BUTTON_BETEEN, -sideMargin)
+    wnd.btnCancel:RemoveAllAnchors()
+    wnd.btnCancel:AddAnchor("BOTTOM", wnd, BUTTON_COMMON_INSET.TWO_BUTTON_BETEEN, -sideMargin)
+    local modelView = wnd:CreateChildWidget("modelview", "modelView", 0, true)
+    modelView:AddAnchor("TOP", wnd, 0, titleMargin - sideMargin / 2)
+    modelView:SetExtent(DEFAULT_SIZE.MODELVIEW_WIDTH, DEFAULT_SIZE.MODELVIEW_HEIGHT)
+    modelView:SetTextureSize(512, 512)
+    modelView:SetModelViewExtent(DEFAULT_SIZE.MODELVIEW_WIDTH, DEFAULT_SIZE.MODELVIEW_HEIGHT)
+    modelView:SetModelViewCoords((512 - DEFAULT_SIZE.MODELVIEW_WIDTH) / 2, (512 - DEFAULT_SIZE.MODELVIEW_HEIGHT) / 2, DEFAULT_SIZE.MODELVIEW_WIDTH, DEFAULT_SIZE.MODELVIEW_HEIGHT)
+    decoBg:AddAnchor("CENTER", modelView, 0, 20)
+    local str = GetUIText(MSG_BOX_BODY_TEXT, "show_dyeing")
+    local checkbox = CreateCheckButton(wnd:GetId() .. ".checkbox", wnd, str)
+    checkbox.toggle = true
+    checkbox:SetChecked(checkbox.toggle)
+    wnd.checkbox = checkbox
+    local inset = checkbox.style:GetTextWidth(str)
+    checkbox:AddAnchor("TOPRIGHT", modelView, -inset, 0)
+    local itemIcon = CreateItemIconButton(wnd:GetId() .. ".itemIcon", wnd)
+    itemIcon:AddAnchor("TOP", modelView, "BOTTOM", 0, sideMargin / 1.5)
+    wnd.itemIcon = itemIcon
+    local itemName = wnd:CreateChildWidget("textbox", "itemName", 0, true)
+    itemName:SetExtent(300, FONT_SIZE.LARGE)
+    itemName.style:SetAlign(ALIGN_CENTER)
+    itemName:AddAnchor("TOP", itemIcon, "BOTTOM", 0, sideMargin / 4)
+    wnd.textbox:RemoveAllAnchors()
+    wnd.textbox:AddAnchor("TOP", itemIcon, "BOTTOM", 0, sideMargin * 1.8)
+    wnd:RegistBottomWidget(wnd.textbox)
+    local line = CreateLine(wnd.textbox, "TYPE1")
+    line:SetWidth(270)
+    line:AddAnchor("BOTTOM", wnd.textbox, "TOP", 0, -sideMargin / 3)
+    local rotateLeft = modelView:CreateChildWidget("button", "rotateLeft", 0, true)
+    ApplyButtonSkin(rotateLeft, BUTTON_BASIC.ROTATE_LEFT)
+    rotateLeft:AddAnchor("RIGHT", modelView, 0, 0)
+    local rotateRight = modelView:CreateChildWidget("button", "rotateRight", 0, true)
+    ApplyButtonSkin(rotateRight, BUTTON_BASIC.ROTATE_RIGHT)
+    rotateRight:AddAnchor("LEFT", modelView, 0, 0)
+  end
+  local function SetItemInfo(itemInfo, dyeingItemInfo, count)
+    wnd.itemIcon:SetStack(count)
+    wnd.itemIcon:SetItemInfo(itemInfo)
+    wnd.itemName:SetWidth(500)
+    wnd.itemName:SetText(string.format("|c%s%s", itemInfo.gradeColor, itemInfo.name))
+    wnd.itemName:SetWidth(wnd.itemName:GetLongestLineWidth() + 10)
+    local beforeDyeingItemInfo = X2Item:GetItemInfoByType(itemInfo.dyeingType)
+    local dyeingItemName = string.format("|c%s[%s]|r", dyeingItemInfo.gradeColor, dyeingItemInfo.name)
+    local beforeDyeingItemInfo = X2Item:GetItemInfoByType(itemInfo.dyeingType)
+    if beforeDyeingItemInfo ~= nil then
+      local beforeDyeingItemName = string.format("|c%s[%s]%s", beforeDyeingItemInfo.gradeColor, beforeDyeingItemInfo.name, FONT_COLOR_HEX.RED)
+      content = X2Locale:LocalizeUiText(MSG_BOX_BODY_TEXT, "ask_dyeing_item_warning", dyeingItemName, beforeDyeingItemName)
+    else
+      content = X2Locale:LocalizeUiText(MSG_BOX_BODY_TEXT, "ask_dyeing_item", dyeingItemName)
+    end
+    wnd.textbox:SetText(content)
+    wnd.textbox:SetExtent(260, 50)
+    wnd.textbox:SetHeight(wnd.textbox:GetTextHeight())
+    wnd:Resize()
+  end
+  SetLayout()
+  function wnd:Resize()
+    self:SetExtent(300, self:GetFrameHeight())
+  end
+  local delayTime = 0
+  function InitModelView(_, dt)
+    delayTime = delayTime + dt
+    if delayTime < 500 then
+      return
+    end
+    wnd:ReleaseHandler("OnUpdate")
+    local dyeingItemType = infoTable.dyeingInit and infoTable.defaultDyeingItem or infoTable.dyeingItemInfo.itemType
+    wnd.modelView:Init("player", false)
+    wnd.modelView:EquipCostume(infoTable.itemInfo.lookType, infoTable.itemInfo.itemGrade, dyeingItemType)
+    wnd.modelView:UnequipItemSlot(ES_BACKPACK)
+    wnd.modelView:ApplyModel()
+    wnd.modelView:AdjustCameraPosToModel(1, 0)
+    wnd.modelView:PlayAnimation(RELAX_ANIMATION_NAME, true)
+    SetModelViewFunc(wnd.modelView)
+  end
+  function wnd:ShowProc()
+    wnd.modelView:ClearModel()
+    self:SetHandler("OnUpdate", InitModelView)
+  end
+  function wnd:OnHide()
+    self.modelView:StopAnimation()
+    self.modelView:ClearModel()
+  end
+  function wnd.checkbox:CheckBtnCheckChagnedProc(checked)
+    wnd.checkbox.toggle = not wnd.checkbox.toggle
+    local dyeingItemType = 0
+    if self.toggle then
+      dyeingItemType = infoTable.dyeingInit and infoTable.defaultDyeingItem or infoTable.dyeingItemInfo.itemType
+    else
+      dyeingItemType = infoTable.itemInfo.dyeingType
+    end
+    wnd.modelView:StopAnimation()
+    wnd.modelView:EquipCostume(infoTable.itemInfo.lookType, infoTable.itemInfo.itemGrade, dyeingItemType)
+    wnd.modelView:ApplyModel()
+    wnd.modelView:PlayAnimation(RELAX_ANIMATION_NAME, true)
+  end
+  local title = X2Locale:LocalizeUiText(MSG_BOX_TITLE_TEXT, "ask_dyeing_item")
+  wnd:SetTitle(title)
+  SetItemInfo(infoTable.itemInfo, infoTable.dyeingItemInfo, 1)
+end
+X2DialogManager:SetHandler(DLG_TASK_DYEING_ITEM, DialogDyeingItemHandler)
+local DialogSecurityLockItem = function(wnd, infoTable)
+  ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_ITEM_ICON)
+  local delayMin = X2Item:GetSecurityUnlockDelayTime()
+  local title = GetUIText(INVEN_TEXT, "lock_item")
+  local content = GetUIText(MSG_BOX_BODY_TEXT, "lock_item", FONT_COLOR_HEX.RED, tostring(delayMin / 60))
+  local itemDesc = string.format("|c%s[%s]", infoTable.itemInfo.gradeColor, infoTable.itemInfo.name)
+  wnd:SetTitle(title)
+  wnd:SetContentEx(content, infoTable.itemInfo, 1, itemDesc)
+end
+X2DialogManager:SetHandler(DLG_TASK_SECURITY_LOCK_ITEM, DialogSecurityLockItem)
+local DialogSecurityUnlockItem = function(wnd, infoTable)
+  ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_ITEM_ICON)
+  local delayMin = X2Item:GetSecurityUnlockDelayTime()
+  local title = GetUIText(INVEN_TEXT, "unlock_item")
+  local content = GetUIText(MSG_BOX_BODY_TEXT, "unlock_item", FONT_COLOR_HEX.RED, tostring(delayMin / 60))
+  local itemDesc = string.format("|c%s[%s]", infoTable.itemInfo.gradeColor, infoTable.itemInfo.name)
+  wnd:SetTitle(title)
+  wnd:SetContentEx(content, infoTable.itemInfo, 1, itemDesc)
+end
+X2DialogManager:SetHandler(DLG_TASK_SECURITY_UNLOCK_ITEM, DialogSecurityUnlockItem)
+local DialogIndunDirectTel = function(wnd, infoTable)
+  ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_ITEM_ICON)
+  local color = infoTable.haveItemCount >= infoTable.useItemCount and FONT_COLOR_HEX.BLUE or FONT_COLOR_HEX.RED
+  local content = GetUIText(COMMON_TEXT, "portal_indun_tel_content", FONT_COLOR_HEX.BLUE, infoTable.zoneText)
+  local itemDesc = string.format("[%s] %s%s/%s", infoTable.itemInfo.name, color, infoTable.haveItemCount, infoTable.useItemCount)
+  wnd:SetTitle(GetUIText(COMMON_TEXT, "portal_indun_tel"))
+  wnd:SetContentEx(content, infoTable.itemInfo, infoTable.useItemCount, itemDesc)
+end
+X2DialogManager:SetHandler(DLG_TASK_INDUN_DIRECT_TEL, DialogIndunDirectTel)
+local DialogIndunEntrance = function(wnd, infoTable)
+  local condition = GetUIText(COMMON_TEXT, "indun_entrance_condition", FONT_COLOR_HEX.DARK_GRAY, tostring(infoTable.minLevel), tostring(infoTable.maxLevel), infoTable.party and X2Locale:LocalizeUiText(COMMON_TEXT, "indun_entrance_condition_party") or "")
+  local player = GetUIText(COMMON_TEXT, "indun_entrance_max_player", FONT_COLOR_HEX.DARK_GRAY, tostring(infoTable.maxPlayer))
+  local reset = string.format("%s", GetUIText(COMMON_TEXT, "indun_entrance_reset"))
+  if infoTable.visitCount < infoTable.maxEnterCount then
+    ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_VALUE_TEXT_EX)
+    local content = GetUIText(COMMON_TEXT, "indun_entrance_question", FONT_COLOR_HEX.BLUE, infoTable.zoneName)
+    local valueText1 = string.format([[
+%s
+%s]], condition, player)
+    local dailycount
+    if infoTable.maxEnterCount == 1000 then
+      dailycount = GetUIText(COMMON_TEXT, "indun_entrance_daily_count_unlimited", FONT_COLOR_HEX.BLUE)
+    else
+      dailycount = GetUIText(COMMON_TEXT, "indun_entrance_daily_count", FONT_COLOR_HEX.BLUE, tostring(infoTable.visitCount), tostring(infoTable.maxEnterCount))
+    end
+    local valueText2 = ""
+    if X2Player:GetFeatureSet().indunDailyLimit then
+      valueText2 = string.format([[
+%s
+%s]], dailycount, reset)
+    end
+    wnd:SetTitle(GetUIText(COMMON_TEXT, "indun_entrance_title"))
+    wnd:SetContentEx(content, valueText1, valueText2)
+  else
+    ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_ITEM_ICON_VALUE_TEXT_EX)
+    local title = ""
+    local content = ""
+    if infoTable.maxEnterCount == 0 then
+      reset = ""
+      title = GetUIText(COMMON_TEXT, "indun_entrance_title")
+      content = GetUIText(COMMON_TEXT, "indun_entrance_question", FONT_COLOR_HEX.BLUE, infoTable.zoneName)
+    else
+      title = GetUIText(COMMON_TEXT, "indun_entrance_item_title")
+      content = GetUIText(COMMON_TEXT, "indun_entrance_item_question", FONT_COLOR_HEX.BLUE, infoTable.zoneName, tostring(infoTable.maxEnterCount))
+    end
+    local itemDesc = string.format([[
+[%s]
+%d/1]], infoTable.itemInfo.name, infoTable.haveItemCount)
+    local valueText1 = string.format([[
+%s
+%s]], condition, player)
+    wnd:SetTitle(title)
+    wnd:SetContentEx(content, infoTable.itemInfo, 0, itemDesc, valueText1, reset)
+  end
+  local events = {
+    INTERACTION_END = function()
+      X2DialogManager:OnCancel(wnd:GetId())
+    end
+  }
+  wnd:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(wnd, events)
+end
+X2DialogManager:SetHandler(DLG_TASK_INDUN_ENTRANCE, DialogIndunEntrance)
+local DialogSoulBindItemHandler = function(wnd, infoTable)
+  ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_ITEM_ICON)
+  if infoTable.isMateEquip == true then
+    infoTable.title = GetUIText(MSG_BOX_TITLE_TEXT, "ask_mate_equip_soul_bind_item")
+    infoTable.content = GetUIText(MSG_BOX_BODY_TEXT, "ask_mate_equip_soul_bind_item", infoTable.itemInfo.name)
+  else
+    infoTable.title = GetUIText(MSG_BOX_TITLE_TEXT, "ask_equip_soul_bind_item")
+    infoTable.content = GetUIText(MSG_BOX_BODY_TEXT, "ask_equip_soul_bind_item", infoTable.itemInfo.name)
+  end
+  local itemDesc = string.format("|c%s[%s]", infoTable.itemInfo.gradeColor, infoTable.itemInfo.name)
+  wnd:SetTitle(infoTable.title)
+  wnd:SetContentEx(infoTable.content, infoTable.itemInfo, 1, itemDesc)
+end
+X2DialogManager:SetHandler(DLG_TASK_SOUL_BIND_ITEM, DialogSoulBindItemHandler)
+local DialogConvertFishHandler = function(wnd, infoTable)
+  ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_ITEM_AND_DESCRIPTION)
+  local title = X2Locale:LocalizeUiText(MSG_BOX_TITLE_TEXT, "ask_convert_fish")
+  local content = X2Locale:LocalizeUiText(MSG_BOX_BODY_TEXT, "ask_convert_fish", infoTable.itemInfo.name)
+  local description = X2Locale:LocalizeUiText(MSG_BOX_BODY_TEXT, "ask_convert_fish_description")
+  wnd:SetTitle(title)
+  wnd:SetContentEx(content, infoTable.itemInfo, infoTable.itemCount, description)
+  local events = {
+    INTERACTION_END = function()
+      X2DialogManager:OnCancel(wnd:GetId())
+    end
+  }
+  wnd:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(wnd, events)
+end
+X2DialogManager:SetHandler(DLG_TASK_CONVERT_FISH, DialogConvertFishHandler)
+local DialogExpandCharacterCountHandler = function(wnd, infoTable)
+  local title = X2Locale:LocalizeUiText(MSG_BOX_TITLE_TEXT, "ask_expand_character_count")
+  local content = X2Locale:LocalizeUiText(MSG_BOX_BODY_TEXT, "ask_expand_character_count")
+  wnd:SetTitle(title)
+  wnd:SetContent(content)
+end
+X2DialogManager:SetHandler(DLG_TASK_EXPAND_CHARACTER_COUNT, DialogExpandCharacterCountHandler)
+local DialogExpandedCharacterCountHandler = function(wnd, infoTable)
+  local title = X2Locale:LocalizeUiText(MSG_BOX_TITLE_TEXT, "expanded_character_count")
+  local content
+  if infoTable.result == true then
+    content = X2Locale:LocalizeUiText(MSG_BOX_BODY_TEXT, "expanded_character_count")
+  else
+    content = infoTable.errorMsg
+  end
+  wnd:SetTitle(title)
+  wnd:SetContent(content)
+end
+X2DialogManager:SetHandler(DLG_TASK_EXPANDED_CHARACTER_COUNT, DialogExpandedCharacterCountHandler)
+local function DialogNoticeExpireIndunTicket(wnd, infoTable)
+  infoTable.title = X2Locale:LocalizeUiText(MSG_BOX_TITLE_TEXT, "confirm_thief_action_title")
+  infoTable.content = X2Locale:LocalizeUiText(MSG_BOX_BODY_TEXT, "instance_zone_warning")
+  SetDialogTexts(wnd, infoTable)
+end
+X2DialogManager:SetHandler(DLG_NOTICE_EXPIRE_INSTANCE_TICKET, DialogNoticeExpireIndunTicket)
+local DialogRenameExpeditionHandler = function(wnd, infoTable)
+  local title = GetUIText(EXPEDITION_TEXT, "rename_title")
+  local namePolicyInfo = X2Util:GetNamePolicyInfo(VNT_FACTION)
+  local guide = GetLimitInfoText(namePolicyInfo)
+  local content = GetUIText(EXPEDITION_TEXT, "rename_content")
+  ApplyEditDialogStyle(wnd, infoTable.expeditionName, guide, false, VNT_FACTION)
+  wnd:SetTitle(title)
+  wnd:SetContent(content)
+  function wnd:OkProc()
+    local newName = wnd.editbox:GetText()
+    X2Faction:RenameExpedition(newName)
+  end
+end
+X2DialogManager:SetHandler(DLG_TASK_RENAME_EXPEDITION, DialogRenameExpeditionHandler)
+local DialogRenameNationHandler = function(wnd, infoTable)
+  local title = X2Locale:LocalizeUiText(NATION_TEXT, "rename_title")
+  local namePolicyInfo = X2Util:GetNamePolicyInfo(VNT_FACTION)
+  local guide = GetLimitInfoText(namePolicyInfo)
+  local content = X2Locale:LocalizeUiText(NATION_TEXT, "rename_content")
+  ApplyEditDialogStyle(wnd, infoTable.nationName, guide, false, VNT_FACTION)
+  wnd:SetTitle(title)
+  wnd:SetContent(content)
+  function wnd:OkProc()
+    local newName = wnd.editbox:GetText()
+    X2Faction:RenameNation(newName)
+  end
+end
+X2DialogManager:SetHandler(DLG_TASK_RENAME_NATION, DialogRenameNationHandler)
+local DialogIndependenceFactionNameHandler = function(wnd, infoTable)
+  local title = X2Locale:LocalizeUiText(FACTION_TEXT, "independence_title")
+  local content = X2Locale:LocalizeUiText(FACTION_TEXT, "independence_content")
+  local namePolicyInfo = X2Util:GetNamePolicyInfo(VNT_FACTION)
+  local guide = GetLimitInfoText(namePolicyInfo)
+  ApplyEditDialogStyle(wnd, "", guide, false, VNT_FACTION)
+  wnd:SetTitle(title)
+  wnd:SetContent(content)
+  function wnd:OkProc()
+    local name = wnd.editbox:GetText()
+    X2Nation:DeclareIndependence(name)
+  end
+end
+X2DialogManager:SetHandler(DLG_TASK_INDEPENDENCE_FACTION_NAME, DialogIndependenceFactionNameHandler)
+local function DialogAskUseAAPoint(wnd, infoTable)
+  infoTable.title = GetUIText(MONEY_TEXT, "aa_point")
+  infoTable.content = GetUIText(MONEY_TEXT, "ask_use_aa_point")
+  local autoUseAAPoint = CreateCheckButton("autoUseAAPoint", wnd, locale.money.autoUseAAPoint)
+  local offsetX = autoUseAAPoint.textButton:GetWidth() / 2
+  autoUseAAPoint:AddAnchor("TOP", wnd.textbox, "BOTTOM", -offsetX, 10)
+  function wnd:OkProc()
+    local checked = autoUseAAPoint:GetChecked()
+    if checked then
+      X2Bag:SetAutoUseAAPoint(checked)
+    end
+  end
+  SetDialogTexts(wnd, infoTable)
+  local height = wnd:GetHeight()
+  wnd:SetHeight(height + autoUseAAPoint:GetHeight() + 10)
+end
+X2DialogManager:SetHandler(DLG_TASK_ASK_USE_AA_POINT, DialogAskUseAAPoint)
+local function DialogAskChargeAAPoint(wnd, infoTable)
+  infoTable.title = GetUIText(MONEY_TEXT, "aa_point")
+  infoTable.content = GetUIText(MONEY_TEXT, "ask_charge_aa_point")
+  SetDialogTexts(wnd, infoTable)
+end
+X2DialogManager:SetHandler(DLG_TASK_ASK_CHARGE_AA_POINT, DialogAskChargeAAPoint)
+local DialogNationalTaxRateHandler = function(wnd, infoTable)
+  local title = GetUIText(NATION_TEXT, "change_tax")
+  local content = GetUIText(NATION_TEXT, "change_tax_dlg", tostring(infoTable.zoneName), tostring(infoTable.prevTaxRate), tostring(infoTable.taxRate))
+  wnd:SetTitle(title)
+  wnd:SetContent(content)
+end
+X2DialogManager:SetHandler(DLG_TASK_NATIONAL_TAXRATE, DialogNationalTaxRateHandler)
+local DialogFactionImmigrateInviteHandler = function(wnd, infoTable)
+  local title = locale.nationMgr.peopleInvite
+  local content = locale.nationMgr.peopleInviteDlg(infoTable.invitorName, infoTable.nationName)
+  wnd:SetTitle(title)
+  wnd:SetContent(content)
+end
+X2DialogManager:SetHandler(DLG_TASK_FACTION_INVITE, DialogFactionImmigrateInviteHandler)
+local DialogFactionDeclareHostileHandler = function(wnd, infoTable)
+  local title = GetUIText(NATION_TEXT, "hostile_setting_dlg_title")
+  local nationName = string.format("%s[%s]|r", FONT_COLOR_HEX.BLUE, infoTable.nationName)
+  local content = GetUIText(NATION_TEXT, "hostile_setting_dlg", tostring(nationName), FONT_COLOR_HEX.RED)
+  wnd:SetTitle(title)
+  wnd:SetContent(content)
+end
+X2DialogManager:SetHandler(DLG_TASK_FACTION_DECLAREHOSTILE, DialogFactionDeclareHostileHandler)
+local DialogImmigrateToOriginFactionHandler = function(wnd, infoTable)
+  local title = locale.nationMgr.withdrawNation
+  local content = locale.nationMgr.withdrawNationDlg(infoTable.nationName)
+  wnd:SetTitle(title)
+  wnd:SetContent(content)
+end
+X2DialogManager:SetHandler(DLG_TASK_FACTION_IMMIGRATE_TO_ORIGIN, DialogImmigrateToOriginFactionHandler)
+local function DialogWarnCraftItemHandler(wnd, infoTable)
+  wnd:SetTitle(GetUIText(MSG_BOX_TITLE_TEXT, "warning_craft_title"))
+  local itemIconWnd = wnd:CreateChildWidget("emptywidget", "itemIconWnd", 0, true)
+  itemIconWnd:AddAnchor("TOP", wnd, 0, 50)
+  itemIconWnd:SetHeight(ICON_SIZE.DEFAULT)
+  function itemIconWnd:SetInfo(itemInfo)
+    self.itemIcon = {}
+    for i = 1, #itemInfo do
+      local item = CreateItemIconButton(string.format("item[%d]", i), itemIconWnd)
+      item:SetItemInfo(itemInfo[i])
+      item:AddAnchor("TOPLEFT", itemIconWnd, (ICON_SIZE.DEFAULT + 10) * (i - 1), 0)
+    end
+    self:SetWidth((ICON_SIZE.DEFAULT + 10) * #itemInfo - 10)
+  end
+  itemIconWnd:SetInfo(infoTable.itemInfo)
+  local warningWnd = wnd:CreateChildWidget("textbox", "warningWnd", 0, true)
+  warningWnd:AddAnchor("TOP", wnd.textbox, "BOTTOM", 0, 25)
+  warningWnd:SetWidth(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH)
+  warningWnd:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  local warningBg = CreateContentBackground(warningWnd, "TYPE2")
+  warningBg:AddAnchor("TOPLEFT", warningWnd, 0, -sideMargin / 1.2)
+  warningBg:AddAnchor("BOTTOMRIGHT", warningWnd, 0, sideMargin / 1.2)
+  warningBg:SetColor(1, 1, 1, 0.2)
+  function warningWnd:SetInfo(info)
+    local str = FONT_COLOR_HEX.RED
+    if info.warningGem ~= nil and info.warningGem then
+      str = string.format("%s%s\n", str, GetUIText(MSG_BOX_BODY_TEXT, "warning_gem"))
+    end
+    if info.warningLook ~= nil and info.warningLook then
+      str = string.format("%s%s\n", str, GetUIText(MSG_BOX_BODY_TEXT, "warning_look"))
+    end
+    if info.warningSkinized ~= nil and info.warningSkinized then
+      str = string.format("%s%s\n", str, GetUIText(MSG_BOX_BODY_TEXT, "warning_skinized"))
+    end
+    warningWnd:SetText(str)
+    local warningHeight = warningWnd:GetTextHeight()
+    warningWnd:SetHeight(warningHeight)
+  end
+  warningWnd:SetInfo(infoTable)
+  local helper = wnd:CreateChildWidget("textbox", "helper", 0, true)
+  helper:AddAnchor("TOP", warningWnd, "BOTTOM", 0, 25)
+  helper:SetWidth(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH)
+  helper:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  helper.style:SetFontSize(FONT_SIZE.SMALL)
+  ApplyTextColor(helper, FONT_COLOR.GRAY)
+  helper:SetText(GetUIText(MSG_BOX_BODY_TEXT, "warning_craft_helper"))
+  local helperHeight = helper:GetTextHeight()
+  helper:SetHeight(helperHeight)
+  function wnd:Resize()
+    local height = itemIconWnd:GetHeight() + self.textbox:GetHeight() + warningWnd:GetHeight() + helper:GetHeight() + 25
+    self:SetExtent(POPUP_WINDOW_WIDTH, height + self:GetFrameHeight())
+  end
+  wnd:SetContent(GetUIText(MSG_BOX_BODY_TEXT, "warning_remove"))
+  wnd.textbox:RemoveAllAnchors()
+  wnd.textbox:AddAnchor("TOP", itemIconWnd, "BOTTOM", 0, 10)
+end
+X2DialogManager:SetHandler(DLG_TASK_WARN_CRAFT_ITEM, DialogWarnCraftItemHandler)
+local RACE_OF_GENDER_IMAGE = {
+  nuian = {
+    male = BUTTON_LOGINSTAGE.RACE_NUIAN_MALE,
+    female = BUTTON_LOGINSTAGE.RACE_NUIAN_FEMALE
+  },
+  elf = {
+    male = BUTTON_LOGINSTAGE.RACE_ELF_MALE,
+    female = BUTTON_LOGINSTAGE.RACE_ELF_FEMALE
+  },
+  hariharan = {
+    male = BUTTON_LOGINSTAGE.RACE_HARIHARAN_MALE,
+    female = BUTTON_LOGINSTAGE.RACE_HARIHARAN_FEMALE
+  },
+  ferre = {
+    male = BUTTON_LOGINSTAGE.RACE_FERRE_MALE,
+    female = BUTTON_LOGINSTAGE.RACE_FERRE_FEMALE
+  },
+  dwarf = {
+    male = BUTTON_LOGINSTAGE.RACE_NUIAN_MALE,
+    female = BUTTON_LOGINSTAGE.RACE_NUIAN_FEMALE
+  },
+  warborn = {
+    male = BUTTON_LOGINSTAGE.RACE_ELF_MALE,
+    female = BUTTON_LOGINSTAGE.RACE_ELF_FEMALE
+  }
+}
+local function DialogGenderTransferHandler(wnd, infoTable)
+  wnd:SetSounds("dialog_gender_transfer")
+  ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_ITEM_ICON)
+  local width = 430 - sideMargin * 2
+  local title = GetUIText(MSG_BOX_TITLE_TEXT, "genderTransfer_title")
+  local arrow = CreateIcon(wnd, "arrow")
+  arrow:AddAnchor("TOP", wnd.textbox, "BOTTOM", 0, 70)
+  wnd.textbox:SetWidth(width)
+  wnd.textbox.style:SetFontSize(FONT_SIZE.LARGE)
+  wnd.genderLabel = {}
+  local function CreateGenderIcon(id, index)
+    local iconFrame = wnd:CreateChildWidget("emptywidget", id, index, true)
+    iconFrame:SetExtent(128, 118)
+    local bg = iconFrame:CreateImageDrawable(TEXTURE_PATH.DIALOG_GENDER_TRANSFER, "background")
+    bg:SetCoords(0, 0, 128, 118)
+    bg:AddAnchor("TOPLEFT", iconFrame, 0, 0)
+    bg:AddAnchor("BOTTOMRIGHT", iconFrame, 0, 0)
+    iconFrame.bg = bg
+    local genderIcon = wnd:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.RACE, "overlay")
+    genderIcon:AddAnchor("TOP", iconFrame, 0, 0)
+    iconFrame.genderIcon = genderIcon
+    local label = iconFrame:CreateChildWidget("label", "label", 0, true)
+    label:SetHeight(FONT_SIZE.XLARGE)
+    label:SetAutoResize(true)
+    label.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.XLARGE)
+    label:AddAnchor("TOP", genderIcon, "BOTTOM", 0, 5)
+    function iconFrame:SetGender(gender)
+      local playerRace = X2Unit:UnitRace("player")
+      local imageInfo = RACE_OF_GENDER_IMAGE[playerRace][gender][2]
+      self.genderIcon:SetTexture(imageInfo.path)
+      self.genderIcon:SetExtent(imageInfo.drawableExtent.width, imageInfo.drawableExtent.height)
+      self.genderIcon:SetCoords(imageInfo.coords.normal[1], imageInfo.coords.normal[2], imageInfo.coords.normal[3], imageInfo.coords.normal[4])
+      self.label:SetText(locale.gender[gender])
+      if gender == "male" then
+        ApplyTextColor(self.label, FONT_COLOR.GENDER_MALE)
+        ApplyTextureColor(self.bg, TEXTURE_COLOR.GENDER_MALE)
+      elseif gender == "female" then
+        ApplyTextColor(self.label, FONT_COLOR.GENDER_FEMALE)
+        ApplyTextureColor(self.bg, TEXTURE_COLOR.GENDER_FEMALE)
+      end
+    end
+    return image
+  end
+  local playerGender = X2Unit:UnitGender("player")
+  CreateGenderIcon("genderIconFrame", 1)
+  wnd.genderIconFrame[1]:AddAnchor("RIGHT", arrow, "LEFT", 0, 0)
+  wnd.genderIconFrame[1]:SetGender(playerGender)
+  local otherGender
+  if playerGender == "male" then
+    otherGender = "female"
+    ApplyTextureColor(arrow, FONT_COLOR.GENDER_MALE)
+  else
+    otherGender = "male"
+    ApplyTextureColor(arrow, FONT_COLOR.GENDER_FEMALE)
+  end
+  CreateGenderIcon("genderIconFrame", 2)
+  wnd.genderIconFrame[2]:AddAnchor("LEFT", arrow, "RIGHT", 0, 0)
+  wnd.genderIconFrame[2]:SetGender(otherGender)
+  local desc = wnd:CreateChildWidget("textbox", "desc", 0, true)
+  desc:SetWidth(width)
+  desc:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  desc:SetText(GetUIText(MSG_BOX_BODY_TEXT, "genderTransfer_desc"))
+  desc.style:SetAlign(ALIGN_CENTER)
+  desc:SetHeight(desc:GetTextHeight())
+  ApplyTextColor(desc, FONT_COLOR.RED)
+  desc:AddAnchor("TOP", arrow, "BOTTOM", 0, 65)
+  local tip = wnd:CreateChildWidget("textbox", "tip", 0, true)
+  tip:SetWidth(width)
+  tip:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  local itemType, has, need = X2Customizer:GetBeautyShopConfigInfo()
+  if infoTable.bypass then
+    tip:SetText(GetUIText(MSG_BOX_BODY_TEXT, "genderTransfer_bypass_tip"))
+  else
+    tip:SetText(GetUIText(MSG_BOX_BODY_TEXT, "genderTransfer_tip", tostring(X2Item:Name(itemType)), tostring(need)))
+  end
+  tip:AddAnchor("TOP", wnd.itemTextbox, "BOTTOM", 0, 13)
+  tip:SetHeight(tip:GetTextHeight())
+  ApplyTextColor(tip, FONT_COLOR.GRAY)
+  wnd.btnOk:Enable(true)
+  if infoTable.itemType == nil then
+    wnd.itemIcon:Show(false)
+    wnd.itemTextbox:Show(false)
+  else
+    wnd.itemIcon:RemoveAllAnchors()
+    wnd.itemIcon:AddAnchor("TOP", desc, "BOTTOM", 0, sideMargin / 1.5)
+    local itemInfo = X2Item:GetItemInfoByType(infoTable.itemType)
+    local name = ""
+    if 1 < infoTable.needs then
+      name = string.format("[%s]x%d", itemInfo.name, infoTable.needs)
+    else
+      name = string.format("[%s]", itemInfo.name)
+    end
+    wnd:SetContentEx(GetUIText(MSG_BOX_BODY_TEXT, "genderTransfer_body"), itemInfo, infoTable.needs, name)
+    wnd.itemIcon.stack:RemoveAllAnchors()
+    wnd.itemIcon.stack:AddAnchor("BOTTOM", wnd.itemIcon, 0, -10)
+    wnd.itemIcon.stack.style:SetAlign(ALIGN_CENTER)
+    wnd.itemIcon.stack.style:SetFontSize(FONT_SIZE.MIDDLE)
+    wnd.itemIcon.stack:SetNumberOnly(false)
+    wnd.itemIcon.stack:SetText(string.format("%d/%d", infoTable.has, infoTable.needs))
+    if infoTable.has < infoTable.needs then
+      ApplyTextColor(wnd.itemIcon.stack, FONT_COLOR.RED)
+      wnd.btnOk:Enable(false)
+      local function OnEnter(self)
+        if self:IsEnabled() then
+          return
+        end
+        SetTooltip(locale.beautyshop.notEnoughItem(X2Item:Name(infoTable.itemType)), self)
+      end
+      wnd.btnOk:SetHandler("OnEnter", OnEnter)
+      local OnLeave = function()
+        HideTooltip()
+      end
+      wnd.btnOk:SetHandler("OnLeave", OnLeave)
+    else
+      ApplyTextColor(wnd.itemIcon.stack, FONT_COLOR.WHITE)
+    end
+  end
+  function wnd:Resize()
+    local height = self.genderIconFrame[1]:GetHeight() + self.desc:GetHeight() + (wnd.itemIcon:IsVisible() and wnd.itemIcon:GetHeight() + wnd.itemTextbox:GetHeight() + sideMargin * 3)
+    height = height + self.tip:GetHeight() + sideMargin / 2
+    self:SetExtent(430, height + self:GetFrameHeight())
+  end
+  wnd:SetTitle(title)
+  wnd:Resize()
+  local events = {
+    NPC_INTERACTION_END = function()
+      X2DialogManager:OnCancel(wnd:GetId())
+    end
+  }
+  wnd:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(wnd, events)
+end
+X2DialogManager:SetHandler(DLG_TASK_CONFIRM_GENDER_TRANSEFR, DialogGenderTransferHandler)
+local DialogEnterBeautyShopHandler = function(wnd, infoTable)
+  wnd:SetSounds("dialog_enter_beautyshop")
+  wnd:SetTitle(GetUIText(MSG_BOX_TITLE_TEXT, "enter_beautyshop_title"))
+  local bodyStr = GetUIText(MSG_BOX_BODY_TEXT, "enter_beautyshop_body")
+  if infoTable.bypass then
+    bodyStr = string.format([[
+%s
+
+%s]], bodyStr, GetUIText(MSG_BOX_BODY_TEXT, "enter_beautyshop_body_bypass"))
+  end
+  wnd:SetContent(bodyStr)
+  local events = {
+    NPC_INTERACTION_END = function()
+      X2DialogManager:OnCancel(wnd:GetId())
+    end
+  }
+  wnd:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(wnd, events)
+end
+X2DialogManager:SetHandler(DLG_TASK_CONFIRM_ENTER_BEAUTYSHOP, DialogEnterBeautyShopHandler)
+local DialogSkinizeItemHandler = function(wnd, infoTable)
+  ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_ITEM_ICON)
+  local scroll = string.format("|c%s[%s]|r", X2Item:GradeColor(infoTable.scrollGrade), X2Item:Name(infoTable.scrollType))
+  local title = GetUIText(MSG_BOX_TITLE_TEXT, "skinizeItem_title")
+  local content = GetUIText(MSG_BOX_BODY_TEXT, "skinizeItem_body", tostring(scroll), FONT_COLOR_HEX.DARK_GRAY)
+  local itemDesc = string.format("|c%s[%s] %s", infoTable.itemInfo.gradeColor, infoTable.itemInfo.grade, infoTable.itemInfo.name)
+  wnd:SetTitle(title)
+  wnd:SetContentEx(content, infoTable.itemInfo, 1, itemDesc)
+end
+X2DialogManager:SetHandler(DLG_TASK_SKINIZE_ITEM, DialogSkinizeItemHandler)
+local DialogRevertLookItemHandler = function(wnd, infoTable)
+  ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_TWO_ITEM_ICON_AND_ONE_NAME)
+  local title = GetUIText(MSG_BOX_TITLE_TEXT, "revert_item_look_title")
+  local scroll = string.format("|c%s[%s]|r", X2Item:GradeColor(infoTable.scrollGrade), X2Item:Name(infoTable.scrollType))
+  local content = string.format([[
+%s
+%s%s]], GetUIText(MSG_BOX_BODY_TEXT, "revert_item_look_body", scroll), FONT_COLOR_HEX.DARK_GRAY, GetUIText(MSG_BOX_BODY_TEXT, "revert_item_look_desc"))
+  local itemInfo1 = infoTable.itemInfo
+  local itemInfo2 = infoTable.revertItemInfo
+  local itemContent = string.format("|c%s[%s]", itemInfo1.gradeColor, itemInfo1.name)
+  wnd:SetTitle(title)
+  wnd:SetContentEx(content, itemInfo1, itemInfo2, itemContent)
+end
+X2DialogManager:SetHandler(DLG_TASK_REVERT_LOOK_ITEM, DialogRevertLookItemHandler)
+local DialogUnpackItemHandler = function(wnd, infoTable)
+  wnd:SetTitle(GetUIText(MSG_BOX_TITLE_TEXT, "unpack_item_title"))
+  local str
+  if infoTable.isSoulBound then
+    str = GetUIText(MSG_BOX_BODY_TEXT, "soul_bound_unpack_item_body")
+  else
+    str = GetUIText(MSG_BOX_BODY_TEXT, "unpack_item_body")
+  end
+  wnd:SetContent(str)
+end
+X2DialogManager:SetHandler(DLG_TASK_ITEM_UNPACK, DialogUnpackItemHandler)
+local DialogInviteToBeginnerExpeditionHandler = function(wnd, infoTable)
+  local title = GetUIText(MSG_BOX_TITLE_TEXT, "apply_beginner_expedition")
+  local content1 = GetUIText(MSG_BOX_BODY_TEXT, "suggest_beginner_expedition")
+  local bindKey = string.upper(infoTable.bindKey)
+  if string.len(bindKey) == 0 then
+    bindKey = string.format("%s - %s", X2Locale:LocalizeUiText(TEMP_TEXT, "text5"), X2Locale:LocalizeUiText(COMMUNITY_TEXT, "expedition"))
+  end
+  local content2 = X2Locale:LocalizeUiText(MSG_BOX_BODY_TEXT, "beginner_expedition_guide", bindKey)
+  local contents = string.format([[
+%s
+
+%s]], content1, content2)
+  wnd:SetTitle(title)
+  wnd:SetContent(contents)
+end
+X2DialogManager:SetHandler(DLG_TASK_INVITE_TO_BEGINNER_EXPEDITION, DialogInviteToBeginnerExpeditionHandler)
+function ShowResultBuyAAPoint(result, moneyString)
+  local function ResultBuyAAPoint(wnd, infoTable)
+    function wnd:OkProc()
+      wnd:Show(false)
+    end
+    wnd:SetTitle(locale.inGameShop.chargeAAPoint)
+    if result then
+      wnd:SetContent(GetUIText(INGAMESHOP_TEXT, "buy_success_aa_point", SettingPriceText(moneyString, PRICE_TYPE_AA_POINT)), true)
+    else
+      wnd:SetContent(GetUIText(ERROR_MSG, "INGAME_SHOP_BUY_FAIL_AA_POINT"), true)
+    end
+  end
+  X2DialogManager:RequestNoticeDialog(ResultBuyAAPoint, "UIParent")
+end
+UIParent:SetEventHandler("BUY_RESULT_AA_POINT", ShowResultBuyAAPoint)
+function ShowAntibotPunishMessage(message)
+  local function AntibotPunishMessage(wnd, infoTable)
+    wnd:SetContent(message)
+  end
+  X2DialogManager:RequestNoticeDialog(AntibotPunishMessage, "UIParent")
+end
+UIParent:SetEventHandler("ANTIBOT_PUNISH", ShowAntibotPunishMessage)
+local alreadyShowRequestBuyLaborPowerDialog = false
+local function AskBuyLaborPower()
+  if alreadyShowRequestBuyLaborPowerDialog then
+    return
+  end
+  local timeStampKey = "request_buy_labor_power_one_day_hide"
+  local localData = X2Time:GetLocalDate()
+  local stamp = string.format("%s-%s-%s", localData.year, localData.month, localData.day)
+  local savedStamp = UI:GetUIStamp(timeStampKey)
+  if savedStamp == stamp then
+    return
+  end
+  local function DecorateBuyLaborPowerNotifyFunc(wnd, infoTable)
+    local title = GetUIText(COMMON_TEXT, "not_enough_labor_power")
+    local content = string.format([[
+%s
+%s
+%s]], GetUIText(ERROR_MSG, "NOT_ENOUGH_LABOR_POWER"), GetUIText(COMMON_TEXT, "can_buy_labor_power_potion"), GetUIText(COMMON_TEXT, "ask_open_ingameshop"))
+    local addHeight = 10
+    wnd:SetTitle(title)
+    wnd:SetContent(content)
+    wnd.btnOk:AddAnchor("BOTTOM", wnd, -BUTTON_COMMON_INSET.TWO_BUTTON_BETEEN, BUTTON_COMMON_INSET.MESSAGEBOX_BOTTOM - addHeight)
+    wnd.btnCancel:AddAnchor("BOTTOM", wnd, BUTTON_COMMON_INSET.TWO_BUTTON_BETEEN, BUTTON_COMMON_INSET.MESSAGEBOX_BOTTOM - addHeight)
+    wnd:SetHeight(wnd:GetHeight() + addHeight)
+    local text = GetUIText(COMMON_TEXT, "hide_window")
+    local checkButton = CreateCheckButton(wnd:GetId() .. ".checkButton", wnd, text)
+    checkButton:AddAnchor("BOTTOMLEFT", wnd, 10, -10)
+    function wnd:ShowProc()
+      alreadyShowRequestBuyLaborPowerDialog = true
+    end
+    function wnd:OkProc()
+      local checked = checkButton:GetChecked()
+      if checked then
+        UI:SetUIStamp(timeStampKey, stamp)
+      end
+      ToggleInGameShop()
+      wnd:Show(false)
+      alreadyShowRequestBuyLaborPowerDialog = false
+    end
+    function wnd:CancelProc()
+      local checked = checkButton:GetChecked()
+      if checked then
+        UI:SetUIStamp(timeStampKey, stamp)
+      end
+      wnd:Show(false)
+      alreadyShowRequestBuyLaborPowerDialog = false
+    end
+  end
+  X2DialogManager:RequestDefaultDialog(DecorateBuyLaborPowerNotifyFunc, "")
+end
+UIParent:SetEventHandler("ASK_BUY_LABOR_POWER_POTION", AskBuyLaborPower)
+function ShowUnfinishedBuildHouse(message)
+  local function UnfinishedBuildHouse(wnd, infoTable)
+    function wnd:OkProc()
+      wnd:Show(false)
+    end
+    wnd:SetTitle(GetUIText(COMMON_TEXT, "diglog_title_of_unifinished_build_house"))
+    wnd:SetContent(message)
+  end
+  X2DialogManager:RequestNoticeDialog(UnfinishedBuildHouse, "")
+end
+UIParent:SetEventHandler("UNFINISHED_BUILD_HOUSE", ShowUnfinishedBuildHouse)
+local ShowDeclarationExpeditionWarDialog = function(id, name, money)
+  local function DialogHandler(wnd, infoTable)
+    function wnd:OkProc()
+      X2Faction:DeclareExpeditionWar(id, money)
+    end
+    wnd:SetTitle(GetCommonText("declare_expedition_war"))
+    wnd:SetExtent(352, 265)
+    local sideMargin = 20
+    local heightMargin = 5
+    local contentWidth = 352 - sideMargin * 2
+    local nameLabel = wnd:CreateChildWidget("label", "nameLabel", 0, false)
+    nameLabel:SetExtent(contentWidth, FONT_SIZE.LARGE)
+    nameLabel:SetText(name)
+    nameLabel.style:SetFontSize(FONT_SIZE.LARGE)
+    nameLabel:AddAnchor("TOP", wnd.titleBar, "BOTTOM", 0, heightMargin)
+    ApplyTextColor(nameLabel, FONT_COLOR.BLUE)
+    local askContent = wnd:CreateChildWidget("textbox", "askContent", 0, false)
+    askContent:SetExtent(contentWidth, FONT_SIZE.MIDDLE)
+    askContent:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+    askContent:AddAnchor("TOP", nameLabel, "BOTTOM", 0, heightMargin + TEXTBOX_LINE_SPACE.MIDDLE)
+    askContent.style:SetAlign(ALIGN_CENTER)
+    ApplyTextColor(askContent, FONT_COLOR.DEFAULT)
+    askContent:SetText(GetCommonText("ask_declare_expedition_war"))
+    askContent:SetHeight(askContent:GetTextHeight())
+    local cost = CreateTitleMoneyWindow("cost", wnd, "", "horizon")
+    cost:SetWidth(150)
+    cost:NotUseTitle()
+    cost:AddAnchor("TOP", askContent, "BOTTOM", 0, 13)
+    local featureSet = X2Player:GetFeatureSet()
+    if featureSet.aaPoint then
+      cost:UpdateAAPoint(money)
+    else
+      cost:Update(money)
+    end
+    wnd.textbox:SetExtent(contentWidth, FONT_SIZE.MIDDLE)
+    wnd.textbox:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+    wnd.textbox:RemoveAllAnchors()
+    wnd.textbox:AddAnchor("TOP", cost, "BOTTOM", 0, 14)
+    wnd.textbox.style:SetAlign(ALIGN_CENTER)
+    ApplyTextColor(wnd.textbox, FONT_COLOR.RED)
+    wnd.textbox:SetText(GetCommonText("alert_declaration_cost_per_expedition_war"))
+    wnd.textbox:SetHeight(wnd.textbox:GetTextHeight())
+    local function Resize()
+      local _, height = F_LAYOUT:GetExtentWidgets(wnd.titleBar, wnd.textbox)
+      height = height + 16 + wnd.btnOk:GetHeight() + -BUTTON_COMMON_INSET.MESSAGEBOX_BOTTOM
+      wnd:SetHeight(height)
+    end
+    Resize()
+  end
+  X2DialogManager:RequestDefaultDialog(DialogHandler, "")
+end
+UIParent:SetEventHandler("EXPEDITION_WAR_DECLARATION_MONEY", ShowDeclarationExpeditionWarDialog)
+function ShowCancelProtectionDialog()
+  local DialogHandler = function(wnd, infoTable)
+    function wnd:OkProc()
+      X2Faction:RequestCancelProtection()
+    end
+    function wnd:CancelProc()
+      wnd:Show(false)
+    end
+    wnd:SetTitle(GetCommonText("expedition_my_disable_protect"))
+    wnd:SetExtent(352, 265)
+    local sideMargin = 20
+    local heightMargin = 15
+    local contentWidth = 352 - sideMargin * 2
+    wnd.textbox:SetExtent(contentWidth, FONT_SIZE.LARGE)
+    wnd.textbox:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+    wnd.textbox:RemoveAllAnchors()
+    wnd.textbox:AddAnchor("TOP", wnd.titleBar, "BOTTOM", 0, heightMargin)
+    wnd.textbox.style:SetFontSize(FONT_SIZE.LARGE)
+    wnd.textbox.style:SetAlign(ALIGN_CENTER)
+    wnd.textbox:SetText(GetCommonText("ask_cancel_protection_for_expedition"))
+    wnd.textbox:SetHeight(wnd.textbox:GetTextHeight())
+    local subContent = wnd:CreateChildWidget("textbox", "subContent", 0, false)
+    subContent:SetExtent(contentWidth, FONT_SIZE.MIDDLE)
+    subContent:SetText(GetCommonText("result_cancel_protection"))
+    subContent.style:SetFontSize(FONT_SIZE.MIDDLE)
+    subContent:AddAnchor("TOP", wnd.textbox, "BOTTOM", 0, heightMargin)
+    ApplyTextColor(subContent, FONT_COLOR.GRAY)
+    subContent:SetHeight(subContent:GetTextHeight())
+    wnd.btnOk:AddAnchor("BOTTOM", wnd, -BUTTON_COMMON_INSET.TWO_BUTTON_BETEEN, -sideMargin)
+    wnd.btnCancel:AddAnchor("BOTTOM", wnd, BUTTON_COMMON_INSET.TWO_BUTTON_BETEEN, -sideMargin)
+    local function Resize()
+      local _, height = F_LAYOUT:GetExtentWidgets(wnd.titleBar, subContent)
+      height = height + 23 + wnd.btnOk:GetHeight() + -BUTTON_COMMON_INSET.MESSAGEBOX_BOTTOM
+      wnd:SetHeight(height)
+    end
+    Resize()
+  end
+  X2DialogManager:RequestDefaultDialog(DialogHandler, "")
+end
+local function DialogZonePermissionHandler(wnd, infoTable)
+  wnd.window = infoTable.window
+  infoTable.resize = false
+  local zoneText = infoTable.zoneName .. "\r" .. infoTable.waitName
+  local timeText = GetUIText(COMMON_TEXT, "zp_out_time") .. " : " .. tostring(infoTable.waitTime) .. GetUIText(CHARACTER_SUBTITLE_INFO_TOOLTIP_TEXT, "sec")
+  local numText = GetUIText(COMMON_TEXT, "zp_wait_num", tostring(infoTable.waitNum))
+  wnd.titleBar.closeButton:Show(false)
+  wnd.textbox.style:SetFontSize(FONT_SIZE.MIDDLE)
+  local upperContent = wnd:CreateChildWidget("textbox", "upperContent", 0, true)
+  upperContent:SetExtent(wnd:GetWidth() - MARGIN.WINDOW_SIDE * 2, 60)
+  ApplyTextColor(upperContent, FONT_COLOR.BLUE)
+  upperContent.style:SetFontSize(FONT_SIZE.LARGE)
+  local downContent = wnd:CreateChildWidget("textbox", "downContent", 0, true)
+  downContent:SetExtent(wnd:GetWidth() - MARGIN.WINDOW_SIDE * 2, 60)
+  ApplyTextColor(downContent, FONT_COLOR.BLUE)
+  downContent.style:SetFontSize(FONT_SIZE.MIDDLE)
+  downContent:SetText(timeText)
+  if infoTable.window == 0 or infoTable.window == 1 then
+    upperContent:AddAnchor("TOP", wnd.titleBar, "BOTTOM", 0, 10)
+    upperContent:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+    upperContent:SetText(zoneText)
+    upperContent:SetHeight(upperContent:GetTextHeight())
+    wnd.textbox:RemoveAllAnchors()
+    wnd.textbox:AddAnchor("TOP", upperContent, "BOTTOM", 0, 19)
+    infoTable.content = GetUIText(COMMON_TEXT, "zp_enter_text")
+    downContent:AddAnchor("TOP", wnd.textbox, "BOTTOM", 0, 19)
+    if infoTable.window == 1 then
+      infoTable.content = GetUIText(COMMON_TEXT, "zp_wait_text")
+      downContent:SetText(numText)
+      wnd.btnCancel:SetText(GetUIText(COMMON_TEXT, "zp_wait_cancel"))
+    end
+    downContent:SetHeight(downContent:GetTextHeight())
+    local _, height = F_LAYOUT:GetExtentWidgets(wnd.titleBar, downContent)
+    height = height + wnd.btnOk:GetHeight() + MARGIN.WINDOW_SIDE + 49
+    wnd:SetHeight(height)
+  elseif infoTable.window == 2 then
+    wnd.textbox:AddAnchor("TOP", wnd.titleBar, "BOTTOM", 0, 16)
+    wnd.textbox.style:SetFontSize(FONT_SIZE.LARGE)
+    ApplyTextColor(wnd.textbox, FONT_COLOR.RED)
+    local bg = CreateContentBackground(wnd.textbox, "TYPE2")
+    bg:SetExtent(390, 70)
+    bg:AddAnchor("TOP", wnd.titleBar, "BOTTOM", 0, 0)
+    downContent:AddAnchor("TOP", wnd.textbox, "BOTTOM", 0, 8)
+    downContent:SetHeight(downContent:GetTextHeight())
+    local scroll = CreateScrollWindow(wnd, "scroll", 0)
+    scroll:SetHeight(266)
+    scroll:AddAnchor("TOPLEFT", bg, "BOTTOMLEFT", 0, 10)
+    scroll:AddAnchor("TOPRIGHT", bg, "BOTTOMRIGHT", 0, 10)
+    local scrollContent1 = scroll.content:CreateChildWidget("textbox", "scrollontent1", 0, true)
+    scrollContent1:SetExtent(scroll.content:GetWidth(), 30)
+    scrollContent1:AddAnchor("TOPLEFT", scroll.content, 0, 0)
+    scrollContent1:SetAutoResize(true)
+    scrollContent1:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+    scrollContent1.style:SetAlign(ALIGN_TOP_LEFT)
+    scrollContent1.style:SetFontSize(FONT_SIZE.LARGE)
+    scrollContent1:SetText(infoTable.zoneName .. " " .. infoTable.waitName .. "\r" .. numText)
+    ApplyTextColor(scrollContent1, FONT_COLOR.BLUE)
+    local scrollContent2 = scroll.content:CreateChildWidget("textbox", "scrollontent2", 0, true)
+    scrollContent2:SetExtent(scroll.content:GetWidth(), 30)
+    scrollContent2:AddAnchor("TOPLEFT", scrollContent1, "BOTTOMLEFT", 0, 30)
+    scrollContent2:SetAutoResize(true)
+    scrollContent2:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+    scrollContent2.style:SetAlign(ALIGN_LEFT)
+    scrollContent2.style:SetFontSize(FONT_SIZE.MIDDLE)
+    scrollContent2:SetText(GetUIText(COMMON_TEXT, "zp_out_scroll"))
+    ApplyTextColor(scrollContent2, FONT_COLOR.DEFAULT)
+    ResetScroll(scroll, scrollContent1:GetHeight() + scrollContent2:GetHeight() + 30)
+    infoTable.content = GetUIText(COMMON_TEXT, "zp_out_text")
+    wnd.btnOk:SetText(GetUIText(COMMON_TEXT, "zp_out_now_button"))
+    wnd.btnCancel:SetText(GetUIText(COMMON_TEXT, "zp_out_wait_button"))
+    wnd.btnOk:RemoveAllAnchors()
+    wnd.btnCancel:RemoveAllAnchors()
+    ReanchorDefaultTextButtonSet({
+      wnd.btnOk,
+      wnd.btnCancel
+    }, wnd, -MARGIN.WINDOW_SIDE)
+    local _, height = F_LAYOUT:GetExtentWidgets(wnd.titleBar, scroll)
+    height = height + wnd.btnOk:GetHeight() + MARGIN.WINDOW_SIDE * 2
+    wnd:SetExtent(430, height)
+  end
+  local delay = 0
+  local function OnUpdate(self, dt)
+    delay = delay + dt
+    if wnd.window ~= 1 and delay > 500 then
+      local condition = X2Player:GetZonePermissionCondition()
+      downContent:SetText(GetUIText(TOOLTIP_TEXT, "wait_time") .. tostring(condition.waitTime) .. GetUIText(CHARACTER_SUBTITLE_INFO_TOOLTIP_TEXT, "sec"))
+      delay = 0
+    end
+  end
+  wnd:SetHandler("OnUpdate", OnUpdate)
+  SetDialogTexts(wnd, infoTable)
+end
+X2DialogManager:SetHandler(DLG_TASK_ZONE_PERMISSION, DialogZonePermissionHandler)
+local function DialogSiegeBidHandler(wnd, infoTable)
+  wnd.window = infoTable.window
+  infoTable.resize = false
+  if infoTable.zoneName == nil or infoTable.zoneName == "" then
+    return
+  end
+  SetDialogTexts(wnd, infoTable)
+  wnd.textbox.style:SetFontSize(FONT_SIZE.MIDDLE)
+  wnd.textbox:SetText("[" .. infoTable.zoneName .. "]\n" .. infoTable.content)
+  local auctionMoney = CreateTitleMoneyWindow("auctionMoney", wnd, "", "vertical")
+  auctionMoney:Show(true)
+  auctionMoney:NotUseTitle()
+  auctionMoney:SetWidth(150)
+  auctionMoney:AddAnchor("TOP", wnd.textbox, "BOTTOM", 0, 0)
+  auctionMoney.money.style:SetAlign(ALIGN_CENTER)
+  if F_MONEY.currency.siegeAuctionBid == CURRENCY_AA_POINT then
+    auctionMoney:UpdateAAPoint(infoTable.money)
+  else
+    auctionMoney:Update(infoTable.money)
+  end
+  local commision = GetUIText(COMMON_TEXT, "auction_commission")
+  local moneyStr = ""
+  if F_MONEY.currency.siegeAuctionBid == CURRENCY_AA_POINT then
+    moneyStr = string.format("|p%d;", infoTable.baseMoney)
+  else
+    moneyStr = string.format("|m%d;", infoTable.baseMoney)
+  end
+  local moneyString = string.format("%s %s", commision, moneyStr)
+  local baseMoney = wnd:CreateChildWidget("textbox", "baseMoeny", 0, true)
+  baseMoney:SetExtent(312, 20)
+  baseMoney:AddAnchor("TOP", auctionMoney, "BOTTOM", 0, 11)
+  baseMoney.style:SetFontSize(FONT_SIZE.MIDDLE)
+  baseMoney:SetText(moneyString)
+  ApplyTextColor(baseMoney, FONT_COLOR.BLUE)
+  local _, height = F_LAYOUT:GetExtentWidgets(wnd.titleBar, baseMoney)
+  height = height + wnd.btnOk:GetHeight() + MARGIN.WINDOW_SIDE + 31
+  wnd:SetHeight(height)
+end
+X2DialogManager:SetHandler(DLG_TASK_SIEGE_BID, DialogSiegeBidHandler)
+local EnterTeamTalkRoomDialogHandler = function(wnd, infoTable)
+  ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_VALUE_TEXT)
+  wnd:SetTitle(GetCommonText("talk_room"))
+  wnd:SetContent(GetCommonText("ask_enter_talk_room1"))
+end
+X2DialogManager:SetHandler(DLG_TASK_ENTER_TEAM_TALK_ROOM, EnterTeamTalkRoomDialogHandler)
+local AskEnterTalkRoomDialogHandler = function(wnd, infoTable)
+  ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_VALUE_TEXT)
+  wnd:SetTitle(GetCommonText("talk_room"))
+  wnd:SetContent(GetCommonText("ask_enter_talk_room2", infoTable.invitorName))
+end
+X2DialogManager:SetHandler(DLG_TASK_ASK_ENTER_TEAM_TALK_ROOM, AskEnterTalkRoomDialogHandler)

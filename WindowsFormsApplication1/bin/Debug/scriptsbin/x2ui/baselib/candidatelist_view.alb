@@ -1,0 +1,34 @@
+local windowWidth = UIParent:GetScreenWidth()
+local windowHeight = UIParent:GetScreenHeight()
+local CANDIDATES_COUNT = 9
+local LINE_GAP = 2
+local WINDOW_MARGIN = 10
+local CANDIDATE_LABEL_WIDTH = 30
+local CANDIDATE_STRING_WIDTH = 100
+local CANDIDATE_HEIGHT = 20
+candidateListWnd = CreateEmptyWindow("candidateListWnd", "UIParent")
+candidateListWnd:Show(true)
+candidateListWnd:SetExtent(CANDIDATE_LABEL_WIDTH + CANDIDATE_STRING_WIDTH + WINDOW_MARGIN * 2, CANDIDATE_HEIGHT * CANDIDATES_COUNT + WINDOW_MARGIN * 2)
+candidateListWnd:AddAnchor("BOTTOMRIGHT", "UIParent", -5, -5)
+candidateListWnd:SetUILayer("dialog")
+local bg = CreateContentBackground(candidateListWnd, "TYPE2")
+bg:AddAnchor("TOPLEFT", candidateListWnd, -10, -10)
+bg:AddAnchor("BOTTOMRIGHT", candidateListWnd, 10, 10)
+bg:SetColor(0, 0, 0, 0.4)
+candidateListWnd.idxLabel = {}
+candidateListWnd.candidateStringLabel = {}
+for i = 1, CANDIDATES_COUNT do
+  local idxLabel = CreateLabel("candidateListWnd.idxLabel[" .. i .. "]", candidateListWnd)
+  idxLabel:SetExtent(CANDIDATE_LABEL_WIDTH, CANDIDATE_HEIGHT)
+  idxLabel:SetText(tostring(i))
+  local candidateStringLabel = CreateLabel("candidateListWnd.candidateStringLabel[" .. i .. "]", candidateListWnd)
+  candidateStringLabel:SetExtent(CANDIDATE_STRING_WIDTH, CANDIDATE_HEIGHT)
+  if i == 1 then
+    idxLabel:AddAnchor("TOPLEFT", candidateListWnd, "TOPLEFT", 10, 10)
+  else
+    idxLabel:AddAnchor("TOPLEFT", candidateListWnd.idxLabel[i - 1], "BOTTOMLEFT", 0, 0)
+  end
+  candidateStringLabel:AddAnchor("TOPLEFT", idxLabel, "TOPRIGHT", 0, 0)
+  candidateListWnd.idxLabel[i] = idxLabel
+  candidateListWnd.candidateStringLabel[i] = candidateStringLabel
+end

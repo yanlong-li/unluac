@@ -1,0 +1,59 @@
+function CreateChatOptionWindow(id, parent)
+  local window = CreateWindow(id, parent)
+  window:Show(false)
+  window:SetExtent(chatLocale.chatOption.windowWidth, 440)
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local cancelButton = window:CreateChildWidget("button", "cancelButton", 0, true)
+  cancelButton:SetText(GetUIText(COMMON_TEXT, "cancel"))
+  ApplyButtonSkin(cancelButton, BUTTON_BASIC.DEFAULT)
+  cancelButton:AddAnchor("BOTTOMRIGHT", window, -sideMargin, -sideMargin)
+  local okButton = window:CreateChildWidget("button", "okButton", 0, true)
+  okButton:SetText(locale.pet.okButton)
+  ApplyButtonSkin(okButton, BUTTON_BASIC.DEFAULT)
+  okButton:AddAnchor("RIGHT", cancelButton, "LEFT", 0, 0)
+  local buttonTable = {cancelButton, okButton}
+  AdjustBtnLongestTextWidth(buttonTable)
+  local chatResetButton = window:CreateChildWidget("button", "chatResetButton", 0, true)
+  chatResetButton:Show(false)
+  chatResetButton:SetText(locale.chatFiltering.chatReset)
+  ApplyButtonSkin(chatResetButton, BUTTON_BASIC.DEFAULT)
+  chatResetButton:AddAnchor("BOTTOMLEFT", window, sideMargin, -sideMargin)
+  local resetButton = window:CreateChildWidget("button", "resetButton", 0, true)
+  resetButton:SetText(locale.chatFiltering.reset)
+  ApplyButtonSkin(resetButton, BUTTON_BASIC.DEFAULT)
+  resetButton:AddAnchor("BOTTOMLEFT", window, sideMargin, -sideMargin)
+  local buttonTable = {chatResetButton, resetButton}
+  AdjustBtnLongestTextWidth(buttonTable)
+  local menuListWindow = CreateEmptyWindow(id .. ".menuListWindow", window)
+  menuListWindow:Show(true)
+  menuListWindow:SetWidth(chatLocale.chatOption.menuList.width)
+  menuListWindow:AddAnchor("TOPLEFT", window, sideMargin, titleMargin)
+  menuListWindow:AddAnchor("BOTTOMLEFT", window, sideMargin, bottomMargin)
+  window.menuListWindow = menuListWindow
+  local bg = CreateContentBackground(menuListWindow, "TYPE3")
+  bg:AddAnchor("TOPLEFT", menuListWindow, -sideMargin / 1.7, -sideMargin)
+  bg:AddAnchor("BOTTOMRIGHT", menuListWindow, sideMargin / 1.7, sideMargin + sideMargin)
+  ApplyTextureColor(bg, TEXTURE_COLOR.TYPE3_BROWN)
+  menuListWindow.menu = {}
+  for i = 1, #locale.chatFiltering.menuName do
+    local menu = menuListWindow:CreateChildWidget("button", "menu", i, true)
+    menu:SetText(locale.chatFiltering.menuName[i])
+    ApplyButtonSkin(menu, BUTTON_CONTENTS.CHAT_OPTION)
+    if i == 3 then
+      DrawTargetLine(menu)
+      menu:AddAnchor("TOP", menuListWindow, -3, (i - 1) * 35 - 8)
+    elseif i == 4 then
+      menu:AddAnchor("TOP", menuListWindow, -3, (i - 1) * 35 + 7)
+    else
+      menu:AddAnchor("TOP", menuListWindow, -3, (i - 1) * 35 - 8)
+    end
+  end
+  local pageWindow = CreateEmptyWindow(id .. ".pageWindow", window)
+  pageWindow:Show(true)
+  pageWindow:AddAnchor("TOPLEFT", menuListWindow, "TOPRIGHT", sideMargin / 1.2, 0)
+  pageWindow:AddAnchor("BOTTOMRIGHT", window, -sideMargin, bottomMargin)
+  window.pageWindow = pageWindow
+  window:EnableHidingIsRemove(true)
+  return window
+end
+chatOptionWindow = nil

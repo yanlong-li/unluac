@@ -1,0 +1,124 @@
+local CreateGradeEnchantBroadcastAlarmMessage = function(id, parent)
+  local frame = CreateEmptyWindow(id, parent)
+  frame:SetExtent(946, 180)
+  frame:AddAnchor("TOP", parent, 0, 60)
+  frame:SetUILayer("system")
+  frame:Clickable(false)
+  local bg = frame:CreateImageDrawable(TEXTURE_PATH.ALARM_DECO, "background")
+  bg:SetCoords(0, 0, 782, 128)
+  bg:SetExtent(782, 128)
+  bg:AddAnchor("BOTTOM", frame, 0, 0)
+  local statusBg = frame:CreateImageDrawable(TEXTURE_PATH.ALARM_DECO, "artwork")
+  statusBg:SetExtent(116.1, 74.7)
+  statusBg:SetCoords(782, 0, 129, 83)
+  statusBg:AddAnchor("TOP", frame, 0, 0)
+  local itemBg = frame:CreateImageDrawable(TEXTURE_PATH.GRADE_ENCHANT_BROADCAST_ALARM, "artwork")
+  itemBg:SetExtent(67, 64)
+  itemBg:AddAnchor("CENTER", statusBg, -1, 2)
+  frame.itemBg = itemBg
+  local itemIcon = CreateItemIconImage(frame:GetId() .. ".itemIcon", frame)
+  itemIcon:AddAnchor("CENTER", itemBg, 1, 2)
+  frame.itemIcon = itemIcon
+  local itemName = frame:CreateChildWidget("label", "itemName", 0, true)
+  itemName:SetAutoResize(true)
+  itemName:SetHeight(FONT_SIZE.LARGE)
+  itemName.style:SetShadow(true)
+  itemName.style:SetFontSize(FONT_SIZE.LARGE)
+  itemName:AddAnchor("TOP", itemIcon, "BOTTOM", 0, MARGIN.WINDOW_SIDE / 4)
+  local arrow = frame:CreateImageDrawable(TEXTURE_PATH.HUD, "overlay")
+  arrow:SetCoords(624, 364, 54, 17)
+  arrow:SetExtent(54, 17)
+  arrow:AddAnchor("TOP", itemName, "BOTTOM", 0, MARGIN.WINDOW_SIDE / 3.5)
+  frame.arrow = arrow
+  local oldGradeLabel = frame:CreateChildWidget("label", "oldGradeLabel", 0, true)
+  oldGradeLabel:SetAutoResize(true)
+  oldGradeLabel:SetHeight(FONT_SIZE.LARGE)
+  oldGradeLabel.style:SetShadow(true)
+  oldGradeLabel.style:SetFontSize(FONT_SIZE.LARGE)
+  oldGradeLabel:AddAnchor("RIGHT", arrow, "LEFT", -2, 0)
+  local newGradeLabel = frame:CreateChildWidget("label", "newGradeLabel", 0, true)
+  newGradeLabel:SetAutoResize(true)
+  newGradeLabel:SetHeight(FONT_SIZE.LARGE)
+  newGradeLabel.style:SetShadow(true)
+  newGradeLabel.style:SetFontSize(FONT_SIZE.LARGE)
+  newGradeLabel:AddAnchor("LEFT", arrow, "RIGHT", 4, 0)
+  local content = frame:CreateChildWidget("textbox", "content", 0, true)
+  content:SetHeight(FONT_SIZE.XLARGE)
+  content.style:SetAlign(ALIGN_CENTER)
+  content.style:SetFontSize(FONT_SIZE.XLARGE)
+  content.style:SetShadow(true)
+  content:AddAnchor("TOP", arrow, "BOTTOM", 0, MARGIN.WINDOW_SIDE / 3)
+  local function SetArrowTexture(resultCode)
+    if resultCode == ENCHANT_RESULT.SUCCESS then
+      frame.arrow:SetCoords(624, 364, 28, 17)
+      frame.arrow:SetExtent(28, 17)
+    elseif resultCode == ENCHANT_RESULT.GREATE_SUCCESS then
+      frame.arrow:SetCoords(624, 364, 54, 17)
+      frame.arrow:SetExtent(54, 17)
+    end
+  end
+  local OnHide = function(self)
+    self:ReleaseHandler("OnUpdate")
+  end
+  frame:SetHandler("OnHide", OnHide)
+  local OnEndFadeOut = function(self)
+    StartNextImgEvent()
+  end
+  frame:SetHandler("OnEndFadeOut", OnEndFadeOut)
+  function frame:SetResult(characterName, resultCode, itemLink, oldGrade, newGrade)
+    local itemInfo = X2Item:InfoFromLink(itemLink)
+    local oldGradeColor = X2Item:GradeColor(oldGrade)
+    oldGradeColor = Hex2Dec(oldGradeColor)
+    local oldGradeName = X2Item:GradeName(oldGrade)
+    oldGradeName = string.format("[%s]", oldGradeName)
+    local newGradeColor = X2Item:GradeColor(newGrade)
+    newGradeColor = Hex2Dec(newGradeColor)
+    local newGradeName = X2Item:GradeName(newGrade)
+    newGradeName = string.format("[%s]", newGradeName)
+    ApplyTextureColor(self.itemBg, newGradeColor)
+    ApplyTextureColor(self.arrow, newGradeColor)
+    ApplyTextColor(self.oldGradeLabel, oldGradeColor)
+    ApplyTextColor(self.newGradeLabel, newGradeColor)
+    ApplyTextColor(self.itemName, newGradeColor)
+    self.itemIcon:SetItemIconImage(itemInfo, newGrade)
+    self.oldGradeLabel:SetText(oldGradeName)
+    self.newGradeLabel:SetText(newGradeName)
+    self.itemName:SetText(itemInfo.name)
+    SetArrowTexture(resultCode)
+    local text = ""
+    if resultCode == ENCHANT_RESULT.SUCCESS then
+      text = locale.physicalEnchant.broadcast_success_alarm(FONT_COLOR_HEX.SOFT_YELLOW, characterName, FONT_COLOR_HEX.SKYBLUE)
+    elseif resultCode == ENCHANT_RESULT.GREATE_SUCCESS then
+      text = locale.physicalEnchant.broadcast_great_success_alarm(FONT_COLOR_HEX.SOFT_YELLOW, characterName, FONT_COLOR_HEX.SKYBLUE)
+    end
+    self.content:SetWidth(1000)
+    self.content:SetText(text)
+    self.content:SetWidth(self.content:GetLongestLineWidth() + 10)
+    local showTime = 0
+    local function OnUpdate(self, dt)
+      showTime = dt + showTime
+      if showTime >= 3500 then
+        self:Show(false, 1000)
+        self:ReleaseHandler("OnUpdate")
+      end
+    end
+    self:SetHandler("OnUpdate", OnUpdate)
+  end
+  return frame
+end
+gradeEnchantBroadcastAlarm = CreateGradeEnchantBroadcastAlarmMessage("gradeEnchantBroadcastAlarm", "UIParent")
+function ShowGradeEnchantBroadcastAlarmMessage(characterName, resultCode, itemLink, oldGrade, newGrade)
+  if characterName == X2Unit:UnitName("player") then
+    return false
+  end
+  if resultCode == ENCHANT_RESULT.FAIL or resultCode == ENCHANT_RESULT.DOWNGRADE or resultCode == ENCHANT_RESULT.BREAK then
+    return false
+  end
+  if newGrade < ITEM_GRADES.UNIQUE then
+    return false
+  end
+  gradeEnchantBroadcastAlarm:Show(true, 500)
+  gradeEnchantBroadcastAlarm:SetResult(characterName, resultCode, itemLink, oldGrade, newGrade)
+  gradeEnchantBroadcastAlarm:Raise()
+  return true
+end

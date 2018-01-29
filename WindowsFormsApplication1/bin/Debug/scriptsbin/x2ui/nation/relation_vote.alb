@@ -1,0 +1,78 @@
+local wnd
+function ShowRelationVote(param)
+  if wnd == nil then
+    wnd = SetViewOfRelationVote("RelationVote", "UIParent")
+    function SetFriendTab(tabWnd)
+      local infoWnd = CreateTabView(tabWnd, "friend")
+      infoWnd.title:SetText(GetCommonText("nation_friend_title"))
+      infoWnd.target:SetText(GetCommonText("nation_request"))
+      infoWnd.period:SetText(GetCommonText("nation_period_friend"))
+      infoWnd.msg:SetText(GetCommonText("nation_friend_message"))
+      function infoWnd.SetNationInfo(info)
+        infoWnd.relationPeriod:SetText(X2Locale:LocalizeUiText(COMMON_TEXT, "nation_period", tostring(info.skMonth), tostring(info.skDay), tostring(info.skHour), tostring(info.ekMonth), tostring(info.ekDay), tostring(info.ekHour)))
+        infoWnd.votePeriod:SetText(X2Locale:LocalizeUiText(COMMON_TEXT, "nation_period", tostring(info.sMonth), tostring(info.sDay), tostring(info.sHour), tostring(info.eMonth), tostring(info.eDay), tostring(info.eHour)))
+        infoWnd.botNotice:SetText(GetCommonText("nation_friend_no_vote_notice"))
+        if info.vote then
+          infoWnd.botNotice:SetText(GetCommonText("nation_friend_vote_notice"))
+        end
+        if info.votePossible == false then
+          ApplyTextColor(infoWnd.botNotice, FONT_COLOR.RED)
+          infoWnd.botNotice:SetText(GetCommonText("nation_already_vote"))
+        end
+      end
+      function infoWnd.Click(factionId, result)
+        X2Nation:SendRelationVote(factionId, result)
+        ApplyTextColor(infoWnd.botNotice, FONT_COLOR.RED)
+        infoWnd.botNotice:SetText(GetCommonText("nation_already_vote"))
+        infoWnd.okBtn:Enable(false)
+        infoWnd.noBtn:Enable(false)
+      end
+    end
+    function SetHostileTab(tabWnd)
+      local infoWnd = CreateTabView(tabWnd, "hostile")
+      infoWnd.title:SetText(GetCommonText("nation_hostile_title"))
+      infoWnd.target:SetText(GetCommonText("nation_declare_target"))
+      infoWnd.period:SetText(GetCommonText("nation_period_hostile"))
+      infoWnd.msg:SetText(GetCommonText("nation_hostile_message"))
+      function infoWnd.SetNationInfo(info)
+        infoWnd.votePeriod:SetText(X2Locale:LocalizeUiText(COMMON_TEXT, "nation_period", tostring(info.sMonth), tostring(info.sDay), tostring(info.sHour), tostring(info.eMonth), tostring(info.eDay), tostring(info.eHour)))
+        infoWnd.botNotice:SetText(GetCommonText("nation_hostile_no_vote_notice"))
+        if info.vote then
+          infoWnd.botNotice:SetText(GetCommonText("nation_hostile_vote_notice"))
+        end
+        if info.votePossible == false then
+          ApplyTextColor(infoWnd.botNotice, FONT_COLOR.RED)
+          infoWnd.botNotice:SetText(GetCommonText("nation_already_vote"))
+        end
+      end
+      function infoWnd.Click(factionId, result)
+        X2Nation:SendRelationVote(factionId, result)
+        ApplyTextColor(infoWnd.botNotice, FONT_COLOR.RED)
+        infoWnd.botNotice:SetText(GetCommonText("nation_already_vote"))
+        infoWnd.okBtn:Enable(false)
+        infoWnd.noBtn:Enable(false)
+      end
+    end
+    function wnd:ShowProc()
+      local relationList = X2Nation:GetRelationVoteList(X2Faction:GetMyTopLevelFaction())
+      if relationList == nil then
+        return
+      end
+      local friendlyInfos = {}
+      local hostileInfos = {}
+      for i = 1, #relationList do
+        if relationList[i].nextState == NATION_RELATION.FRIENDLY then
+          friendlyInfos[#friendlyInfos + 1] = relationList[i]
+        elseif relationList[i].nextState == NATION_RELATION.HOSTILE then
+          hostileInfos[#hostileInfos + 1] = relationList[i]
+        end
+      end
+      self.friendTab:SetRelation(friendlyInfos)
+      self.hostileTab:SetRelation(hostileInfos)
+    end
+    SetFriendTab(wnd.friendTab)
+    SetHostileTab(wnd.hostileTab)
+  end
+  wnd:Show(true)
+end
+UIParent:SetEventHandler("NATION_RELRATION_VOTE", ShowRelationVote)

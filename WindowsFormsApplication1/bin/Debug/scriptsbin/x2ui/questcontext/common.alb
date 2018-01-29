@@ -1,0 +1,1292 @@
+local MAX_COUNT = {OBJECTIVE = 5, ITEM = 5}
+function CreateDailyMarker(parent)
+  local widget = parent:CreateChildWidget("emptywidget", "dailyMarker", 0, true)
+  local drawable = widget:CreateImageDrawable(TEXTURE_PATH.QUEST_NOTIFIER, "background")
+  F_LAYOUT:AttachAnchor(drawable, widget)
+  widget.drawable = drawable
+  function widget:SetDailyMaker(isDaily, dayInfo)
+    if not isDaily then
+      self:Show(false)
+      return
+    end
+    local coords = FORM_QUEST_NOTIFIER.DAY_QUEST_ICON_COORDS
+    local tip = {
+      GetCommonText("sunday"),
+      GetCommonText("monday"),
+      GetCommonText("tuesday"),
+      GetCommonText("wednesday"),
+      GetCommonText("thursday"),
+      GetCommonText("friday"),
+      GetCommonText("saturday"),
+      GetUIText(QUEST_TEXT, "daily_quest_message")
+    }
+    local tooltip
+    if coords[dayInfo] ~= nil then
+      self.drawable:SetCoords(coords[dayInfo][1], coords[dayInfo][2], coords[dayInfo][3], coords[dayInfo][4])
+      self:SetExtent(coords[dayInfo][3], coords[dayInfo][4])
+    end
+    if tip[dayInfo] ~= nil then
+      if dayInfo == DOW_INVALID then
+        tooltip = tip[dayInfo]
+      else
+        tooltip = X2Locale:LocalizeUiText(COMMON_TEXT, "day_quest_tip", tostring(tip[dayInfo]))
+      end
+    end
+    local function OnEnter(self)
+      SetTooltip(tooltip, self)
+    end
+    self:SetHandler("OnEnter", OnEnter)
+    self:Show(true)
+  end
+  return widget
+end
+function CreateRepeatableQuestMarker(parent)
+  local widget = parent:CreateChildWidget("emptywidget", "repeatableMarker", 0, true)
+  local drawable = widget:CreateImageDrawable(TEXTURE_PATH.QUEST_NOTIFIER, "background")
+  drawable:SetTextureInfo("repeat")
+  drawable:AddAnchor("CENTER", widget, 0, 0)
+  widget.drawable = drawable
+  widget:SetExtent(drawable:GetExtent())
+  local OnEnter = function(self)
+    SetTooltip(GetUIText(COMMON_TEXT, "repeatable_quest_tip"), self)
+  end
+  widget:SetHandler("OnEnter", OnEnter)
+  return widget
+end
+function VisibleQuestGrade(grade)
+  if grade == "elite" or grade == "boss_c" or grade == "boss_b" or grade == "boss_a" or grade == "boss_s" then
+    return true
+  end
+  return false
+end
+local CreateQuestRewardExpDisplay = function(id, parent)
+  local widget = UIParent:CreateWidget("textbox", id, parent)
+  widget.style:SetAlign(ALIGN_LEFT)
+  widget:SetHeight(FONT_SIZE.MIDDLE)
+  ApplyTextColor(widget, FONT_COLOR.DEFAULT)
+  DrawRoundDingbat(widget)
+  function widget:ClearValue()
+    self:Show(false)
+    self:SetText("")
+    self:RemoveAllAnchors()
+  end
+  function widget:UpdateValue(expValue)
+    if expValue == "0" or expValue == nil then
+      self:ClearValue()
+      return
+    end
+    local str = string.format("%s %s|,%s;", GetUIText(COMMON_TEXT, "exp"), FONT_COLOR_HEX.BLUE, tostring(expValue))
+    self:SetText(str)
+    self:SetHeight(self:GetTextHeight())
+    self:Show(true)
+  end
+  return widget
+end
+local CreateQuestRewardLaborPowerDisplay = function(id, parent)
+  local widget = UIParent:CreateWidget("textbox", id, parent)
+  widget.style:SetAlign(ALIGN_LEFT)
+  widget:SetHeight(FONT_SIZE.MIDDLE)
+  ApplyTextColor(widget, FONT_COLOR.DEFAULT)
+  DrawRoundDingbat(widget)
+  function widget:ClearValue()
+    self:Show(false)
+    self:SetText("")
+    self:RemoveAllAnchors()
+  end
+  function widget:UpdateValue(laborPower)
+    if laborPower == 0 or laborPower == nil then
+      self:ClearValue()
+      return
+    end
+    local str = string.format("%s %s|,%s;", locale.attribute("labor_power"), FONT_COLOR_HEX.BLUE, tostring(laborPower))
+    self:SetText(str)
+    self:SetHeight(self:GetTextHeight())
+    self:Show(true)
+  end
+  return widget
+end
+local CreateQuestRewardMoneyDisplay = function(id, parent)
+  local widget = UIParent:CreateWidget("textbox", id, parent)
+  widget:SetHeight(FONT_SIZE.MIDDLE)
+  widget.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(widget, FONT_COLOR.DEFAULT)
+  DrawRoundDingbat(widget)
+  function widget:ClearValue()
+    self:Show(false)
+    self:SetText("")
+    self:RemoveAllAnchors()
+  end
+  function widget:UpdateValue(money)
+    if money == 0 or money == nil then
+      self:ClearValue()
+      return
+    end
+    local str = string.format("%s %s|m%d;", locale.questContext.rewardMoney, FONT_COLOR_HEX.BLUE, money)
+    self:SetText(str)
+    self:SetHeight(self:GetTextHeight())
+    self:Show(true)
+  end
+  return widget
+end
+local CreateQuestRewardAAPointDisplay = function(id, parent)
+  local widget = UIParent:CreateWidget("textbox", id, parent)
+  widget.style:SetAlign(ALIGN_LEFT)
+  widget:SetHeight(FONT_SIZE.MIDDLE)
+  ApplyTextColor(widget, FONT_COLOR.DEFAULT)
+  DrawRoundDingbat(widget)
+  function widget:ClearValue()
+    self:Show(false)
+    self:SetText("")
+    self:RemoveAllAnchors()
+  end
+  function widget:UpdateValue(aaPoint)
+    if aaPoint == nil or aaPoint == 0 then
+      self:ClearValue()
+      return
+    end
+    local str = string.format("%s %s|p%d;", locale.questContext.rewardAAPoint, FONT_COLOR_HEX.DEEP_ORANGE, aaPoint)
+    self:SetText(str)
+    self:SetHeight(self:GetTextHeight())
+    self:Show(true)
+  end
+  return widget
+end
+local CreateQuestRewardExpeditionExpDisplay = function(id, parent)
+  local widget = UIParent:CreateWidget("textbox", id, parent)
+  widget.style:SetAlign(ALIGN_LEFT)
+  widget:SetHeight(FONT_SIZE.MIDDLE)
+  ApplyTextColor(widget, FONT_COLOR.DEFAULT)
+  DrawRoundDingbat(widget)
+  function widget:ClearValue()
+    self:Show(false)
+    self:SetText("")
+    self:RemoveAllAnchors()
+  end
+  function widget:UpdateValue(expValue)
+    if expValue == "0" or expValue == nil then
+      self:ClearValue()
+      return
+    end
+    local str = string.format("%s %s|,%s;", GetUIText(COMMON_TEXT, "expedition_exp"), FONT_COLOR_HEX.BLUE, tostring(expValue))
+    self:SetText(str)
+    self:SetHeight(self:GetTextHeight())
+    self:Show(true)
+  end
+  return widget
+end
+local CreateQuestRewardHonorPointDisplay = function(id, parent)
+  local widget = UIParent:CreateWidget("textbox", id, parent)
+  widget.style:SetAlign(ALIGN_LEFT)
+  widget:SetHeight(FONT_SIZE.MIDDLE)
+  ApplyTextColor(widget, FONT_COLOR.DEFAULT)
+  DrawRoundDingbat(widget)
+  function widget:ClearValue()
+    self:Show(false)
+    self:SetText("")
+    self:RemoveAllAnchors()
+  end
+  function widget:UpdateValue(honorValue)
+    if honorValue == nil or honorValue == 0 then
+      self:ClearValue()
+      return
+    end
+    local str = string.format("%s %s|h%d;", GetUIText(COMMON_TEXT, "honor_point"), FONT_COLOR_HEX.BLUE, honorValue)
+    self:SetText(str)
+    self:SetHeight(self:GetTextHeight())
+    self:Show(true)
+  end
+  return widget
+end
+local CreateQuestRewardDisHonorPointDisplay = function(id, parent)
+  local widget = UIParent:CreateWidget("textbox", id, parent)
+  widget.style:SetAlign(ALIGN_LEFT)
+  widget:SetHeight(FONT_SIZE.MIDDLE)
+  ApplyTextColor(widget, FONT_COLOR.DEFAULT)
+  DrawRoundDingbat(widget)
+  function widget:ClearValue()
+    self:Show(false)
+    self:SetText("")
+    self:RemoveAllAnchors()
+  end
+  function widget:UpdateValue(dishonorPoint)
+    if dishonorPoint == nil or dishonorPoint == 0 then
+      self:ClearValue()
+      return
+    end
+    local str = string.format("%s %s%d;", locale.money.dishonor, FONT_COLOR_HEX.BLUE, dishonorPoint)
+    self:SetText(str)
+    self:SetHeight(self:GetTextHeight())
+    self:Show(true)
+  end
+  return widget
+end
+local CreateQuestRewardLivingPointDisplay = function(id, parent)
+  local widget = UIParent:CreateWidget("textbox", id, parent)
+  widget.style:SetAlign(ALIGN_LEFT)
+  widget:SetHeight(FONT_SIZE.MIDDLE)
+  ApplyTextColor(widget, FONT_COLOR.DEFAULT)
+  DrawRoundDingbat(widget)
+  function widget:ClearValue()
+    self:Show(false)
+    self:SetText("")
+    self:RemoveAllAnchors()
+  end
+  function widget:UpdateValue(livingPoint)
+    if livingPoint == nil or livingPoint == 0 then
+      self:ClearValue()
+      return
+    end
+    local str = string.format("%s %s|l%d", locale.questContext.livingPoint, FONT_COLOR_HEX.BLUE, livingPoint)
+    self:SetText(str)
+    self:SetHeight(self:GetTextHeight())
+    self:Show(true)
+  end
+  return widget
+end
+local CreateQuestRewardContributionPointDisplay = function(id, parent)
+  local widget = UIParent:CreateWidget("textbox", id, parent)
+  widget.style:SetAlign(ALIGN_LEFT)
+  widget:SetHeight(FONT_SIZE.MIDDLE)
+  ApplyTextColor(widget, FONT_COLOR.DEFAULT)
+  DrawRoundDingbat(widget)
+  function widget:ClearValue()
+    self:Show(false)
+    self:SetText("")
+    self:RemoveAllAnchors()
+  end
+  function widget:UpdateValue(contributionPoint)
+    if contributionPoint == nil or contributionPoint == 0 then
+      self:ClearValue()
+      return
+    end
+    local str = string.format("%s %s|w%d", locale.money.contribution_point, FONT_COLOR_HEX.BLUE, contributionPoint)
+    self:SetText(str)
+    self:SetHeight(self:GetTextHeight())
+    self:Show(true)
+  end
+  return widget
+end
+local CreateQuestRewardLeadershipPointDisplay = function(id, parent)
+  local widget = UIParent:CreateWidget("textbox", id, parent)
+  widget.style:SetAlign(ALIGN_LEFT)
+  widget:SetHeight(FONT_SIZE.MIDDLE)
+  ApplyTextColor(widget, FONT_COLOR.DEFAULT)
+  DrawRoundDingbat(widget)
+  function widget:ClearValue()
+    self:Show(false)
+    self:SetText("")
+    self:RemoveAllAnchors()
+  end
+  function widget:UpdateValue(leadershipVale)
+    if leadershipVale == nil or leadershipVale == 0 then
+      self:ClearValue()
+      return
+    end
+    local str = string.format("%s %s%d", questLocale:GetLeaderShipPointText(), FONT_COLOR_HEX.BLUE, leadershipVale)
+    self:SetText(str)
+    self:SetHeight(self:GetTextHeight())
+    self:Show(true)
+  end
+  return widget
+end
+local CreateQuestAppellationDisplay = function(id, parent)
+  local widget = UIParent:CreateWidget("textbox", id, parent)
+  widget.style:SetAlign(ALIGN_LEFT)
+  widget:SetHeight(FONT_SIZE.MIDDLE)
+  ApplyTextColor(widget, FONT_COLOR.DEFAULT)
+  DrawRoundDingbat(widget)
+  local buff = CreateItemIconButton(id .. ".buff", widget)
+  buff:SetExtent(ICON_SIZE.BUFF, ICON_SIZE.BUFF)
+  buff:AddAnchor("LEFT", widget, "RIGHT", 0, 0)
+  ApplySlotSkin(buff, buff.back, SLOT_STYLE.BUFF)
+  ApplyTextureColor(buff.back, TEXTURE_COLOR.SINERGY_BUFF)
+  widget.buff = buff
+  local buff_deco = buff:CreateImageDrawable(TEXTURE_PATH.HUD, "overlay")
+  buff_deco:SetExtent(15, 8)
+  buff_deco:SetCoords(733, 168, 15, -8)
+  buff_deco:AddAnchor("BOTTOM", buff, 0, 0)
+  ApplyTextureColor(buff_deco, TEXTURE_COLOR.SINERGY_BUFF)
+  function widget:ClearValue()
+    self:Show(false)
+    self:SetText("")
+    self:RemoveAllAnchors()
+    self.buff:Show(false)
+  end
+  function widget:UpdateValue(appellationInfo)
+    if appellationInfo == nil then
+      self:ClearValue()
+      return
+    end
+    local str = string.format("%s %s%s", locale.appellation.title, FONT_COLOR_HEX.BLUE, appellationInfo[APPELLATION_INFO.NAME])
+    self:SetText(str)
+    self:SetWidth(275)
+    self:SetExtent(self:GetLongestLineWidth() + 5, self:GetTextHeight())
+    self:Show(true)
+    local buffInfo = appellationInfo[APPELLATION_INFO.BUFF_INFO]
+    if buffInfo == nil then
+      self.buff:Show(false)
+      return
+    end
+    self.buff:Show(true)
+    self.buff:SetTooltip(buffInfo)
+    SetIconBackGround(self.buff, buffInfo.path)
+  end
+  return widget
+end
+local CreateQuestRewardActabilityDisplay = function(id, parent)
+  local widget = UIParent:CreateWidget("textbox", id, parent)
+  widget.style:SetAlign(ALIGN_LEFT)
+  widget:SetHeight(FONT_SIZE.MIDDLE)
+  ApplyTextColor(widget, FONT_COLOR.DEFAULT)
+  DrawRoundDingbat(widget)
+  function widget:ClearValue()
+    self:Show(false)
+    self:SetText("")
+    self:RemoveAllAnchors()
+  end
+  function widget:UpdateValue(actability)
+    if actability == nil or actability.point == 0 then
+      self:ClearValue()
+      return
+    end
+    local str = string.format("%s %s%d", questLocale:GetActabilityText(actability.name, GetUIText(COMMON_TEXT, "actability_in_quest_journal")), FONT_COLOR_HEX.BLUE, actability.point)
+    self:SetText(str)
+    self:SetHeight(self:GetTextHeight())
+    self:Show(true)
+  end
+  return widget
+end
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+function SetViewOfQuestJournal(id, parent, journalType)
+  local frame = UIParent:CreateWidget("emptywidget", id, parent)
+  local bg = frame:CreateImageDrawable(TEXTURE_PATH.QUEST_LIST, "background")
+  bg:SetCoords(0, 0, 376, 462)
+  bg:AddAnchor("TOPLEFT", frame, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", frame, 0, 0)
+  local titleInset = {
+    questList = sideMargin / 2,
+    task = sideMargin / 3,
+    hidden = sideMargin / 3,
+    cinemaView = sideMargin / 3
+  }
+  local title = frame:CreateChildWidget("label", "title", 0, true)
+  title:SetHeight(FONT_SIZE.XLARGE)
+  title:AddAnchor("TOPLEFT", frame, sideMargin / 1.5, titleInset[journalType])
+  title:AddAnchor("TOPRIGHT", frame, -sideMargin / 1.5, titleInset[journalType])
+  title.style:SetEllipsis(true)
+  title.style:SetAlign(ALIGN_CENTER)
+  title.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.XLARGE)
+  ApplyTextColor(title, FONT_COLOR.HIGH_TITLE)
+  local OnEnter = function(self)
+    if self.style:GetTextWidth(self:GetText()) <= self:GetWidth() then
+      return
+    end
+    local anchorInfos = {
+      myAnchor = "TOPLEFT",
+      targetAnchor = "BOTTOMRIGHT",
+      x = 0,
+      y = 0
+    }
+    ShowTextTooltip(self, nil, self:GetText(), anchorInfos)
+  end
+  title:SetHandler("OnEnter", OnEnter)
+  local OnLeave = function()
+    HideTextTooltip()
+  end
+  title:SetHandler("OnLeave", OnLeave)
+  local scrollWnd = CreateScrollWindow(frame, frame:GetId() .. ".scrollWnd", 0)
+  scrollWnd:AddAnchor("TOPLEFT", frame, sideMargin + 5, titleMargin)
+  scrollWnd:AddAnchor("BOTTOMRIGHT", frame, -sideMargin, bottomMargin)
+  frame.scrollWnd = scrollWnd
+  local width = scrollWnd:GetWidth() - scrollWnd.scroll.vs:GetWidth() - sideMargin / 2
+  local width_2 = scrollWnd:GetWidth() - scrollWnd.scroll.vs:GetWidth() - sideMargin
+  local gradeMarker = CreateQuestGradeMarker(frame)
+  local dailyMarker = CreateDailyMarker(frame)
+  local repeatableMarker = CreateRepeatableQuestMarker(frame)
+  if journalType ~= "cinemaView" then
+    local summary = scrollWnd.content:CreateChildWidget("textbox", "summary", 0, true)
+    summary:Show(false)
+    summary:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+    summary:SetExtent(width, FONT_SIZE.MIDDLE)
+    summary.style:SetSnap(true)
+    summary.style:SetAlign(ALIGN_TOP_LEFT)
+    ApplyTextColor(summary, FONT_COLOR.MIDDLE_TITLE)
+  end
+  local function GetRelateButton()
+    if frame.GetRelateButton == nil then
+      return
+    end
+    return frame.GetRelateButton()
+  end
+  local function GetAffectedButton()
+    if frame.GetAffectedButton == nil then
+      return
+    end
+    return frame.GetAffectedButton()
+  end
+  if journalType == "questList" or journalType == "task" then
+    local function CreateObjectiveFrame(id, parent)
+      local objFrame = UIParent:CreateWidget("emptywidget", id, parent)
+      local SettingObjective = function(widget)
+        widget:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+        widget.style:SetSnap(true)
+        widget.style:SetAlign(ALIGN_LEFT)
+        ApplyTextColor(widget, FONT_COLOR.DEFAULT)
+      end
+      local objDesc = objFrame:CreateChildWidget("textbox", "objDesc", 0, true)
+      objDesc:AddAnchor("TOPLEFT", objFrame, 0, 0)
+      SettingObjective(objDesc)
+      for i = 1, MAX_COUNT.OBJECTIVE do
+        local objective = objFrame:CreateChildWidget("textbox", "objective", i, true)
+        SettingObjective(objective)
+        DrawRoundDingbat(objective)
+        if i ~= 1 then
+          objective:AddAnchor("TOPLEFT", objFrame.objective[i - 1], "BOTTOMLEFT", 0, sideMargin / 4)
+        end
+      end
+      function objFrame:SetFrameWidth(width)
+        self:SetWidth(width)
+        local width_2 = width - sideMargin / 2
+        self.objDesc:SetWidth(width)
+        for i = 1, MAX_COUNT.OBJECTIVE do
+          self.objective[i]:SetWidth(width_2)
+        end
+      end
+      function objFrame:FillObjective(questType)
+        local idx = IndexFromQuestType(questType)
+        local objSize = X2Quest:GetQuestJournalObjectiveCount(idx)
+        if objSize == 0 then
+          self:Show(false)
+          return
+        end
+        self.objDesc:Show(false)
+        for i = 1, MAX_COUNT.OBJECTIVE do
+          self.objective[i]:Show(false)
+        end
+        local height = 0
+        local function SetObjDesc(str)
+          if str == "" or str == nil then
+            objDesc:Show(false)
+            return
+          end
+          objDesc:SetText(str)
+          objDesc:SetHeight(objDesc:GetTextHeight())
+          objDesc:Show(true)
+          height = height + objDesc:GetTextHeight()
+        end
+        local descStr = ""
+        if X2Quest:IsSelectiveQuest(questType) and not IsCompleteQuest(questType) then
+          descStr = string.format("- %s", locale.questContext.selectiveObj)
+        elseif X2Quest:NowIsAggroComponent(questType) then
+          descStr = string.format("- %s", locale.questContext.aggroObj)
+        elseif X2Quest:IsScoreQuest(questType) and not IsCompleteQuest(questType) then
+          local scoreObjStr = X2Quest:GetScoreQuestObjective(questType)
+          if scoreObjStr ~= nil then
+            local cnt = X2Quest:GetScoreQuestCurrentScore(questType)
+            local maxCnt = X2Quest:GetScoreQuestDoneScore(questType)
+            descStr = string.format([[
+- %s
+- %s %d/%d]], scoreObjStr, locale.questContext.scoreCount, cnt, maxCnt)
+          end
+        elseif X2Quest:IsGroupQuest(questType) and not IsCompleteQuest(questType) then
+          descStr = string.format("- %s", locale.questContext.groupObj)
+        end
+        SetObjDesc(descStr)
+        local objTexts = {}
+        for j = 1, objSize do
+          local obj = X2Quest:GetActiveQuestObjectiveText(questType, j)
+          if obj == false then
+            break
+          end
+          objTexts[j] = obj
+        end
+        for k = 1, #objTexts do
+          local objective = self.objective[k]
+          local str = objTexts[k]
+          if X2Quest:IsGroupQuest(questType) and not IsCompleteQuest(questType) then
+            str = string.format("[%s] %s", str, locale.questContext.questComplete)
+          end
+          objective:SetText(str)
+          objective:Show(true)
+          objective:SetHeight(objective:GetTextHeight())
+          height = height + objective:GetTextHeight()
+          if k ~= #objTexts then
+            height = height + sideMargin / 4
+          end
+          if k == 1 then
+            if objDesc:IsVisible() then
+              objective:AddAnchor("TOPLEFT", objDesc, "BOTTOMLEFT", sideMargin / 2, sideMargin / 3)
+              height = height + sideMargin / 3
+            else
+              objective:AddAnchor("TOPLEFT", self, sideMargin / 2, 0)
+            end
+          end
+        end
+        if height == 0 then
+          self:Show(false)
+          return
+        end
+        self:Show(true)
+        self:SetHeight(height)
+      end
+      return objFrame
+    end
+    local objFrame = CreateObjectiveFrame("objFrame", scrollWnd.content)
+    scrollWnd.content.objFrame = objFrame
+  end
+  if journalType == "questList" then
+    local bottomSmoothImg = scrollWnd.content:CreateImageDrawable(TEXTURE_PATH.QUEST_LIST, "overlay")
+    bottomSmoothImg:SetCoords(0, 502, 289, 10)
+    bottomSmoothImg:SetColor(1, 1, 1, 1)
+    bottomSmoothImg:SetExtent(289, 10)
+    bottomSmoothImg:AddAnchor("BOTTOMLEFT", scrollWnd.content, 30, 5)
+    local status = scrollWnd.content:CreateChildWidget("textbox", "status", 0, true)
+    status:Show(false)
+    status:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+    status:SetHeight(FONT_SIZE.MIDDLE)
+    status.style:SetAlign(ALIGN_TOP_LEFT)
+    status.style:SetSnap(true)
+    ApplyTextColor(status, FONT_COLOR.BLUE)
+    local mainBody = scrollWnd.content:CreateChildWidget("textbox", "mainBody", 0, true)
+    mainBody:Show(false)
+    mainBody:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+    mainBody.style:SetAlign(ALIGN_TOP_LEFT)
+    mainBody.style:SetSnap(true)
+    ApplyTextColor(mainBody, FONT_COLOR.DEFAULT)
+    local function CreateQuestBubbleFrame(id, parent)
+      local frame = UIParent:CreateWidget("gametooltip", id, parent)
+      frame:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+      frame:SetAutoWordwrap(true)
+      frame.style:SetSnap(true)
+      ApplyTextColor(frame, FONT_COLOR.DEFAULT)
+      local bg = frame:CreateImageDrawable(TEXTURE_PATH.DEFAULT, "background")
+      bg:SetCoords(635, 582, -274, 413)
+      bg:AddAnchor("TOPLEFT", frame, -22, -20)
+      bg:AddAnchor("BOTTOMRIGHT", frame, 22, 30)
+      ApplyTextureColor(bg, TEXTURE_COLOR.TYPE3_BROWN)
+      function frame:FillQuestBubble(questType)
+        local bubbles = X2Quest:AcceptBubbleText(questType)
+        if bubbles == nil or #bubbles == 0 then
+          self:ClearLines()
+          self:Show(false)
+          return
+        end
+        self:ClearLines()
+        local DecoSystemChatBubble = function(str)
+          return string.format(localeView.questContextList.systemChatBubbleDecoFormat, str)
+        end
+        local RemovedGestureText = function(str)
+          return string.gsub(str, "/(%w+) ", "")
+        end
+        local height = 0
+        for i = 1, #bubbles do
+          local speech = bubbles[i]
+          if speech.kind == CBK_SYSTEM then
+            speech.text = DecoSystemChatBubble(speech.text)
+          elseif bubbles[i - 1] == nil or bubbles[i - 1].who ~= speech.who then
+            local str = string.format("%s%s", FONT_COLOR_HEX.MIDDLE_TITLE, speech.who)
+            local index = self:AddLine(str, FONT_PATH.DEFAULT, FONT_SIZE.LARGE, "left", ALIGN_LEFT, 0)
+            if i ~= 1 then
+              self:AttachUpperSpaceLine(index, sideMargin / 3)
+            end
+            self:AttachLowerSpaceLine(index, 3)
+          end
+          local index = self:AddLine(RemovedGestureText(speech.text), FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE, "left", ALIGN_LEFT, sideMargin / 2)
+          self:AttachLowerSpaceLine(index, sideMargin / 3)
+        end
+        frame:Show(true)
+      end
+      return frame
+    end
+    local questBubbleFrame = CreateQuestBubbleFrame("questBubbleFrame", scrollWnd.content)
+    scrollWnd.content.questBubbleFrame = questBubbleFrame
+  end
+  local function CreateDefaultRewardFrame(id, parent)
+    local frame = UIParent:CreateWidget("emptywidget", id, parent)
+    local title = frame:CreateChildWidget("label", "title", 0, true)
+    title:Show(false)
+    title:SetHeight(FONT_SIZE.LARGE)
+    title:SetAutoResize(true)
+    title:SetText(locale.questContext.compensation)
+    title.style:SetFontSize(FONT_SIZE.LARGE)
+    title:AddAnchor("TOPLEFT", frame, 0, 0)
+    ApplyTextColor(title, FONT_COLOR.MIDDLE_TITLE)
+    local rewardExp = CreateQuestRewardExpDisplay("rewardExp", frame)
+    rewardExp:Show(false)
+    frame.rewardExp = rewardExp
+    local rewardMoney = CreateQuestRewardMoneyDisplay("rewardMoney", frame)
+    rewardMoney:Show(false)
+    frame.rewardMoney = rewardMoney
+    local rewardAAPoint = CreateQuestRewardAAPointDisplay("rewardAAPoint", frame)
+    rewardAAPoint:Show(false)
+    frame.rewardAAPoint = rewardAAPoint
+    local rewardExpeditionExp = CreateQuestRewardExpeditionExpDisplay("rewardExpeditionExp", frame)
+    rewardExpeditionExp:Show(false)
+    frame.rewardExpeditionExp = rewardExpeditionExp
+    local rewardLaborPower = CreateQuestRewardLaborPowerDisplay("rewardLaborPower", frame)
+    rewardLaborPower:Show(false)
+    frame.rewardLaborPower = rewardLaborPower
+    local rewardHonorPoint = CreateQuestRewardHonorPointDisplay("rewardHonorPoint", frame)
+    rewardHonorPoint:Show(false)
+    frame.rewardHonorPoint = rewardHonorPoint
+    local rewardDisHonorPoint = CreateQuestRewardDisHonorPointDisplay("rewardDisHonorPoint", frame)
+    rewardDisHonorPoint:Show(false)
+    frame.rewardDisHonorPoint = rewardDisHonorPoint
+    local rewardLivingPoint = CreateQuestRewardLivingPointDisplay("rewardLivingPoint", frame)
+    rewardLivingPoint:Show(false)
+    frame.rewardLivingPoint = rewardLivingPoint
+    local rewardContributionPoint = CreateQuestRewardContributionPointDisplay("rewardContributionPoint", frame)
+    rewardContributionPoint:Show(false)
+    frame.rewardContributionPoint = rewardContributionPoint
+    local rewardLeadershipPoint = CreateQuestRewardLeadershipPointDisplay("rewardLeadershipPoint", frame)
+    rewardLeadershipPoint:Show(false)
+    frame.rewardLeadershipPoint = rewardLeadershipPoint
+    local rewardAppellation = CreateQuestAppellationDisplay("rewardAppellation", frame)
+    rewardAppellation:Show(false)
+    frame.rewardAppellation = rewardAppellation
+    local rewardActability = CreateQuestRewardActabilityDisplay("rewardActability", frame)
+    rewardActability:Show(false)
+    frame.rewardActability = rewardActability
+    local CreateRewardItem = function(parent, index)
+      local itemName = parent:CreateChildWidget("label", "itemName", index, true)
+      itemName:Show(false)
+      itemName:SetHeight(ICON_SIZE.DEFAULT)
+      itemName:SetInset(50, 0, 0, 0)
+      itemName.style:SetAlign(ALIGN_LEFT)
+      itemName:SetLimitWidth(true)
+      ApplyTextColor(itemName, FONT_COLOR.REWARD)
+      local itemIcon = CreateSlotItemButton("itemIcon", itemName)
+      itemIcon:Show(true)
+      itemIcon:AddAnchor("LEFT", itemName, 0, 0)
+      itemName.itemIcon = itemIcon
+      local bg = itemName:CreateImageDrawable(TEXTURE_PATH.REWARD, "background")
+      bg:SetCoords(0, 0, 198, 64)
+      bg:SetExtent(198, 64)
+      bg:AddAnchor("LEFT", itemName, -10, -1)
+      bg:AddAnchor("RIGHT", itemName, 30, 0)
+    end
+    local rewardItemFrame = frame:CreateChildWidget("emptywidget", "rewardItemFrame", 0, true)
+    rewardItemFrame:Show(false)
+    rewardItemFrame.itemName = {}
+    local inset = ICON_SIZE.DEFAULT + 5
+    for i = 1, MAX_COUNT.ITEM do
+      CreateRewardItem(rewardItemFrame, i)
+      rewardItemFrame.itemName[i]:AddAnchor("TOPLEFT", rewardItemFrame, 0, (i - 1) * inset)
+    end
+    function frame:SetFrameWidth(width)
+      self:SetWidth(width)
+      local width_2 = width - sideMargin / 2
+      self.rewardExp:SetWidth(width_2)
+      self.rewardMoney:SetWidth(width_2)
+      self.rewardAAPoint:SetWidth(width_2)
+      self.rewardExpeditionExp:SetWidth(width_2)
+      self.rewardLaborPower:SetWidth(width_2)
+      self.rewardHonorPoint:SetWidth(width_2)
+      self.rewardDisHonorPoint:SetWidth(width_2)
+      self.rewardLivingPoint:SetWidth(width_2)
+      self.rewardContributionPoint:SetWidth(width_2)
+      self.rewardLeadershipPoint:SetWidth(width_2)
+      self.rewardItemFrame:SetWidth(width_2)
+      self.rewardActability:SetWidth(width_2)
+      for i = 1, MAX_COUNT.ITEM do
+        self.rewardItemFrame.itemName[i]:SetWidth(230)
+      end
+    end
+    function frame:FillItem(questType)
+      local count = X2Quest:GetQuestContextRewardItemAllCount(questType)
+      if count == nil or count == 0 then
+        self.rewardItemFrame:Show(false)
+      end
+      for i = 1, MAX_COUNT.ITEM do
+        self.rewardItemFrame.itemName[i]:Show(false)
+        self.rewardItemFrame.itemName[i].itemIcon:Init()
+      end
+      for i = 1, count do
+        local info = X2Quest:GetQuestContextItemTooltip(questType, i)
+        if info ~= nil then
+          local itemCount = X2Quest:GetQuestContextRewardItemCount(questType, i)
+          self.rewardItemFrame.itemName[i]:Show(true)
+          self.rewardItemFrame.itemName[i]:SetText(info.name)
+          self.rewardItemFrame.itemName[i].itemIcon:SetItem(info.itemType, info.itemGrade, itemCount)
+        end
+      end
+      self.rewardItemFrame:Show(true)
+      local height = count * self.rewardItemFrame.itemName[1]:GetHeight() + (count - 1) * 5
+      self.rewardItemFrame:SetHeight(height)
+    end
+    local GetDefaultRewardInfo = function(questType)
+      local info = {
+        exp = X2Quest:GetQuestContextRewardExp(questType),
+        money = X2Quest:GetQuestContextRewardCopper(questType),
+        aaPoint = X2Quest:GetQuestContextRewardAAPoint(questType),
+        expeditionExp = X2Quest:RewardExpeditionExp(questType),
+        laborPower = X2Quest:RewardLaborPower(questType),
+        honorPoint = X2Quest:RewardHonorPoint(questType),
+        disHonorPoint = X2Quest:RewardCrimePoint(questType),
+        livingPoint = X2Quest:RewardLivingPoint(questType),
+        contributionPoint = X2Quest:RewardContributionPoint(questType),
+        leadershipPoint = X2Quest:RewardLeadershipPoint(questType),
+        appellationInfo = X2Quest:GetQuestContextRewardAppellation(questType),
+        itemCount = X2Quest:GetQuestContextRewardItemAllCount(questType),
+        actability = X2Quest:RewardActability(questType)
+      }
+      if info.exp == "0" then
+        info.exp = nil
+      end
+      if info.money == 0 then
+        info.money = nil
+      end
+      if info.aaPoint == 0 then
+        info.aaPoint = nil
+      end
+      if info.itemCount == 0 then
+        info.itemCount = nil
+      end
+      return info
+    end
+    local ExistDefaultRewards = function(rewardInfos)
+      if rewardInfos.exp == nil and rewardInfos.money == nil and rewardInfos.laborPower == nil and rewardInfos.aaPoint == nil and rewardInfos.honorPoint == nil and rewardInfos.disHonorPoint == nil and rewardInfos.livingPoint == nil and rewardInfos.leadershipPoint == nil and rewardInfos.appellationInfo == nil and rewardInfos.itemCount == nil and rewardInfos.contributionPoint == nil and rewardInfos.expeditionExp == nil then
+        return false
+      end
+      return true
+    end
+    local function RewardLabelFormatAnchor(widget, target)
+      if target == nil then
+        widget:ClearValue()
+        return target
+      end
+      if not widget:IsVisible() then
+        return target
+      end
+      local xOffset = 0
+      if target == frame.title then
+        xOffset = sideMargin / 2
+      end
+      widget:AddAnchor("TOPLEFT", target, "BOTTOMLEFT", xOffset, sideMargin / 2)
+      frame:SetHeight(frame:GetHeight() + sideMargin / 2 + widget:GetHeight())
+    end
+    local function CheckTarget(target)
+      local CheckVisible = function(widget)
+        return widget:IsVisible()
+      end
+      if CheckVisible(frame.rewardExp) then
+        return frame.rewardExp
+      end
+      return frame.defaultRewardTitle
+    end
+    function frame:FillDefaultRewards(questType)
+      local rewardInfos = GetDefaultRewardInfo(questType)
+      if not ExistDefaultRewards(rewardInfos) then
+        self:Show(false)
+        return
+      end
+      local yInset = sideMargin / 2
+      self:Show(true)
+      self.title:Show(true)
+      self:SetHeight(self.title:GetHeight() + yInset)
+      local target = self.title
+      local function GetOffsetX()
+        if target == self.title then
+          return sideMargin / 2
+        end
+        return 0
+      end
+      self.rewardExp:UpdateValue(rewardInfos.exp)
+      if self.rewardExp:IsVisible() then
+        self.rewardExp:AddAnchor("TOPLEFT", target, "BOTTOMLEFT", GetOffsetX(), yInset)
+        target = self.rewardExp
+        self:SetHeight(self:GetHeight() + yInset + self.rewardExp:GetHeight())
+      end
+      self.rewardMoney:UpdateValue(rewardInfos.money)
+      if self.rewardMoney:IsVisible() then
+        self.rewardMoney:AddAnchor("TOPLEFT", target, "BOTTOMLEFT", GetOffsetX(), yInset)
+        target = self.rewardMoney
+        self:SetHeight(self:GetHeight() + yInset + self.rewardMoney:GetHeight())
+      end
+      self.rewardAAPoint:UpdateValue(rewardInfos.aaPoint)
+      if self.rewardAAPoint:IsVisible() then
+        self.rewardAAPoint:AddAnchor("TOPLEFT", target, "BOTTOMLEFT", GetOffsetX(), yInset)
+        target = self.rewardAAPoint
+        self:SetHeight(self:GetHeight() + yInset + self.rewardAAPoint:GetHeight())
+      end
+      self.rewardExpeditionExp:UpdateValue(rewardInfos.expeditionExp)
+      if self.rewardExpeditionExp:IsVisible() then
+        self.rewardExpeditionExp:AddAnchor("TOPLEFT", target, "BOTTOMLEFT", GetOffsetX(), yInset)
+        target = self.rewardExpeditionExp
+        self:SetHeight(self:GetHeight() + yInset + self.rewardExpeditionExp:GetHeight())
+      end
+      self.rewardLaborPower:UpdateValue(rewardInfos.laborPower)
+      if self.rewardLaborPower:IsVisible() then
+        self.rewardLaborPower:AddAnchor("TOPLEFT", target, "BOTTOMLEFT", GetOffsetX(), yInset)
+        target = self.rewardLaborPower
+        self:SetHeight(self:GetHeight() + yInset + self.rewardLaborPower:GetHeight())
+      end
+      self.rewardHonorPoint:UpdateValue(rewardInfos.honorPoint)
+      if self.rewardHonorPoint:IsVisible() then
+        self.rewardHonorPoint:AddAnchor("TOPLEFT", target, "BOTTOMLEFT", GetOffsetX(), yInset)
+        target = self.rewardHonorPoint
+        self:SetHeight(self:GetHeight() + yInset + self.rewardHonorPoint:GetHeight())
+      end
+      self.rewardDisHonorPoint:UpdateValue(rewardInfos.disHonorPoint)
+      if self.rewardDisHonorPoint:IsVisible() then
+        self.rewardDisHonorPoint:AddAnchor("TOPLEFT", target, "BOTTOMLEFT", GetOffsetX(), yInset)
+        target = self.rewardDisHonorPoint
+        self:SetHeight(self:GetHeight() + yInset + self.rewardDisHonorPoint:GetHeight())
+      end
+      self.rewardLivingPoint:UpdateValue(rewardInfos.livingPoint)
+      if self.rewardLivingPoint:IsVisible() then
+        self.rewardLivingPoint:AddAnchor("TOPLEFT", target, "BOTTOMLEFT", GetOffsetX(), yInset)
+        target = self.rewardLivingPoint
+        self:SetHeight(self:GetHeight() + yInset + self.rewardLivingPoint:GetHeight())
+      end
+      self.rewardContributionPoint:UpdateValue(rewardInfos.contributionPoint)
+      if self.rewardContributionPoint:IsVisible() then
+        self.rewardContributionPoint:AddAnchor("TOPLEFT", target, "BOTTOMLEFT", GetOffsetX(), yInset)
+        target = self.rewardContributionPoint
+        self:SetHeight(self:GetHeight() + yInset + self.rewardContributionPoint:GetHeight())
+      end
+      self.rewardLeadershipPoint:UpdateValue(rewardInfos.leadershipPoint)
+      if self.rewardLeadershipPoint:IsVisible() then
+        self.rewardLeadershipPoint:AddAnchor("TOPLEFT", target, "BOTTOMLEFT", GetOffsetX(), yInset)
+        target = self.rewardLeadershipPoint
+        self:SetHeight(self:GetHeight() + yInset + self.rewardLeadershipPoint:GetHeight())
+      end
+      self.rewardAppellation:UpdateValue(rewardInfos.appellationInfo)
+      if self.rewardAppellation:IsVisible() then
+        self.rewardAppellation:AddAnchor("TOPLEFT", target, "BOTTOMLEFT", GetOffsetX(), yInset)
+        target = self.rewardAppellation
+        self:SetHeight(self:GetHeight() + yInset + self.rewardAppellation:GetHeight())
+      end
+      self.rewardActability:UpdateValue(rewardInfos.actability)
+      if self.rewardActability:IsVisible() then
+        self.rewardActability:AddAnchor("TOPLEFT", target, "BOTTOMLEFT", GetOffsetX(), yInset)
+        target = self.rewardActability
+        self:SetHeight(self:GetHeight() + yInset + self.rewardActability:GetHeight())
+      end
+      self:FillItem(questType)
+      if self.rewardItemFrame:IsVisible() then
+        self.rewardItemFrame:AddAnchor("TOPLEFT", target, "BOTTOMLEFT", 0, yInset)
+        self:SetHeight(self:GetHeight() + self.rewardItemFrame:GetHeight())
+      end
+    end
+    return frame
+  end
+  local defaultRewardFrame = CreateDefaultRewardFrame("defaultRewardFrame", scrollWnd.content)
+  scrollWnd.content.defaultRewardFrame = defaultRewardFrame
+  local function CreateSelectiveRewardFrame(id, parent)
+    local frame = UIParent:CreateWidget("emptywidget", id, parent)
+    local title = frame:CreateChildWidget("label", "title", 0, true)
+    title:SetHeight(FONT_SIZE.LARGE)
+    title:SetAutoResize(true)
+    title:SetText(locale.questContext.selectiveCompensation)
+    title.style:SetFontSize(FONT_SIZE.LARGE)
+    title:AddAnchor("TOPLEFT", frame, 0, 0)
+    ApplyTextColor(title, FONT_COLOR.MIDDLE_TITLE)
+    local selectionDesc = frame:CreateChildWidget("label", "selectionDesc", 0, true)
+    selectionDesc:Show(false)
+    selectionDesc:SetAutoResize(true)
+    selectionDesc:SetHeight(FONT_SIZE.MIDDLE)
+    selectionDesc:AddAnchor("TOPLEFT", title, "BOTTOMLEFT", 0, 5)
+    selectionDesc:SetText(GetCommonText("select_quest_item"))
+    ApplyTextColor(selectionDesc, FONT_COLOR.BLUE)
+    local CreateSelectiveRewardItem = function(parent, index)
+      local itemName = parent:CreateChildWidget("button", "itemName", index, true)
+      ApplyButtonSkin(itemName, BUTTON_CONTENTS.QUEST_REWARD_ITEM)
+      local itemIcon = CreateSlotItemButton("itemIcon", itemName)
+      itemIcon:Show(true)
+      itemIcon:AddAnchor("LEFT", itemName, 0, 0)
+      itemName.itemIcon = itemIcon
+    end
+    local function SetRelateButton(enable)
+      local button = GetRelateButton()
+      if button == nil then
+        return
+      end
+      button:Enable(enable)
+      local affectedButton = GetAffectedButton()
+      if affectedButton == nil then
+        return
+      end
+      affectedButton:Enable(enable)
+    end
+    local titleInset = title:GetHeight() + sideMargin / 2
+    local inset = ICON_SIZE.DEFAULT + 5
+    local target = title
+    for k = 1, MAX_COUNT.ITEM do
+      CreateSelectiveRewardItem(frame, k)
+      do
+        local button = frame.itemName[k]
+        if target == title then
+          button:AddAnchor("TOPLEFT", title, 10, (k - 1) * inset + titleInset)
+        else
+          button:AddAnchor("TOPLEFT", target, "BOTTOMLEFT", 0, 5)
+        end
+        target = button
+        local function ItemNameLeftClickFunc(self)
+          frame:Init()
+          if journalType == "questList" then
+            return
+          end
+          SetBGPushed(self, true, GetButtonDefaultFontColor())
+          frame.selectiveItemIndex = k
+          SetRelateButton(true)
+        end
+        ButtonOnClickHandler(button, ItemNameLeftClickFunc)
+      end
+    end
+    function frame:Init()
+      self.selectiveItemIndex = 0
+      for i = 1, MAX_COUNT.ITEM do
+        SetBGPushed(self.itemName[i], false, GetButtonDefaultFontColor())
+      end
+    end
+    function frame:SetFrameWidth(width)
+      self:SetWidth(width)
+    end
+    function frame:FillSelectiveItem(journalType, questType)
+      local count = X2Quest:GetQuestContextRewardSelectiveItemAllCount(questType)
+      if count == nil or count == 0 then
+        self:Show(false)
+        return
+      end
+      local additionalHeight = 0
+      local show = journalType == "cinemaView" and X2Quest:IsReadyForCompleteQuest(questType)
+      self.selectionDesc:Show(show)
+      if self.selectionDesc:IsVisible() then
+        self.itemName[1]:RemoveAllAnchors()
+        self.itemName[1]:AddAnchor("TOPLEFT", self.selectionDesc, "BOTTOMLEFT", 10, 10)
+        additionalHeight = additionalHeight + self.selectionDesc:GetHeight()
+      else
+        self.itemName[1]:RemoveAllAnchors()
+        self.itemName[1]:AddAnchor("TOPLEFT", self.title, "BOTTOMLEFT", 10, 10)
+      end
+      SetRelateButton(false)
+      for i = 1, MAX_COUNT.ITEM do
+        self.itemName[i]:Show(false)
+        self.itemName[i].itemIcon:Init()
+      end
+      for i = 1, count do
+        local info = X2Quest:GetQuestContextSelectiveItemTooltip(questType, i)
+        if info ~= nil then
+          local itemCount = X2Quest:GetQuestContextRewardSelectiveItemCount(questType, i)
+          self.itemName[i]:Show(true)
+          self.itemName[i]:SetText(info.name)
+          self.itemName[i].itemIcon:SetItem(info.itemType, info.itemGrade, itemCount)
+        end
+      end
+      self:Show(true)
+      self:SetHeight(count * inset + titleInset + additionalHeight)
+    end
+    return frame
+  end
+  local selectiveRewardFrame = CreateSelectiveRewardFrame("selectiveRewardFrame", scrollWnd.content)
+  scrollWnd.content.selectiveRewardFrame = selectiveRewardFrame
+  function frame:EnableSelectveItems(enable)
+    for i = 1, MAX_COUNT.ITEM do
+      self.scrollWnd.content.selectiveRewardFrame.itemName[i]:Enable(enable)
+    end
+  end
+  function frame:ExistSlectiveReward()
+    return scrollWnd.content.selectiveRewardFrame:IsVisible()
+  end
+  function frame:ExistRewards()
+    return scrollWnd.content.defaultRewardFrame:IsVisible() or self:ExistSlectiveReward()
+  end
+  function frame:GetSelectionDescWidget()
+    return frame.scrollWnd.content.selectiveRewardFrame.selectionDesc
+  end
+  return frame
+end
+function CreateQuestJournal(id, parent, journalType)
+  local frame = SetViewOfQuestJournal(id, parent, journalType)
+  local FillSummary = function(widget, text)
+    if text == nil or text == "" then
+      widget:Show(false)
+      return
+    end
+    widget:Show(true)
+    widget:SetText(text)
+    widget:SetHeight(widget:GetTextHeight())
+  end
+  function frame:SetContentsWidth()
+    local noneDingbatWidth = self.scrollWnd.content:GetWidth()
+    local dingbatWidth = self.scrollWnd.content:GetWidth() - sideMargin / 2
+    if self.scrollWnd.content.summary ~= nil then
+      self.scrollWnd.content.summary:SetWidth(noneDingbatWidth)
+    end
+    self.scrollWnd.content.defaultRewardFrame:SetFrameWidth(noneDingbatWidth)
+    self.scrollWnd.content.selectiveRewardFrame:SetFrameWidth(noneDingbatWidth)
+    if self.scrollWnd.content.mainBody ~= nil then
+      self.scrollWnd.content.mainBody:SetWidth(noneDingbatWidth)
+    end
+    if self.scrollWnd.content.objFrame ~= nil then
+      self.scrollWnd.content.objFrame:SetFrameWidth(noneDingbatWidth)
+    end
+    if self.scrollWnd.content.status ~= nil then
+      self.scrollWnd.content.status:SetWidth(noneDingbatWidth)
+    end
+    if self.scrollWnd.content.questBubbleFrame ~= nil then
+      self.scrollWnd.content.questBubbleFrame:SetWidth(noneDingbatWidth - sideMargin)
+    end
+  end
+  function frame:GetCurQuestType()
+    return self.questType
+  end
+  function frame:SetCurQuestType(questType)
+    self.questType = questType
+  end
+  function frame:GetSelectiveItemIndex()
+    return self.scrollWnd.content.selectiveRewardFrame.selectiveItemIndex
+  end
+  function frame:Init()
+    ResetScroll(self.scrollWnd, 0)
+    self.title:SetText("")
+    self.gradeMarker:Show(false)
+    self.dailyMarker:Show(false)
+    self.repeatableMarker:Show(false)
+    if self.scrollWnd.content.summary ~= nil then
+      self.scrollWnd.content.summary:Show(false)
+    end
+    if self.scrollWnd.content.objFrame ~= nil then
+      self.scrollWnd.content.objFrame:Show(false)
+    end
+    if self.scrollWnd.content.status ~= nil then
+      self.scrollWnd.content.status:Show(false)
+    end
+    self.scrollWnd.content.defaultRewardFrame:Show(false)
+    self.scrollWnd.content.selectiveRewardFrame:Show(false)
+    self.scrollWnd.content.selectiveRewardFrame:Init()
+    if self.scrollWnd.content.mainBody ~= nil then
+      self.scrollWnd.content.mainBody:Show(false)
+    end
+    if self.scrollWnd.content.questBubbleFrame ~= nil then
+      self.scrollWnd.content.questBubbleFrame:Show(false)
+    end
+  end
+  local function FillMainBody(journalType, questType)
+    local mainBody = frame.scrollWnd.content.mainBody
+    if mainBody == nil then
+      return
+    end
+    if journalType ~= "questList" then
+      return
+    end
+    mainBody:SetText("")
+    mainBody:Show(false)
+    local idx = IndexFromQuestType(questType)
+    local mainBodyText = X2Quest:GetQuestJournalMainBody(idx)
+    if mainBodyText == nil then
+      return
+    end
+    local ConvertSyntax = function(msg)
+      local temp = ""
+      for w in string.gfind(msg, ".") do
+        if w == "^" then
+          temp = temp .. "\n"
+        elseif w == "[" or w == "]" then
+        else
+          temp = temp .. w
+        end
+      end
+      return temp
+    end
+    mainBodyText = X2Util:ApplyUIMacroString(mainBodyText)
+    mainBodyText = ConvertSyntax(mainBodyText)
+    if mainBodyText == nil then
+      return
+    end
+    mainBody:SetText(mainBodyText)
+    mainBody:SetHeight(mainBody:GetTextHeight())
+    mainBody:Show(true)
+  end
+  local function FillStatus(journalType, questType)
+    local status = frame.scrollWnd.content.status
+    if status == nil then
+      return
+    end
+    if journalType ~= "questList" then
+      return
+    end
+    status:SetText("")
+    status:Show(false)
+    local GetQuestStatusMessage = function(questType)
+      local letItDone = X2Quest:IsLetItDoneQuestByType(questType)
+      local overDone = X2Quest:IsOverDoneQuestByType(questType)
+      local complete = IsCompleteQuest(questType)
+      if not letItDone and not overDone and not complete then
+        return
+      end
+      if letItDone then
+        return locale.questContext.letItDoneMessage
+      elseif overDone then
+        return locale.questContext.overDoneMessage
+      else
+        return locale.questContext.completeMessage
+      end
+    end
+    local msg = GetQuestStatusMessage(questType)
+    if msg == nil or msg == "" then
+      return
+    end
+    status:SetText(msg)
+    status:SetHeight(status:GetTextHeight())
+    status:Show(true)
+  end
+  local function FillMarker(questType)
+    local showDailyMarker, dayInfo = X2Quest:IsDailyQuest(questType)
+    local questGrade = X2Quest:GetQuestContextGrade(questType)
+    local repeatable = X2Quest:IsRepeatableQuest(questType)
+    local dailyMarker = frame.dailyMarker
+    local gradeMarker = frame.gradeMarker
+    local repeatableMarker = frame.repeatableMarker
+    dailyMarker:SetDailyMaker(showDailyMarker, dayInfo)
+    gradeMarker:Show(VisibleQuestGrade(questGrade))
+    repeatableMarker:Show(repeatable)
+    local target = frame
+    local myAnchor = "TOPRIGHT"
+    local targetAnchor = "TOPRIGHT"
+    local offsetX = 0
+    local offsetY = -18
+    if repeatable then
+      repeatableMarker:RemoveAllAnchors()
+      repeatableMarker:AddAnchor(myAnchor, target, targetAnchor, 0, offsetY)
+      target = repeatableMarker
+      targetAnchor = "BOTTOMLEFT"
+      myAnchor = "BOTTOMRIGHT"
+      offsetX = 8
+      offsetY = 2
+    end
+    if VisibleQuestGrade(questGrade) then
+      gradeMarker:RemoveAllAnchors()
+      gradeMarker:AddAnchor(myAnchor, target, targetAnchor, offsetX, offsetY)
+      gradeMarker:SetQuestGrade(questGrade)
+      target = gradeMarker
+      targetAnchor = "BOTTOMLEFT"
+      myAnchor = "BOTTOMRIGHT"
+      offsetX = 3
+      offsetY = 0
+    end
+    if showDailyMarker then
+      dailyMarker:RemoveAllAnchors()
+      dailyMarker:AddAnchor(myAnchor, target, targetAnchor, offsetX, offsetY)
+    end
+  end
+  function frame:FillJournal(journalType, questType)
+    if questType == nil then
+      self:Init()
+      ResetScroll(self.scrollWnd, 0)
+      return
+    end
+    self:Init()
+    local questName = ""
+    local summaryInfo = ""
+    if journalType == "hidden" then
+      questName = locale.questContext.hiddenQuest
+      summaryInfo = X2Quest:GetQuestContextReadySummary(questType)
+    elseif journalType == "task" then
+      questName = X2Quest:GetQuestContextMainTitle(questType)
+      summaryInfo = X2Quest:GetQuestContextProgressSummary(questType)
+    elseif journalType == "questList" then
+      local idx = IndexFromQuestType(questType)
+      questName = X2Quest:GetQuestJournalTitle(idx)
+      local objSize = X2Quest:GetQuestJournalObjectiveCount(idx)
+      for k = 1, objSize do
+        local obj = X2Quest:GetQuestJournalObjectiveText(idx, k)
+        if obj ~= nil and obj.summary ~= nil then
+          local msg = X2Util:ApplyUIMacroString(obj.summary)
+          summaryInfo = msg
+        end
+      end
+    elseif journalType == "cinemaView" then
+      if X2Quest:IsReadyForCompleteQuest(questType) then
+        questName = X2Locale:LocalizeUiText(QUEST_TEXT, "complete")
+      else
+        questName = X2Locale:LocalizeUiText(QUEST_TEXT, "ok")
+      end
+      self.title.style:SetFontSize(FONT_SIZE.XXLARGE)
+      self.title:SetInset(0, 2, 0, 0)
+    end
+    self.questType = questType
+    if questName ~= nil and questName ~= "" then
+      self.title:SetText(questName)
+    end
+    FillMarker(questType)
+    local target = self.scrollWnd.content
+    local yOffset = 0
+    local function GetAnchorY(offset)
+      if offset == 0 then
+        return 0
+      else
+        return sideMargin
+      end
+    end
+    if self.scrollWnd.content.summary ~= nil and summaryInfo ~= nil and summaryInfo ~= "" then
+      self.scrollWnd.content.summary:Show(true)
+      self.scrollWnd.content.summary:AddAnchor("TOPLEFT", target, 0, yOffset)
+      yOffset = yOffset + GetAnchorY(yOffset)
+      FillSummary(self.scrollWnd.content.summary, summaryInfo)
+      yOffset = yOffset + self.scrollWnd.content.summary:GetTextHeight()
+    end
+    if self.scrollWnd.content.objFrame ~= nil then
+      self.scrollWnd.content.objFrame:FillObjective(questType)
+      if self.scrollWnd.content.objFrame:IsVisible() then
+        yOffset = yOffset + GetAnchorY(yOffset)
+        if yOffset ~= 0 then
+          yOffset = yOffset - sideMargin / 2
+        end
+        self.scrollWnd.content.objFrame:AddAnchor("TOPLEFT", target, 0, yOffset)
+        yOffset = yOffset + self.scrollWnd.content.objFrame:GetHeight()
+      end
+    end
+    FillStatus(journalType, questType)
+    if self.scrollWnd.content.status ~= nil and self.scrollWnd.content.status:IsVisible() then
+      yOffset = yOffset + GetAnchorY(yOffset)
+      self.scrollWnd.content.status:AddAnchor("TOPLEFT", target, 0, yOffset)
+      yOffset = yOffset + self.scrollWnd.content.status:GetHeight()
+    end
+    self.scrollWnd.content.defaultRewardFrame:FillDefaultRewards(questType)
+    if self.scrollWnd.content.defaultRewardFrame:IsVisible() then
+      yOffset = yOffset + GetAnchorY(yOffset)
+      self.scrollWnd.content.defaultRewardFrame:AddAnchor("TOPLEFT", target, 0, yOffset)
+      yOffset = yOffset + self.scrollWnd.content.defaultRewardFrame:GetHeight()
+    end
+    self.scrollWnd.content.selectiveRewardFrame:FillSelectiveItem(journalType, questType)
+    if self.scrollWnd.content.selectiveRewardFrame:IsVisible() then
+      yOffset = yOffset + GetAnchorY(yOffset)
+      self.scrollWnd.content.selectiveRewardFrame:AddAnchor("TOPLEFT", target, 0, yOffset)
+      yOffset = yOffset + self.scrollWnd.content.selectiveRewardFrame:GetHeight()
+    end
+    if X2Quest:IsTaskQuest(questType) then
+      FillMainBody(journalType, questType)
+      if self.scrollWnd.content.mainBody ~= nil and self.scrollWnd.content.mainBody:IsVisible() then
+        yOffset = yOffset + GetAnchorY(yOffset)
+        self.scrollWnd.content.mainBody:AddAnchor("TOPLEFT", target, 0, yOffset)
+        yOffset = yOffset + self.scrollWnd.content.mainBody:GetHeight()
+      end
+    elseif self.scrollWnd.content.questBubbleFrame ~= nil then
+      self.scrollWnd.content.questBubbleFrame:FillQuestBubble(questType)
+      if self.scrollWnd.content.questBubbleFrame:IsVisible() then
+        yOffset = yOffset + GetAnchorY(yOffset) + sideMargin / 2.5
+        self.scrollWnd.content.questBubbleFrame:AddAnchor("TOPLEFT", target, sideMargin / 2, yOffset)
+        yOffset = yOffset + self.scrollWnd.content.questBubbleFrame:GetHeight() + sideMargin / 2
+      end
+    end
+    if self.JournalProc ~= nil then
+      self:JournalProc()
+    end
+    ResetScroll(self.scrollWnd, yOffset)
+  end
+  return frame
+end
+function CreateSmallJournalFrame(id, parent, journalType)
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local widget = CreateQuestJournal(id, parent, journalType)
+  widget:SetExtent(320, 430)
+  widget:SetContentsWidth()
+  local titleBar = CreateTitleBar(widget:GetId() .. ".titleBar", widget)
+  titleBar.closeButton:Show(false)
+  local button = widget:CreateChildWidget("button", "button", 0, true)
+  button:Show(true)
+  button:AddAnchor("BOTTOM", widget, 0, -sideMargin)
+  return widget
+end

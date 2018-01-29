@@ -1,0 +1,48 @@
+if X2Util:GetGameProvider() == TRION then
+  auctionLocale.icon = {
+    currentCoords = {
+      0,
+      42,
+      24,
+      21
+    },
+    directCoords = {
+      0,
+      21,
+      24,
+      21
+    }
+  }
+  auctionLocale.width = {
+    window = 900,
+    category = 230,
+    bidListCtrl = 620,
+    putupListCtrl = 650,
+    bidHistoryListCtrl = 860,
+    bidStateCol = 120,
+    itemlevelCol = 55,
+    itemConditionCol = 100,
+    gradeCombobox = 160,
+    timeCol = 60
+  }
+  auctionLocale.nameColWidth = {
+    bidTab = 195,
+    putupTab = 260,
+    bidHistoryTab = 330
+  }
+  auctionLocale.nameColLimitLen = {
+    bidTab = 40,
+    putupTab = 60,
+    bidHistoryTab = 70
+  }
+  auctionLocale.leftTimeColInset = 5
+  auctionLocale.categoryTooltip = true
+  auctionLocale.viewMatchWordBox = false
+  function auctionLocale:SetLayoutDirectBundleAmountLabel(label, target)
+    label:AddAnchor("TOPLEFT", target, "BOTTOMLEFT", 0, 3)
+    label.style:SetAlign(ALIGN_LEFT)
+  end
+  function auctionLocale:AnchorDirectBundlePrice(widget, target)
+    widget:AddAnchor("TOPLEFT", target, "BOTTOMLEFT", 0, 3)
+  end
+end

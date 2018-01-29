@@ -1,0 +1,354 @@
+local ML = expedMgmt.ML_VIEW
+function GetConvertingPosString(isOnline, posInfo)
+  local posStr = ""
+  if isOnline then
+    posStr = tostring(table.concat(posInfo, " < "))
+  else
+    posStr = GetWorldLeaveTime(posInfo)
+  end
+  return posStr
+end
+function SetViewOfExpeditionMemberList(id, parent)
+  EXPEDITION_MEMBER_COL = {
+    NAME = 1,
+    LV = 2,
+    CLASS = 3,
+    ROLE = 4,
+    POS = 5,
+    MEMO = 6,
+    ONLINE = 7,
+    PARTY = 8,
+    CONTRIBUTION = 9,
+    CHK = 10
+  }
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local frame = CreatePageScrollListCtrl(parent, "frame", 0)
+  frame:Show(true)
+  frame:AddAnchor("TOPLEFT", parent, 0, sideMargin / 2)
+  frame:AddAnchor("BOTTOMRIGHT", parent, 0, bottomMargin * 1.5)
+  function frame:CheckProc_inviteButton()
+    parent.inviteRaid:Enable(frame:GetSelctedCheckBoxs())
+    parent.summon:Enable(frame:GetSelctedCheckBoxs())
+  end
+  local function NameDataSetFunc(subItem, data, setValue)
+    if setValue then
+      subItem.nameLabel:SetText(data[EXPEDITION_MEMBER_COL.NAME])
+      subItem.selectCheck:Show(true)
+      subItem.selectCheck:Enable(data[EXPEDITION_MEMBER_COL.ONLINE])
+      subItem.selectCheck:SetChecked(data[EXPEDITION_MEMBER_COL.CHK], true)
+      subItem.icon:Show(data[EXPEDITION_MEMBER_COL.PARTY])
+      ChangeSubItemTextColorForOnline(subItem.nameLabel, data[EXPEDITION_MEMBER_COL.ONLINE])
+      if data[EXPEDITION_MEMBER_COL.NAME] == X2Unit:UnitName("player") then
+        subItem.selectCheck:Enable(false)
+      end
+    else
+      subItem.nameLabel:SetText("")
+      subItem.icon:Show(false)
+      subItem.selectCheck:SetChecked(false, false)
+      subItem.selectCheck:Show(false)
+      frame.allSelectCheck:SetChecked(false, false)
+    end
+  end
+  local ContributionPointSetFunc = function(subItem, data, setValue)
+    if setValue then
+      subItem:SetText(string.format("%d", data[EXPEDITION_MEMBER_COL.CONTRIBUTION]))
+      ChangeSubItemTextColorForOnline(subItem, data[EXPEDITION_MEMBER_COL.ONLINE])
+    end
+  end
+  local LevelDataSetFunc = function(subItem, data, setValue)
+    if setValue then
+      subItem:SetText(tostring(data[EXPEDITION_MEMBER_COL.LV]))
+      ChangeSubItemTextColorForOnline(subItem, data[EXPEDITION_MEMBER_COL.ONLINE])
+    end
+  end
+  local RoleDataSetFunc = function(subItem, data, setValue)
+    if setValue then
+      subItem.roleIcon:SetRoleIcon(data[EXPEDITION_MEMBER_COL.ROLE], 5, 8)
+    end
+  end
+  local PosDataSetFunc = function(subItem, data, setValue)
+    if setValue then
+      local posStr = GetConvertingPosString(data[EXPEDITION_MEMBER_COL.ONLINE], data[EXPEDITION_MEMBER_COL.POS])
+      subItem.posLabel:SetText(posStr)
+      ChangeSubItemTextColorForOnline(subItem.posLabel, data[EXPEDITION_MEMBER_COL.ONLINE])
+    end
+  end
+  local JobAscendingSortFunc = function(a, b)
+    local aString = GetCombinedAbilityName(a[ROWDATA_COLUMN_OFFSET + 1][EXPEDITION_MEMBER_COL.CLASS][1], a[ROWDATA_COLUMN_OFFSET + 1][EXPEDITION_MEMBER_COL.CLASS][2], a[ROWDATA_COLUMN_OFFSET + 1][EXPEDITION_MEMBER_COL.CLASS][3])
+    local bString = GetCombinedAbilityName(b[ROWDATA_COLUMN_OFFSET + 1][EXPEDITION_MEMBER_COL.CLASS][1], b[ROWDATA_COLUMN_OFFSET + 1][EXPEDITION_MEMBER_COL.CLASS][2], b[ROWDATA_COLUMN_OFFSET + 1][EXPEDITION_MEMBER_COL.CLASS][3])
+    return aString < bString and true or false
+  end
+  local JobDescendingSortFunc = function(a, b)
+    local aString = GetCombinedAbilityName(a[ROWDATA_COLUMN_OFFSET + 1][EXPEDITION_MEMBER_COL.CLASS][1], a[ROWDATA_COLUMN_OFFSET + 1][EXPEDITION_MEMBER_COL.CLASS][2], a[ROWDATA_COLUMN_OFFSET + 1][EXPEDITION_MEMBER_COL.CLASS][3])
+    local bString = GetCombinedAbilityName(b[ROWDATA_COLUMN_OFFSET + 1][EXPEDITION_MEMBER_COL.CLASS][1], b[ROWDATA_COLUMN_OFFSET + 1][EXPEDITION_MEMBER_COL.CLASS][2], b[ROWDATA_COLUMN_OFFSET + 1][EXPEDITION_MEMBER_COL.CLASS][3])
+    return aString > bString and true or false
+  end
+  local RoleAscendingSortFunc = function(a, b)
+    return a[ROWDATA_COLUMN_OFFSET + 1][EXPEDITION_MEMBER_COL.ROLE] < b[ROWDATA_COLUMN_OFFSET + 1][EXPEDITION_MEMBER_COL.ROLE] and true or false
+  end
+  local RoleDescendingSortFunc = function(a, b)
+    return a[ROWDATA_COLUMN_OFFSET + 1][EXPEDITION_MEMBER_COL.ROLE] > b[ROWDATA_COLUMN_OFFSET + 1][EXPEDITION_MEMBER_COL.ROLE] and true or false
+  end
+  local function RoleLayoutSetFunc(frame, rowIndex, colIndex, subItem)
+    CreateRoleIconDrawable(subItem)
+    subItem.roleIcon:SetExtent(expeditionLocale.width.memberListColumn[ML.ROLE], 25)
+  end
+  local PosAscendingSortFunc = function(a, b)
+    local aPos = GetConvertingPosString(a[ROWDATA_COLUMN_OFFSET + 1][EXPEDITION_MEMBER_COL.ONLINE], a[ROWDATA_COLUMN_OFFSET + 1][EXPEDITION_MEMBER_COL.POS])
+    local bPos = GetConvertingPosString(b[ROWDATA_COLUMN_OFFSET + 1][EXPEDITION_MEMBER_COL.ONLINE], b[ROWDATA_COLUMN_OFFSET + 1][EXPEDITION_MEMBER_COL.POS])
+    return aPos < bPos and true or false
+  end
+  local PosDescendingSortFunc = function(a, b)
+    local aPos = GetConvertingPosString(a[ROWDATA_COLUMN_OFFSET + 1][EXPEDITION_MEMBER_COL.ONLINE], a[ROWDATA_COLUMN_OFFSET + 1][EXPEDITION_MEMBER_COL.POS])
+    local bPos = GetConvertingPosString(b[ROWDATA_COLUMN_OFFSET + 1][EXPEDITION_MEMBER_COL.ONLINE], b[ROWDATA_COLUMN_OFFSET + 1][EXPEDITION_MEMBER_COL.POS])
+    return aPos < bPos and true or false
+  end
+  local PosLayoutSetFunc = function(frame, rowIndex, colIndex, subItem)
+    local posLabel = subItem:CreateChildWidget("label", "posLabel", 0, true)
+    posLabel:Raise()
+    posLabel:Show(true)
+    posLabel:AddAnchor("TOPLEFT", subItem, 10, 0)
+    posLabel:AddAnchor("BOTTOMRIGHT", subItem, -10, 0)
+    posLabel.style:SetEllipsis(true)
+    posLabel.style:SetAlign(ALIGN_LEFT)
+    ApplyTextColor(posLabel, FONT_COLOR.DEFAULT)
+  end
+  local NameColumnLayoutSetFunc = function(frame, rowIndex, colIndex, subItem)
+    local selectCheck = CreateCheckButton(subItem:GetId() .. ".selectCheck", subItem)
+    selectCheck:Show(false)
+    selectCheck:AddAnchor("LEFT", subItem, 5, -1)
+    subItem.selectCheck = selectCheck
+    subItem.selectCheck.rowIndex = rowIndex
+    function selectCheck:CheckBtnCheckChagnedProc(checked)
+      local data = frame:GetDataByViewIndex(rowIndex, colIndex)
+      data[EXPEDITION_MEMBER_COL.CHK] = checked
+      if not checked then
+        frame.allSelectCheck:SetChecked(false, false)
+      else
+        frame.allSelectCheck:SetChecked(frame:IsAllChecked(), false)
+      end
+      if frame.CheckProc_inviteButton ~= nil then
+        frame:CheckProc_inviteButton()
+      end
+    end
+    local icon = CreatePartyIconWidget(subItem)
+    icon:Show(false)
+    icon:AddAnchor("LEFT", subItem, 20, 1)
+    local nameLabel = subItem:CreateChildWidget("label", "nameLabel", 0, true)
+    nameLabel:Show(true)
+    nameLabel:SetExtent(140, 25)
+    nameLabel:AddAnchor("LEFT", icon, "RIGHT", 3, -1)
+    nameLabel.style:SetAlign(ALIGN_LEFT)
+    ApplyTextColor(nameLabel, FONT_COLOR.DEFAULT)
+  end
+  frame:InsertColumn(locale.faction.name, expeditionLocale.width.memberListColumn[ML.NAME], LCCIT_WINDOW, NameDataSetFunc, NameAscendingSortFunc, NameDescendingSortFunc, NameColumnLayoutSetFunc)
+  frame:InsertColumn(locale.auction.level, expeditionLocale.width.memberListColumn[ML.LEVEL], LCCIT_STRING, LevelDataSetFunc, LevelAscendingSortFunc, LevelDescendingSortFunc)
+  frame:InsertColumn(locale.community.job, expeditionLocale.width.memberListColumn[ML.CLASS], LCCIT_STRING, expeditionLocale.jobDataFunc, JobAscendingSortFunc, JobDescendingSortFunc, expeditionLocale.jobLayoutFunc)
+  frame:InsertColumn(GetUIText(COMMON_TEXT, "expedition_member_contribution"), expeditionLocale.width.memberListColumn[ML.CONTRIBUTION], LCCIT_STRING, ContributionPointSetFunc, nil, nil)
+  frame:InsertColumn(locale.expedition.role, expeditionLocale.width.memberListColumn[ML.ROLE], LCCIT_WINDOW, RoleDataSetFunc, RoleAscendingSortFunc, RoleDescendingSortFunc, RoleLayoutSetFunc)
+  frame:InsertColumn(locale.expedition.position, expeditionLocale.width.memberListColumn[ML.POS], LCCIT_WINDOW, PosDataSetFunc, nil, nil, PosLayoutSetFunc)
+  frame:InsertRows(18, false)
+  frame:DisuseSorting()
+  DrawListCtrlUnderLine(frame.listCtrl)
+  ListCtrlOverClickTextureSetting(frame.listCtrl)
+  for i = 1, #frame.listCtrl.column do
+    SettingListColumn(frame.listCtrl, frame.listCtrl.column[i])
+    DrawListCtrlColumnSperatorLine(frame.listCtrl.column[i], #frame.listCtrl.column, i)
+    if i == #frame.listCtrl.column then
+      frame.listCtrl.column[i]:Enable(false)
+    end
+  end
+  local allSelectCheck = CreateCheckButton(frame:GetId() .. ".allSelectCheck", frame)
+  allSelectCheck:AddAnchor("LEFT", frame.listCtrl.column[1], 5, -1)
+  frame.allSelectCheck = allSelectCheck
+  local inviteRaid = parent:CreateChildWidget("button", "inviteRaid", 0, true)
+  inviteRaid:Enable(false)
+  inviteRaid:SetText(locale.expedition.inviteRaid)
+  inviteRaid:AddAnchor("BOTTOMRIGHT", parent, 0, -sideMargin + 4)
+  ApplyButtonSkin(inviteRaid, BUTTON_BASIC.DEFAULT)
+  local summon = parent:CreateChildWidget("button", "summon", 0, true)
+  summon:SetText(GetCommonText("expedition_summon"))
+  summon:AddAnchor("RIGHT", inviteRaid, "LEFT", -3, 0)
+  summon:Show(X2Player:GetFeatureSet().expeditionSummon)
+  summon:Enable(false)
+  ApplyButtonSkin(summon, BUTTON_BASIC.DEFAULT)
+  local namePolicyInfo = X2Util:GetNamePolicyInfo(VNT_CHAR)
+  local inputName = parent:CreateChildWidget("editbox", "inputName", 0, true)
+  inputName:SetExtent(326, 29)
+  inputName:AddAnchor("BOTTOMLEFT", parent, 0, -sideMargin)
+  inputName:SetMaxTextLength(namePolicyInfo.local_max)
+  ApplyEditSkin(inputName)
+  CreateEditGuideText(inputName, locale.common.input_name_guide)
+  local inviteExped = parent:CreateChildWidget("button", "inviteExped", 0, true)
+  inviteExped:Enable(false)
+  inviteExped:SetText(locale.expedition.invite)
+  inviteExped:AddAnchor("LEFT", inputName, "RIGHT", 0, 0)
+  ApplyButtonSkin(inviteExped, BUTTON_BASIC.DEFAULT)
+  local numOfonlineMember = parent:CreateChildWidget("textbox", "numOfonlineMember", 0, true)
+  numOfonlineMember:Show(true)
+  numOfonlineMember:SetExtent(220, 16)
+  numOfonlineMember.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(numOfonlineMember, FONT_COLOR.TITLE)
+  local viewOffMember = CreateCheckButton(id .. ".viewOffMember", parent, locale.expedition.viewOffMember)
+  viewOffMember:SetButtonStyle("eyeShape")
+  if X2Player:GetFeatureSet().expeditionRecruit == true then
+    viewOffMember:AddAnchor("BOTTOMLEFT", inputName, "TOPLEFT", viewOffMember.textButton:GetWidth() + 3, -7)
+    numOfonlineMember:AddAnchor("BOTTOMRIGHT", inviteRaid, "TOPRIGHT", -3, -7)
+    numOfonlineMember.style:SetAlign(ALIGN_RIGHT)
+  else
+    viewOffMember:AddAnchor("BOTTOMRIGHT", parent, "TOPRIGHT", 0, -2)
+    numOfonlineMember:AddAnchor("BOTTOMLEFT", inputName, "TOPLEFT", 0, -4)
+  end
+  parent.viewOffMember = viewOffMember
+  local buttonTable = {inviteRaid, summon}
+  AdjustBtnLongestTextWidth(buttonTable)
+  local refreshButton = parent:CreateChildWidget("button", "refreshButton", 0, true)
+  refreshButton:AddAnchor("TOPRIGHT", parent, 3, 13)
+  refreshButton:Show(true)
+  refreshButton:SetExtent(28, 28)
+  ApplyButtonSkin(refreshButton, BUTTON_BASIC.RESET)
+  local modalWindow = parent:CreateChildWidget("emptywidget", "modalWindow", 0, true)
+  modalWindow:AddAnchor("TOPLEFT", parent, 0, 0)
+  modalWindow:AddAnchor("BOTTOMRIGHT", parent, 0, 0)
+  local bg = modalWindow:CreateNinePartDrawable(TEXTURE_PATH.DEFAULT, "background")
+  bg:SetCoords(971, 199, 8, 4)
+  bg:SetInset(3, 1, 3, 1)
+  bg:SetColor(1, 1, 1, 0.7)
+  bg:AddAnchor("TOPLEFT", modalWindow, -15, 3)
+  bg:AddAnchor("BOTTOMRIGHT", modalWindow, 15, -3)
+  local loading_effect = modalWindow:CreateEffectDrawable("ui/tutorials/loading.dds", "background")
+  loading_effect:SetExtent(32, 32)
+  loading_effect:SetCoords(100, 1, 32, 32)
+  loading_effect:AddAnchor("CENTER", modalWindow, 0, 0)
+  loading_effect:SetRepeatCount(0)
+  loading_effect:SetEffectPriority(1, "rotate", 1.5, 1.5)
+  loading_effect:SetEffectRotate(1, 0, 360)
+  parent.loading_effect = loading_effect
+  function parent:WaitPage(isShow)
+    self.modalWindow:Show(isShow)
+    self.loading_effect:SetStartEffect(isShow)
+  end
+end
+function CreateMemberList(id, parent)
+  SetViewOfExpeditionMemberList(id, parent)
+  local frame = parent.frame
+  local allSelectCheck = frame.allSelectCheck
+  local listCtrl = frame.listCtrl
+  local inputName = parent.inputName
+  local inviteExped = parent.inviteExped
+  function inputName:OnTextChanged()
+    if string.len(self:GetText()) >= 1 then
+      inviteExped:Enable(true)
+    else
+      inviteExped:Enable(false)
+    end
+  end
+  function inviteExped:OnClick()
+    local name = inputName:GetText()
+    if name == "" then
+      X2Chat:DispatchChatMessage(CMF_SYSTEM, "no invite Exped pc name")
+    else
+      X2Faction:InviteToExpedition(name)
+      inputName:SetText("")
+    end
+  end
+  inviteExped:SetHandler("OnClick", inviteExped.OnClick)
+  function parent:OnShow()
+    inputName:SetText("")
+    inviteExped:Enable(false)
+  end
+  parent:SetHandler("OnShow", parent.OnShow)
+  function frame:IsAllChecked()
+    for i = 1, frame:GetDataCount() do
+      local data = frame:GetDataByDataIndex(i, 1)
+      if data[EXPEDITION_MEMBER_COL.ONLINE] and not data[EXPEDITION_MEMBER_COL.CHK] then
+        return false
+      end
+    end
+    return true
+  end
+  function frame:GetSelctedCheckBoxs()
+    for i = 1, frame:GetDataCount() do
+      local data = frame:GetDataByDataIndex(i, 1)
+      if data[EXPEDITION_MEMBER_COL.ONLINE] and data[EXPEDITION_MEMBER_COL.CHK] then
+        return true
+      end
+    end
+    return false
+  end
+  function allSelectCheck:SetCheckedAll(check)
+    for i = 1, frame:GetDataCount() do
+      local data = frame:GetDataByDataIndex(i, 1)
+      if data[EXPEDITION_MEMBER_COL.ONLINE] and data[EXPEDITION_MEMBER_COL.NAME] ~= X2Unit:UnitName("player") then
+        data[EXPEDITION_MEMBER_COL.CHK] = check
+      end
+    end
+    for i = 1, #listCtrl.items do
+      local selectCheck = listCtrl.items[i].subItems[1].selectCheck
+      if selectCheck:IsVisible() and selectCheck:IsEnabled() then
+        selectCheck:SetChecked(check, false)
+      end
+    end
+  end
+  function allSelectCheck:CheckBtnCheckChagnedProc()
+    self:SetCheckedAll(self:GetChecked())
+    parent.inviteRaid:Enable(self:GetChecked())
+    parent.summon:Enable(self:GetChecked())
+  end
+end
+function GetOnLineButtonColor()
+  local color = {}
+  color.disabled = {
+    r = 0.3,
+    g = 0.3,
+    b = 0.3,
+    a = 1
+  }
+  color.highlight = {
+    r = 0.96,
+    g = 0.82,
+    b = 0.6,
+    a = 1
+  }
+  color.pushed = {
+    r = 0.8,
+    g = 0.7,
+    b = 0.53,
+    a = 1
+  }
+  color.normal = {
+    r = 0.8,
+    g = 0.7,
+    b = 0.53,
+    a = 1
+  }
+  return color
+end
+function GetOffLineButtonColor()
+  local color = {}
+  color.disabled = {
+    r = 0.3,
+    g = 0.3,
+    b = 0.3,
+    a = 1
+  }
+  color.highlight = {
+    r = 0.6,
+    g = 0.6,
+    b = 0.6,
+    a = 1
+  }
+  color.pushed = {
+    r = 0.3,
+    g = 0.3,
+    b = 0.3,
+    a = 1
+  }
+  color.normal = {
+    r = 0.5,
+    g = 0.5,
+    b = 0.5,
+    a = 1
+  }
+  return color
+end

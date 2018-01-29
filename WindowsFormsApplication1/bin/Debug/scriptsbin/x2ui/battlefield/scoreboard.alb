@@ -1,0 +1,183 @@
+function CreateScoreboard(id, parent)
+  local frame = SetViewOfScoreboard(id, parent)
+  local askLeaveBtn = frame.askLeaveBtn
+  local askLeaveBtnLeftClickFunc = function()
+    X2BattleField:AskLeaveInstantGame()
+  end
+  ButtonOnClickHandler(askLeaveBtn, askLeaveBtnLeftClickFunc)
+  frame.myTeam = BATTLEFIELD_TEAM.NONE
+  local oldTime = 0
+  local function OnUpdateTime(self, dt)
+    frame.nowTime = frame.nowTime + dt
+    local nowTime = math.floor((frame.endTime - frame.nowTime) / 1000)
+    if oldTime ~= nowTime then
+      oldTime = nowTime
+      frame.timeFrame:UpdateTime(nowTime)
+    end
+  end
+  local function FillOutWaitTimeInfo()
+    local timeInfo = X2BattleField:GetProgressTimeInfo()
+    frame.startTime = tonumber(timeInfo.startTime)
+    frame.endTime = tonumber(timeInfo.endTime)
+    frame.nowTime = tonumber(timeInfo.nowtime)
+    if frame:HasHandler("OnUpdate") == false then
+      frame:SetHandler("OnUpdate", OnUpdateTime)
+    end
+  end
+  local function ResetResult()
+    frame.gaugeFrame.leftTeamName:SetText("")
+    frame.gaugeFrame.rightTeamName:SetText("")
+    frame.gaugeFrame.leftScore:SetText("0")
+    frame.gaugeFrame.rightScore:SetText("0")
+    frame.leftScoreBoard:DeleteAllDatas()
+    frame.rightScoreBoard:DeleteAllDatas()
+  end
+  local function GetTargetScoreboard(index)
+    if index == BATTLEFIELD_TEAM.FIRST then
+      return frame.rightScoreBoard
+    elseif index == BATTLEFIELD_TEAM.SECOND then
+      return frame.leftScoreBoard
+    end
+  end
+  local function FillMemberInfo(data, teamIndex, memberIndex)
+    if data == nil or teamIndex == nil then
+      return
+    end
+    local target
+    target = GetTargetScoreboard(teamIndex)
+    if target == nil then
+      return
+    end
+    local achievementTable = {
+      victory = data.isWinner,
+      bravery = data.topPcKill,
+      destroyer = data.topNonPcKill,
+      immortality = data.noDeath,
+      defeat = data.isLoser
+    }
+    local scoreTable = {
+      default = data.memberScores,
+      bonus = data.memberBonus,
+      isRating = false
+    }
+    local ratingTable = {
+      default = data.memberTotalRating,
+      bonus = data.memberDeltaRating,
+      isRating = true
+    }
+    target:InsertData(memberIndex, 1, data.name)
+    target:InsertData(memberIndex, 2, tostring(data.memberNPcKills))
+    target:InsertData(memberIndex, 3, tostring(data.memberNDeaths))
+    target:InsertData(memberIndex, 4, tostring(data.memberNPcKillAssists))
+    target:InsertData(memberIndex, 5, achievementTable)
+    local featureSet = X2Player:GetFeatureSet()
+    if featureSet.eloRating then
+      target:InsertData(memberIndex, 6, ratingTable)
+    else
+      target:InsertData(memberIndex, 6, scoreTable)
+    end
+  end
+  local function FillTeamInfo(data, teamIndex)
+    for i = 1, #data do
+      FillMemberInfo(data[i], teamIndex, i)
+    end
+  end
+  function frame:FillResult()
+    ResetResult()
+    local memberInfo = X2BattleField:GetMembersDetailInfo()
+    if memberInfo == nil then
+      return
+    end
+    for i = 1, #memberInfo do
+      FillTeamInfo(memberInfo[i], i)
+    end
+    local info = X2BattleField:GetProgressEntireInfo()
+    if info ~= nil then
+      frame.gaugeFrame.rightTeamName:SetText(info.corpsName1)
+      frame.gaugeFrame.leftTeamName:SetText(info.corpsName2)
+      if info.victoryDefault == 2 then
+        frame.gaugeFrame.rightScore:SetText(tostring(info.roundWinCount1))
+        frame.gaugeFrame.leftScore:SetText(tostring(info.roundWinCount2))
+        frame.gaugeFrame.gauge:UpdateScore(info.roundWinCount1, info.roundWinCount2)
+      else
+        frame.gaugeFrame.rightScore:SetText(tostring(info.killScore1))
+        frame.gaugeFrame.leftScore:SetText(tostring(info.killScore2))
+        frame.gaugeFrame.gauge:UpdateScore(info.killScore1, info.killScore2)
+      end
+      local coprsVictoryState = info.myCorpsVictoryState
+      if coprsVictoryState == VS_LOSE then
+        frame.gaugeFrame:SetGameResult("defeat")
+      elseif coprsVictoryState == VS_WIN then
+        frame.gaugeFrame:SetGameResult("win")
+      else
+        frame.gaugeFrame:SetGameResult("draw")
+      end
+      frame.gaugeFrame:SetWinCondition(info)
+    end
+    FillOutWaitTimeInfo()
+  end
+  function frame:PlayResultSound()
+    local info = X2BattleField:GetProgressEntireInfo()
+    local coprsVictoryState = info.myCorpsVictoryState
+    if coprsVictoryState == VS_LOSE then
+      F_SOUND:PlayUISound("battlefield_defeat", false)
+    elseif coprsVictoryState == VS_WIN then
+      F_SOUND:PlayUISound("battlefield_win", false)
+    else
+      F_SOUND:PlayUISound("battlefield_draw", false)
+    end
+  end
+  function frame:HideScoreboard()
+    self:ReleaseHandler("OnUpdate")
+    self:Show(false)
+  end
+  local OnHideScoreboard = function()
+    battlefield.scoreboard = nil
+  end
+  frame:SetHandler("OnHide", OnHideScoreboard)
+  local events = {
+    LEAVED_INSTANT_GAME_ZONE = function()
+      ResetResult()
+      frame:HideScoreboard()
+    end,
+    UPDATE_INSTANT_GAME_TIME = function()
+      FillOutWaitTimeInfo()
+    end
+  }
+  frame:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(frame, events)
+  return frame
+end
+function ShowScoreBoard(isShow, playSound)
+  local timeInfo = X2BattleField:GetProgressTimeInfo()
+  if timeInfo == nil or timeInfo.state ~= "ENDED" then
+    return
+  end
+  if battlefield.scoreboard == nil then
+    if isShow then
+      battlefield.scoreboard = CreateScoreboard("battlefield.scoreboard", "UIParent")
+      battlefield.scoreboard:Show(true)
+      battlefield.scoreboard:EnableHidingIsRemove(true)
+      battlefield.scoreboard:FillResult()
+      if playSound then
+        battlefield.scoreboard:PlayResultSound()
+      end
+    else
+      return
+    end
+  elseif isShow then
+    battlefield.scoreboard:Show(true)
+    battlefield.scoreboard:FillResult()
+    if playSound then
+      battlefield.scoreboard:PlayResultSound()
+    end
+  else
+    battlefield.scoreboard:HideScoreboard()
+  end
+end
+local EnteredWorld = function()
+  ShowScoreBoard(true, false)
+end
+UIParent:SetEventHandler("ENTERED_WORLD", EnteredWorld)

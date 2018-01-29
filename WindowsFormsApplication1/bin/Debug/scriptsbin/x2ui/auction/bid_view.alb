@@ -1,0 +1,301 @@
+MIN_MAX_LEVEL_INIT_VAL = -1
+local CreateSearchFrame = function(window)
+  local frame = window:CreateChildWidget("emptywidget", "searchFrame", 0, true)
+  local width, _ = window:GetExtent()
+  frame:SetExtent(width, 25)
+  frame:AddAnchor("TOPLEFT", window, 0, 15)
+  local bg = CreateContentBackground(frame, "TYPE5")
+  bg:SetColor(ConvertColor(217), ConvertColor(193), ConvertColor(162), 0.6)
+  bg:AddAnchor("TOPLEFT", frame, 50, -8)
+  bg:AddAnchor("BOTTOMRIGHT", frame, 10, 8)
+  local function CreateSearchFrameLabel(strId, msg)
+    local label = frame:CreateChildWidget("label", strId, 0, true)
+    label:SetHeight(FONT_SIZE.MIDDLE)
+    label:SetAutoResize(true)
+    label:SetText(msg)
+    ApplyTextColor(label, FONT_COLOR.TITLE)
+    return label
+  end
+  local conditionInitButton = frame:CreateChildWidget("button", "conditionInitButton", 0, true)
+  conditionInitButton:Show(true)
+  conditionInitButton:AddAnchor("LEFT", frame, 5, 0)
+  conditionInitButton:SetText(locale.auction.searchConditionInit)
+  ApplyButtonSkin(conditionInitButton, BUTTON_BASIC.DEFAULT)
+  local levelRangeLabel = CreateSearchFrameLabel("levelRangeLabel", locale.auction.levelRange)
+  levelRangeLabel:AddAnchor("LEFT", conditionInitButton, "RIGHT", 8, 0)
+  local minLevelEdit = frame:CreateChildWidget("editbox", "minLevelEdit", 0, true)
+  minLevelEdit:Show(true)
+  minLevelEdit:AddAnchor("LEFT", levelRangeLabel, "RIGHT", 4, 0)
+  minLevelEdit:SetExtent(35, DEFAULT_SIZE.EDIT_HEIGHT)
+  minLevelEdit:SetDigit(true)
+  minLevelEdit:SetMaxTextLength(2)
+  minLevelEdit:SetInitVal(MIN_MAX_LEVEL_INIT_VAL)
+  ApplyEditSkin(minLevelEdit)
+  local tildeLabel = CreateSearchFrameLabel("tildeLabel", "~")
+  tildeLabel:AddAnchor("LEFT", minLevelEdit, "RIGHT", 2, 0)
+  local maxLevelEdit = frame:CreateChildWidget("editbox", "maxLevelEdit", 0, true)
+  maxLevelEdit:Show(true)
+  maxLevelEdit:AddAnchor("LEFT", tildeLabel, "RIGHT", 3, 0)
+  maxLevelEdit:SetExtent(35, DEFAULT_SIZE.EDIT_HEIGHT)
+  maxLevelEdit:SetDigit(true)
+  maxLevelEdit:SetMaxTextLength(2)
+  maxLevelEdit:SetInitVal(MIN_MAX_LEVEL_INIT_VAL)
+  ApplyEditSkin(maxLevelEdit)
+  local gradeLabel = CreateSearchFrameLabel("gradeLabel", locale.auction.itemGrade)
+  gradeLabel:AddAnchor("LEFT", maxLevelEdit, "RIGHT", 15, 0)
+  local gradeComboBoxButton = CreateGradeCombobox(frame)
+  gradeComboBoxButton:SetExtent(auctionLocale.width.gradeCombobox, DEFAULT_SIZE.EDIT_HEIGHT)
+  gradeComboBoxButton:AddAnchor("LEFT", gradeLabel, "RIGHT", 2, 0)
+  frame.gradeComboBoxButton = gradeComboBoxButton
+  local nameEditbox = frame:CreateChildWidget("editbox", "nameEditbox", 0, true)
+  nameEditbox:Show(true)
+  nameEditbox:AddAnchor("LEFT", gradeComboBoxButton, "RIGHT", 5, 0)
+  nameEditbox:SetExtent(170, DEFAULT_SIZE.EDIT_HEIGHT)
+  nameEditbox:SetMaxTextLength(150)
+  InitEdit(nameEditbox)
+  ApplyEditSkin(nameEditbox)
+  CreateEditGuideText(nameEditbox, locale.auction.guideText)
+  local searchButton = frame:CreateChildWidget("button", "searchButton", 0, true)
+  searchButton:AddAnchor("LEFT", nameEditbox, "RIGHT", 3, 0)
+  searchButton:Show(true)
+  searchButton:SetText(GetCommonText("search"))
+  ApplyButtonSkin(searchButton, BUTTON_BASIC.DEFAULT)
+  local matchWordTextbox
+  if auctionLocale.viewMatchWordBox then
+    matchWordTextbox = CreateCheckButton("matchWordTextbox", frame, locale.auction.matchWord)
+    matchWordTextbox:AddAnchor("LEFT", searchButton, "RIGHT", 5, 0)
+  end
+  frame.matchWordTextbox = matchWordTextbox
+  local showDirectPriceRangeEdit = X2Auction:IsShowDirectPriceRangeEdit()
+  local showDirectPriceRangeButton = frame:CreateChildWidget("button", "showDirectPriceRangeButton", 0, true)
+  showDirectPriceRangeButton:AddAnchor("RIGHT", frame, 0, 0)
+  showDirectPriceRangeButton:Show(true)
+  if showDirectPriceRangeEdit then
+    ApplyButtonSkin(showDirectPriceRangeButton, BUTTON_BASIC.MINUS)
+  else
+    ApplyButtonSkin(showDirectPriceRangeButton, BUTTON_BASIC.PLUS)
+  end
+  showDirectPriceRangeButton:Show(true)
+  if F_MONEY.currency.auctionBid == CURRENCY_AA_POINT then
+    frame.minDirectPriceWindow = CreateAAPointEditsWindow(frame:GetId() .. ".minDirectPriceEdit", frame)
+  else
+    frame.minDirectPriceWindow = CreateMoneyEditsWindow(frame:GetId() .. ".minDirectPriceEdit", frame)
+  end
+  frame.minDirectPriceWindow:SetStyle("brown")
+  frame.minDirectPriceWindow.goldEdit:Show(showDirectPriceRangeEdit)
+  frame.minDirectPriceWindow.silverEdit:Show(false)
+  frame.minDirectPriceWindow.copperEdit:Show(false)
+  frame.minDirectPriceWindow:SetExtentByMultiplier(1, 0.85)
+  frame.minDirectPriceWindow:SetMoneyFontSize(FONT_SIZE.SMALL)
+  frame.minDirectPriceWindow:AddAnchor("TOPLEFT", nameEditbox, "BOTTOMLEFT", 0, 5)
+  local tildeLabel2 = CreateSearchFrameLabel("tildeLabel2", "~")
+  tildeLabel2:AddAnchor("LEFT", frame.minDirectPriceWindow.goldEdit, "RIGHT", 2, 0)
+  tildeLabel2:Show(showDirectPriceRangeEdit)
+  if F_MONEY.currency.auctionBid == CURRENCY_AA_POINT then
+    frame.maxDirectPriceWindow = CreateAAPointEditsWindow(frame:GetId() .. ".maxDirectPriceEdit", frame)
+  else
+    frame.maxDirectPriceWindow = CreateMoneyEditsWindow(frame:GetId() .. ".maxDirectPriceEdit", frame)
+  end
+  frame.maxDirectPriceWindow:SetStyle("brown")
+  frame.maxDirectPriceWindow.goldEdit:Show(X2Auction:IsShowDirectPriceRangeEdit())
+  frame.maxDirectPriceWindow.silverEdit:Show(false)
+  frame.maxDirectPriceWindow.copperEdit:Show(false)
+  frame.maxDirectPriceWindow:SetExtentByMultiplier(1, 0.85)
+  frame.maxDirectPriceWindow:SetMoneyFontSize(FONT_SIZE.SMALL)
+  frame.maxDirectPriceWindow:AddAnchor("TOPLEFT", frame.minDirectPriceWindow.goldEdit, "TOPRIGHT", tildeLabel2:GetWidth() + 4, 0)
+  local directPriceRangeLabel = CreateSearchFrameLabel("directPriceRangeLabel", GetCommonText("auction_search_direct_price_per_one"))
+  directPriceRangeLabel.style:SetAlign(ALIGN_RIGHT)
+  directPriceRangeLabel:AddAnchor("RIGHT", frame.minDirectPriceWindow.goldEdit, "LEFT", -5, 0)
+  directPriceRangeLabel:Show(showDirectPriceRangeEdit)
+  RegistCoolTimeButton(searchButton, 1)
+end
+local CreateCategoryFrame = function(window)
+  local categoryFrame = CreateScrollListBox(window, window:GetId() .. ".categoryFrame")
+  categoryFrame.content:EnableSelectionToggle(true)
+  categoryFrame:Show(true)
+  categoryFrame:SetExtent(auctionLocale.width.category, 440)
+  categoryFrame:AddAnchor("TOPLEFT", window.searchFrame, "BOTTOMLEFT", 0, MARGIN.WINDOW_SIDE + 10)
+  categoryFrame.content:ShowTooltip(auctionLocale.categoryTooltip)
+  window.categoryFrame = categoryFrame
+  local opened = categoryFrame.content:CreateOpenedImageDrawable("ui/button/grid.dds")
+  opened:SetCoords(0, 0, 21, 14)
+  opened:SetExtent(21, 14)
+  local closed = categoryFrame.content:CreateClosedImageDrawable("ui/button/grid.dds")
+  closed:SetCoords(44, 0, 13, 21)
+  closed:SetExtent(13, 21)
+  local MakeCategoryID = function(depth1_id, depth2_id, depth3_id)
+    local idStr = string.format("%02d%02d%02d", depth1_id, depth2_id, depth3_id)
+    local idNum = tonumber(idStr)
+    if idNum == nil then
+      UIParent:LogAlways(string.format("[ERROR - bid_view.lua] MakeCategoryID().. can't make id"))
+      return 0
+    end
+    return idNum
+  end
+  local itemCategoryTable = {}
+  for depth1 = 1, #auctionLocale.auctionCategories do
+    itemCategoryTable[depth1] = {}
+    local depth1_table = itemCategoryTable[depth1]
+    local depth1_categories = auctionLocale.auctionCategories[depth1]
+    depth1_table.text = depth1_categories.name
+    depth1_table.value = MakeCategoryID(depth1_categories.id, 0, 0)
+    if depth1_categories.child ~= nil then
+      depth1_table.child = {}
+      for depth2 = 1, #depth1_categories.child do
+        depth1_table.child[depth2] = {}
+        local depth2_table = depth1_table.child[depth2]
+        local depth2_categories = depth1_categories.child[depth2]
+        depth2_table.text = depth2_categories.name
+        depth2_table.value = MakeCategoryID(depth1_categories.id, depth2_categories.id, 0)
+        if depth2_categories.child ~= nil then
+          depth2_table.child = {}
+          for depth3 = 1, #depth2_categories.child do
+            depth2_table.child[depth3] = {}
+            local depth3_table = depth2_table.child[depth3]
+            local depth3_categories = depth2_categories.child[depth3]
+            depth3_table.text = depth3_categories.name
+            depth3_table.value = MakeCategoryID(depth1_categories.id, depth2_categories.id, depth3_categories.id)
+          end
+        end
+      end
+    end
+  end
+  categoryFrame:SetItemTrees(itemCategoryTable)
+end
+local CreateItemListFrame = function(window)
+  local listInfos = {
+    width = auctionLocale.width.bidListCtrl,
+    height = 431,
+    anchorWidget = window.categoryFrame,
+    columns = {
+      {
+        name = locale.auction.name,
+        width = auctionLocale.nameColWidth.bidTab,
+        itemType = LCCIT_WINDOW,
+        itemPropFunc = CreateItemName,
+        sortKinds = {
+          columnSortKind[5]
+        },
+        limitLen = auctionLocale.nameColLimitLen.bidTab
+      },
+      {
+        name = locale.auction.level,
+        width = auctionLocale.width.itemlevelCol,
+        itemType = LCCIT_STRING,
+        itemPropFunc = CreateItemLevel,
+        sortKinds = {
+          columnSortKind[6]
+        }
+      },
+      {
+        name = locale.auction.leftTime,
+        width = auctionLocale.width.timeCol,
+        itemType = LCCIT_STRING,
+        itemPropFunc = CreateItemLeftTime,
+        sortKinds = {
+          columnSortKind[7]
+        }
+      },
+      {
+        name = locale.auction.bidState,
+        width = auctionLocale.width.bidStateCol,
+        itemType = LCCIT_WINDOW,
+        itemPropFunc = CreateItemBiddingState
+      },
+      {
+        name = locale.auction.bidPrice,
+        width = 190,
+        itemType = LCCIT_WINDOW,
+        itemPropFunc = CreateItemBiddingPrice,
+        sortKinds = {
+          columnSortKind[1],
+          columnSortKind[2],
+          columnSortKind[3],
+          columnSortKind[4]
+        },
+        defaultSortKinds = 3
+      }
+    }
+  }
+  CreateAuctionItemList(window, listInfos)
+  window.listCtrl.column[4]:Enable(false)
+end
+local CreateCenterGuideFrame = function(window)
+  local center_guide = window:CreateChildWidget("label", "center_guide", 0, true)
+  center_guide:Show(false)
+  center_guide:SetAutoResize(true)
+  center_guide:SetHeight(FONT_SIZE.XLARGE)
+  center_guide.style:SetFontSize(FONT_SIZE.XLARGE)
+  center_guide:AddAnchor("CENTER", window.listCtrl, 0, 0)
+  ApplyTextColor(center_guide, FONT_COLOR.DEFAULT)
+  function window:ShowFirstGuide(visible)
+    self.center_guide:Show(visible)
+    if visible then
+      self.center_guide:SetText(locale.auction.first_search_guide)
+    end
+  end
+  function window:ShowNoneSearchResult(visible)
+    self.center_guide:Show(visible)
+    if visible then
+      self.center_guide:SetText(locale.auction.none_search_result)
+    end
+  end
+end
+local CreateBottomFrame = function(window)
+  local availableMoney = CreateTitleMoneyWindow(window:GetId() .. ".availableMoney", window, nil, "vertical")
+  availableMoney:Show(true)
+  availableMoney:AddAnchor("BOTTOMLEFT", window, 0, 0)
+  window.availableMoney = availableMoney
+  local availableAAPoint = CreateTitleMoneyWindow(window:GetId() .. ".availableAAPoint", window, GetUIText(MONEY_TEXT, "aa_point"), "vertical")
+  if F_MONEY.currency.auctionFee ~= CURRENCY_GOLD or F_MONEY.currency.auctionBid ~= CURRENCY_GOLD then
+    availableAAPoint:Show(true)
+  else
+    availableAAPoint:Show(false)
+  end
+  availableAAPoint:AddAnchor("LEFT", availableMoney, "RIGHT", 20, 0)
+  window.availableAAPoint = availableAAPoint
+  if baselibLocale.showMoneyTooltip then
+    local OnEnter = function(self)
+      SetTooltip(locale.moneyTooltip.money, self)
+    end
+    availableMoney:SetHandler("OnEnter", OnEnter)
+    local OnEnter = function(self)
+      SetTooltip(locale.moneyTooltip.aapoint, self)
+    end
+    availableAAPoint:SetHandler("OnEnter", OnEnter)
+  end
+  local marketPriceBtn = CreateMarketPriceBtn("marketPriceBtn", window)
+  window.marketPriceBtn = marketPriceBtn
+  local directButton = window:CreateChildWidget("button", "directButton", 0, true)
+  directButton:SetText(locale.auction.directBid)
+  ApplyButtonSkin(directButton, BUTTON_BASIC.DEFAULT)
+  if marketPriceBtn == nil then
+    directButton:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+  else
+    marketPriceBtn:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+    directButton:AddAnchor("BOTTOMRIGHT", marketPriceBtn, "BOTTOMLEFT", -5, 0)
+  end
+  local bidButton = window:CreateChildWidget("button", "bidButton", 0, true)
+  bidButton:AddAnchor("BOTTOMRIGHT", directButton, "BOTTOMLEFT", 0, 0)
+  bidButton:SetText(locale.auction.bid)
+  ApplyButtonSkin(bidButton, BUTTON_BASIC.DEFAULT)
+  local buttonTable = {directButton, bidButton}
+  AdjustBtnLongestTextWidth(buttonTable)
+  local moneyEditsWindow
+  if F_MONEY.currency.auctionBid == CURRENCY_AA_POINT then
+    moneyEditsWindow = CreateAAPointEditsWindow(window:GetId() .. ".moneyEditsWindow", window)
+  else
+    moneyEditsWindow = CreateMoneyEditsWindow(window:GetId() .. ".moneyEditsWindow", window)
+  end
+  moneyEditsWindow:AddAnchor("BOTTOMRIGHT", bidButton, "BOTTOMLEFT", 0, -5)
+  moneyEditsWindow:SetStyle("brown")
+  window.moneyEditsWindow = moneyEditsWindow
+end
+function SetViewOfAuctionBidFrame(window)
+  CreateSearchFrame(window)
+  CreateCategoryFrame(window)
+  CreateItemListFrame(window)
+  CreateCenterGuideFrame(window)
+  window:ShowFirstGuide(true)
+  CreateBottomFrame(window)
+end

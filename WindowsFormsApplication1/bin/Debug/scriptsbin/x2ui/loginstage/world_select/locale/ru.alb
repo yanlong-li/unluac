@@ -1,0 +1,226 @@
+if X2Util:GetGameProvider() == MAILRU then
+  worldSelectLocale.titleCoords = UIParent:GetTextureData(LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT, "SelectServer").coords
+  worldSelectLocale.worldList = {
+    extent = {603, 300},
+    columnWidth = {
+      100,
+      130,
+      210,
+      140
+    },
+    columnInset = {
+      0,
+      0,
+      0,
+      12
+    },
+    raceCongestionIcon = {
+      check = {
+        354,
+        443,
+        98,
+        21
+      },
+      high = {
+        354,
+        422,
+        98,
+        21
+      },
+      middle = {
+        452,
+        443,
+        98,
+        21
+      },
+      low = {
+        452,
+        422,
+        98,
+        21
+      }
+    },
+    raceTypeIcon = {
+      {
+        550,
+        422,
+        22,
+        21
+      },
+      {
+        0,
+        0,
+        0,
+        0
+      },
+      {
+        0,
+        0,
+        0,
+        0
+      },
+      {
+        550,
+        443,
+        22,
+        21
+      },
+      {
+        572,
+        443,
+        22,
+        21
+      },
+      {
+        572,
+        422,
+        22,
+        21
+      },
+      {
+        0,
+        0,
+        0,
+        0
+      },
+      {
+        0,
+        0,
+        0,
+        0
+      }
+    }
+  }
+  worldSelectLocale.integrationWorldInfo = {
+    {
+      worldId = 51,
+      bgColor = {
+        0.627451,
+        0.52156866,
+        0.7882353,
+        0.8
+      }
+    },
+    {
+      worldId = 52,
+      bgColor = {
+        0.8117647,
+        0.6392157,
+        0.53333336,
+        0.8
+      }
+    },
+    {
+      worldId = 53,
+      bgColor = {
+        0.5529412,
+        0.72156864,
+        0.83137256,
+        0.8
+      }
+    },
+    {
+      worldId = 54,
+      bgColor = {
+        0.7490196,
+        0.70980394,
+        0.3647059,
+        0.8
+      }
+    },
+    {
+      worldId = 55,
+      bgColor = {
+        0.79607844,
+        0.38431373,
+        0.5568628,
+        0.8
+      }
+    },
+    {
+      worldId = 56,
+      bgColor = {
+        0.4117647,
+        0.7254902,
+        0.6745098,
+        0.8
+      }
+    }
+  }
+  worldSelectLocale.newWorldInfo = {
+    {
+      worldId = 31,
+      bgColor = {
+        0.6509804,
+        0.80784315,
+        0.5294118,
+        0.8
+      }
+    },
+    {
+      worldId = 32,
+      bgColor = {
+        0.6509804,
+        0.80784315,
+        0.5294118,
+        0.8
+      }
+    },
+    {
+      worldId = 33,
+      bgColor = {
+        0.6509804,
+        0.80784315,
+        0.5294118,
+        0.8
+      }
+    },
+    {
+      worldId = 34,
+      bgColor = {
+        0.6509804,
+        0.80784315,
+        0.5294118,
+        0.8
+      }
+    },
+    {
+      worldId = 35,
+      bgColor = {
+        0.6509804,
+        0.80784315,
+        0.5294118,
+        0.8
+      }
+    }
+  }
+  worldSelectLocale.integrationNoticeWidth = 120
+  local integrationContent = {
+    {
+      title = string.format("%s 1 (%s)", locale.server.integration, locale.server.integratedWorld[1]),
+      titleBgColor = {
+        ConvertColor(160),
+        ConvertColor(133),
+        ConvertColor(201),
+        0.8
+      },
+      body = locale.server.integrationWorldList[1]
+    },
+    {
+      title = string.format("%s 2 (%s)", locale.server.integration, locale.server.integratedWorld[2]),
+      titleBgColor = {
+        ConvertColor(207),
+        ConvertColor(163),
+        ConvertColor(136),
+        0.8
+      },
+      body = locale.server.integrationWorldList[2]
+    }
+  }
+  worldSelectLocale.notifyInfo[1].content = integrationContent
+  worldSelectLocale.notifyInfo[2].content = integrationContent
+  worldSelectLocale.notifyInfo[3].content = integrationContent
+  worldSelectLocale.notifyIndex = nil
+  worldSelectLocale.combatWorldInfo = {}
+  worldSelectLocale.showWorldDescriptionInfo = {}
+end

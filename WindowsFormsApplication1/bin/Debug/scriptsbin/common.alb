@@ -1,0 +1,240 @@
+g_SignalData_point = {
+  x = 0,
+  y = 0,
+  z = 0
+}
+g_SignalData_point2 = {
+  x = 0,
+  y = 0,
+  z = 0
+}
+g_SignalData = {
+  point = g_SignalData_point,
+  point2 = g_SignalData_point2,
+  ObjectName = "",
+  id = NULL_ENTITY,
+  fValue = 0,
+  iValue = 0,
+  iValue2 = 0
+}
+g_StringTemp1 = "                                            "
+g_HitTable = {
+  {},
+  {},
+  {},
+  {},
+  {},
+  {},
+  {},
+  {},
+  {},
+  {}
+}
+function ShowTime()
+  local ttime = System.GetLocalOSTime()
+  System.Log(string.format("%d/%d/%d, %02d:%02d", ttime.mday, ttime.mon + 1, ttime.year + 1900, ttime.hour, ttime.min))
+end
+function count(_tbl)
+  local count = 0
+  if _tbl then
+    for i, v in pairs(_tbl) do
+      count = count + 1
+    end
+  end
+  return count
+end
+function new(_obj, norecurse)
+  if type(_obj) == "table" then
+    local _newobj = {}
+    if norecurse then
+      for i, f in pairs(_obj) do
+        _newobj[i] = f
+      end
+    else
+      for i, f in pairs(_obj) do
+        if type(f) == "table" and _obj ~= f then
+          _newobj[i] = new(f)
+        else
+          _newobj[i] = f
+        end
+      end
+    end
+    return _newobj
+  else
+    return _obj
+  end
+end
+function merge(dst, src, recurse)
+  for i, v in pairs(src) do
+    if type(v) ~= "function" then
+      if recurse then
+        if type(v) == "table" and v ~= src then
+          if not dst[i] then
+            dst[i] = {}
+          end
+          merge(dst[i], v, recurse)
+        elseif not dst[i] then
+          dst[i] = v
+        end
+      elseif not dst[i] then
+        dst[i] = v
+      end
+    end
+  end
+  return dst
+end
+function mergeOverwrite(dst, src, recursive)
+  for i, v in pairs(src) do
+    if type(v) ~= "function" then
+      if recursive then
+        if type(v) == "table" and v ~= src then
+          if not dst[i] then
+            dst[i] = {}
+          end
+          mergeOverwriteF(dst[i], v, recursive)
+        else
+          dst[i] = v
+        end
+      else
+        dst[i] = v
+      end
+    end
+  end
+  return dst
+end
+function mergef(dst, src, recursive)
+  for i, v in pairs(src) do
+    if recursive then
+      if type(v) == "table" and v ~= src then
+        if not dst[i] then
+          dst[i] = {}
+        end
+        mergef(dst[i], v, recursive)
+      elseif not dst[i] then
+        dst[i] = v
+      end
+    elseif not dst[i] then
+      dst[i] = v
+    end
+  end
+  return dst
+end
+function mergeOverwriteF(dst, src, recursive)
+  for i, v in pairs(src) do
+    if recursive then
+      if type(v) == "table" and v ~= src then
+        if not dst[i] then
+          dst[i] = {}
+        end
+        mergeOverwriteF(dst[i], v, recursive)
+      else
+        dst[i] = v
+      end
+    else
+      dst[i] = v
+    end
+  end
+  return dst
+end
+function Vec2Str(vec)
+  return string.format("(x: %.3f y: %.3f z: %.3f)", vec.x, vec.y, vec.z)
+end
+function LogError(fmt, ...)
+end
+function LogWarning(fmt, ...)
+end
+function Log(fmt, ...)
+end
+g_dump_tabs = 0
+function dump(_class, no_func, depth)
+  __dump(_class, no_func, depth, System.Log)
+end
+function dumpAlways(_class, no_func, depth)
+  __dump(_class, no_func, depth, System.LogAlways)
+end
+function __dump(_class, no_func, depth, LogFunc)
+  if not _class then
+    LogFunc("$2nil")
+  else
+    depth = depth or 8
+    local str = ""
+    for n = 0, g_dump_tabs do
+      str = str .. "  "
+    end
+    for i, field in pairs(_class) do
+      if type(field) == "table" then
+        if depth > g_dump_tabs then
+          g_dump_tabs = g_dump_tabs + 1
+          LogFunc(str .. "$4" .. tostring(i) .. "$1= {")
+          __dump(field, no_func, depth, LogFunc)
+          LogFunc(str .. "$1}")
+          g_dump_tabs = g_dump_tabs - 1
+        else
+          LogFunc(str .. "$4" .. tostring(i) .. "$1= { $4...$1 }")
+        end
+      elseif type(field) == "number" then
+        LogFunc("$2" .. str .. "$6" .. tostring(i) .. "$1=$8" .. field)
+      elseif type(field) == "string" then
+        LogFunc("$2" .. str .. "$6" .. tostring(i) .. "$1=$8" .. "\"" .. field .. "\"")
+      elseif type(field) == "boolean" then
+        LogFunc("$2" .. str .. "$6" .. tostring(i) .. "$1=$8" .. "\"" .. tostring(field) .. "\"")
+      elseif not no_func then
+        if type(field) == "function" then
+          LogFunc("$2" .. str .. "$5" .. tostring(i) .. "()")
+        else
+          LogFunc("$2" .. str .. "$7" .. tostring(i) .. "$8<userdata>")
+        end
+      end
+    end
+  end
+end
+function EmptyString(str)
+  if str and string.len(str) > 0 then
+    return false
+  end
+  return true
+end
+function NumberToBool(n)
+  if n and tonumber(n) ~= 0 then
+    return true
+  else
+    return false
+  end
+end
+function EntityName(entity)
+  if type(entity) == "userdata" then
+    local e = System.GetEntity(entity)
+    if e then
+      return e:GetName()
+    end
+  elseif type(entity) == "table" then
+    return entity:GetName()
+  end
+  return ""
+end
+function EntityNamed(name)
+  return System.GetEntityByName(name)
+end
+function SafeTableGet(table, name)
+  if table then
+    return table[name]
+  else
+    return nil
+  end
+end
+Script.ReloadScript("scripts/Utils/Math.lua")
+Script.ReloadScript("scripts/Utils/EntityUtils.lua")
+Script.ReloadScript("scripts/Utils/ZeroG.lua")
+function AIReload()
+  Script.LoadScript("Scripts/AI/aiconfig.lua", true, true)
+end
+g_AIDebugToggleOn = 0
+function AIDebugToggle()
+  if g_AIDebugToggleOn == 0 then
+    g_AIDebugToggleOn = 1
+    System.SetCVar("ai_DebugDraw", 1)
+  else
+    System.SetCVar("ai_DebugDraw", 0)
+    g_AIDebugToggleOn = 0
+  end
+end

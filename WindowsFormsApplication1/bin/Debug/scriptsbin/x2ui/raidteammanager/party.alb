@@ -1,0 +1,46 @@
+local MAX_RAID_PARTY_MEMBERS = X2Team:GetMaxPartyMembers()
+function CreateRaidTeamManagerParty(id, parent, party)
+  local w = SetViewOfRaidTeamManagerParty(id, parent, party)
+  w.party = party
+  local event = w.eventWindow
+  event:RegisterForDrag("LeftButton")
+  function event:OnEnter()
+    local myMemberIndex = X2Team:GetTeamPlayerIndex()
+    if X2Team:IsTeamOwner(myMemberIndex) and raidteam_moving_member_index ~= nil and raidteam_moving_member_party ~= w.party then
+      w.bg:SetVisible(false)
+      self.bg:SetVisible(true)
+    end
+  end
+  event:SetHandler("OnEnter", event.OnEnter)
+  function event:OnLeave()
+    self.bg:SetVisible(false)
+    w.bg:SetVisible(w.visiblePartyBtn:GetChecked())
+  end
+  event:SetHandler("OnLeave", event.OnLeave)
+  function event:OnDragReceive(arg)
+    if arg == "LeftButton" then
+      self.bg:SetVisible(false)
+      w.bg:SetVisible(w.visiblePartyBtn:GetChecked())
+      local myMemberIndex = X2Team:GetTeamPlayerIndex()
+      if X2Team:IsTeamOwner(myMemberIndex) and raidteam_moving_member_index ~= nil and raidteam_moving_member_party ~= w.party then
+        X2Team:MoveTeamMemberToParty(raidteam_moving_member_index, w.party)
+      end
+    end
+  end
+  event:SetHandler("OnDragReceive", event.OnDragReceive)
+  function w:Refresh()
+    for i = 1, MAX_RAID_PARTY_MEMBERS do
+      w.member[i]:Refresh()
+    end
+    self.visiblePartyBtn:SetChecked(X2Team:GetPartyVisible(self.party))
+    if RaidFrame ~= nil then
+      RaidFrame:SetPartyVisible(self.party, X2Team:GetPartyVisible(self.party))
+    end
+  end
+  function w.visiblePartyBtn:OnCheckChanged()
+    X2Team:SetPartyVisible(w.party, self:GetChecked())
+    w.bg:SetVisible(self:GetChecked())
+  end
+  w.visiblePartyBtn:SetHandler("OnCheckChanged", w.visiblePartyBtn.OnCheckChanged)
+  return w
+end

@@ -1,0 +1,80 @@
+function SetViewOfCastingBar(id, parent)
+  local frame = CreateEmptyWindow(id, parent)
+  frame:SetExtent(340, 12)
+  local bg = frame:CreateImageDrawable(TEXTURE_PATH.HUD, "background")
+  bg:SetCoords(452, 144, 232, 23)
+  bg:AddAnchor("TOPLEFT", frame, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", frame, 0, 0)
+  frame.bg = bg
+  local statusBar = UIParent:CreateWidget("statusbar", id .. ".statusBar", frame)
+  statusBar:AddAnchor("TOPLEFT", frame, 4, 1)
+  statusBar:AddAnchor("BOTTOMRIGHT", frame, -5, -2)
+  statusBar:SetBarTexture(TEXTURE_PATH.HUD, "background")
+  statusBar:SetBarTextureCoords(459, 179, 223, 18)
+  statusBar:SetOrientation("HORIZONTAL")
+  statusBar:SetBarColor(1, 1, 1, 1)
+  frame.statusBar = statusBar
+  local lightDeco = statusBar:CreateEffectDrawable(TEXTURE_PATH.HUD, "background")
+  lightDeco:SetColor(1, 1, 1, 1)
+  lightDeco:SetCoords(684, 146, 21, 25)
+  lightDeco:SetExtent(21, 14)
+  lightDeco:SetRepeatCount(1)
+  frame.lightDeco = lightDeco
+  statusBar:AddAnchorChildToBar(lightDeco, "TOPLEFT", "TOPRIGHT", -15, -2)
+  frame.startAnim_condition = false
+  frame.endAnim_condition = false
+  function frame:StartAnmation(time)
+    self.lightDeco:SetEffectPriority(1, "alpha", time, time)
+    self.lightDeco:SetEffectPriority(1, "alpha", 0.7, 0.5)
+    self.lightDeco:SetEffectInitialColor(1, 1, 1, 1, 0)
+    self.lightDeco:SetEffectFinalColor(1, 1, 1, 1, 1)
+    self.lightDeco:SetStartEffect(true)
+    self.progress_startAnim = true
+  end
+  function frame:EndAnmation(time)
+    self.lightDeco:SetEffectPriority(1, "alpha", time, time)
+    self.lightDeco:SetEffectInitialColor(1, 1, 1, 1, 1)
+    self.lightDeco:SetEffectFinalColor(1, 1, 1, 1, 0)
+    self.lightDeco:SetStartEffect(true)
+    self.progress_endAnim = true
+  end
+  frame.prev_curtime = nil
+  local flashDeco = statusBar:CreateEffectDrawable(TEXTURE_PATH.HUD, "artwork")
+  flashDeco:SetCoords(459, 197, 223, 18)
+  flashDeco:SetExtent(223, 18)
+  flashDeco:SetColor(1, 1, 1, 1)
+  flashDeco:SetRepeatCount(1)
+  flashDeco:AddAnchor("TOPLEFT", statusBar, 0, 0)
+  flashDeco:AddAnchor("BOTTOMRIGHT", statusBar, 0, 0)
+  frame.flashDeco = flashDeco
+  frame.flash_startAnim = false
+  frame.anim_direction = nil
+  function frame:flashAnmation()
+    self.flashDeco:SetEffectPriority(1, "alpha", 0.5, 0.3)
+    self.flashDeco:SetEffectInitialColor(1, 1, 1, 1, 0)
+    self.flashDeco:SetEffectFinalColor(1, 1, 1, 1, 1)
+    self.flashDeco:SetEffectPriority(2, "alpha", 0.5, 0.3)
+    self.flashDeco:SetEffectInitialColor(2, 1, 1, 1, 1)
+    self.flashDeco:SetEffectFinalColor(2, 1, 1, 1, 0)
+    self.flashDeco:SetStartEffect(true)
+    self.flash_startAnim = true
+  end
+  local barDeco = statusBar:CreateImageDrawable(TEXTURE_PATH.HUD, "overlay")
+  barDeco:SetCoords(460, 167, 220, 12)
+  barDeco:SetColor(1, 1, 1, 1)
+  barDeco:AddAnchor("TOPLEFT", statusBar, 5, 2)
+  barDeco:AddAnchor("BOTTOMRIGHT", statusBar, -5, -2)
+  frame.barDeco = barDeco
+  local text = frame:CreateChildWidget("textbox", "text", 0, true)
+  text:Raise()
+  text.style:SetShadow(true)
+  text.style:SetAlign(ALIGN_CENTER)
+  text.style:SetFontSize(FONT_SIZE.SMALL)
+  text:AddAnchor("TOPLEFT", statusBar, "BOTTOMLEFT", 0, 5)
+  text:AddAnchor("TOPRIGHT", statusBar, "BOTTOMRIGHT", 0, 5)
+  function text:SetCastingText(str)
+    text:SetText(str)
+    text:SetHeight(text:GetTextHeight())
+  end
+  return frame
+end

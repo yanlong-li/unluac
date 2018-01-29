@@ -1,0 +1,580 @@
+function CreateActionSlot(parent, ownId, slotType, slotIdx)
+  local slot = parent:CreateChildWidget("slot", ownId, slotIdx, true)
+  slot:SetExtent(ICON_SIZE.DEFAULT, ICON_SIZE.DEFAULT)
+  slot:RegisterForDrag("LeftButton")
+  slot.cooltime_style:SetShadow(true)
+  slot.slotIdx = slotIdx
+  function slot:OnClick(arg)
+    HideTooltip()
+  end
+  slot:SetHandler("OnClick", slot.OnClick)
+  local normalImage = slot:CreateStateDrawable(UI_BUTTON_NORMAL, UOT_NINE_PART_DRAWABLE, TEXTURE_PATH.HUD, "background")
+  normalImage:SetCoords(452, 228, 9, 8)
+  normalImage:SetInset(4, 3, 4, 4)
+  normalImage:SetColor(1, 1, 1, 0.5)
+  normalImage:SetExtent(ICON_SIZE.DEFAULT, ICON_SIZE.DEFAULT)
+  normalImage:AddAnchor("CENTER", slot, 0, 0)
+  slot.normalImage = normalImage
+  local reqPointText = slot:CreateTextDrawable(FONT_PATH.SNAIL, FONT_SIZE.XXLARGE, "artwork")
+  reqPointText:SetAlign(ALIGN_CENTER)
+  reqPointText:SetColor(1, 1, 1, 1)
+  reqPointText:SetExtent(15, 22)
+  reqPointText:AddAnchor("CENTER", slot, 0, 0)
+  reqPointText:SetVisible(false)
+  slot.reqPointText = reqPointText
+  local stateImage = slot:CreateColorDrawable(0, 0, 0, 0, "artwork")
+  stateImage:SetExtent(ICON_SIZE.DEFAULT - 2, ICON_SIZE.DEFAULT - 2)
+  stateImage:AddAnchor("CENTER", slot, 0, 0)
+  stateImage:SetColor(1, 1, 1, 0)
+  slot.stateImage = stateImage
+  local overImage = slot:CreateStateDrawable(UI_BUTTON_HIGHLIGHTED, UOT_NINE_PART_DRAWABLE, TEXTURE_PATH.HUD, "overlay")
+  overImage:SetCoords(743, 35, 13, 16)
+  overImage:SetInset(6, 7, 6, 8)
+  overImage:AddAnchor("TOPLEFT", slot, 1, 1)
+  overImage:AddAnchor("BOTTOMRIGHT", slot, -1, -1)
+  local levelText = slot:CreateTextDrawable(FONT_PATH.DEFAULT, FONT_SIZE.SMALL, "overlay")
+  levelText:AddAnchor("BOTTOMLEFT", slot, 0, 0)
+  levelText:SetExtent(15, 20)
+  levelText:SetVisible(false)
+  levelText:SetAlign(ALIGN_CENTER)
+  slot.levelText = levelText
+  local bg = slot:CreateImageDrawable(TEXTURE_PATH.SKILL, "artwork")
+  bg:SetCoords(205, 59, 18, 22)
+  bg:SetExtent(20, 22)
+  bg:AddAnchor("BOTTOMLEFT", levelText, 0, 0)
+  bg:SetVisible(false)
+  levelText.bg = bg
+  CreateDestroyIcon(slot, "artwork")
+  CreateDyeingIcon(slot, "artwork")
+  CreateLookIcon(slot, "artwork")
+  CreateOpenPaperItemIcon(slot, "artwork")
+  local limitLevel = slot:CreateTextDrawable(FONT_PATH.DEFAULT, FONT_SIZE.XLARGE, "overlay")
+  limitLevel:SetExtent(FONT_SIZE.XLARGE, FONT_SIZE.XLARGE)
+  limitLevel:SetVisible(false)
+  limitLevel.style:SetAlign(ALIGN_CENTER)
+  limitLevel.style:SetShadow(true)
+  limitLevel:AddAnchor("CENTER", slot, 0, 0)
+  ApplyTextColor(limitLevel, FONT_COLOR.SOFT_RED)
+  slot.limitLevel = limitLevel
+  CreateLifeTimeIcon(slot, "artwork")
+  CreatePackIcon(slot, "artwork")
+  local stackLabel = slot:CreateChildWidget("label", "stackLabel", 0, true)
+  stackLabel:SetExtent(10, 10)
+  stackLabel:AddAnchor("BOTTOMRIGHT", slot, -4, -4)
+  stackLabel.style:SetAlign(ALIGN_RIGHT)
+  stackLabel.style:SetShadow(true)
+  local keybindingLabel = slot:CreateChildWidget("label", "keybindingLabel", 0, true)
+  keybindingLabel:Clickable(false)
+  keybindingLabel:SetExtent(ICON_SIZE.DEFAULT - 5, 13)
+  keybindingLabel:SetLimitWidth(true)
+  keybindingLabel:AddAnchor("TOPLEFT", slot, 2, 1)
+  keybindingLabel.style:SetAlign(ALIGN_LEFT)
+  keybindingLabel.style:SetFontSize(FONT_SIZE.SMALL)
+  keybindingLabel.style:SetShadow(true)
+  keybindingLabel.style:SetColor(0.9, 0.9, 0.9, 1)
+  local skillPointIcon = slot:CreateImageDrawable(TEXTURE_PATH.SKILL, "artwork")
+  skillPointIcon:SetHeight(13)
+  skillPointIcon:AddAnchor("BOTTOM", slot, 0, -2)
+  slot.skillPointIcon = skillPointIcon
+  local auto_attack_effect_bg = slot:CreateEffectDrawable(TEXTURE_PATH.HUD, "artwork")
+  auto_attack_effect_bg:SetVisible(false)
+  auto_attack_effect_bg:SetInternalDrawType("ninepart")
+  auto_attack_effect_bg:SetCoords(462, 233, 3, 3)
+  auto_attack_effect_bg:SetInset(1, 1, 1, 1)
+  auto_attack_effect_bg:SetExtent(ICON_SIZE.DEFAULT - 1, ICON_SIZE.DEFAULT - 1)
+  auto_attack_effect_bg:AddAnchor("CENTER", slot, 0, 0)
+  slot.auto_attack_effect_bg = auto_attack_effect_bg
+  auto_attack_effect_bg:SetRepeatCount(0)
+  local attack_effect_time = 0.5
+  auto_attack_effect_bg:SetEffectPriority(1, "alpha", attack_effect_time, attack_effect_time)
+  auto_attack_effect_bg:SetEffectInitialColor(1, 1, 1, 1, 0)
+  auto_attack_effect_bg:SetEffectFinalColor(1, 1, 1, 1, 0.6)
+  auto_attack_effect_bg:SetEffectPriority(2, "alpha", attack_effect_time, attack_effect_time)
+  auto_attack_effect_bg:SetEffectInitialColor(2, 1, 1, 1, 0.6)
+  auto_attack_effect_bg:SetEffectFinalColor(2, 1, 1, 1, 0.2)
+  local auto_attack_effect_arrow = slot:CreateEffectDrawable(TEXTURE_PATH.HUD, "artwork")
+  auto_attack_effect_arrow:SetVisible(false)
+  auto_attack_effect_arrow:SetCoords(655, 130, 30, 14)
+  auto_attack_effect_arrow:SetExtent(30, 14)
+  auto_attack_effect_arrow:AddAnchor("CENTER", slot, 0, 0)
+  slot.auto_attack_effect_arrow = auto_attack_effect_arrow
+  auto_attack_effect_arrow:SetRepeatCount(0)
+  auto_attack_effect_arrow:SetEffectPriority(1, "alpha", 0.4, 0.4)
+  auto_attack_effect_arrow:SetEffectInitialColor(1, 1, 1, 1, 1)
+  auto_attack_effect_arrow:SetEffectFinalColor(1, 1, 1, 1, 1)
+  auto_attack_effect_arrow:SetMoveEffectType(1, "circle", 0.53333336, 1.1428572, 1.5, 0)
+  auto_attack_effect_arrow:SetMoveEffectCircle(1, 0, 360)
+  function slot:Anim_auto_attack_effect(isStart)
+    self.auto_attack_effect_bg:SetStartEffect(isStart or false)
+    self.auto_attack_effect_arrow:SetStartEffect(isStart or false)
+  end
+  local combo_action_for_me = slot:CreateNinePartDrawable(TEXTURE_PATH.HUD, "artwork")
+  combo_action_for_me:SetVisible(false)
+  combo_action_for_me:SetCoords(771, 35, 13, 16)
+  combo_action_for_me:SetInset(6, 8, 6, 7)
+  combo_action_for_me:AddAnchor("TOPLEFT", slot, 1, 1)
+  combo_action_for_me:AddAnchor("BOTTOMRIGHT", slot, -1, -1)
+  slot.combo_action_for_me = combo_action_for_me
+  local combo_action_for_me_effect = slot:CreateEffectDrawable(TEXTURE_PATH.HUD, "artwork")
+  combo_action_for_me_effect:SetVisible(false)
+  combo_action_for_me_effect:SetInternalDrawType("ninepart")
+  combo_action_for_me_effect:SetCoords(771, 35, 13, 16)
+  combo_action_for_me_effect:SetInset(6, 8, 6, 7)
+  combo_action_for_me_effect:AddAnchor("TOPLEFT", slot, 1, 1)
+  combo_action_for_me_effect:AddAnchor("BOTTOMRIGHT", slot, -1, -1)
+  slot.combo_action_for_me_effect = combo_action_for_me_effect
+  combo_action_for_me_effect:SetRepeatCount(0)
+  combo_action_for_me_effect:SetEffectPriority(1, "alpha", 0.5, 0.4)
+  combo_action_for_me_effect:SetEffectInitialColor(1, 1, 1, 1, 0.4)
+  combo_action_for_me_effect:SetEffectFinalColor(1, 1, 1, 1, 1)
+  combo_action_for_me_effect:SetEffectScale(1, 0.3, 1, 0.3, 1)
+  combo_action_for_me_effect:SetEffectPriority(2, "alpha", 0.3, 0.2)
+  combo_action_for_me_effect:SetEffectInitialColor(2, 1, 1, 1, 0.9)
+  combo_action_for_me_effect:SetEffectFinalColor(2, 1, 1, 1, 0)
+  combo_action_for_me_effect:SetEffectScale(2, 1, 1, 1, 1)
+  combo_action_for_me_effect:SetEffectInterval(2, 0.8)
+  function slot:Anim_combo_aciton_for_me_effect(isStart)
+    self.combo_action_for_me:SetVisible(isStart)
+    self.combo_action_for_me_effect:SetStartEffect(isStart)
+  end
+  local combo_action_for_target = slot:CreateNinePartDrawable(TEXTURE_PATH.HUD, "artwork")
+  combo_action_for_target:SetVisible(false)
+  combo_action_for_target:SetCoords(757, 35, 13, 16)
+  combo_action_for_target:SetInset(6, 8, 6, 7)
+  combo_action_for_target:AddAnchor("TOPLEFT", slot, 1, 1)
+  combo_action_for_target:AddAnchor("BOTTOMRIGHT", slot, -1, -1)
+  slot.combo_action_for_target = combo_action_for_target
+  local combo_action_for_target_effect = slot:CreateEffectDrawable(TEXTURE_PATH.HUD, "artwork")
+  combo_action_for_target_effect:SetVisible(false)
+  combo_action_for_target_effect:SetInternalDrawType("ninepart")
+  combo_action_for_target_effect:SetCoords(757, 35, 13, 16)
+  combo_action_for_target_effect:SetInset(6, 8, 6, 7)
+  combo_action_for_target_effect:AddAnchor("TOPLEFT", slot, 1, 1)
+  combo_action_for_target_effect:AddAnchor("BOTTOMRIGHT", slot, -1, -1)
+  slot.combo_action_for_target_effect = combo_action_for_target_effect
+  combo_action_for_target_effect:SetRepeatCount(0)
+  combo_action_for_target_effect:SetEffectPriority(1, "alpha", 0.5, 0.4)
+  combo_action_for_target_effect:SetEffectInitialColor(1, 1, 1, 1, 0.4)
+  combo_action_for_target_effect:SetEffectFinalColor(1, 1, 1, 1, 1)
+  combo_action_for_target_effect:SetEffectScale(1, 0.3, 1, 0.3, 1)
+  combo_action_for_target_effect:SetEffectPriority(2, "alpha", 0.3, 0.2)
+  combo_action_for_target_effect:SetEffectInitialColor(2, 1, 1, 1, 0.9)
+  combo_action_for_target_effect:SetEffectFinalColor(2, 1, 1, 1, 0)
+  combo_action_for_target_effect:SetEffectScale(2, 1, 1, 1, 1)
+  combo_action_for_target_effect:SetEffectInterval(2, 0.8)
+  function slot:Anim_combo_aciton_for_target_effect(isStart)
+    self.combo_action_for_target:SetVisible(isStart)
+    self.combo_action_for_target_effect:SetStartEffect(isStart)
+  end
+  local toggleSkillEffectBg = slot:CreateEffectDrawable(TEXTURE_PATH.HUD, "artwork")
+  toggleSkillEffectBg:SetVisible(false)
+  toggleSkillEffectBg:SetInternalDrawType("ninepart")
+  toggleSkillEffectBg:SetCoords(743, 35, 13, 16)
+  toggleSkillEffectBg:SetInset(6, 8, 6, 7)
+  toggleSkillEffectBg:AddAnchor("TOPLEFT", slot, 1, 1)
+  toggleSkillEffectBg:AddAnchor("BOTTOMRIGHT", slot, -1, -1)
+  slot.toggleSkillEffectBg = toggleSkillEffectBg
+  toggleSkillEffectBg:SetRepeatCount(0)
+  toggleSkillEffectBg:SetEffectPriority(1, "alpha", 0.7, 0.6)
+  toggleSkillEffectBg:SetEffectInitialColor(1, 1, 1, 1, 0)
+  toggleSkillEffectBg:SetEffectFinalColor(1, 1, 1, 1, 1)
+  toggleSkillEffectBg:SetEffectPriority(2, "alpha", 0.5, 0.4)
+  toggleSkillEffectBg:SetEffectInitialColor(2, 1, 1, 1, 1)
+  toggleSkillEffectBg:SetEffectFinalColor(2, 1, 1, 1, 0)
+  local toggleSkillEffectLine = slot:CreateEffectDrawable(TEXTURE_PATH.HUD, "artwork")
+  toggleSkillEffectLine:SetCoords(795, 47, 18, 4)
+  toggleSkillEffectLine:SetExtent(18, 4)
+  toggleSkillEffectLine:AddAnchor("TOPLEFT", slot, 0, 1)
+  toggleSkillEffectLine:SetRepeatCount(0)
+  local animTime = 0.3
+  toggleSkillEffectLine:SetMoveEffectType(1, "top", 0, 0, animTime, animTime)
+  toggleSkillEffectLine:SetMoveEffectEdge(1, 0.5, 1.5)
+  toggleSkillEffectLine:SetEffectPriority(1, "alpha", animTime, animTime)
+  toggleSkillEffectLine:SetEffectInitialColor(1, 1, 1, 1, 0)
+  toggleSkillEffectLine:SetEffectFinalColor(1, 1, 1, 1, 1)
+  toggleSkillEffectLine:SetMoveEffectType(2, "top", 0, 0, animTime, animTime)
+  toggleSkillEffectLine:SetMoveEffectEdge(2, 1.5, 1.8)
+  toggleSkillEffectLine:SetEffectPriority(2, "alpha", animTime, animTime)
+  toggleSkillEffectLine:SetEffectInitialColor(2, 1, 1, 1, 1)
+  toggleSkillEffectLine:SetEffectFinalColor(2, 1, 1, 1, 0)
+  toggleSkillEffectLine:SetMoveEffectType(3, "right", 1.7, 0, animTime, animTime)
+  toggleSkillEffectLine:SetMoveEffectEdge(3, 1, 3.5)
+  toggleSkillEffectLine:SetEffectPriority(3, "alpha", animTime, animTime)
+  toggleSkillEffectLine:SetEffectInitialColor(3, 1, 1, 1, 0)
+  toggleSkillEffectLine:SetEffectFinalColor(3, 1, 1, 1, 1)
+  toggleSkillEffectLine:SetMoveEffectType(4, "right", 1.7, 0, animTime, animTime)
+  toggleSkillEffectLine:SetMoveEffectEdge(4, 3.5, 7.5)
+  toggleSkillEffectLine:SetEffectPriority(4, "alpha", animTime, animTime)
+  toggleSkillEffectLine:SetEffectInitialColor(4, 1, 1, 1, 1)
+  toggleSkillEffectLine:SetEffectFinalColor(4, 1, 1, 1, 0)
+  toggleSkillEffectLine:SetMoveEffectType(5, "bottom", 0, 9, animTime, animTime)
+  toggleSkillEffectLine:SetMoveEffectEdge(5, 2, 1.5)
+  toggleSkillEffectLine:SetEffectPriority(5, "alpha", animTime, animTime)
+  toggleSkillEffectLine:SetEffectInitialColor(5, 1, 1, 1, 0)
+  toggleSkillEffectLine:SetEffectFinalColor(5, 1, 1, 1, 1)
+  toggleSkillEffectLine:SetMoveEffectType(6, "bottom", 0, 9, animTime, animTime)
+  toggleSkillEffectLine:SetMoveEffectEdge(6, 1.5, 0.3)
+  toggleSkillEffectLine:SetEffectPriority(6, "alpha", animTime, animTime)
+  toggleSkillEffectLine:SetEffectInitialColor(6, 1, 1, 1, 1)
+  toggleSkillEffectLine:SetEffectFinalColor(6, 1, 1, 1, 0)
+  toggleSkillEffectLine:SetMoveEffectType(7, "left", 0.3, 0.2, animTime, animTime)
+  toggleSkillEffectLine:SetMoveEffectEdge(7, 7.5, 3.5)
+  toggleSkillEffectLine:SetEffectPriority(7, "alpha", animTime, animTime)
+  toggleSkillEffectLine:SetEffectInitialColor(7, 1, 1, 1, 0)
+  toggleSkillEffectLine:SetEffectFinalColor(7, 1, 1, 1, 1)
+  toggleSkillEffectLine:SetMoveEffectType(8, "left", 0.3, 0.2, animTime, animTime)
+  toggleSkillEffectLine:SetMoveEffectEdge(8, 3.5, 1.7)
+  toggleSkillEffectLine:SetEffectPriority(8, "alpha", animTime, animTime)
+  toggleSkillEffectLine:SetEffectInitialColor(8, 1, 1, 1, 1)
+  toggleSkillEffectLine:SetEffectFinalColor(8, 1, 1, 1, 0)
+  slot.toggleSkillEffectLine = toggleSkillEffectLine
+  function slot:AnimToggleSkill(isStart)
+    self.toggleSkillEffectBg:SetStartEffect(isStart)
+    self.toggleSkillEffectLine:SetStartEffect(isStart)
+  end
+  if baselibLocale.itemSideEffect == true then
+    slot.itemSideEffect = DrawItemSideEffectBackground(slot)
+  end
+  function slot:ResetAllAnimEffect()
+    self:Anim_combo_aciton_for_target_effect(false)
+    self:Anim_combo_aciton_for_me_effect(false)
+    if baselibLocale.itemSideEffect == true then
+      self:Anim_Item_Side_effect(false)
+    end
+    if self.toggle == false then
+      self:AnimToggleSkill(false)
+    end
+    if self.auto_attack == false then
+      self:Anim_auto_attack_effect(false)
+    end
+  end
+  function slot:OnMouseDown()
+  end
+  slot:SetHandler("OnMouseDown", slot.OnMouseDown)
+  function slot:OnMouseUp()
+  end
+  slot:SetHandler("OnMouseUp", slot.OnMouseUp)
+  local SetAutoAttackAnim = function(slot)
+    if not slot.isProgrssAutoAttackAnim and slot.auto_attack then
+      slot:Anim_auto_attack_effect(slot.auto_attack)
+      slot.isProgrssAutoAttackAnim = slot.auto_attack
+    elseif slot.isProgrssAutoAttackAnim and not slot.auto_attack then
+      slot:Anim_auto_attack_effect(slot.auto_attack)
+      slot.isProgrssAutoAttackAnim = slot.auto_attack
+    end
+  end
+  function slot:CheckStateImage()
+    local bindedType = self:GetBindedType()
+    self.limitLevel:SetVisible(false)
+    self.reqPointText:SetVisible(false)
+    self.levelText:SetVisible(false)
+    self.levelText.bg:SetVisible(false)
+    self.normalImage:SetColor(1, 1, 1, 1)
+    if bindedType == "none" then
+      self.stateImage:SetColor(1, 1, 1, 0)
+      self:ResetAllAnimEffect()
+      self.normalImage:SetColor(1, 1, 1, 0.2)
+    elseif bindedType == "pet_skill" then
+      if self.canUse == true then
+        self.stateImage:SetColor(1, 1, 1, 0)
+      else
+        if not self.learned then
+          self.stateImage:SetColor(ConvertColor(144), ConvertColor(18), ConvertColor(5), 0.6)
+        else
+          self.stateImage:SetColor(0, 0, 0, 0.75)
+        end
+        self:ResetAllAnimEffect()
+      end
+      SetAutoAttackAnim(slot)
+    elseif bindedType == "item" then
+      self.dyeingIcon:SetVisible(false)
+      self:SetLookIcon(nil)
+      self:SetLifeTimeIcon(nil)
+      self:SetPaperInfo(nil)
+      self:SetDestroyInfo(nil)
+      self:SetPackInfo(nil)
+      self:SetPaperInfo(nil)
+      local extraInfo = self:GetExtraInfo()
+      if extraInfo then
+        local dyeingInfo = extraInfo.dyeingInfo
+        if dyeingInfo ~= nil then
+          self.dyeingIcon:SetVisible(true)
+          self.dyeingIcon:SetColor(dyeingInfo.red, dyeingInfo.green, dyeingInfo.blue, 1)
+        end
+        self:SetLookIcon(extraInfo)
+        self:SetLifeTimeIcon(extraInfo)
+        self:SetPackInfo(extraInfo)
+        self:SetDestroyInfo(extraInfo)
+        self:SetPaperInfo(extraInfo)
+        if baselibLocale.itemSideEffect == true and extraInfo.sideEffect == true then
+          self:Anim_Item_Side_effect(true)
+        end
+      end
+      if self.canUse == true then
+        self.stateImage:SetColor(1, 1, 1, 0)
+        SetAutoAttackAnim(self)
+      else
+        self.stateImage:SetColor(0, 0, 0, 0.75)
+        self:ResetAllAnimEffect()
+      end
+      if not self.canUseLevel then
+        self.stateImage:SetColor(0, 0, 0, 0.75)
+      end
+      if self.levelRequirement ~= nil and self.levelRequirement ~= 0 and not self.canUseLevel then
+        self.limitLevel:SetVisible(true)
+        self.limitLevel:SetText(tostring(self.levelRequirement))
+      end
+    elseif bindedType == "skill" then
+      self.skillPointIcon:SetVisible(false)
+      local extraInfo = self:GetExtraInfo()
+      if extraInfo then
+        if extraInfo.skillPoints == 2 then
+          self.skillPointIcon:SetVisible(true)
+          self.skillPointIcon:SetCoords(205, 46, 25, 13)
+          self.skillPointIcon:SetWidth(25)
+        elseif extraInfo.skillPoints == 3 then
+          self.skillPointIcon:SetVisible(true)
+          self.skillPointIcon:SetCoords(205, 46, 38, 13)
+          self.skillPointIcon:SetWidth(38)
+        end
+      end
+      if self.canUse == true or self.onlyView ~= nil and self.onlyView then
+        self.stateImage:SetColor(1, 1, 1, 0)
+        self:AnimToggleSkill(self.toggle)
+        if self.visibleType >= SAT_NONACTIVE then
+          self:Anim_combo_aciton_for_me_effect(false)
+          self:Anim_combo_aciton_for_target_effect(false)
+          self.stateImage:SetColor(0, 0, 0, 0.75)
+        elseif self.combo ~= nil and self.combo ~= "normal" then
+          if self.combo == "source_buff" or self.combo == "source_skill_modifier" then
+            self:Anim_combo_aciton_for_me_effect(true)
+            self:Anim_combo_aciton_for_target_effect(false)
+          else
+            self:Anim_combo_aciton_for_me_effect(false)
+            self:Anim_combo_aciton_for_target_effect(true)
+          end
+        else
+          self:Anim_combo_aciton_for_me_effect(false)
+          self:Anim_combo_aciton_for_target_effect(false)
+        end
+        SetAutoAttackAnim(self)
+      else
+        if not self.learned then
+          if self.canLearn then
+            self.stateImage:SetColor(ConvertColor(8), ConvertColor(198), ConvertColor(160), 0.4)
+          else
+            self.stateImage:SetColor(ConvertColor(144), ConvertColor(18), ConvertColor(5), 0.6)
+          end
+        elseif self.useView then
+          self.stateImage:SetColor(1, 1, 1, 0)
+        else
+          self.stateImage:SetColor(0, 0, 0, 0.75)
+        end
+        self:ResetAllAnimEffect()
+      end
+      if self.showSavedSkills then
+        self.stateImage:SetColor(1, 1, 1, 0)
+      end
+      if self.skillLevel ~= nil and 1 < self.skillLevel then
+        self.levelText:SetText(tostring(self.skillLevel))
+        self.levelText:SetVisible(true)
+        self.levelText.bg:SetVisible(true)
+      end
+    elseif bindedType == "slave_skill" then
+      if self.canUse then
+        self.stateImage:SetColor(1, 1, 1, 0)
+      else
+        self.stateImage:SetColor(0, 0, 0, 0.75)
+      end
+    elseif bindedType == "function" then
+      self.stateImage:SetColor(1, 1, 1, 0)
+    elseif bindedType == "buff" then
+      if self.learned or self.onlyView ~= nil and self.onlyView then
+        self.stateImage:SetColor(1, 1, 1, 0)
+      else
+        if self.canLearn then
+          self.stateImage:SetColor(ConvertColor(8), ConvertColor(198), ConvertColor(160), 0.4)
+        else
+          self.stateImage:SetColor(ConvertColor(137), ConvertColor(0), ConvertColor(0), 0.6)
+        end
+        if 0 < self.reqPoints then
+          self.reqPointText:SetVisible(true)
+          self.reqPointText:SetText(tostring(self.reqPoints))
+        end
+      end
+      if self.showSavedSkills then
+        self.stateImage:SetColor(1, 1, 1, 0)
+        self.reqPointText:SetVisible(false)
+      end
+    end
+    if bindedType == "none" then
+      ApplyTextColor(self.keybindingLabel, FONT_COLOR.RED)
+    elseif bindedType == "function" then
+      ApplyTextColor(self.keybindingLabel, FONT_COLOR.WHITE)
+    elseif self.canUse and self.hotkey_activated then
+      ApplyTextColor(self.keybindingLabel, FONT_COLOR.WHITE)
+    else
+      ApplyTextColor(self.keybindingLabel, FONT_COLOR.RED)
+    end
+  end
+  function slot:OnContentUpdated(arg1, arg2, arg3)
+    if arg1 == "global_cooldown_start" or arg1 == "skill_cooldown_start" then
+      self.cooldown = true
+      self.cooldownDuration = arg2
+    elseif arg1 == "global_cooldown_done" or arg1 == "skill_cooldown_done" then
+      self.cooldown = false
+      self.cooldownDuration = 0
+    elseif arg1 == "stack_count_changed" then
+      self.stackCount = arg2
+      if self.stackCount > 1 then
+        self.stackLabel:SetText(tostring(self.stackCount))
+      else
+        self.stackLabel:SetText("")
+      end
+    elseif arg1 == "action_binded" then
+      self.binded = arg2
+      self.cooldown = false
+      self.canUse = false
+      self.canUseLevel = true
+      self.toggle = false
+      self.combo = nil
+      self.stackCount = 0
+      self.cooldownDuration = 0
+      self.learned = false
+      self.auto_attack = false
+      self.hotkey_overrided = true
+      self.isProgrssAutoAttackAnim = false
+      self.canLearn = false
+      self.reqPoints = 0
+      self.skillLevel = 0
+      self.visibleType = 0
+      self:Anim_auto_attack_effect(false)
+      self:Anim_combo_aciton_for_me_effect(false)
+      self:Anim_combo_aciton_for_target_effect(false)
+      self.dyeingIcon:SetVisible(false)
+      self.skillPointIcon:SetVisible(false)
+      self:SetLookIcon(nil)
+      self:SetLifeTimeIcon(nil)
+      self:SetPaperInfo(nil)
+      self:SetDestroyInfo(nil)
+      self:SetPackInfo(nil)
+      self.stackLabel:SetText("")
+      if self.binded == true then
+        NotifyEmptyActionBarSlotCount()
+      else
+        CancelAutoRegisteredEffect()
+      end
+    elseif arg1 == "can_use" then
+      self.canUse = arg2
+    elseif arg1 == "skill_toggled" then
+      self.toggle = arg2
+    elseif arg1 == "can_use_level" then
+      self.canUseLevel = arg2
+      self.levelRequirement = arg3
+    elseif arg1 == "combo_action" then
+      self.combo = arg2
+    elseif arg1 == "auto_attack" then
+      self.auto_attack = arg2
+    elseif arg1 == "buff_skill" then
+    elseif arg1 == "learned" then
+      self.learned = arg2
+    elseif arg1 == "hotkey_activated" then
+      self.hotkey_activated = arg2
+    elseif arg1 == "canLearn" then
+      self.canLearn = arg2
+    elseif arg1 == "reqPoints" then
+      self.reqPoints = arg2
+    elseif arg1 == "skillLevel" then
+      self.skillLevel = arg2
+    elseif arg1 == "visibleType" then
+      self.visibleType = arg2
+    end
+    self:CheckStateImage()
+  end
+  slot:SetHandler("OnContentUpdated", slot.OnContentUpdated)
+  function slot:Reset()
+    self.cooldown = false
+    self.canUse = false
+    self.combo = nil
+    self.cooldownDuration = 0
+    self.toggle = false
+    self.learned = false
+    self.auto_attack = false
+    self.isProgrssAutoAttackAnim = false
+    self.canLearn = false
+    self.reqPoints = 0
+    self.skillLevel = 0
+    self:Anim_auto_attack_effect(false)
+    self:Anim_combo_aciton_for_me_effect(false)
+    self:Anim_combo_aciton_for_target_effect(false)
+    self.dyeingIcon:SetVisible(false)
+    self.skillPointIcon:SetVisible(false)
+    self:SetLookIcon(nil)
+    self:SetDestroyInfo(nil)
+    self:SetPackInfo(nil)
+    self:SetPaperInfo(nil)
+    self:SetLifeTimeIcon(nil)
+    self:ResetState()
+  end
+  if slotType ~= ISLOT_CONSTANT then
+    slot:EstablishSlot(slotType, slotIdx)
+  end
+  local ActionSlotEvents = {
+    LEFT_LOADING = function()
+      slot:Reset()
+    end
+  }
+  slot:SetHandler("OnEvent", function(this, event, ...)
+    ActionSlotEvents[event](...)
+  end)
+  slot:RegisterEvent("LEFT_LOADING")
+  return slot
+end
+local isLock
+function IsActionBarLocked()
+  if isLock == nil then
+    isLock = GetOptionItemValue(OPTION_ITEM_ACTION_BAR_LOCK)
+  end
+  return isLock
+end
+function ActionBarLock(lock)
+  SetOptionItemValue(OPTION_ITEM_ACTION_BAR_LOCK, lock)
+  X2Option:Save()
+  isLock = lock
+end
+function NotifyEmptyActionBarSlotCount()
+  local onlyShowBaseActionBar = true
+  local emptySlotCnt = 0
+  if actionBar_renewal ~= nil then
+    for i = 1, #actionBar_renewal do
+      if actionBar_renewal[i]:IsVisible() then
+        if i > 3 then
+          break
+        else
+          for var in pairs(actionBar_renewal[i].slot) do
+            if actionBar_renewal[i].slot[var]:GetBindedType() == "none" then
+              emptySlotCnt = emptySlotCnt + 1
+            end
+          end
+        end
+      end
+    end
+  end
+  X2Action:BaseActionBarEmptySlotCount(emptySlotCnt)
+end
+function CancelAutoRegisteredEffect()
+  if actionBar_renewal == nil then
+    return
+  end
+  for i = 1, AUTO_REGISTER_ACTIONBAR_NUM do
+    local actionBar = actionBar_renewal[i]
+    if actionBar ~= nil then
+      for j = actionBar.buttonStartIndex, actionBar.buttonEndIndex do
+        local slot = actionBar.slot[j]
+        if slot.flicker ~= nil and not slot.binded then
+          slot:CancelEffect()
+        end
+      end
+    end
+  end
+end

@@ -1,0 +1,1096 @@
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+local featureSet = X2Player:GetFeatureSet()
+function GetRemainTimeString(time)
+  local tipText = locale.tooltip
+  if time <= 0 then
+    return ""
+  end
+  local sec = time % 60
+  local totalMinute = math.floor(time / 60)
+  local minute = totalMinute % 60
+  local totalHour = math.floor(totalMinute / 60)
+  local minute = totalMinute % 60
+  local totalHour = math.floor(totalMinute / 60)
+  local hour = totalHour % 24
+  local day = math.floor(totalHour / 24)
+  local str = ""
+  if sec ~= 0 then
+    str = string.format("%d%s", sec, tipText.second)
+  end
+  if minute ~= 0 then
+    if 0 < string.len(str) then
+      str = " " .. str
+    end
+    str = string.format("%d%s%s", minute, tipText.minute, str)
+  end
+  if hour ~= 0 then
+    if 0 < string.len(str) then
+      str = " " .. str
+    end
+    str = string.format("%d%s%s", hour, tipText.hour, str)
+  end
+  if day ~= 0 then
+    if 0 < string.len(str) then
+      str = " " .. str
+    end
+    str = string.format("%d%s%s", day, tipText.day, str)
+  end
+  str = locale.login.remainTime(str)
+  return str
+end
+function AddEvent(widget)
+  widget.deleteWaiting = false
+  function widget:Init()
+    widget.emptySlot = true
+    widget.openBtn.infoLabel:SetText("")
+    widget.openBtn.infoLabel.style:SetColor(0.3, 0.3, 0.3, 1)
+    widget.closeBtn.infoLabel.style:SetColor(0.3, 0.3, 0.3, 1)
+  end
+  local delay = 300
+  function widget:OnUpdate(dt)
+    delay = delay + dt
+    if delay > 300 then
+      delay = 0
+      local remain = X2LoginCharacter:GetCharacterDeleteWaitingTime(CalcCharacterIndex(widget.index))
+      if remain == nil then
+        widget.deleteWaitingLabel:SetText("")
+      else
+        widget.deleteWaitingLabel:SetText(GetRemainTimeString(remain))
+      end
+    end
+  end
+  function widget:Update(name, job, level, seled, deleteWaiting, transferWaiting)
+    self.emptySlot = false
+    local str = string.format("%s %s", X2Locale:LocalizeUiText(COMMON_TEXT, "character_level", tostring(level)), job)
+    name = X2Util:UTF8StringLimit(name, 12, "...")
+    widget.openBtn:SetText(name)
+    widget.openBtn.infoLabel:SetText(str)
+    widget.closeBtn:SetText(name)
+    widget.closeBtn.infoLabel:SetText(str)
+    if seled == true then
+      self.selected = true
+    else
+      self.selected = false
+    end
+    local isDisable = deleteWaiting
+    isDisable = featureSet.forbidTransferChar and (deleteWaiting or transferWaiting)
+    if isDisable then
+      widget.openBtn.infoLabel.style:SetColor(ConvertColor(144), ConvertColor(77), ConvertColor(77), 1)
+      widget.closeBtn.infoLabel.style:SetColor(ConvertColor(144), ConvertColor(77), ConvertColor(77), 1)
+    else
+      widget.openBtn.infoLabel.style:SetColor(0.3, 0.3, 0.3, 1)
+      widget.closeBtn.infoLabel.style:SetColor(0.3, 0.3, 0.3, 1)
+    end
+    if deleteWaiting then
+      widget.deleteWaitingLabel:Show(true)
+      widget:SetHandler("OnUpdate", widget.OnUpdate)
+    else
+      widget.deleteWaitingLabel:Show(false)
+      widget:ReleaseHandler("OnUpdate")
+    end
+    self.deleteWaiting = deleteWaiting
+  end
+end
+function CalcPageInfo(charIndex, totalCharCount)
+  if charIndex == nil or totalCharCount <= 0 or not featureSet.useCharacterListPage then
+    return
+  end
+  characterSelectWindow.rightPanel.pageControl:SetPageByItemCount(totalCharCount, MAX_CHARACTER_COUNT, false)
+  currentPage = math.floor(charIndex / MAX_CHARACTER_COUNT)
+  if charIndex % MAX_CHARACTER_COUNT ~= 0 then
+    currentPage = currentPage + 1
+  end
+  characterSelectWindow.rightPanel.pageControl:SetCurrentPage(currentPage, false)
+end
+function GetFirstCharacterIndex(totalCharCount)
+  if totalCharCount > 0 then
+    if not featureSet.useCharacterListPage then
+      return 1
+    end
+    characterSelectWindow.rightPanel.pageControl:SetPageByItemCount(totalCharCount, MAX_CHARACTER_COUNT, false)
+    local currentPage = characterSelectWindow.rightPanel.pageControl:GetCurrentPageIndex()
+    return (currentPage - 1) * MAX_CHARACTER_COUNT + 1
+  end
+  return nil
+end
+function CalcDisplayCharacterCountOnCurrentPage(totalCharCount)
+  if totalCharCount <= 0 then
+    return 0
+  end
+  local currentPage = 1
+  if featureSet.useCharacterListPage then
+    currentPage = characterSelectWindow.rightPanel.pageControl:GetCurrentPageIndex()
+  end
+  if totalCharCount >= currentPage * MAX_CHARACTER_COUNT then
+    return MAX_CHARACTER_COUNT
+  end
+  return totalCharCount - (currentPage - 1) * MAX_CHARACTER_COUNT
+end
+function CalcCharacterIndex(selectedButtonIndex)
+  local currentPage = 1
+  if featureSet.useCharacterListPage then
+    currentPage = characterSelectWindow.rightPanel.pageControl:GetCurrentPageIndex()
+  end
+  return selectedButtonIndex + (currentPage - 1) * MAX_CHARACTER_COUNT
+end
+function CalcCharacterButtonIndex(selectedCharIndex)
+  if selectedCharIndex == 0 or selectedCharIndex == nil then
+    return nil
+  end
+  if selectedCharIndex % MAX_CHARACTER_COUNT == 0 then
+    return MAX_CHARACTER_COUNT
+  end
+  return selectedCharIndex % MAX_CHARACTER_COUNT
+end
+function FindSelectedCharacterIdx()
+  if charButtonList == nil then
+    return nil
+  end
+  for i = 1, #charButtonList do
+    if charButtonList[i].selected == true then
+      return CalcCharacterIndex(i)
+    end
+  end
+  return nil
+end
+local CreateWorldQueueWindow = function(id, parent)
+  local wnd = parent:CreateChildWidget("emptywidget", id, 0, true)
+  wnd:SetExtent(1000, 100)
+  wnd:AddAnchor("CENTER", parent, 0, -100)
+  wnd:Clickable(false)
+  local bg = wnd:CreateNinePartDrawable(LOGIN_STAGE_TEXTURE_PATH.QUEUE, "background")
+  bg:SetCoords(0, 0, 512, 4)
+  bg:SetInset(251, 2, 260, 1)
+  bg:SetColor(ConvertColor(18), ConvertColor(35), ConvertColor(83), 1)
+  bg:AddAnchor("TOPLEFT", wnd, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", wnd, 0, 0)
+  local userTypeText = wnd:CreateChildWidget("textbox", "userTypeText", 0, true)
+  userTypeText:SetExtent(500, FONT_SIZE.XXLARGE)
+  userTypeText:AddAnchor("TOP", wnd, 0, 24)
+  userTypeText.style:SetAlign(ALIGN_CENTER)
+  userTypeText.style:SetSnap(true)
+  userTypeText.style:SetShadow(true)
+  userTypeText.style:SetFontSize(FONT_SIZE.XXLARGE)
+  ApplyTextColor(userTypeText, FONT_COLOR.WHITE)
+  local normalLengthText = wnd:CreateChildWidget("textbox", "normalLengthText", 0, true)
+  normalLengthText:SetExtent(500, FONT_SIZE.XLARGE)
+  normalLengthText:AddAnchor("TOP", userTypeText, "BOTTOM", 0, 10)
+  normalLengthText.style:SetAlign(ALIGN_CENTER)
+  normalLengthText.style:SetSnap(true)
+  normalLengthText.style:SetShadow(true)
+  normalLengthText.style:SetFontSize(FONT_SIZE.XLARGE)
+  ApplyTextColor(normalLengthText, FONT_COLOR.WHITE)
+  local premiumLengthText = wnd:CreateChildWidget("textbox", "premiumLengthText", 0, true)
+  premiumLengthText:SetExtent(500, FONT_SIZE.XLARGE)
+  premiumLengthText:AddAnchor("TOP", normalLengthText, "BOTTOM", 0, 5)
+  premiumLengthText.style:SetAlign(ALIGN_CENTER)
+  premiumLengthText.style:SetSnap(true)
+  premiumLengthText.style:SetShadow(true)
+  premiumLengthText.style:SetFontSize(FONT_SIZE.XLARGE)
+  ApplyTextColor(premiumLengthText, FONT_COLOR.WHITE)
+  local waitingRemain = wnd:CreateChildWidget("textbox", "waitingRemain", 0, true)
+  waitingRemain:SetExtent(500, FONT_SIZE.XLARGE)
+  waitingRemain:AddAnchor("TOP", premiumLengthText, "BOTTOM", 0, 5)
+  waitingRemain.style:SetAlign(ALIGN_CENTER)
+  waitingRemain.style:SetSnap(true)
+  waitingRemain.style:SetShadow(true)
+  waitingRemain.style:SetFontSize(FONT_SIZE.XLARGE)
+  ApplyTextColor(waitingRemain, FONT_COLOR.WHITE)
+  local noticeBox = wnd:CreateChildWidget("textbox", "noticeBox", 0, true)
+  noticeBox:SetExtent(500, FONT_SIZE.LARGE)
+  noticeBox:SetAutoResize(true)
+  noticeBox:AddAnchor("BOTTOM", wnd, "BOTTOM", -70, -24)
+  noticeBox.style:SetAlign(ALIGN_LEFT)
+  noticeBox.style:SetSnap(true)
+  noticeBox.style:SetShadow(true)
+  noticeBox:SetLineSpace(5)
+  noticeBox.style:SetFontSize(FONT_SIZE.LARGE)
+  local noticeColor = {
+    ConvertColor(136),
+    ConvertColor(223),
+    ConvertColor(255),
+    1
+  }
+  ApplyTextColor(noticeBox, noticeColor)
+  function wnd:UpdateWaitingInfo()
+    local isPremiumUser = X2LoginCharacter:IsInPremiumQueue()
+    local normalLength = X2LoginCharacter:GetWorldNormalQueueLength()
+    local premiumLength = X2LoginCharacter:GetWorldPremiumQueueLength()
+    local remainLength = X2LoginCharacter:GetWorldQueuePosition()
+    local remainTime = X2LoginCharacter:GetWorldQueueExpectedTime()
+    local premiumUserType = GetCommonText("premiumUserType")
+    local normalUserType = GetCommonText("normalUserType")
+    userTypeText:SetText(GetCommonText("userTypeText", isPremiumUser and premiumUserType or normalUserType, string.format("%s%s|r", FONT_COLOR_HEX.ORANGE, tostring(remainLength))))
+    normalLengthText:SetText(GetCommonText("waitingUserCount", normalUserType, string.format("%s|,%d;|r", FONT_COLOR_HEX.ORANGE, normalLength)))
+    premiumLengthText:SetText(GetCommonText("waitingUserCount", premiumUserType, string.format("%s|,%d;|r", FONT_COLOR_HEX.ORANGE, premiumLength)))
+    local timeStr
+    if remainTime > 0 then
+      local time = math.floor(remainTime / 60)
+      local minute = time % 60
+      time = math.floor(time / 60)
+      local hour = time % 24
+      time = math.floor(time / 24)
+      local day = time
+      local filter = FORMAT_FILTER.DAY + FORMAT_FILTER.HOUR + FORMAT_FILTER.MINUTE
+      local tStr = locale.time.GetRemainDate(0, 0, day, hour, minute, 0, filter)
+      timeStr = GetCommonText("waiting_remainTime_text", string.format("%s%s|r", FONT_COLOR_HEX.ORANGE, tStr))
+    else
+      timeStr = GetCommonText("waiting_remainTime_calculating_text")
+    end
+    waitingRemain:SetText(timeStr)
+    local noticeStr = GetCommonText("world_waiting_queue_notice")
+    local noticeNum = 1
+    local usePremium = X2LoginCharacter:UsePremiumEntrance()
+    if usePremium then
+      userTypeText:Show(true)
+      normalLengthText:Show(true)
+      premiumLengthText:Show(true)
+      waitingRemain:Show(true)
+      waitingRemain:AddAnchor("TOP", premiumLengthText, "BOTTOM", 0, 5)
+      noticeStr = string.format([[
+%s
+%d.%s]], noticeStr, noticeNum, GetCommonText("world_waiting_queue_notice_1"))
+      noticeNum = noticeNum + 1
+      wnd:SetHeight(230)
+    else
+      userTypeText:Show(true)
+      normalLengthText:Show(false)
+      premiumLengthText:Show(false)
+      waitingRemain:Show(true)
+      waitingRemain:AddAnchor("TOP", userTypeText, "BOTTOM", 0, 10)
+      noticeBox:SetLineSpace(8)
+      wnd:SetHeight(180)
+    end
+    noticeStr = string.format([[
+%s
+%d.%s]], noticeStr, noticeNum, GetCommonText("world_waiting_queue_notice_2"))
+    noticeBox:SetText(noticeStr)
+  end
+  return wnd
+end
+characterSelectWindow = CreateEmptyWindow("characterSelectWindow", "UIParent")
+characterSelectWindow:Show(true)
+characterSelectWindow:AddAnchor("TOPLEFT", "UIParent", "TOPLEFT", 0, 0)
+characterSelectWindow:AddAnchor("BOTTOMRIGHT", "UIParent", "BOTTOMRIGHT", 0, 0)
+characterSelectWindow:SetUILayer("game")
+characterSelectWindow:Clickable(false)
+characterSelectWindow.rightPanel = CreateEmptyWindow("characterSelectWindow.rightPanel", characterSelectWindow)
+characterSelectWindow.rightPanel:Show(true)
+characterSelectWindow.rightPanel:SetWidth(455)
+characterSelectWindow.rightPanel:AddAnchor("TOPRIGHT", characterSelectWindow, 0, 0)
+characterSelectWindow.rightPanel:AddAnchor("BOTTOMRIGHT", characterSelectWindow, 0, 0)
+local rightPanel = characterSelectWindow.rightPanel
+characterSelectWindow.bottomPanel = CreateBottomPanel("characterSelectWindow.bottomPanel", characterSelectWindow)
+local bottomPanel = characterSelectWindow.bottomPanel
+characterSelectWindow.bgWindow = CreateLoginStageBgWindow(CH_SELECT_BG_PATH)
+characterSelectWindow.queueWindow = CreateWorldQueueWindow("queueWindow", characterSelectWindow)
+characterSelectWindow.queueWindow:Clickable(false)
+characterSelectWindow.queueWindow:Show(false)
+local authMessage = CreateAuthMessageWindow(characterSelectWindow)
+authMessage:AddAnchor("TOP", characterSelectWindow, 0, 200)
+authMessage:SetExtent(250, 20)
+characterSelectWindow.authMessage = authMessage
+local selecteArcheAgeLogo = CreatePageTitleLogo("selecteArcheAgeLogo", characterSelectWindow, "selectPage")
+local serverName = characterSelectWindow:CreateChildWidget("label", "serverName", 0, true)
+serverName:SetExtent(100, FONT_SIZE.LARGE)
+serverName:SetAlpha(0.7)
+serverName:SetAutoResize(true)
+serverName:SetText(X2World:GetCurrentWorldName())
+serverName:AddAnchor("TOPLEFT", selecteArcheAgeLogo, "TOPRIGHT", 3, 3)
+serverName.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.MIDDLE)
+serverName.style:SetAlign(ALIGN_LEFT)
+ApplyTextColor(serverName, FONT_COLOR.BLACK)
+local textFrame = characterSelectWindow:CreateChildWidget("emptywidget", "textFrame", 0, true)
+textFrame:Show(true)
+textFrame:AddAnchor("TOP", characterSelectWindow, 0, sideMargin / 2)
+textFrame:SetHeight(FONT_SIZE.LARGE)
+local bmMileage = characterSelectWindow:CreateChildWidget("textbox", "bmMileage", 0, true)
+bmMileage:SetHeight(FONT_SIZE.LARGE)
+bmMileage:AddAnchor("LEFT", textFrame, 0, 0)
+ApplyTextColor(bmMileage, FONT_COLOR.WHITE)
+bmMileage.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.MIDDLE)
+bmMileage.style:SetAlign(ALIGN_CENTER)
+local laborpower_label = characterSelectWindow:CreateChildWidget("textbox", "laborpower_label", 0, true)
+laborpower_label:SetHeight(FONT_SIZE.LARGE)
+laborpower_label:AddAnchor("RIGHT", textFrame, 0, 0)
+ApplyTextColor(laborpower_label, FONT_COLOR.WHITE)
+laborpower_label.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.MIDDLE)
+laborpower_label.style:SetAlign(ALIGN_CENTER)
+function textFrame:SetValue(existCharacter)
+  local laborpower_label = characterSelectWindow.laborpower_label
+  local bmMileage = characterSelectWindow.bmMileage
+  local inset = 0
+  local laborPower = X2LoginCharacter:GetLoginCharacterLaborPower(1)
+  local maxLaborPower = X2LoginCharacter:GetLoginCharacterMaxLaborPower(1)
+  local mileage = X2LoginCharacter:GetLoginCharacterBmPoint(1)
+  if not existCharacter then
+    laborPower = 0
+    maxLaborPower = 0
+    mileage = 0
+  end
+  if not baselibLocale.useMileage then
+    bmMileage:Show(false)
+    bmMileage:SetWidth(0)
+  else
+    bmMileage:Show(true)
+    bmMileage:SetWidth(500)
+    bmMileage:SetText(string.format("%s |b%s;", locale.bmmileage.bmmileage, tostring(mileage)))
+    bmMileage:SetWidth(bmMileage:GetLongestLineWidth() + 7)
+    inset = sideMargin / 2
+  end
+  local laborText = characterSelectLocale.GetLaborPowerText(laborPower, maxLaborPower)
+  laborpower_label:SetWidth(500)
+  laborpower_label:SetText(laborText)
+  laborpower_label:SetWidth(laborpower_label:GetLongestLineWidth() + 7)
+  textFrame:SetWidth(laborpower_label:GetWidth() + bmMileage:GetWidth() + inset)
+end
+function CreatePremiumServiceGrade()
+  local premiumLabelOffset = sideMargin / 2 + textFrame:GetHeight()
+  local premiumLabel = characterSelectWindow:CreateChildWidget("label", "premiumLabel", 0, true)
+  premiumLabel:SetAutoResize(true)
+  premiumLabel:AddAnchor("TOP", characterSelectWindow, 0, premiumLabelOffset + 13)
+  premiumLabel:SetHeight(FONT_SIZE.XLARGE)
+  premiumLabel.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.XLARGE)
+  premiumLabel.style:SetAlign(ALIGN_CENTER)
+  local grade = X2LoginCharacter:GetLoginCharacterPremiumGrade(1)
+  local isPremiumService = X2PremiumService:IsPremiumService()
+  local premiumServiceButton
+  if featureSet.buyPremiuminSelChar then
+    premiumServiceButton = CreatePremiumService(characterSelectWindow)
+    premiumServiceButton:RemoveAllAnchors()
+  end
+  if grade == PG_PREMIUM_0 or isPremiumService == false then
+    premiumLabel:Show(false)
+    if premiumServiceButton ~= nil then
+      premiumServiceButton:AddAnchor("TOP", characterSelectWindow, 0, premiumLabelOffset + 19)
+    end
+  else
+    if baselibLocale.premiumService.usePremiumGrade then
+      premiumLabel:SetText(locale.premium.premium_grade_num(tostring(grade - 1)))
+    else
+      premiumLabel:SetText(GetUIText(PREMIUM_TEXT, "premium_service"))
+    end
+    premiumLabel:Show(true)
+    if premiumServiceButton ~= nil then
+      premiumServiceButton:AddAnchor("TOP", premiumLabel, "BOTTOM", 0, 17)
+    end
+  end
+end
+local CreatePayFrame = function(widget, direction)
+  local iconWidth = localeView.payIcon.extent[1]
+  local iconHeight = localeView.payIcon.extent[2]
+  local payFrame = widget:CreateChildWidget("emptywidget", "payFrame", 0, true)
+  payFrame:Show(true)
+  payFrame.icon = {}
+  for i = 1, 3 do
+    do
+      local icon = payFrame:CreateChildWidget("emptywidget", "icon", i, true)
+      icon:Show(false)
+      icon:SetExtent(iconWidth, iconHeight)
+      if direction == "vertical" then
+        icon:AddAnchor("TOP", payFrame, 0, (i - 1) * iconHeight)
+      elseif direction == "horizon" then
+        icon:AddAnchor("LEFT", payFrame, (i - 1) * iconWidth, 0)
+      end
+      local bg = icon:CreateImageDrawable(TEXTURE_PATH.HUD, "overlay")
+      bg:AddAnchor("TOPLEFT", icon, 0, 0)
+      bg:AddAnchor("BOTTOMRIGHT", icon, 0, 0)
+      icon.bg = bg
+      function icon:SetIconTooltip(texts)
+        local function OnEnter()
+          local anchorInfos = {
+            myAnchor = "TOPLEFT",
+            targetAnchor = "TOPRIGHT",
+            x = 0,
+            y = 0
+          }
+          ShowTextTooltip(self, nil, texts, anchorInfos)
+        end
+        icon:SetHandler("OnEnter", OnEnter)
+        local OnLeave = function()
+          HideTextTooltip()
+        end
+        icon:SetHandler("OnLeave", OnLeave)
+      end
+    end
+  end
+  if direction == "vertical" then
+    payFrame:SetWidth(iconWidth)
+  elseif direction == "horizon" then
+    payFrame:SetHeight(iconHeight)
+  end
+  local GetToolipTexts = function(payType)
+    if not X2:IsEnteredWorld() then
+      return
+    end
+    local PAY_TYPE = {
+      EVERY = 1,
+      PCBANG = 2,
+      PREMIUM = 3,
+      FREE = 4
+    }
+    local function GetPayTypeText(kind)
+      if kind == PAY_TYPE.PCBANG then
+        return string.format("%s%s|r", FONT_COLOR_HEX.MILEAGE_PCROOM, locale.bmmileage.bmmileage_pcbang)
+      elseif kind == PAY_TYPE.PREMIUM then
+        return string.format("%s%s|r", FONT_COLOR_HEX.MILEAGE_ARCHELIFE, locale.bmmileage.bmmileage_archelife)
+      elseif kind == PAY_TYPE.FREE then
+        return string.format("%s%s|r", FONT_COLOR_HEX.MILEAGE_FREE, locale.bmmileage.bmmileage_free)
+      end
+    end
+    local kindStrTable = {
+      "",
+      GetPayTypeText(2),
+      GetPayTypeText(3),
+      GetPayTypeText(4)
+    }
+    local function AddTip(kind, addStr)
+      kindStrTable[kind] = string.format([[
+%s
+%s]], kindStrTable[kind], addStr)
+    end
+    local scheduleList = X2Player:GetScheduleItemList(false)
+    if #scheduleList == 0 then
+      return X2Locale:LocalizeUiText(INFOBAR_MENU_TIP_TEXT, "bmmileage_none_info")
+    end
+    local GetTimeStr = function(timeInfo)
+      return locale.server.paramTimeAboutMinutes(timeInfo)
+    end
+    local function GetKindTip(kind, itemName, giveTerm, giveCount, giveMax, time)
+      local str = ""
+      local remainingTime = string.format("%s%s|r", FONT_COLOR_HEX.ORANGE, GetTimeStr(giveTerm - time))
+      if giveTerm == 0 then
+        if giveCount == giveMax then
+          str = locale.mileage.none_give_term_give_max(itemName, string.format("|,%d;", giveMax), FONT_COLOR_HEX.RED, locale.mileage.gived_max_warning)
+        else
+          str = locale.mileage.none_give_term(itemName, string.format("|,%d;", giveMax))
+        end
+      else
+        local termTime = string.format("%s%s|r", FONT_COLOR_HEX.ORANGE, GetTimeStr(giveTerm))
+        if giveCount == giveMax then
+          str = locale.mileage.gived_max(itemName, termTime, FONT_COLOR_HEX.RED, locale.mileage.gived_max_warning)
+        else
+          str = locale.mileage.none_give_max(itemName, termTime, remainingTime)
+        end
+      end
+      AddTip(kind, str)
+    end
+    for i = 1, #scheduleList do
+      local info = X2Player:GetScheduleItemInfo(scheduleList[i])
+      if not info.activeTake then
+        local itemInfo = X2Item:GetItemInfoByType(info.itemType)
+        local itemName
+        if info.itemType == BM_MILEAGE_ITEM_TYPE then
+          itemName = string.format("%s%s %s|r", FONT_COLOR_HEX.ORANGE, itemInfo.name, X2Locale:LocalizeUiText(COMMON_TEXT, "piece_count", tostring(info.itemCount)))
+        else
+          itemName = string.format("%s%s %s|r", FONT_COLOR_HEX.ORANGE, itemInfo.name, X2Locale:LocalizeUiText(COMMON_TEXT, "amount", tostring(info.itemCount)))
+        end
+        GetKindTip(info.kind, itemName, info.giveTerm, info.give, info.giveMax, info.time)
+      end
+    end
+    if payType == "pcbang" then
+      return kindStrTable[2]
+    elseif payType == "person_time" or payType == "person" then
+      return kindStrTable[3]
+    elseif payType == "trial" or payType == "event" then
+      return kindStrTable[4]
+    end
+  end
+  function payFrame:SetValue()
+    if baselibLocale.viewArcheLifeIcon == false then
+      payFrame:Show(false)
+      return
+    end
+    local payMethod = X2Player:GetPayMethod()
+    local payLocation = X2Player:GetPayLocation()
+    if payMethod == "unknown" and payLocation == "unknown" then
+      payFrame:Show(false)
+      return
+    end
+    for i = 1, #self.icon do
+      self.icon[i]:Show(false)
+    end
+    local index = 1
+    if payMethod == "person_time" or payMethod == "person" then
+      payFrame.icon[index]:Show(true)
+      payFrame.icon[index].bg:SetCoords(localeView.payIcon.person[1], localeView.payIcon.person[2], localeView.payIcon.person[3], localeView.payIcon.person[4])
+      payFrame.icon[index]:SetIconTooltip(GetToolipTexts(payMethod))
+      index = index + 1
+    end
+    if payLocation == "pcbang" then
+      payFrame.icon[index]:Show(true)
+      payFrame.icon[index].bg:SetCoords(localeView.payIcon.pcbang[1], localeView.payIcon.pcbang[2], localeView.payIcon.pcbang[3], localeView.payIcon.pcbang[4])
+      payFrame.icon[index]:SetIconTooltip(GetToolipTexts(payLocation))
+      index = index + 1
+    elseif payMethod == "trial" or payMethod == "event" then
+      payFrame.icon[index]:Show(true)
+      payFrame.icon[index].bg:SetCoords(localeView.payIcon.trial[1], localeView.payIcon.trial[2], localeView.payIcon.trial[3], localeView.payIcon.trial[4])
+      payFrame.icon[index]:SetIconTooltip(GetToolipTexts(payMethod))
+      index = index + 1
+    end
+    if index == 1 then
+      payFrame:Show(false)
+      return
+    end
+    payFrame:Show(true)
+    if direction == "vertical" then
+      payFrame:SetExtent(iconWidth, iconHeight * (index - 1))
+    elseif direction == "horizon" then
+      payFrame:SetExtent(iconWidth * (index - 1), iconHeight)
+    end
+  end
+end
+if X2PremiumService:IsPremiumServiceEnable() then
+  CreatePremiumServiceGrade()
+else
+  CreatePayFrame(characterSelectWindow, "horizon")
+  characterSelectWindow.payFrame:AddAnchor("TOP", textFrame, "BOTTOM", 0, 6)
+end
+local CreateForceRenamedCharacterNotice = function(id, parent)
+  local forceRenameNotice = parent:CreateChildWidget("label", id, 0, true)
+  forceRenameNotice:SetAutoResize(true)
+  forceRenameNotice:SetHeight(FONT_SIZE.LARGE)
+  forceRenameNotice.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.LARGE)
+  forceRenameNotice.style:SetAlign(ALIGN_CENTER)
+  forceRenameNotice:SetText(locale.characterSelect.character_name_force_changed)
+  ApplyTextColor(forceRenameNotice, FONT_COLOR.BATTLEFIELD_YELLOW)
+  local noticeLabelBg = forceRenameNotice:CreateImageDrawable(TEXTURE_PATH.PREMIUM_SERVICE_LOGIN_STAGE_GRADE, "background")
+  noticeLabelBg:SetExtent(600, 100)
+  noticeLabelBg:AddAnchor("CENTER", forceRenameNotice, 50, 10)
+  noticeLabelBg:SetColor(ConvertColor(137), ConvertColor(179), ConvertColor(198), 1)
+  noticeLabelBg:SetVisible(true)
+  return forceRenameNotice
+end
+characterSelectWindow.forceRenameNotice = CreateForceRenamedCharacterNotice("forceRenameNotice", characterSelectWindow)
+characterSelectWindow.forceRenameNotice:AddAnchor("TOP", characterSelectWindow, 0, 120)
+characterSelectWindow.forceRenameNotice:Show(false)
+local CreatePreSelectPeriodNotice = function(id, parent)
+  local preSelectPeriodNotice = parent:CreateChildWidget("textbox", id, 0, true)
+  preSelectPeriodNotice:SetWidth(300)
+  preSelectPeriodNotice:SetAutoResize(true)
+  preSelectPeriodNotice:SetLineSpace(5)
+  preSelectPeriodNotice.style:SetFontSize(FONT_SIZE.LARGE)
+  preSelectPeriodNotice.style:SetAlign(ALIGN_CENTER)
+  preSelectPeriodNotice:SetText(locale.characterSelect.character_name_force_changed)
+  local bg = CreateContentBackground(preSelectPeriodNotice, "TYPE1")
+  bg:AddAnchor("TOPLEFT", preSelectPeriodNotice, -45, -15)
+  bg:AddAnchor("BOTTOMRIGHT", preSelectPeriodNotice, 55, 15)
+  bg:SetColor(0, 0, 0, 0.5)
+  bg:SetVisible(true)
+  local str = ""
+  if X2World:IsPreSelectCharacterPeriodForPcbang() then
+    str = string.format([[
+|cFFFFFF00%s
+|r%s]], GetCommonText("pre_select_period_part1"), GetCommonText("pre_select_period_for_pcbang"))
+    str = string.format([[
+%s
+%s]], str, GetCommonText("pre_select_period_for_pcbang_but_not"))
+  else
+    str = string.format([[
+|cFFFFFF00%s
+|r%s]], GetCommonText("pre_select_period_part2"), GetCommonText("pre_select_period_for_all"))
+  end
+  preSelectPeriodNotice:SetText(str)
+  return preSelectPeriodNotice
+end
+if X2World:IsPreSelectCharacterPeriod() then
+  characterSelectWindow.preSelectPeriodNotice = CreatePreSelectPeriodNotice("preSelectPeriodNotice", characterSelectWindow)
+  characterSelectWindow.preSelectPeriodNotice:AddAnchor("TOP", characterSelectWindow, 0, 120)
+  characterSelectWindow.preSelectPeriodNotice:Show(true)
+end
+local function SetViewOfFolderButton(id, parent)
+  local closeBtn = CreateEmptyButton(id .. "closeButton", parent)
+  closeBtn:AddAnchor("TOPLEFT", parent, 0, 0)
+  ApplyButtonSkinTable(closeBtn, BUTTON_LOGINSTAGE.CHAR_LIST_NUIAN_MALE)
+  parent.closeBtn = closeBtn
+  local infoLabel = CreateLabel(id .. ".closeBtn.infoLabel", closeBtn)
+  infoLabel:Show(true)
+  infoLabel:SetExtent(280, 22)
+  infoLabel:AddAnchor("TOPLEFT", closeBtn, 105, 10)
+  infoLabel.style:SetColor(0, 0, 0, 1)
+  infoLabel.style:SetAlign(ALIGN_LEFT)
+  closeBtn.infoLabel = infoLabel
+  local openBtn = CreateEmptyButton(id .. "openBtn", parent)
+  openBtn:AddAnchor("TOPLEFT", parent, 0, 0)
+  ApplyButtonSkinTable(openBtn, BUTTON_LOGINSTAGE.CHAR_LIST_NUIAN_FEMALE)
+  parent.openBtn = openBtn
+  local infoLabel = CreateLabel(id .. ".openBtn.infoLabel", openBtn)
+  infoLabel:Show(true)
+  infoLabel:SetExtent(280, 22)
+  infoLabel:AddAnchor("TOPLEFT", openBtn, 105, 10)
+  infoLabel.style:SetAlign(ALIGN_LEFT)
+  openBtn.infoLabel = infoLabel
+  local deleteWaitingLabel = parent:CreateChildWidget("label", "deleteWaitingLabel", 0, true)
+  deleteWaitingLabel:AddAnchor("BOTTOMLEFT", openBtn, "TOPLEFT", 100, -3)
+  deleteWaitingLabel:AddAnchor("BOTTOMRIGHT", openBtn, "TOPRIGHT", 100, -3)
+  ApplyTextColor(deleteWaitingLabel, FONT_COLOR.RED)
+  deleteWaitingLabel.style:SetAlign(ALIGN_LEFT)
+  deleteWaitingLabel:Show(false)
+  local serverTransferIcon = parent:CreateChildWidget("emptywidget", "serverTransferIcon", 0, true)
+  serverTransferIcon:Show(false)
+  serverTransferIcon:AddAnchor("BOTTOMLEFT", closeBtn, "TOPLEFT", 100, 3)
+  local bg = serverTransferIcon:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT, "background")
+  bg:SetTextureInfo("icon_transfer")
+  bg:AddAnchor("CENTER", serverTransferIcon, 0, 0)
+  serverTransferIcon:SetExtent(bg:GetExtent())
+  local function OnEnter(self)
+    local msg = X2Locale:LocalizeUiText(CHARACTER_SELECT_TEXT, "transfer_icon_tip")
+    if featureSet.forbidTransferChar then
+      msg = GetCommonText("transfer_icon_tip")
+    end
+    SetTargetAnchorTooltip(msg, "BOTTOMRIGHT", self, "TOPLEFT", 2, -1)
+  end
+  serverTransferIcon:SetHandler("OnEnter", OnEnter)
+  local OnLeave = function()
+    HideTooltip()
+  end
+  serverTransferIcon:SetHandler("OnLeave", OnLeave)
+  local renameBtn = parent:CreateChildWidget("button", "renameBtn", 0, true)
+  renameBtn:Show(false)
+  renameBtn:SetText(locale.characterSelect.renameCharacter.title)
+  ApplyButtonSkin(renameBtn, BUTTON_BASIC.DEFAULT)
+  renameBtn:AddAnchor("RIGHT", closeBtn, "LEFT", 0, 0)
+  return closeBtn, openBtn
+end
+local GetCharacterZone = function(charIndex)
+  local zoneName = X2LoginCharacter:GetLoginCharacterZone(charIndex)
+  if zoneName == nil then
+    zoneName = locale.unknown
+  end
+  return zoneName
+end
+function UpdateDetailCharacterInfo(widget, charIndex)
+  local factionName
+  local chrFaction = X2LoginCharacter:GetLoginCharacterFaction(charIndex)
+  if chrFaction == nil then
+    factionName = locale.characterSelect.invalidIndex
+  else
+    local factionInfo = X2Faction:GetFactionInfo(chrFaction)
+    if factionInfo ~= nil then
+      factionName = factionInfo.name or locale.unknown
+    else
+      factionName = X2LoginCharacter:GetLoginCharacterFactionName(charIndex)
+      if string.len(factionName) == 0 then
+        factionName = locale.characterSelect.unknownFactionInfo .. "(" .. tostring(chrFaction) .. ")"
+      end
+    end
+  end
+  local zoneName = GetCharacterZone(charIndex)
+  if zoneName == nil then
+    zoneName = "-"
+  end
+  local money = X2LoginCharacter:GetLoginCharacterMoney(charIndex)
+  local str = ""
+  str = string.format("%s|m%s;", locale.characterSelect.availableMoney, money)
+  str = string.format([[
+%s
+%s%s]], str, locale.characterSelect.faction, tostring(factionName))
+  str = string.format([[
+%s
+%s%s]], str, locale.characterSelect.position, tostring(zoneName))
+  if X2LoginCharacter:IsDeleteRequestedCharacter(charIndex) then
+    str = string.format([[
+%s
+%s%s]], str, FONT_COLOR_HEX.RED, X2Locale:LocalizeUiText(LOGIN_TEXT, "housing_authority_open"))
+  end
+  widget.textbox:SetText(str)
+  widget.textbox:SetHeight(widget.textbox:GetTextHeight())
+  local isUniverseLp = X2LoginCharacter:IsUniverseLp()
+  if not isUniverseLp then
+    local laborPower = X2LoginCharacter:GetLoginCharacterLaborPower(charIndex)
+    local maxLaborPower = X2LoginCharacter:GetLoginCharacterMaxLaborPower(charIndex)
+    local laborText = string.format("(%s%d|r/%d)", FONT_COLOR_HEX.BLUE, laborPower, maxLaborPower)
+    widget.checkBox.textButton:SetText(tostring(locale.characterSelect.chargeLaborPower))
+    widget.laborpower_textbox:SetText(laborText)
+  end
+  widget.checkBox:Show(not isUniverseLp)
+  widget.laborpower_textbox:Show(not isUniverseLp)
+end
+local CreateCharacterDetailWindow = function(id, parent)
+  local window = UIParent:CreateWidget("emptywidget", id, parent)
+  window:Show(true)
+  local textbox = window:CreateChildWidget("textbox", "textbox", 0, true)
+  textbox:SetWidth(388)
+  textbox:SetInset(100, 0, 0, 0)
+  textbox:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  textbox:AddAnchor("TOPLEFT", window, 0, 5)
+  textbox.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(textbox, FONT_COLOR.BLACK)
+  local checkBox = CreateCheckButton(id .. "lpManageCheck", window, locale.characterSelect.chargeLaborPower)
+  checkBox:Show(true)
+  checkBox:SetExtent(16, 16)
+  checkBox:AddAnchor("BOTTOMLEFT", window, 100, -3)
+  checkBox.style:SetAlign(ALIGN_LEFT)
+  SetButtonFontColor(checkBox.textButton, GetBlackCheckButtonFontColor())
+  window.checkBox = checkBox
+  local laborpower_textbox = window:CreateChildWidget("textbox", "laborpower_textbox", 0, true)
+  laborpower_textbox:SetExtent(100, 20)
+  laborpower_textbox:AddAnchor("LEFT", checkBox.textButton, "RIGHT", 2, 0)
+  ApplyTextColor(laborpower_textbox, FONT_COLOR.BLACK)
+  laborpower_textbox.style:SetAlign(ALIGN_LEFT)
+  function window.checkBox:CheckBtnCheckChagnedProc()
+    local charIndex = FindSelectedCharacterIdx()
+    if charIndex == nil or charIndex < 1 then
+      return
+    end
+    X2LoginCharacter:RequestLpManageCharacter(charIndex)
+  end
+  return window
+end
+local target = rightPanel
+local Setting_Widget_Tooltip_Handler = function(widget, index)
+  function widget:OnEnter()
+    if not self:IsEnabled() then
+      if self.disableReason == DISALBE_REASON_LIMIT then
+        SetTargetAnchorTooltip(locale.characterSelect.max_character_count_warning, "RIGHT", self, "LEFT", -5, 0)
+        return
+      elseif self.disableReason == DISALBE_REASON_LIMIT_BUT_EXPANDABLE then
+        SetTargetAnchorTooltip(locale.characterSelect.max_character_count_warning2, "RIGHT", self, "LEFT", -5, 0)
+        return
+      elseif self.disableReason == DISALBE_REASON_CH_COUNT_NOT_MATCH then
+        SetTargetAnchorTooltip(locale.characterSelect.character_count_not_match, "RIGHT", self, "LEFT", -5, 0)
+        return
+      end
+      if X2LoginCharacter:IsInEnableStartingLocation(CalcCharacterIndex(index)) == false then
+        SetTargetAnchorTooltip(locale.characterCreate.race_congestion_warning, "RIGHT", self, "LEFT", -5, 0)
+      end
+    end
+  end
+  widget:SetHandler("OnEnter", widget.OnEnter)
+  function widget:OnLeave()
+    HideTooltip()
+  end
+  widget:SetHandler("OnLeave", widget.OnLeave)
+end
+charButtonList = {}
+DISALBE_REASON_NONE = 0
+DISALBE_REASON_LIMIT = 1
+DISALBE_REASON_LIMIT_BUT_EXPANDABLE = 2
+DISALBE_REASON_CH_COUNT_NOT_MATCH = 3
+representCharButton = {}
+function CreateRepresentButton(id, parent, anchorX, anchorY)
+  local button = UIParent:CreateWidget("button", id, parent)
+  button:AddAnchor("TOPLEFT", parent, anchorX, anchorY)
+  ApplyButtonSkin(button, BUTTON_HUD.TOGGLE_CHAR_SELECT_REPRESENT_CHAR)
+  return button
+end
+local charButtonListTotalHeight = 0
+for index = 1, MAX_CHARACTER_COUNT do
+  do
+    local id = "charButtonList" .. index
+    local widget = UIParent:CreateWidget("folder", id, rightPanel)
+    widget:SetExtent(391, 88)
+    charButtonListTotalHeight = charButtonListTotalHeight + 88
+    if index > 1 then
+      widget:AddAnchor("TOPLEFT", target, "BOTTOMLEFT", 0, 35)
+      charButtonListTotalHeight = charButtonListTotalHeight + 35
+    else
+      widget:AddAnchor("TOPRIGHT", target, -15, 40)
+      charButtonListTotalHeight = charButtonListTotalHeight + 40
+    end
+    local closeBtn, openBtn = SetViewOfFolderButton(id, widget)
+    widget:SetOpenStateButton(closeBtn)
+    widget:SetCloseStateButton(openBtn)
+    widget:UseAnimation(true)
+    widget:SetTitleHeight(70)
+    widget:SetAnimateStep(1.5)
+    if X2LoginCharacter:IsUniverseLp() then
+      widget:SetExtendLength(70)
+    else
+      widget:SetExtendLength(80)
+    end
+    local detailInfo = CreateCharacterDetailWindow(id .. ".detailInfo", widget)
+    widget:SetChildWidget(detailInfo)
+    if index == 1 then
+      charButtonListTotalHeight = charButtonListTotalHeight + detailInfo:GetHeight()
+    end
+    local width = 20
+    local height = 29
+    local aniWidget = CreateEmptyButton(id .. ".aniWidget", detailInfo)
+    aniWidget:Show(true)
+    aniWidget:SetExtent(width, height)
+    aniWidget:AddAnchor("TOPRIGHT", widget, -20, 18)
+    local aniTexture = aniWidget:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.REMNANTS, "background")
+    aniTexture:SetColor(1, 1, 1, 1)
+    aniTexture:SetCoords(118, 196, width, height)
+    aniTexture:AddAnchor("TOPLEFT", aniWidget, 0, 3)
+    aniTexture:AddAnchor("BOTTOMRIGHT", aniWidget, 0, 0)
+    aniTexture:SetVisible(false)
+    local selectedAnimation = {}
+    for j = 1, 4 do
+      selectedAnimation[j] = {}
+    end
+    local y = 196
+    selectedAnimation[1].x = 118
+    selectedAnimation[1].y = y
+    selectedAnimation[1].w = width
+    selectedAnimation[1].h = height
+    selectedAnimation[1].time = 150
+    selectedAnimation[1].scale = 1
+    selectedAnimation[2].x = 139
+    selectedAnimation[2].y = y
+    selectedAnimation[2].w = width
+    selectedAnimation[2].h = height
+    selectedAnimation[2].time = 150
+    selectedAnimation[2].scale = 1
+    selectedAnimation[3].x = 160
+    selectedAnimation[3].y = y
+    selectedAnimation[3].w = width
+    selectedAnimation[3].h = height
+    selectedAnimation[3].time = 150
+    selectedAnimation[3].scale = 1
+    selectedAnimation[4].x = 139
+    selectedAnimation[4].y = y
+    selectedAnimation[4].w = width
+    selectedAnimation[4].h = height
+    selectedAnimation[4].time = 150
+    selectedAnimation[4].scale = 1
+    aniTexture:SetAnimFrameInfo(selectedAnimation)
+    widget.aniTexture = aniTexture
+    widget.closeBtn = closeBtn
+    widget.closeBtn.disableReason = DISALBE_REASON_NONE
+    widget.openBtn = openBtn
+    widget.openBtn.disableReason = DISALBE_REASON_NONE
+    widget.detailInfo = detailInfo
+    widget.deleteButton = deleteButton
+    widget.deleteWaitingBtn = deleteWaitingBtn
+    widget.index = index
+    widget.selected = false
+    widget.emptySlot = false
+    AddEvent(widget)
+    widget:Init()
+    target = widget
+    Setting_Widget_Tooltip_Handler(widget.openBtn, index)
+    Setting_Widget_Tooltip_Handler(widget.closeBtn, index)
+    charButtonList[index] = widget
+    local width = charButtonList[index]:GetWidth()
+    local height = charButtonList[index]:GetHeight()
+    if featureSet.buyPremiuminSelChar then
+      representCharButton[index] = CreateRepresentButton("representChar" .. index, widget.closeBtn, width - 80, height / 2 - 14)
+      local button = representCharButton[index]
+      function button:OnClick()
+        local deleteRequestedCharacter = X2LoginCharacter:IsDeleteRequestedCharacter(index)
+        local transferRequestedCharacter = X2LoginCharacter:IsTransferRequestedCharacter(index)
+        if deleteRequestedCharacter then
+          ShowRepresentCharacterMsg(GetUIText(COMMON_TEXT, "waiting_delete_character_represent_character"), false)
+        elseif transferRequestedCharacter then
+          ShowRepresentCharacterMsg(GetUIText(COMMON_TEXT, "server_transfer_character_represent_character"), false)
+        else
+          ShowRepresentCharacter(CalcCharacterIndex(index))
+        end
+      end
+      button:SetHandler("OnClick", button.OnClick)
+    end
+  end
+end
+if featureSet.useCharacterListPage then
+  rightPanel.pageControl = CreatePageControl(rightPanel:GetId() .. ".pageControl", rightPanel, "characterList")
+  rightPanel.pageControl:Show(true)
+  rightPanel.pageControl:AddAnchor("TOP", rightPanel, "TOP", 0, charButtonListTotalHeight - 10)
+end
+local representCharIcon
+function SetRepresentCharacterIcon(isLoginLoad, success, isClearRequest)
+  if representCharIcon == nil then
+    return
+  end
+  local representCharIndex = X2LoginCharacter:GetRepresentCharacterIndex()
+  if isLoginLoad == false then
+    local msg
+    if success then
+      if isClearRequest then
+        msg = GetUIText(COMMON_TEXT, "clear_represent_character_success")
+      else
+        local representCharName = X2Player:GetPremiumItemReceiveCharacterName()
+        if representCharName ~= nil then
+          msg = GetUIText(COMMON_TEXT, "represent_character_success", representCharName)
+        end
+      end
+    else
+      msg = GetUIText(COMMON_TEXT, "represent_character_fail")
+    end
+    ShowRepresentCharacterMsg(msg)
+  end
+  local firstCharIndexOnCurrentPage = GetFirstCharacterIndex(X2LoginCharacter:GetNumLoginCharacters())
+  if firstCharIndexOnCurrentPage ~= nil then
+    local lastCharIndexOnCurrentPage = firstCharIndexOnCurrentPage + MAX_CHARACTER_COUNT - 1
+    if representCharIndex < firstCharIndexOnCurrentPage or representCharIndex > lastCharIndexOnCurrentPage then
+      representCharIndex = 0
+    end
+  else
+    representCharIndex = 0
+  end
+  if representCharIndex == 0 then
+    representCharIcon:SetVisible(false)
+  else
+    representCharIcon:SetVisible(true)
+    representCharIcon:AddAnchor("TOPLEFT", charButtonList[CalcCharacterButtonIndex(representCharIndex)], 95, -15)
+  end
+end
+if featureSet.buyPremiuminSelChar then
+  representCharIcon = rightPanel:CreateImageDrawable(TEXTURE_PATH.PREMIUM_CHAR_SELECT_REPRESENT_CHAR_ICON, "overlay")
+  representCharIcon:SetTextureInfo("representative")
+  representCharIcon:SetVisible(false)
+  UIParent:SetEventHandler("REPRESENT_CHARACTER_RESULT", SetRepresentCharacterIcon)
+end
+bottomPanelLeftButtons = {}
+local exitButton = CreateLoginStageExitButton("exitButton", bottomPanel)
+if characterSelectLocale.showReturnServer then
+  local serverButton = bottomPanel:CreateChildWidget("button", "serverButton", 0, true)
+  ApplyButtonSkinTable(serverButton, BUTTON_LOGINSTAGE.SERVER_SELECT)
+  serverButton:Show(characterSelectLocale.showReturnServer)
+  bottomPanel.serverButton = serverButton
+  table.insert(bottomPanelLeftButtons, serverButton)
+end
+local optionButton = CreateLoingStageOptionButton("optionButton", bottomPanel)
+bottomPanel.optionButton = optionButton
+table.insert(bottomPanelLeftButtons, optionButton)
+if ADDON:GetFeatureset() == true then
+  local addonFrmae = CreateAddonFrame()
+  local addonButton = bottomPanel:CreateChildWidget("button", "addonButton", 0, true)
+  addonButton:AddAnchor("LEFT", optionButton, "RIGHT", 0, 1)
+  ApplyButtonSkinTable(addonButton, BUTTON_LOGINSTAGE.UI_ADDON)
+  function addonButton:OnClick()
+    ToggleAddonFrame()
+  end
+  addonButton:SetHandler("OnClick", addonButton.OnClick)
+  table.insert(bottomPanelLeftButtons, addonButton)
+end
+local deleteButton = bottomPanel:CreateChildWidget("button", "deleteButton", 0, true)
+ApplyButtonSkinTable(deleteButton, BUTTON_LOGINSTAGE.CHARACTER_DELETE)
+deleteButton.isDeleteBtn = true
+table.insert(bottomPanelLeftButtons, deleteButton)
+local deleteWaitingButton = bottomPanel:CreateChildWidget("button", "deleteWaitingButton", 0, true)
+deleteWaitingButton:Show(false)
+ApplyButtonSkinTable(deleteWaitingButton, BUTTON_LOGINSTAGE.CHARACTER_DELETE_CANCEL)
+bottomPanel.staffButton = characterSelectLocale.CreateStaffButton(bottomPanel)
+if bottomPanel.staffButton then
+  table.insert(bottomPanelLeftButtons, bottomPanel.staffButton)
+end
+local startButton = bottomPanel:CreateChildWidget("button", "startButton", 0, true)
+startButton:AddAnchor("BOTTOMRIGHT", bottomPanel, -10, 1)
+startButton:SetSounds("default")
+if X2World:IsPreSelectCharacterPeriod() then
+  ApplyButtonSkinTable(startButton, BUTTON_LOGINSTAGE.RECUSTOMIZING)
+else
+  ApplyButtonSkinTable(startButton, BUTTON_LOGINSTAGE.GAME_START)
+end
+for i = 1, #bottomPanelLeftButtons do
+  local button = bottomPanelLeftButtons[i]
+  if i == 1 then
+    button:AddAnchor("LEFT", exitButton, "RIGHT", 0, 1)
+  else
+    button:AddAnchor("LEFT", bottomPanelLeftButtons[i - 1], "RIGHT", 0, 1)
+    if button.isDeleteBtn == true then
+      deleteWaitingButton:AddAnchor("LEFT", bottomPanelLeftButtons[i - 1], "RIGHT", 0, 1)
+    end
+  end
+end
+function CreateInfoWindow(charIndex, info)
+  local infoWnd = characterSelectWindow:CreateChildWidget("window", "infoWindow", 0, true)
+  infoWnd:SetExtent(1, 1)
+  infoWnd:AddAnchor("CENTER", characterSelectWindow, 0, 0)
+  infoWnd:Show(false)
+  if info == nil then
+    return
+  end
+  local function SetPostionOnBG(window, x, y)
+    local centerX = 16144
+    local centerY = 18313
+    local width = 69810
+    local height = 43651
+    local bg_width = characterSelectWindow.bgWindow.bg:GetWidth()
+    local bg_height = characterSelectWindow.bgWindow.bg:GetHeight()
+    local posX = (x - centerX) / width * bg_width
+    local posY = (centerY - y) / height * bg_height
+    window:AddAnchor("CENTER", infoWnd, posX, posY)
+    function window:ReAnchor()
+      window:RemoveAllAnchors()
+      window:AddAnchor("CENTER", infoWnd, F_LAYOUT:CalcDontApplyUIScale(posX), F_LAYOUT:CalcDontApplyUIScale(posY))
+    end
+  end
+  local chWindow = infoWnd:CreateChildWidget("emptywidget", "chWindow", 0, true)
+  chWindow:SetExtent(32, 32)
+  function chWindow:OnEnter()
+    local name = X2LoginCharacter:GetLoginCharacterName(charIndex)
+    local zone = GetCharacterZone(charIndex)
+    local text = tostring(name .. "\n" .. zone)
+    SetTooltip(text, self)
+  end
+  chWindow:SetHandler("OnEnter", chWindow.OnEnter)
+  function chWindow:OnLeave()
+    HideTooltip()
+  end
+  chWindow:SetHandler("OnLeave", chWindow.OnLeave)
+  local chDrawable = infoWnd:CreateImageDrawable("ui/map/icon/player_cursor.dds", "overlay")
+  chDrawable:SetExtent(32, 32)
+  chDrawable:SetCoords(0, 0, 32, 32)
+  chDrawable:AddAnchor("CENTER", chWindow, 0, 0)
+  local isShow = true
+  if info.validCharPos == false then
+    isShow = false
+  else
+    isShow = not info.inDirtyZone
+  end
+  SetPostionOnBG(chWindow, info.posX, info.posY)
+  chWindow:Show(isShow)
+  chDrawable:SetVisible(isShow)
+  local hCount = info.houseCount
+  local houseWnd = {}
+  for i = 1, hCount do
+    do
+      local hInfo = X2LoginCharacter:GetLoginCharacterInfoHouse(charIndex, i)
+      if hInfo then
+        local hWindow = infoWnd:CreateChildWidget("emptywidget", "houseWindow" .. i, 0, true)
+        hWindow:SetExtent(29, 27)
+        function hWindow:OnEnter()
+          local text = tostring(hInfo.name .. "\n" .. hInfo.zone)
+          SetTooltip(text, self)
+        end
+        hWindow:SetHandler("OnEnter", hWindow.OnEnter)
+        function hWindow:OnLeave()
+          HideTooltip()
+        end
+        hWindow:SetHandler("OnLeave", hWindow.OnLeave)
+        local hDrawable = infoWnd:CreateImageDrawable(LOGIN_STAGE_TEXTURE_PATH.REMNANTS, "artwork")
+        if hInfo.type ~= nil then
+          if hInfo.type == "farm" then
+            hDrawable:SetCoords(119, 225, 29, 26)
+            hDrawable:SetExtent(29, 26)
+          elseif hInfo.type == "fishfarm" then
+            hDrawable:SetCoords(148, 230, 27, 21)
+            hDrawable:SetExtent(27, 21)
+          else
+            hDrawable:SetCoords(GetTextureInfo(TEXTURE_PATH.PREMIUM_CHAR_SELECT_REPRESENT_CHAR_BTN, "icon_housing"):GetCoords())
+            hDrawable:SetExtent(GetTextureInfo(TEXTURE_PATH.PREMIUM_CHAR_SELECT_REPRESENT_CHAR_BTN, "icon_housing"):GetExtent())
+          end
+        end
+        hDrawable:AddAnchor("CENTER", hWindow, 0, 0)
+        SetPostionOnBG(hWindow, hInfo.x, hInfo.y)
+        houseWnd[i] = hWindow
+      end
+    end
+  end
+  infoWnd:EnableHidingIsRemove(true)
+  function infoWnd:ReAnchorChildWnd()
+    chWindow:ReAnchor()
+    for i = 1, #houseWnd do
+      houseWnd[i].ReAnchor()
+    end
+  end
+  return infoWnd
+end
+function characterSelectWindow:UpdateUI_PreSelecteCharacterPeriod()
+  if X2World:IsPreSelectCharacterPeriod() then
+    self.bottomPanel.deleteButton:Enable(false)
+    function deleteButton:OnEnter()
+      if not self:IsEnabled() and X2World:IsPreSelectCharacterPeriod() then
+        SetTargetAnchorTooltip(locale.server.pre_select_character_warning, "BOTTOMLEFT", self, "TOPLEFT", 0, 20)
+      end
+    end
+    deleteButton:SetHandler("OnEnter", deleteButton.OnEnter)
+    function deleteButton:OnLeave()
+      HideTooltip()
+    end
+    deleteButton:SetHandler("OnLeave", deleteButton.OnLeave)
+  end
+end

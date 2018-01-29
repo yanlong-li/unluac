@@ -1,0 +1,426 @@
+function ApplyEditDialogStyle(wnd, defaultInputText, guideTip, autoTextChange, applyNamePolicy, itemType, itemCount)
+  local EDIT_OFFSET = 10
+  wnd:SetUILayer("dialog")
+  local editbox = wnd:CreateChildWidget("editbox", "editbox", 0, true)
+  local namePolicyInfo = X2Util:GetNamePolicyInfo(applyNamePolicy)
+  local maxLen = namePolicyInfo.local_max
+  if namePolicyInfo.local_max < namePolicyInfo.eng_max then
+    maxLen = namePolicyInfo.eng_max
+  end
+  editbox:SetMaxTextLength(maxLen)
+  editbox:SetMaxTextLength(maxLen)
+  editbox:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, DEFAULT_SIZE.EDIT_HEIGHT)
+  ApplyEditSkin(editbox)
+  if guideTip ~= nil then
+    local guide = wnd:CreateChildWidget("textbox", "guide", 0, true)
+    guide:SetWidth(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH + 10)
+    if namePolicyInfo ~= nil then
+      guide:SetText(GetLimitInfoText(namePolicyInfo))
+    else
+      guide:SetText(guideTip)
+    end
+    guide:AddAnchor("TOP", wnd.textbox, "BOTTOM", 0, EDIT_OFFSET / 2)
+    guide:SetLineSpace(2)
+    guide.style:SetFontSize(FONT_SIZE.SMALL)
+    ApplyTextColor(guide, FONT_COLOR.GRAY)
+    editbox:AddAnchor("TOP", guide, "BOTTOM", 0, 7)
+  elseif itemType ~= nil then
+    editbox:AddAnchor("TOP", wnd.textbox, "BOTTOM", 0, EDIT_OFFSET)
+  else
+    editbox:AddAnchor("TOP", wnd.textbox, "BOTTOM", 0, EDIT_OFFSET / 2)
+  end
+  if itemType ~= nil then
+    local curCnt = X2Bag:GetCountInBag(itemType)
+    local needCnt = itemCount
+    local str = string.format("%s/%s", tostring(curCnt), tostring(needCnt))
+    wnd.itemIcon = CreateItemIconButton(wnd:GetId() .. ".itemIcon", wnd)
+    wnd.itemIcon:AddAnchor("TOP", wnd.editbox, "BOTTOM", 0, 15)
+    wnd.itemTextbox = wnd:CreateChildWidget("textbox", "itemTextbox", 0, true)
+    wnd.itemTextbox:SetExtent(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH, FONT_SIZE.MIDDLE)
+    wnd.itemTextbox.style:SetAlign(ALIGN_CENTER)
+    wnd.itemTextbox:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+    wnd.itemTextbox.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE)
+    ApplyTextColor(wnd.itemTextbox, FONT_COLOR.TITLE)
+    wnd.itemTextbox:AddAnchor("TOP", wnd.itemIcon, "BOTTOM", 0, 5)
+    local itemInfo = X2Item:GetItemInfoByType(itemType)
+    wnd.itemIcon:SetStack(itemCount)
+    wnd.itemIcon:SetItemInfo(itemInfo)
+    wnd.itemTextbox:SetText(itemInfo.name)
+    wnd.itemIcon.stack:RemoveAllAnchors()
+    wnd.itemIcon.stack:SetAutoResize(true)
+    wnd.itemIcon.stack:SetHeight(FONT_SIZE.MIDDLE)
+    wnd.itemIcon.stack:AddAnchor("BOTTOM", wnd.itemIcon, 0, -3)
+    wnd.itemIcon.stack:SetNumberOnly(false)
+    wnd.itemIcon.stack.style:SetAlign(ALIGN_CENTER)
+    if tonumber(curCnt) >= tonumber(needCnt) then
+      ApplyTextColor(wnd.itemIcon.stack, FONT_COLOR.WHITE)
+      wnd.itemIcon:SetNormalColor(1, 1, 1, 1)
+      wnd.itemIcon:SetPushedColor(1, 1, 1, 1)
+      wnd.itemIcon:SetHighlightColor(1, 1, 1, 1)
+      wnd.itemIcon:SetDisabledColor(1, 1, 1, 1)
+    else
+      ApplyTextColor(wnd.itemIcon.stack, FONT_COLOR.RED)
+      wnd.itemIcon:SetNormalColor(0.5, 0.5, 0.5, 1)
+      wnd.itemIcon:SetPushedColor(0.5, 0.5, 0.5, 1)
+      wnd.itemIcon:SetHighlightColor(0.5, 0.5, 0.5, 1)
+      wnd.itemIcon:SetDisabledColor(0.5, 0.5, 0.5, 1)
+    end
+    wnd.itemIcon.stack:SetText(str)
+  end
+  function wnd:Resize()
+    local height = self:GetFrameHeight() + self.editbox:GetHeight() + EDIT_OFFSET / 2
+    if self.guide ~= nil then
+      self.guide:SetHeight(self.guide:GetTextHeight())
+      height = height + self.guide:GetHeight() + EDIT_OFFSET
+    end
+    if itemType ~= nil then
+      height = height + self.itemIcon:GetHeight() + self.itemTextbox:GetHeight() + 20
+    end
+    self:SetExtent(POPUP_WINDOW_WIDTH, height)
+  end
+  function wnd:ShowProc()
+    if defaultInputText == nil or string.len(defaultInputText) == 0 then
+      wnd.btnOk:Enable(false)
+    end
+    if defaultInputText ~= nil then
+      self.editbox:SetText(defaultInputText)
+    end
+    self.editbox:SetFocus()
+  end
+  local function OnEnterPressed()
+    if not wnd.btnOk:IsEnabled() then
+      return
+    end
+    if wnd.OkProc ~= nil then
+      wnd:OkProc()
+    end
+    F_SOUND:PlayUISound(wnd:GetOkSound(), true)
+    X2DialogManager:OnOK(wnd:GetId())
+  end
+  wnd.editbox:SetHandler("OnEnterPressed", OnEnterPressed)
+  local function OnEscapePressed()
+    if wnd.CancelProc ~= nil then
+      wnd:CancelProc()
+    end
+    X2DialogManager:OnCancel(wnd:GetId())
+  end
+  wnd.editbox:SetHandler("OnEscapePressed", OnEscapePressed)
+  local function OnTextChanged()
+    if autoTextChange then
+      local namePolicy
+      if applyNamePolicy == nil then
+        namePolicy = VNT_END
+      else
+        namePolicy = applyNamePolicy
+      end
+      local text = editbox:GetText()
+      local text2 = X2Util:CheckAvailableName(text, editbox:IsComposingText(), namePolicy)
+      if text ~= text2 then
+        editbox:SetText(text2)
+      end
+    end
+    local isEnable = false
+    if applyNamePolicy ~= nil then
+      isEnable = X2Util:IsValidName(wnd.editbox:GetText(), applyNamePolicy)
+    end
+    wnd.btnOk:Enable(isEnable)
+  end
+  wnd.editbox:SetHandler("OnTextChanged", OnTextChanged)
+end
+local EditTitleFunc = function(argTable)
+  local function DialogDefaultHandler(wnd, infoTable)
+    ApplyEditDialogStyle(wnd, argTable.defaultInputText, argTable.guideTip, argTable.autoTextChange, argTable.applyNamePolicy, argTable.itemType, argTable.itemCount)
+    function wnd:OkProc()
+      local newName = wnd.editbox:GetText()
+      argTable.func(newName, argTable.otherInfo)
+    end
+    wnd:SetTitle(argTable.title)
+    wnd:SetContent(argTable.content)
+  end
+  if argTable.ownerWnd == nil then
+    X2DialogManager:RequestDefaultDialog(DialogDefaultHandler, "")
+  else
+    X2DialogManager:RequestDefaultDialog(DialogDefaultHandler, argTable.ownerWnd:GetId())
+  end
+end
+function ShowChangeMateName(target, ownerWnd)
+  if target == "target" and X2Unit:GetTargetUnitId() == nil then
+    return
+  end
+  local unitId = X2Unit:GetUnitId(target)
+  local mateType = X2Unit:GetUnitMateType(target)
+  local function func(newName)
+    X2Mate:SetMateName(mateType, newName)
+  end
+  local argTable = {
+    title = locale.common.changeName,
+    content = locale.changeName.change_content_guide,
+    otherInfo = nil,
+    ownerWnd = ownerWnd,
+    autoTextChange = true,
+    applyNamePolicy = VNT_SUMMONS,
+    defaultInputText = X2Unit:GetUnitNameById(unitId),
+    guideTip = locale.changeName.name_guide_default,
+    func = func
+  }
+  EditTitleFunc(argTable)
+end
+function ShowChangeSlaveName(target, ownerWnd)
+  if target == "target" and X2Unit:GetTargetUnitId() == nil then
+    return
+  end
+  local unitId = X2Unit:GetUnitId(target)
+  local func = function(newName)
+    X2SiegeWeapon:SetSiegeWeaponName(newName)
+  end
+  local argTable = {
+    title = locale.common.changeName,
+    content = locale.changeName.change_content_guide,
+    ownerWnd = ownerWnd,
+    otherInfo = nil,
+    autoTextChange = true,
+    applyNamePolicy = VNT_SUMMONS,
+    defaultInputText = X2Unit:GetUnitNameById(unitId),
+    guideTip = locale.changeName.name_guide_default,
+    func = func
+  }
+  EditTitleFunc(argTable)
+end
+function HideEditDialog(ownerWnd)
+  X2DialogManager:DeleteByOwnerWindow(ownerWnd:GetId())
+end
+function ShowChangeFamilyAppellation(target, infoTable)
+  local func = function(newAppellation, otherInfo)
+    X2Family:ChangeTitle(otherInfo, newAppellation)
+  end
+  local argTable = {
+    title = locale.family.changeTitle,
+    content = locale.family.inputGuide,
+    ownerWnd = infoTable[1],
+    otherInfo = infoTable[2],
+    autoTextChange = false,
+    applyNamePolicy = VNT_FAMILY_TITLE,
+    defaultInputText = infoTable[3],
+    guideTip = locale.changeName.name_guide_family_appellation,
+    func = func
+  }
+  EditTitleFunc(argTable)
+end
+function ShowChangeHousingName(ownerWnd)
+  local func = function(newName)
+    X2House:SetHouseName(newName)
+  end
+  local argTable = {
+    title = locale.housing.maintainWindow.changeName,
+    content = locale.changeName.change_content_guide,
+    ownerWnd = ownerWnd,
+    applyNamePolicy = VNT_SUMMONS,
+    autoTextChange = true,
+    defaultInputText = X2House:GetHouseName(),
+    guideTip = locale.changeName.name_guide_default,
+    func = func
+  }
+  EditTitleFunc(argTable)
+end
+function ShowRenameCharacter(charIndex, name)
+  local function doOk(newName)
+    local function DialogHandler(wnd)
+      wnd:SetTitle(locale.characterSelect.renameConfirm.title)
+      wnd:SetContent(string.format([[
+%s%s
+%s]], FONT_COLOR_HEX.BLUE, newName, locale.characterSelect.renameConfirm.desc(FONT_COLOR_HEX.RED)))
+      function wnd:OkProc()
+        X2LoginCharacter:RenameCharacter(charIndex, newName)
+      end
+      function wnd:CancelProc()
+        ShowRenameCharacter(charIndex, name)
+      end
+    end
+    X2DialogManager:RequestDefaultDialog(DialogHandler, "")
+  end
+  local argTable = {
+    title = locale.characterSelect.renameCharacter.title,
+    content = locale.characterSelect.renameCharacter.desc,
+    ownerWnd = nil,
+    applyNamePolicy = VNT_CHAR,
+    autoTextChange = true,
+    defaultInputText = "",
+    guideTip = locale.changeName.name_guide_default,
+    func = doOk
+  }
+  EditTitleFunc(argTable)
+end
+function ShowChangeChatTabName(tabId)
+  local function func(newName)
+    X2Chat:RenameChatTabByUser(tabId, newName)
+  end
+  local tabInfo = X2Chat:GetChatTabInfoTable(tabId)
+  local argTable = {
+    title = locale.common.changeName,
+    content = locale.changeName.change_content_guide,
+    ownerWnd = nil,
+    applyNamePolicy = VNT_CHAT_TAB,
+    autoTextChange = false,
+    defaultInputText = tostring(tabInfo.name),
+    guideTip = locale.changeName.name_guide_chat_tab,
+    func = func
+  }
+  EditTitleFunc(argTable)
+end
+function ShowCreateChatTabName(windowId)
+  local function func(newName)
+    X2Chat:AddNewChatTabByUser(windowId, newName)
+  end
+  local argTable = {
+    title = locale.chat.createTab,
+    content = locale.changeName.create_content_guide,
+    ownerWnd = nil,
+    applyNamePolicy = VNT_CHAT_TAB,
+    autoTextChange = false,
+    defaultInputText = "",
+    guideTip = locale.changeName.name_guide_chat_tab,
+    func = func
+  }
+  EditTitleFunc(argTable)
+end
+function ShowDeleteCharacter(ownerWnd, charIndex)
+  local function DelteFunc(name)
+    X2LoginCharacter:DeleteCharacterCheckName(charIndex, name)
+  end
+  local argTable = {
+    title = locale.login.delete.title,
+    content = locale.login.delete.label,
+    ownerWnd = nil,
+    applyNamePolicy = VNT_CHAR,
+    autoTextChange = true,
+    defaultInputText = "",
+    guideTip = nil,
+    func = DelteFunc
+  }
+  EditTitleFunc(argTable)
+end
+function ShowRegisterPotal(ownerWnd)
+  local RegisterPortal = function(name)
+    X2Warp:SavePortal(name)
+  end
+  local argTable = {
+    title = locale.portal.addPortal,
+    content = locale.changeName.register_content_guide,
+    ownerWnd = ownerWnd,
+    applyNamePolicy = VNT_PORTAL,
+    defaultInputText = "",
+    autoTextChange = false,
+    guideTip = locale.changeName.name_guide_portal,
+    func = RegisterPortal
+  }
+  EditTitleFunc(argTable)
+end
+function ShowChangePortalName(ownerWnd, portalId, portalName)
+  local function ChangeName(name)
+    X2Warp:RenamePortal(portalId, name)
+  end
+  local argTable = {
+    title = locale.common.changeName,
+    content = locale.changeName.change_content_guide,
+    ownerWnd = ownerWnd,
+    applyNamePolicy = VNT_PORTAL,
+    autoTextChange = false,
+    defaultInputText = portalName,
+    guideTip = locale.changeName.name_guide_portal,
+    func = ChangeName
+  }
+  EditTitleFunc(argTable)
+end
+function ShowCustomSaveName(ownerWnd, systemAlertWindow)
+  local function func(fileName)
+    if fileName == "" then
+      systemAlertWindow:HandleResult(CDR_ERROR_AS_NO_FILE_NAME)
+    else
+      local result = X2Customizer:FindCustomSameNameFile(fileName)
+      if result == CDR_INVALID_RESULT then
+        local rlt, savePath = X2Customizer:SaveCustomData(fileName)
+        if rlt == CDR_SAVE_SUCCESS then
+          fileName = savePath
+        end
+        result = rlt
+      end
+      systemAlertWindow:HandleResult(result, fileName)
+    end
+  end
+  local argTable = {
+    title = locale.customSaveLoad.customSave,
+    content = locale.customSaveLoad.customSaveContent,
+    otherInfo = nil,
+    ownerWnd = ownerWnd,
+    autoTextChange = true,
+    applyNamePolicy = VNT_CHAR,
+    defaultInputText = nil,
+    guideTip = true,
+    func = func
+  }
+  EditTitleFunc(argTable)
+end
+function ShowDeficiencyMoney(priceType, result)
+  local function DeficiencyMoney(wnd, infoTable)
+    function wnd:OkProc()
+      X2PremiumService:ViewBuyCashWindow(priceType)
+      wnd:Show(false)
+    end
+    function wnd:CancelProc()
+      wnd:Show(false)
+    end
+    if result == nil or result == false then
+      if priceType == PRICE_TYPE_AA_CASH then
+        wnd:SetTitle(locale.premium.premium_not_enough_cash)
+        wnd:SetContent(locale.premium.premium_not_enough_cash_explan, true)
+      else
+        wnd:SetTitle(locale.premium.premium_not_enough_point)
+        wnd:SetContent(locale.premium.premium_not_enough_point_explan, true)
+      end
+      wnd:Show(true)
+    else
+      wnd:Show(false)
+    end
+  end
+  X2DialogManager:RequestDefaultDialog(DeficiencyMoney, "")
+end
+function ShowExpeditionDelegate(ownerWnd)
+  local ChangeExpeditionOwner = function(name)
+    X2Faction:ChangeExpeditionOwner(name)
+  end
+  local argTable = {
+    title = locale.expedition.delegateTitle,
+    content = locale.expedition.delegateMsg,
+    ownerWnd = ownerWnd,
+    applyNamePolicy = VNT_CHAR,
+    autoTextChange = false,
+    defaultInputText = "",
+    guideTip = nil,
+    func = ChangeExpeditionOwner
+  }
+  EditTitleFunc(argTable)
+end
+function ShowNationDelegate(ownerWnd)
+  local ChangeNationOwner = function(name)
+    X2Faction:ChangeNationOwner(name)
+  end
+  local GetDelegateItemType = function()
+    return X2Faction:GetNationOwnerChangeItem()
+  end
+  local GetDelegateItemCount = function()
+    return X2Faction:GetNationOwnerChangeItemCount()
+  end
+  local argTable = {
+    title = GetUIText(NATION_TEXT, "delegation_owner"),
+    content = GetUIText(COMMON_TEXT, "change_nation_owner_target"),
+    ownerWnd = ownerWnd,
+    applyNamePolicy = VNT_CHAR,
+    autoTextChange = false,
+    defaultInputText = "",
+    guideTip = nil,
+    func = ChangeNationOwner,
+    itemType = GetDelegateItemType(),
+    itemCount = GetDelegateItemCount()
+  }
+  EditTitleFunc(argTable)
+end

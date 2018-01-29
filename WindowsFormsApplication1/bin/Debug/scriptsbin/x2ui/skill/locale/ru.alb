@@ -1,0 +1,38 @@
+if X2Util:GetGameProvider() == MAILRU then
+  function skillLocale.SetAbilitySelectLayoutFunc(widget)
+    local yOffset = 50
+    for i = 1, #widget.recommends do
+      local btn = widget.recommends[i]
+      btn:Show(true)
+      btn:AddAnchor("TOP", widget, 5, yOffset)
+      yOffset = yOffset + 35
+    end
+    yOffset = yOffset + 10
+    local xOffset = 18
+    for i = 1, #widget.abilities do
+      local btn = widget.abilities[i]
+      btn:Show(true)
+      btn:AddAnchor("TOP", widget, 0, yOffset)
+      yOffset = yOffset + 30
+    end
+  end
+  skillLocale.combatTab = {
+    jobName = {
+      AddAnchor = function(label, target, margin)
+        label:AddAnchor("TOPRIGHT", target, "TOPRIGHT", 0, margin / 1.5)
+      end
+    }
+  }
+  skillLocale.abilityBtnWidth = 200
+  skillLocale.actabilityGradeInfoWnd = {
+    width = 680,
+    columnWidth = {
+      160,
+      170,
+      175,
+      135
+    },
+    columnFontSize = FONT_SIZE.LARGE,
+    countOffset = -20
+  }
+end

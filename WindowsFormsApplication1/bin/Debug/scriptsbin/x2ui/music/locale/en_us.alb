@@ -1,0 +1,3 @@
+if X2Util:GetGameProvider() == TRION then
+  FORM_COMPOSITION_METHOD = {DINGBET_OFFSET = 2}
+end

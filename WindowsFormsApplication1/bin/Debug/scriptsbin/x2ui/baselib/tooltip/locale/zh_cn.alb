@@ -1,0 +1,3 @@
+if X2Util:GetGameProvider() == TENCENT then
+  FORM_WIDGET_TOOPTIP = {SOCKET_ANCHOR_OFFSET = 3}
+end

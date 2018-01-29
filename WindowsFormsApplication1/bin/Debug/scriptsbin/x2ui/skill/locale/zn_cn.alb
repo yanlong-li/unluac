@@ -1,0 +1,14 @@
+if X2Util:GetGameProvider() == TENCENT then
+  skillLocale.combatTab = {
+    jobName = {
+      AddAnchor = function(label, target, margin)
+        if X2Player:GetFeatureSet().uiAvi then
+          label:AddAnchor("TOPRIGHT", target, "TOPRIGHT", 0, margin / 1.5)
+        else
+          label:AddAnchor("BOTTOMRIGHT", target, "TOPRIGHT", 0, -5)
+        end
+      end
+    }
+  }
+  skillLocale.useUiAvi = true
+end

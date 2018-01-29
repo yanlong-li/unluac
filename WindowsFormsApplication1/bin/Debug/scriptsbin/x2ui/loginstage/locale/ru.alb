@@ -1,0 +1,280 @@
+if X2Util:GetGameProvider() == MAILRU then
+  loginStageCommonLocale.pageTitleCoords = {
+    selectCharacter = {
+      0,
+      466,
+      211,
+      31
+    },
+    createRace = {
+      211,
+      466,
+      145,
+      31
+    },
+    createCustomizing = {
+      356,
+      466,
+      208,
+      31
+    },
+    createAbility = {
+      564,
+      466,
+      259,
+      31
+    }
+  }
+  loginStageCommonLocale.made_html_path = "ui/login_stage/html/made_en.html"
+  BUTTON_LOGINSTAGE.EXIT = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coords = {
+        normal = {
+          0,
+          0,
+          98,
+          35
+        },
+        over = {
+          0,
+          35,
+          98,
+          35
+        },
+        click = {
+          0,
+          70,
+          98,
+          35
+        },
+        disable = {
+          0,
+          105,
+          98,
+          35
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 25,
+        y = -3
+      },
+      drawableExtent = {width = 98, height = 35}
+    }
+  }
+  BUTTON_LOGINSTAGE.OPTION = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coords = {
+        normal = {
+          98,
+          0,
+          142,
+          35
+        },
+        over = {
+          98,
+          35,
+          142,
+          35
+        },
+        click = {
+          98,
+          70,
+          142,
+          35
+        },
+        disable = {
+          98,
+          105,
+          142,
+          35
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 10,
+        y = 0
+      },
+      drawableExtent = {width = 142, height = 35}
+    }
+  }
+  BUTTON_LOGINSTAGE.RECUSTOMIZING = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = 250,
+      height = 100
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.GRADE,
+      coords = {
+        normal = {
+          0,
+          0,
+          209,
+          49
+        },
+        over = {
+          209,
+          0,
+          209,
+          49
+        },
+        click = {
+          0,
+          49,
+          209,
+          49
+        },
+        disable = {
+          209,
+          49,
+          209,
+          49
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 20,
+        y = -4
+      },
+      drawableExtent = {width = 209, height = 49}
+    }
+  }
+  BUTTON_LOGINSTAGE.COMPLETE_RECUSTOMIZING = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = 250,
+      height = 100
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.GRADE,
+      coords = {
+        normal = {
+          0,
+          98,
+          81,
+          57
+        },
+        over = {
+          81,
+          98,
+          81,
+          57
+        },
+        click = {
+          162,
+          98,
+          81,
+          57
+        },
+        disable = {
+          243,
+          98,
+          81,
+          57
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 40,
+        y = -2
+      },
+      drawableExtent = {width = 81, height = 57}
+    }
+  }
+  BUTTON_LOGINSTAGE.EDIT_CANCEL = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coords = {
+        normal = {
+          240,
+          0,
+          112,
+          35
+        },
+        over = {
+          240,
+          35,
+          112,
+          35
+        },
+        click = {
+          240,
+          70,
+          112,
+          35
+        },
+        disable = {
+          240,
+          105,
+          112,
+          35
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 15,
+        y = 0
+      },
+      drawableExtent = {width = 112, height = 35}
+    }
+  }
+  loginStageCommonLocale.max_character_count = 12
+end

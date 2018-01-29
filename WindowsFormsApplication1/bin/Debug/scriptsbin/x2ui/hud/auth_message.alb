@@ -1,0 +1,90 @@
+function CreateAuthMessageWindow(parent)
+  local window = CreateEmptyWindow("auth_message_window", parent)
+  window:Show(false)
+  window:SetWidth(300)
+  window:AddAnchor("TOPLEFT", "UIParent", 0, 550)
+  local authMessage = window:CreateChildWidget("textbox", "authMessage", 0, true)
+  authMessage:Show(true)
+  authMessage:AddAnchor("TOPLEFT", window, 0, 0)
+  authMessage:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+  authMessage:SetInset(15, 0, 0, 0)
+  authMessage:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  authMessage.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.LARGE)
+  authMessage.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(authMessage, FONT_COLOR.NOTICE_ORANGE)
+  local bg = authMessage:CreateImageDrawable(TEXTURE_PATH.DEFAULT, "background")
+  bg:SetColor(0, 0, 0, 0.4)
+  bg:SetCoords(469, 406, 215, 168)
+  bg:AddAnchor("TOPLEFT", authMessage, 0, -10)
+  bg:AddAnchor("BOTTOMRIGHT", authMessage, 60, 10)
+  local fadeInTime = 1000
+  local fadeOutTime = 1000
+  function window:SetMessage(msg, remainTime)
+    self.authMessage:SetText(msg)
+    window:SetHeight(self.authMessage:GetTextHeight() + 10)
+    if remainTime > 0 then
+      window:Show(true, fadeInTime)
+      window:Raise()
+    else
+      window:Show(false, fadeOutTime)
+    end
+  end
+  local evnets = {
+    NOTIFY_AUTH_FATIGUE_MESSAGE = function(msg, remainTime)
+      window:SetMessage(msg, remainTime)
+    end,
+    NOTIFY_AUTH_BILLING_MESSAGE = function(msg, remainTime)
+      window:SetMessage(msg, remainTime)
+    end,
+    NOTIFY_AUTH_ADVERTISING_MESSAGE = function(msg, remainTime)
+      window:SetMessage(msg, remainTime)
+    end,
+    NOTIFY_AUTH_NOTICE_MESSAGE = function(msg, remainTime)
+      window:SetMessage(msg, remainTime)
+    end
+  }
+  window:SetHandler("OnEvent", function(this, event, ...)
+    evnets[event](...)
+  end)
+  RegistUIEvent(window, evnets)
+  return window
+end
+local auth_message = CreateAuthMessageWindow("UIParent")
+auth_message:SetUILayer("system")
+ADDON:RegisterContentWidget(UIC_AUTH_MSG_WND, auth_message)
+function CreateAuthTCFatigueMessageWindow(parent)
+  local window = CreateWindow("tcFatigue", parent)
+  window:SetUILayer("system")
+  window:AddAnchor("CENTER", parent, 0, 0)
+  window:SetExtent(POPUP_WINDOW_WIDTH, 200)
+  window:SetCloseOnEscape(false)
+  window.titleBar.closeButton:Show(false)
+  window:CreateChildWidget("textbox", "fatigueMessage", 0, true)
+  window.fatigueMessage:SetLineSpace(3)
+  window.fatigueMessage:AddAnchor("TOPLEFT", window, "TOPLEFT", 10, window.titleBar:GetHeight())
+  window.fatigueMessage:AddAnchor("BOTTOMRIGHT", window, "BOTTOMRIGHT", -10, -10)
+  window.fatigueMessage:SetHeight(200)
+  window.fatigueMessage.style:SetFontSize(FONT_SIZE.LARGE)
+  window.fatigueMessage.style:SetColor(0, 0, 0, 1)
+  window.fatigueMessage.style:SetAlign(ALIGN_TOP)
+  function window:SetMessage(msg, remainTime)
+    self.fatigueMessage:SetText(msg)
+    if remainTime > 0 then
+      self:Show(true)
+      self:Raise()
+    else
+      self:Show(false)
+    end
+  end
+  local events = {
+    NOTIFY_AUTH_TC_FATIGUE_MESSAGE = function(msg, remainTime)
+      window:SetMessage(msg, remainTime)
+    end
+  }
+  window:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(window, events)
+  return window
+end
+CreateAuthTCFatigueMessageWindow("UIParent")

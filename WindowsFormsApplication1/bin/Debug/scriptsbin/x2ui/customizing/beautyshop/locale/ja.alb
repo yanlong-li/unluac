@@ -1,0 +1,152 @@
+if X2Util:GetGameProvider() == GAMEON then
+  BUTTON_BEAUTYSHOP.RESET = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.BEAUTYSHOP,
+      coords = {
+        normal = {
+          0,
+          84,
+          115,
+          33
+        },
+        over = {
+          115,
+          84,
+          115,
+          33
+        },
+        click = {
+          0,
+          117,
+          115,
+          33
+        },
+        disable = {
+          115,
+          117,
+          115,
+          33
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 15,
+        y = -1
+      },
+      drawableExtent = {width = 115, height = 33}
+    }
+  }
+  BUTTON_BEAUTYSHOP.EXIT = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.BEAUTYSHOP,
+      coords = {
+        normal = {
+          0,
+          183,
+          79,
+          33
+        },
+        over = {
+          79,
+          183,
+          79,
+          33
+        },
+        click = {
+          158,
+          183,
+          79,
+          33
+        },
+        disable = {
+          0,
+          216,
+          79,
+          33
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 15,
+        y = 0
+      },
+      drawableExtent = {width = 79, height = 33}
+    }
+  }
+  BUTTON_BEAUTYSHOP.CONFIRM = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.BEAUTYSHOP,
+      coords = {
+        normal = {
+          0,
+          150,
+          53,
+          33
+        },
+        over = {
+          53,
+          150,
+          53,
+          33
+        },
+        click = {
+          106,
+          150,
+          53,
+          33
+        },
+        disable = {
+          159,
+          183,
+          53,
+          33
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 15,
+        y = 0
+      },
+      drawableExtent = {width = 53, height = 33}
+    }
+  }
+end

@@ -1,0 +1,17 @@
+function DrawPremiumBackground(listCtrl)
+  local coords = premiumServiceLocale.benefitListBgCoord
+  local valueBG = CreateContentBackground(listCtrl, "TYPE2")
+  ApplyTextureColor(valueBG, TEXTURE_COLOR.BOX_BROWN)
+  valueBG:AddAnchor("TOPLEFT", listCtrl, -5, 10)
+  valueBG:AddAnchor("BOTTOMRIGHT", listCtrl, 5, 5)
+  listCtrl.valueBG = valueBG
+  local target = listCtrl
+  if listCtrl.scroll ~= nil then
+    target = listCtrl.listCtrl
+  end
+  local menuBG = listCtrl:CreateNinePartDrawable(TEXTURE_PATH.PREMIUM_SERVICE_GRADE_PROGRESS_BAR, "background")
+  menuBG:SetTextureInfo("table_title")
+  menuBG:SetHeight(target.column[1]:GetHeight())
+  menuBG:AddAnchor("TOPLEFT", target.column[1], 0, 0)
+  menuBG:AddAnchor("TOPRIGHT", valueBG, 0, 0)
+end

@@ -1,0 +1,134 @@
+if characterCreateLocale == nil then
+  characterCreateLocale = {}
+end
+characterCreateLocale.abilityWndWidth = 600
+characterCreateLocale.descHeight = 130
+characterCreateLocale.abilityButton = {
+  anchorSize = 100,
+  offset = -100,
+  fontSize = FONT_SIZE.XLARGE
+}
+function characterCreateLocale:CreateEffectAviButton(parent)
+end
+function characterCreateLocale:CreateAbilityDescLabel(parent)
+end
+function characterCreateLocale:CreateAbilityButton(parent, index, text)
+  local button = parent:CreateChildWidget("button", "abilityBtn", index, true)
+  button:SetText(text)
+  return button
+end
+characterCreateLocale.abilityDesc = {
+  path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+  abilityTitle = {
+    coords = {
+      {
+        862,
+        200,
+        90,
+        55
+      },
+      {
+        758,
+        140,
+        89,
+        63
+      },
+      {
+        769,
+        203,
+        93,
+        53
+      },
+      {
+        663,
+        211,
+        106,
+        56
+      },
+      {
+        663,
+        140,
+        95,
+        71
+      },
+      {
+        847,
+        140,
+        99,
+        60
+      }
+    }
+  }
+}
+characterCreateLocale.abilityDiagram = {
+  path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+  anchorX = 0,
+  bg = {
+    coords = {
+      0,
+      345,
+      217,
+      167
+    },
+    anchor = {13, -3}
+  },
+  labelExtent = {
+    {55, 20},
+    {55, 20},
+    {28, 20},
+    {28, 20},
+    {28, 20}
+  },
+  labelAnchor = {
+    {-2, -13},
+    {4, -23},
+    {8, 10},
+    {-10, 10},
+    {-5, -30}
+  }
+}
+characterCreateLocale.raceName = {
+  anchor = {
+    {
+      "BOTTOM",
+      "TOP",
+      -155,
+      -10
+    },
+    {},
+    {
+      "BOTTOM",
+      "TOP",
+      -155,
+      -10
+    },
+    {
+      "BOTTOMRIGHT",
+      "TOPLEFT",
+      45,
+      10
+    },
+    {
+      "BOTTOM",
+      "TOP",
+      -100,
+      -11
+    },
+    {
+      "BOTTOMRIGHT",
+      "TOPLEFT",
+      102,
+      0
+    },
+    {},
+    {
+      "BOTTOM",
+      "TOP",
+      -155,
+      -10
+    }
+  }
+}
+characterCreateLocale.characterName = {
+  fontSize = FONT_SIZE.XLARGE
+}

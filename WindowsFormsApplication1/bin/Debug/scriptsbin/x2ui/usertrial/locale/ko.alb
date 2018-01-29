@@ -1,0 +1,58 @@
+if userTrialLocale == nil then
+  userTrialLocale = {}
+end
+if userReportBadUser == nil then
+  userReportBadUser = {}
+end
+userTrialLocale.crimeRecords = {
+  windowWidth = 680,
+  listCtrlWidth = 435,
+  columnWidth = {
+    125,
+    50,
+    125,
+    135
+  }
+}
+userTrialLocale.verdict = {
+  windowWidth = 680,
+  sentenceBtnOffset = 20,
+  buttonFontSize = FONT_SIZE.LARGE
+}
+userTrialLocale.botRecords = {
+  windowWidth = 680,
+  listCtrlWidth = 435,
+  columnWidth = {
+    125,
+    175,
+    135
+  }
+}
+userTrialLocale.rulingStatusWnd = {
+  fontSize = {
+    crimeListWndTitle = FONT_SIZE.LARGE,
+    notGuilty = 60,
+    guilty = 60
+  },
+  statusFontPath = "combat",
+  statusTitleAnchor = {
+    myPoint = "BOTTOMLEFT",
+    targetPoint = "TOPLEFT",
+    x = -10,
+    y = -2
+  },
+  crimeTypeIcon = {
+    offset = 60,
+    width = 60,
+    inset = 30
+  }
+}
+userReportBadUser.BadUserRecords = {
+  suspectedstringLimit = 17,
+  reporttypestringLimit = 11,
+  columnWidth = {
+    228,
+    151,
+    162
+  }
+}

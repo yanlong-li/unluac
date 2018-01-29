@@ -1,0 +1,23 @@
+if X2Util:GetGameProvider() == GAMEON then
+  auctionLocale.icon = {
+    currentCoords = UIParent:GetTextureData(TEXTURE_PATH.AUCTION, "present").coords,
+    directCoords = UIParent:GetTextureData(TEXTURE_PATH.AUCTION, "immediately").coords
+  }
+  auctionLocale.width = {
+    window = 800,
+    category = 160,
+    bidListCtrl = 590,
+    putupListCtrl = 550,
+    bidHistoryListCtrl = 760,
+    bidStateCol = 95,
+    itemlevelCol = 55,
+    itemConditionCol = 70,
+    gradeCombobox = 95,
+    timeCol = 75
+  }
+  auctionLocale.nameColLimitLen = {
+    bidTab = 18,
+    putupTab = 18,
+    bidHistoryTab = 26
+  }
+end

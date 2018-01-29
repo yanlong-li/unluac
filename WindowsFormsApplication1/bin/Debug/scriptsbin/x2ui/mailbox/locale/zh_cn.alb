@@ -1,0 +1,35 @@
+if X2Util:GetGameProvider() == TENCENT then
+  mailBoxLocale.maxTextLength = 120
+  function mailBoxLocale.comercialMail:DateDataFunc(subItem, data, setValue, sortMode)
+    if setValue == false then
+      subItem:SetText("")
+      return
+    end
+    if sortMode == "asc" then
+      local str = MakeRefundLimitStrForList(data[COMERCIAL_MAIL_COL.REFUND], data[COMERCIAL_MAIL_COL.REFUND_LIMIT_FILE_TIME])
+      subItem:SetText(str)
+      if GetEnableRefund(data[COMERCIAL_MAIL_COL.REFUND], data[COMERCIAL_MAIL_COL.REFUND_LIMIT_FILE_TIME]) then
+        ApplyTextColor(subItem, FONT_COLOR.BLUE)
+      else
+        ApplyTextColor(subItem, FONT_COLOR.RED)
+      end
+    else
+      subItem:SetText(RecvDateStrFromBody(data[COMERCIAL_MAIL_COL.RECV_DATE]))
+      if data[COMERCIAL_MAIL_COL.ISREAD] then
+        ApplyTextColor(subItem, FONT_COLOR.GRAY)
+      else
+        ApplyTextColor(subItem, FONT_COLOR.BLUE)
+      end
+    end
+  end
+  function mailBoxLocale.comercialMail:DateAscendingSortFunc(a, b, sortFunc)
+    local off = ROWDATA_COLUMN_OFFSET + 3
+    return sortFunc(a[off], b[off])
+  end
+  function mailBoxLocale.comercialMail:DateDescendingSortFunc(a, b)
+    local off = ROWDATA_COLUMN_OFFSET + 3
+    return X2Util:CompareMoneyString(a[off][COMERCIAL_MAIL_COL.MAILID], b[off][COMERCIAL_MAIL_COL.MAILID]) == 1 and true or false
+  end
+  mailBoxLocale.balanceReceiptTotalMoneyFontSize = FONT_SIZE.MIDDLE
+  mailBoxLocale.balanceReceiptDetailMoneyFontSize = FONT_SIZE.SMALL
+end

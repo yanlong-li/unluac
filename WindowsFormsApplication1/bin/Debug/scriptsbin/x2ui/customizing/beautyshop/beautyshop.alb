@@ -1,0 +1,874 @@
+local beautyshop
+local function PayBeautyShop()
+  if beautyshop ~= nil then
+    beautyshop.modelView:PayBeautyShop()
+  end
+end
+function InitCustomizingParam(needUiUpdate)
+  if needUiUpdate == nil then
+    needUiUpdate = false
+  end
+  if beautyshop ~= nil then
+    beautyshop.modelView:InitCustomizerControl(needUiUpdate)
+    UpdateDetails()
+  end
+end
+function IsBeautyShop()
+  if beautyshop ~= nil then
+    return true
+  end
+  return false
+end
+function GetCurrentCosmeticItem(type)
+  if beautyshop == nil then
+    return 0
+  end
+  local modelView = beautyshop.modelView
+  local func = {
+    modelView.GetCustomHair,
+    modelView.GetCustomHairColor,
+    modelView.GetCustomEyebrow,
+    modelView.GetCustomEyebrowColor,
+    modelView.GetCustomPupilColor,
+    modelView.GetCustomMakeUp,
+    modelView.GetCustomLipColor,
+    modelView.GetCustomDeco,
+    modelView.GetCustomDeco,
+    modelView.GetCustomizingDecoColor,
+    modelView.GetCustomFaceDiffuse,
+    modelView.GetCustomSkinColor,
+    modelView.GetCustomFaceNormal,
+    modelView.GetCustomTattoo,
+    modelView.GetCustomScar
+  }
+  return func[type](modelView)
+end
+function UpdateDetails()
+  if beautyshop == nil then
+    return
+  end
+  beautyshop.details:UpdateCosmetic()
+  beautyshop.details:UpdatePlastic()
+end
+function SetCustomItemToParam(type, index, isFixed, needUiUpdate)
+  if beautyshop == nil then
+    return
+  end
+  if needUiUpdate == nil then
+    needUiUpdate = true
+  end
+  local modelView = beautyshop.modelView
+  if type ~= nil then
+    if index == nil then
+      index = 0
+    end
+    modelView:SetCustomizingParam(type - 1, index - 1, isFixed, needUiUpdate)
+  end
+end
+function SelectPresetItem(type, index, needUiUpdate)
+  local isFixed = X2Customizer:IsCosmeticFix()
+  SetCustomItemToParam(type, index, isFixed, false)
+  InitCustomizingParam(needUiUpdate)
+end
+function SelectCosmeticItem(type, index, r, g, b, weight, infoTable, trigger)
+  if beautyshop == nil then
+    return 0
+  end
+  local modelView = beautyshop.modelView
+  local func = {
+    modelView.SetCustomizingHair,
+    modelView.SetCustomizingHairColor,
+    modelView.SetCustomizingEyebrow,
+    modelView.SetCustomizingEyebrowColor,
+    modelView.SetCustomizingPupilColor,
+    modelView.SetCustomizingMakeUp,
+    modelView.SetCustomizingLipColor,
+    modelView.SetCustomizingDeco,
+    modelView.SetCustomizingDeco,
+    modelView.SetCustomizingDecoColor,
+    modelView.SetCustomizingFaceDiffuse,
+    modelView.SetCustomizingSkinColor,
+    modelView.SetCustomizingFaceNormal,
+    modelView.SetCustomizingTattoo,
+    modelView.SetCustomizingScar
+  }
+  if STYLE_WINDOW_TYPE[type] == STYLE_COMPOUND then
+    func[type](modelView, index, 0, 0, 1, 0)
+  elseif STYLE_WINDOW_TYPE[type] == STYLE_PALLET then
+    func[type](modelView, r, g, b)
+  elseif STYLE_WINDOW_TYPE[type] == STYLE_PAGE_USE_SLIDER_DEFAULT_COUNT or STYLE_WINDOW_TYPE[type] == STYLE_PAGE_USE_SLIDER_NOT_DEFAULT_COUNT then
+    func[type](modelView, index, weight or 1)
+  elseif STYLE_WINDOW_TYPE[type] == STYLE_HAIR_COLOR then
+    func[type](modelView, infoTable)
+  else
+    func[type](modelView, index)
+  end
+  if trigger ~= false then
+    InitCustomizingParam()
+  else
+    beautyshop.cosmeticWnd:ReloadCosmetic()
+  end
+end
+function SelctCosmeticScarItem(index, x, y, scale, rotate, trigger)
+  if beautyshop == nil then
+    return
+  end
+  local modelView = beautyshop.modelView
+  if index == nil then
+    index = 0
+  end
+  modelView:SetCustomizingScar(index, x, y, scale, rotate)
+  if trigger ~= false then
+    InitCustomizingParam()
+  else
+    beautyshop.cosmeticWnd:ReloadCosmetic()
+  end
+end
+function GetCosmeticScarInfo()
+  if beautyshop == nil then
+    return
+  end
+  local modelView = beautyshop.modelView
+  return modelView:GetScarStatus()
+end
+function GetTwotoneHairInfo()
+  if beautyshop == nil then
+    return
+  end
+  local modelView = beautyshop.modelView
+  return modelView:GetTwoToneHairStatus()
+end
+function MixWithPresetItem(type, index, value, isRandom)
+  local isFixed = X2Customizer:IsCosmeticFix()
+  X2Customizer:SetMixedParam((index - 1) % MAX_VIEW_PRESET_COUNT + 1)
+  X2Customizer:MixParam(type, value, isRandom, isFixed)
+  SetCustomItemToParam(FACE, nil, isFixed)
+end
+function GetFaceTargetCurValue(index)
+  if beautyshop == nil then
+    return 0
+  end
+  local modelView = beautyshop.modelView
+  return modelView:GetFaceTargetCurValue(index)
+end
+function CancelToMix()
+  X2Customizer:LoadSavedParam(0)
+  SetCustomItemToParam(FACE, nil, false)
+end
+function ConfirmToMix()
+  UpdateDetails()
+end
+function ReadyToModifyDetail()
+  InitCustomizingParam()
+end
+function CancelToModifyDetail()
+  SetCustomItemToParam(FACE, nil, false, false)
+end
+function ConfirmToModifyDetail()
+  InitCustomizingParam()
+end
+function ModifyFaceDetail(index, value)
+  if beautyshop == nil then
+    return
+  end
+  local modelView = beautyshop.modelView
+  modelView:ModifyFaceParamValue(index, value)
+end
+function DoSmile(arg)
+  if beautyshop == nil then
+    return
+  end
+  local modelView = beautyshop.modelView
+  modelView:SetSmile(arg)
+end
+function IsModifierChanged(type)
+  if beautyshop == nil then
+    return
+  end
+  local modelView = beautyshop.modelView
+  return modelView:IsModifierChanged(type)
+end
+function SetModifierToModel(type, checked)
+  if beautyshop == nil then
+    return
+  end
+  local modelView = beautyshop.modelView
+  modelView:SetModifierToModel(type, not checked)
+end
+function SetModelViewFunction(window, parent)
+  function window:OnWheelDown()
+    self:ZoomInOutBeautyShop(1)
+  end
+  window:SetHandler("OnWheelDown", window.OnWheelDown)
+  function window:OnWheelUp()
+    self:ZoomInOutBeautyShop(-1)
+  end
+  window:SetHandler("OnWheelUp", window.OnWheelUp)
+  local ANIMATION_NAME = "fist_ac_stage_idle"
+  function window:Initialize()
+    self:InitBeautyShop()
+    self:PlayAnimation(ANIMATION_NAME, true)
+  end
+end
+function SetBottomMenuFunction(window, parent)
+  local cancelBtn = window.cancelBtn
+  local resetBtn = window.resetBtn
+  local confirmBtn = window.confirmBtn
+  local hideCostumeWnd = window.hideCostumeWnd
+  function window:Init()
+    hideCostumeWnd.chk:SetChecked(true)
+    if X2Equipment:GetEquippedItemType(ES_COSPLAY) == nil then
+      hideCostumeWnd:Enable(false, true)
+    else
+      hideCostumeWnd:Enable(true, true)
+    end
+  end
+  function hideCostumeWnd.chk:CheckBtnCheckChagnedProc(checked)
+    parent:HideCostume(checked)
+  end
+  function window:SetEnable(enable)
+    cancelBtn:Enable(enable)
+    resetBtn:Enable(enable)
+    confirmBtn:Enable(enable)
+  end
+  function cancelBtn:OnClick()
+    local DialogHandler = function(wnd)
+      wnd:SetTitle(locale.beautyshop.exitTitle)
+      wnd:SetContent(locale.beautyshop.exitBody)
+      function wnd:OkProc()
+        X2Customizer:TerminateBeautyShop()
+      end
+    end
+    X2DialogManager:RequestDefaultDialog(DialogHandler, parent:GetId())
+  end
+  cancelBtn:SetHandler("OnClick", cancelBtn.OnClick)
+  function resetBtn:OnClick()
+    local function DialogHandler(wnd)
+      wnd:SetTitle(locale.beautyshop.resetTitle)
+      wnd:SetContent(locale.beautyshop.resetBody)
+      function wnd:OkProc()
+        parent:ResetModel()
+      end
+      function wnd:GetOkSound()
+        return ""
+      end
+    end
+    X2DialogManager:RequestDefaultDialog(DialogHandler, parent:GetId())
+  end
+  resetBtn:SetHandler("OnClick", resetBtn.OnClick)
+  function confirmBtn:OnClick()
+    parent:ShowDetails(true)
+  end
+  confirmBtn:SetHandler("OnClick", confirmBtn.OnClick)
+end
+local function SetBeautyShopFunction(window, parent)
+  function window:HideCostume(checked)
+    if checked then
+      self.modelView:RemoveEquipSlot(ES_COSPLAY)
+    else
+      self.modelView:SetEquipSlotFromCharacter(ES_COSPLAY)
+    end
+  end
+  function window:SetRaceGender(raceStr, genderStr)
+    self.race = 0
+    for i = 1, #RACE_TYPE do
+      if raceStr == X2Unit:GetRaceStr(RACE_TYPE[i]) then
+        self.race = RACE_TYPE[i]
+        break
+      end
+    end
+    self.gender = 0
+    for i = 1, #GENDER_TYPE do
+      if genderStr == X2Unit:GetGenderStr(GENDER_TYPE[i]) then
+        self.gender = GENDER_TYPE[i]
+        break
+      end
+    end
+    if self.gender == 0 or self.race == 0 then
+      return false
+    end
+    self.plasticWnd:SetRaceGender(self.race, self.gender, true)
+    self.cosmeticWnd:SetRaceGender(self.race, self.gender, true)
+    self.details:SetRaceGender(self.race, self.gender)
+    return true
+  end
+  function window:Init()
+    self.modelView:Initialize()
+    local result = self:SetRaceGender(self.modelView:GetRace(), self.modelView:GetGender())
+    if result then
+      self.plasticWnd:Init()
+      self.plasticWnd:ClearSelectedItem()
+      self.cosmeticWnd:Init()
+      self.details:Init()
+      self.bottomMenu:Init()
+    end
+    if X2Customizer:HasTemporaryCustomData() then
+      local AskTemporaryCustomData = function(wnd, infoTable)
+        function wnd:OkProc()
+          X2Customizer:LoadTemporaryCustomData()
+          ClearPlasticWnd()
+          SetCustomItemToParam(FACE, nil, false)
+          X2Customizer:DeleteTemporaryCustomData()
+          wnd:Show(false)
+        end
+        function wnd:CancelProc()
+          X2Customizer:DeleteTemporaryCustomData()
+          wnd:Show(false)
+        end
+        wnd:SetTitle(X2Locale:LocalizeUiText(MSG_BOX_TITLE_TEXT, "error_message"))
+        local str = X2Locale:LocalizeUiText(COMMON_TEXT, "want_to_load_temporary_data")
+        wnd:SetContent(str, true)
+      end
+      X2DialogManager:RequestDefaultDialog(AskTemporaryCustomData, window:GetId())
+    end
+  end
+  function window:ResetModel()
+    self.modelView:ResetBeautyShop()
+    self:HideCostume(self.bottomMenu.hideCostumeWnd.chk:GetChecked())
+    InitCustomizingParam()
+    self.plasticWnd:ClearSelectedItem()
+  end
+  function window:ShowDetails(show)
+    self.bottomMenu:SetEnable(not show)
+    self.details:Show(show)
+    InitCustomizingParam()
+  end
+  function window:OnMouseDown()
+    return true
+  end
+  window:SetHandler("OnMouseDown", window.OnMouseDown)
+  function window:OnWheelUp()
+    return true
+  end
+  window:SetHandler("OnWheelUp", window.OnWheelUp)
+  function window:OnWheelDown()
+    return true
+  end
+  window:SetHandler("OnWheelDown", window.OnWheelDown)
+  function window:ShowProc()
+  end
+  function window:OnHide()
+    beautyshop = nil
+  end
+  window:SetHandler("OnHide", window.OnHide)
+  local BeautyShopEvents = {
+    LEFT_LOADING = function()
+      window:Raise()
+    end,
+    BEAUTYSHOP_CLOSE_BY_SYSTEM = function()
+      if window:IsVisible() then
+        window:Show(false, 500)
+        local ResultBeautyShopCloseBySystem = function(wnd, infoTable)
+          function wnd:OkProc()
+            wnd:Show(false)
+          end
+          wnd:SetTitle(X2Locale:LocalizeUiText(MSG_BOX_TITLE_TEXT, "error_message"))
+          local str = X2Locale:LocalizeUiText(COMMON_TEXT, "cusomizing_data_is_saved_temporary")
+          wnd:SetContent(str, true)
+        end
+        X2DialogManager:RequestNoticeDialog(ResultBeautyShopCloseBySystem, "")
+      end
+    end
+  }
+  window:SetHandler("OnEvent", function(this, event, ...)
+    BeautyShopEvents[event](...)
+  end)
+  RegistUIEvent(window, BeautyShopEvents)
+end
+local IsSameExInfo = function(info1, info2, isTwotoneColor)
+  if info1 == nil and info2 == nil then
+    return true
+  elseif info1 == nil or info2 == nil then
+    return false
+  elseif info1.x ~= info2.x or info1.y ~= info2.y or info1.rotate ~= info2.rotate or info1.scale ~= info2.scale then
+    return false
+  elseif isTwotoneColor and (info1.firstWidth ~= info2.firstWidth or info1.secondWidth ~= info2.secondWidth) then
+    return false
+  end
+  return true
+end
+function SetCosmeticDetailsIconFunction(icon, parent)
+  icon.style = nil
+  function icon:Update()
+    if self.style ~= nil then
+      local result = self:SetIcon(parent.race, parent.gender)
+      if self.isTwotoneColor then
+        if self.style == HAIR_COLOR and self.exInfo == nil then
+          self:Show(false)
+          return false
+        end
+        if result ~= nil and self.default ~= nil then
+          local resultSub = string.sub(result, 13)
+          local defaultSub = string.sub(self.default, 13)
+          if resultSub == defaultSub and IsSameExInfo(self.exInfo, self.defaultExInfo, self.isTwotoneColor) then
+            self:ClearIcon()
+            return false
+          end
+        end
+      end
+      if result ~= nil and self.default ~= nil and self.exInfo ~= nil and self.style == HAIR_COLOR and not self.isTwotoneColor and self.exInfo.firstWidth ~= nil and self.exInfo.secondWidth ~= nil then
+        local resultSub = string.sub(result, 1, 12)
+        local defaultSub = string.sub(self.default, 1, 12)
+        if resultSub == defaultSub then
+          self:ClearIcon()
+          return false
+        end
+      end
+      if result == self.default and IsSameExInfo(self.exInfo, self.defaultExInfo, self.isTwotoneColor) then
+        self:ClearIcon()
+        return false
+      end
+      self:Show(true)
+      return true
+    else
+      self:Show(false)
+    end
+    return false
+  end
+  function icon:ClearIcon()
+    self.iconImg:SetTexture("ui/beautyshop/beautyshop.dds")
+    self.iconImg:SetCoords(self.coords[1], self.coords[2], self.coords[3], self.coords[4])
+    self.iconImg:SetVisible(true)
+    self.colorImg:SetVisible(false)
+    self.hotIcon:SetVisible(false)
+    self.newIcon:SetVisible(false)
+  end
+  function icon:RemoveIcon()
+    self.iconImg:SetTexture("ui/beautyshop/beautyshop.dds")
+    local coords = beautyShopCommonLocale.slotBg.cosmetic
+    self.iconImg:SetCoords(coords[1], coords[2], coords[3], coords[4])
+    self.iconImg:SetVisible(true)
+    self.colorImg:SetVisible(false)
+    self.hotIcon:SetVisible(false)
+    self.newIcon:SetVisible(false)
+  end
+  function icon:SetIcon(race, gender)
+    local result
+    self.exInfo = nil
+    if STYLE_WINDOW_TYPE[self.style] == STYLE_PALLET then
+      if self.style == 1 then
+        UIParent:LogAlways("STYLE_PALLET")
+      end
+      local r, g, b = GetCurrentCosmeticItem(self.style)
+      result = string.format("%.3d%.3d%.3d", r, g, b)
+      self.colorImg:SetColor(r / 255, g / 255, b / 255, 1)
+      self.colorImg:SetVisible(true)
+      self.iconImg:SetVisible(true)
+    elseif STYLE_WINDOW_TYPE[self.style] == STYLE_HAIR_COLOR then
+      local info = GetCurrentCosmeticItem(self.style)
+      if type(info) == "table" then
+        icon:ClearIcon()
+        local firstWidth, secondWidth = GetTwotoneHairInfo()
+        self.exInfo = {firstWidth = firstWidth, secondWidth = secondWidth}
+        result = string.format("%.3d%.3d%.3d%.3d%.3d%.3d%.3d", 0, info.defaultR, info.defaultG, info.defaultB, info.twoToneR, info.twoToneG, info.twoToneB)
+        if self.isTwotoneColor then
+          self.colorImg:SetColor(info.twoToneR / 255, info.twoToneG / 255, info.twoToneB / 255, 1)
+        else
+          self.colorImg:SetColor(info.defaultR / 255, info.defaultG / 255, info.defaultB / 255, 1)
+        end
+        self.colorImg:SetVisible(true)
+        self.iconImg:SetVisible(true)
+      else
+        local index = info
+        if index ~= nil and index ~= 0 then
+          local path, hot, new, _ = GetCosmeticItemInfo(race, gender, self.style, index)
+          result = string.format("%.3d", index)
+          self.iconImg:SetTexture(path)
+          local width, height = self.iconImg:GetTextureSize()
+          self.iconImg:SetCoords(0, 0, width, height)
+          self.hotIcon:RemoveAllAnchors()
+          self.hotIcon:AddAnchor("TOPLEFT", self, 0, 0)
+          self.hotIcon:SetVisible(hot)
+          local offsetY = hot and self.hotIcon:GetHeight() or 0
+          self.newIcon:RemoveAllAnchors()
+          self.newIcon:AddAnchor("TOPLEFT", self, 0, offsetY)
+          self.newIcon:SetVisible(new)
+          self.iconImg:SetVisible(true)
+          self.colorImg:SetVisible(false)
+        else
+          self:RemoveIcon()
+        end
+      end
+    else
+      local index, weight = GetCurrentCosmeticItem(self.style)
+      if self.style == SCAR_TYPE then
+        local x, y, rotate, scale = GetCosmeticScarInfo()
+        self.exInfo = {
+          x = x,
+          y = y,
+          rotate = rotate,
+          scale = scale
+        }
+      end
+      result = string.format("%.3d%.3d", index or 0, weight and weight * 100 or 0)
+      if index ~= nil and index ~= 0 then
+        local path, hot, new = GetCosmeticItemInfo(race, gender, self.style, index)
+        self.iconImg:SetTexture(path)
+        local width, height = self.iconImg:GetTextureSize()
+        self.iconImg:SetCoords(0, 0, width, height)
+        self.hotIcon:RemoveAllAnchors()
+        self.hotIcon:AddAnchor("TOPLEFT", self, 0, 0)
+        self.hotIcon:SetVisible(hot)
+        local offsetY = hot and self.hotIcon:GetHeight() or 0
+        self.newIcon:RemoveAllAnchors()
+        self.newIcon:AddAnchor("TOPLEFT", self, 0, offsetY)
+        self.newIcon:SetVisible(new)
+        self.iconImg:SetVisible(true)
+        self.colorImg:SetVisible(false)
+      else
+        self:RemoveIcon()
+      end
+    end
+    self.value = result
+    return result
+  end
+  function icon:SetValueToModel(checked)
+    local value = checked and self.value or self.default
+    local exInfo = checked and self.exInfo or self.defaultExInfo
+    if STYLE_WINDOW_TYPE[self.style] == STYLE_PALLET then
+      local r = tonumber(string.sub(value, 1, 3))
+      local g = tonumber(string.sub(value, 4, 6))
+      local b = tonumber(string.sub(value, 7, 9))
+      SelectCosmeticItem(self.style, 0, r, g, b, 0, nil, false)
+    elseif STYLE_WINDOW_TYPE[self.style] == STYLE_HAIR_COLOR then
+      local index = tonumber(string.sub(value, 1, 3))
+      local infos = {}
+      if index ~= 0 then
+        infos = {index = index}
+      else
+        local defaultR = tonumber(string.sub(value, 4, 6))
+        local defaultG = tonumber(string.sub(value, 7, 9))
+        local defaultB = tonumber(string.sub(value, 10, 12))
+        local twoToneR = tonumber(string.sub(value, 13, 15))
+        local twoToneG = tonumber(string.sub(value, 16, 18))
+        local twoToneB = tonumber(string.sub(value, 19, 21))
+        infos = {
+          index = 0,
+          defaultR = defaultR,
+          defaultG = defaultG,
+          defaultB = defaultB,
+          twoToneR = twoToneR,
+          twoToneG = twoToneG,
+          twoToneB = twoToneB,
+          firstWidth = exInfo.firstWidth,
+          secondWidth = exInfo.secondWidth
+        }
+      end
+      SelectCosmeticItem(self.style, nil, 0, 0, 0, 0, infos, false)
+    else
+      local index = tonumber(string.sub(value, 1, 3))
+      local weight = tonumber(string.sub(value, 4, 6))
+      if self.style == SCAR_TYPE then
+        if index == 0 then
+          SelctCosmeticScarItem(0, 0, 0, 1, 0, false)
+        else
+          SelctCosmeticScarItem(index, exInfo.x, exInfo.y, exInfo.scale, exInfo.rotate, false)
+        end
+      else
+        SelectCosmeticItem(self.style, index, 0, 0, 0, weight / 100, nil, false)
+      end
+    end
+  end
+  function icon:Init()
+    self.default = nil
+    if self.style == nil then
+      self:Show(false)
+    else
+      self:Show(true)
+      self.default = self:SetIcon(parent.race, parent.gender)
+      if self.style == HAIR_COLOR and self.isTwotoneColor and self.exInfo == nil then
+        self:Show(false)
+      end
+      if self.exInfo ~= nil then
+        self.defaultExInfo = self.exInfo
+      end
+    end
+  end
+  function icon:OnEnter()
+    if icon.style ~= nil then
+      if self.isTwotoneColor then
+        SetTooltip(GetUIText(COMMON_TEXT, "part_hair_color"), self)
+      else
+        SetTooltip(locale.characterCreate.styleTitle[icon.style], self)
+      end
+    end
+  end
+  icon:SetHandler("OnEnter", icon.OnEnter)
+  function icon:OnLeave()
+    HideTooltip()
+  end
+  icon:SetHandler("OnLeave", icon.OnLeave)
+end
+local SetCosmeticDetailsChildFunction = function(window, parent)
+  function window:Update()
+    self.items[1]:Update()
+    self.items[2]:Update()
+  end
+  function window:Init()
+    for i = 1, #self.items do
+      for j = 1, #self.items[i].icons do
+        self.items[i].icons[j]:Init()
+      end
+      self.items[i]:Update()
+    end
+  end
+  function window:SetRaceGender(race, gender)
+    self.race = race
+    self.gender = gender
+    local styleList = STYLE_LIST[race][gender][self.type]
+    if self.type == HAIR_TAB then
+      self.items[1].icons[1].style = styleList[1]
+      self.items[2].icons[1].style = styleList[2]
+      local featureSet = X2Player:GetFeatureSet()
+      if featureSet ~= nil and featureSet.hairTwoTone then
+        self.items[2].icons[2].style = HAIR_COLOR
+        self.items[2].icons[2].isTwotoneColor = true
+      end
+    elseif self.type == SKIN_TAB or self.type == TATTOO_TAB then
+      self.items[1].icons[1].style = styleList[1]
+      self.items[2].icons[1].style = styleList[2]
+    elseif self.type == EYE_TAB then
+      self.items[1].icons[1].style = styleList[1]
+      self.items[1].icons[2].style = styleList[2]
+      self.items[1].icons[3].style = styleList[3]
+    elseif race == RACE_FERRE then
+      self.items[1].icons[1].style = styleList[1]
+      self.items[2].icons[1].style = styleList[3]
+    else
+      self.items[1].icons[1].style = styleList[1]
+      self.items[2].icons[1].style = styleList[2]
+      self.items[2].icons[2].style = styleList[3]
+      if styleList[4] ~= EMPTY_STYLE then
+        self.items[2].icons[3].style = styleList[4]
+      end
+    end
+  end
+  function window:UpdateCheckBox()
+    parent:UpdateCheckBox()
+  end
+end
+local function SetCosmeticDetailsFunction(window, parent)
+  for i = 1, #window.child do
+    local child = window.child[i]
+    SetCosmeticDetailsChildFunction(child, window)
+  end
+  function window:Init()
+    for i = 1, #self.child do
+      self.child[i]:Init()
+    end
+  end
+  function window:SetRaceGender(race, gender)
+    self.race = race
+    self.gender = gender
+    for i = 1, #self.child do
+      self.child[i]:SetRaceGender(race, gender)
+    end
+  end
+  function window:Update()
+    for i = 1, #self.child do
+      self.child[i]:Update()
+    end
+  end
+  function window:UpdateCheckBox()
+    parent:UpdateCosmeticCheckBox()
+    parent:UpdatePlasticCheckBox()
+  end
+end
+local SetPlasticDetailsChildFunction = function(window, parent)
+  function window:UpdateCheckBox()
+    parent:UpdateCheckBox()
+  end
+end
+local function SetPlasticDetailsFunction(window, parent)
+  for i = 1, #window.child do
+    local child = window.child[i]
+    SetPlasticDetailsChildFunction(child, window)
+  end
+  function window:Init()
+  end
+  function window:SetRaceGender(race, gender)
+    self.race = race
+    self.gender = gender
+  end
+  function window:Update()
+    for i = 1, #self.child do
+      self.child[i].item:Update()
+    end
+  end
+  function window:UpdateCheckBox()
+    parent:UpdatePlasticCheckBox()
+  end
+end
+function SetDetailsFunction(window, parent)
+  SetCosmeticDetailsFunction(window.cosmetic, window)
+  SetPlasticDetailsFunction(window.plastic, window)
+  function window:ShowProc()
+    self:UpdateCosmetic()
+    self:UpdatePlastic()
+  end
+  function window:UpdateCosmetic()
+    self.cosmetic:Update()
+    self:UpdateCosmeticCheckBox()
+  end
+  function window:UpdatePlastic()
+    self.plastic:Update()
+    self:UpdatePlasticCheckBox()
+  end
+  function window:SetRaceGender(race, gender)
+    self.cosmetic:SetRaceGender(race, gender)
+    self.plastic:SetRaceGender(race, gender)
+  end
+  function window:Init()
+    self.cosmetic:Init()
+    self.plastic:Init()
+    local itemType, has, need = X2Customizer:GetBeautyShopConfigInfo()
+    local itemName = X2Item:Name(itemType)
+    local info = X2Item:GetItemInfoByType(itemType)
+    local color = FONT_COLOR.WHITE
+    if has < need then
+      color = FONT_COLOR.RED
+    end
+    self.itemNotice:SetText(locale.beautyshop.itemNotice(itemName, need))
+    self.itemIconButton:SetItemInfo(info)
+    self.itemIconButton.stack:SetText(string.format("%d/%d", has, need))
+    self.itemIconButton.stack.style:SetColor(color[1], color[2], color[3], color[4])
+    window.confirmBtn:UpdateEnable()
+  end
+  function window:OnHide()
+    parent:ShowDetails(false)
+  end
+  window:SetHandler("OnHide", window.OnHide)
+  function window:UpdateCosmeticCheckBox()
+    local checked = true
+    for i = 1, #self.cosmetic.child do
+      if not checked then
+        break
+      end
+      for j = 1, #self.cosmetic.child[i].items do
+        local item = self.cosmetic.child[i].items[j]
+        if item.icons[1].style ~= nil and not item.chk:GetChecked() and item.chk:IsVisible() then
+          checked = false
+          break
+        end
+      end
+    end
+    window.cosmeticApply:SetChecked(checked, false)
+    window.confirmBtn:UpdateEnable()
+  end
+  function window.cosmeticApply:CheckBtnCheckChagnedProc(checked)
+    for i = 1, #window.cosmetic.child do
+      for j = 1, #window.cosmetic.child[i].items do
+        local item = window.cosmetic.child[i].items[j]
+        if item.chk:IsEnabled() then
+          item.chk:SetChecked(checked, false)
+          for k = 1, #item.icons do
+            local icon = item.icons[k]
+            if icon.style ~= nil then
+              icon:SetValueToModel(checked)
+            end
+          end
+        end
+      end
+    end
+    UIParent:LogAlways(string.format("self:GetChecked(): %s", tostring(self:GetChecked())))
+    window.confirmBtn:UpdateEnable()
+  end
+  function window:UpdatePlasticCheckBox()
+    local checked = true
+    for i = 1, #self.plastic.child do
+      if not checked then
+        break
+      end
+      local item = self.plastic.child[i].item
+      if item.chk:IsVisible() and not item.chk:GetChecked() then
+        checked = false
+        break
+      end
+    end
+    window.plasticApply:SetChecked(checked, false)
+    window.confirmBtn:UpdateEnable()
+  end
+  function window.plasticApply:CheckBtnCheckChagnedProc(checked)
+    for i = 1, #window.plastic.child do
+      local item = window.plastic.child[i].item
+      if item.chk:IsEnabled() then
+        item.chk:SetChecked(checked, false)
+        SetModifierToModel(window.plastic.child[i].type, checked)
+      end
+    end
+    window.confirmBtn:UpdateEnable()
+  end
+  function window.confirmBtn:UpdateEnable()
+    local isChecked = false
+    for i = 1, #window.plastic.child do
+      local item = window.plastic.child[i].item
+      if item.chk:IsVisible() and item.chk:GetChecked() then
+        isChecked = true
+        break
+      end
+    end
+    for i = 1, #window.cosmetic.child do
+      if isChecked then
+        break
+      end
+      for j = 1, #window.cosmetic.child[i].items do
+        local item = window.cosmetic.child[i].items[j]
+        if item.icons[1].style ~= nil and item.chk:IsVisible() and item.chk:GetChecked() then
+          isChecked = true
+          break
+        end
+      end
+    end
+    local itemType, has, need = X2Customizer:GetBeautyShopConfigInfo()
+    if not isChecked then
+      self:Enable(false)
+      self.tooltip = string.format(locale.beautyshop.noChange)
+    elseif has < need then
+      self:Enable(false)
+      self.tooltip = string.format(locale.beautyshop.notEnoughItem(X2Item:Name(itemType)))
+    else
+      self:Enable(true)
+      self.tooltip = nil
+    end
+  end
+  function window.continueBtn:OnClick()
+    parent:ShowDetails(false)
+  end
+  window.continueBtn:SetHandler("OnClick", window.continueBtn.OnClick)
+  function window.confirmBtn:OnEnter()
+    if not self:IsEnabled() and self.tooltip ~= nil then
+      SetTooltip(self.tooltip, self)
+    end
+  end
+  window.confirmBtn:SetHandler("OnEnter", window.confirmBtn.OnEnter)
+  function window.confirmBtn:OnLeave()
+    HideTooltip()
+  end
+  window.confirmBtn:SetHandler("OnLeave", window.confirmBtn.OnLeave)
+  function window.confirmBtn:OnClick()
+    PayBeautyShop()
+    self:Enable(false)
+  end
+  window.confirmBtn:SetHandler("OnClick", window.confirmBtn.OnClick)
+end
+function ClearPlasticWnd()
+  if beautyshop ~= nil then
+    beautyshop.plasticWnd:ClearSelectedItem()
+  end
+end
+function ToggleBeautyShop(isShow)
+  if isShow == nil then
+    isShow = true
+  end
+  if beautyshop == nil and isShow then
+    beautyshop = CreateBeautyShopWindow("beautyshop", "UIParent")
+    beautyshop:EnableFocus(true)
+    SetBeautyShopFunction(beautyshop, "UIParent")
+    beautyshop:Init()
+    beautyshop:Show(true)
+  end
+  if beautyshop ~= nil then
+    beautyshop:Show(isShow)
+  end
+end
+UIParent:SetEventHandler("TOGGLE_BEAUTYSHOP", ToggleBeautyShop)

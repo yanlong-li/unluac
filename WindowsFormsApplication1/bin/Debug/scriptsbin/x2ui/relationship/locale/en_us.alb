@@ -1,0 +1,31 @@
+if X2Util:GetGameProvider() == TRION then
+  relationshipLocale.extent = {600, 485}
+  relationshipLocale.tabWidth = 130
+  relationshipLocale.friendTab.columnWidth.name = 275
+  relationshipLocale.friendTab.columnWidth.level = 70
+  relationshipLocale.friendTab.columnWidth.race = 80
+  relationshipLocale.friendTab.columnWidth.job = 110
+  relationshipLocale.friendTab.inputName.extent = {
+    240,
+    DEFAULT_SIZE.EDIT_HEIGHT
+  }
+  relationshipLocale.blockTab.columnWidth.name = 275
+  relationshipLocale.blockTab.columnWidth.memo = 285
+  relationshipLocale.blockTab.inputName.extent = {
+    240,
+    DEFAULT_SIZE.EDIT_HEIGHT
+  }
+  relationshipLocale.familyTab.columnWidth.name = 275
+  relationshipLocale.familyTab.columnWidth.title = 215
+  relationshipLocale.familyTab.columnWidth.role = 70
+  relationshipLocale.familyTab.inputName.extent = {
+    205,
+    DEFAULT_SIZE.EDIT_HEIGHT
+  }
+  relationshipLocale.familyTab.inputTitle.extent = {
+    205,
+    DEFAULT_SIZE.EDIT_HEIGHT
+  }
+  relationshipLocale.familyTab.inputTitle.checkAvailableName = true
+  relationshipLocale.familyTab.guideAnchor = {x = -13, y = 3}
+end

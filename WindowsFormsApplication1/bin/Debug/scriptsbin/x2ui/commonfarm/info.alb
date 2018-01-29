@@ -1,0 +1,71 @@
+function CreateCommonFarmInfoWindow()
+  local w = SetViewOfCommonFarmInfoWindow()
+  local btn = w.okBtn
+  function btn:OnClick(arg)
+    if arg == "LeftButton" then
+      w:Show(false)
+    end
+  end
+  btn:SetHandler("OnClick", btn.OnClick)
+  function w:Update(commonFarmType)
+    local name, guardTime, farmGroupType = X2:GetCommonFarmInfo(commonFarmType)
+    if name == nil then
+      return
+    end
+    self:SetTitle(name)
+    local time = MakeTimeString(guardTime / 1000)
+    self.protectTime:SetText(locale.commonFarm.protectWaring(time))
+    local farmGroupName, maxCount, description = X2:GetFarmGorupInfo(farmGroupType)
+    if farmGroupName == nil then
+      return
+    end
+    self.growableCount:SetText(locale.commonFarm.ableCount(maxCount))
+    self.growableTitle:SetText(description)
+    local names = X2:GetFarmGroupDoodadList(farmGroupType)
+    if names == nil then
+      return
+    end
+    local count = MAX_INFO_CONTENT
+    local str = {}
+    for i = 1, count do
+      str[i] = ""
+    end
+    local index = -1
+    for i = 1, #names do
+      if names[i] ~= nil then
+        if i % count == 1 then
+          index = (index + 1) % 5
+        end
+        str[index + 1] = string.format("%s%s\n", str[index + 1], names[i])
+        if i % count == 0 then
+          str[index + 1] = string.format("%s\n", str[index + 1])
+        end
+      end
+    end
+    for i = 1, count do
+      self.content[i]:SetText(str[i])
+    end
+  end
+  return w
+end
+local commonFarmInfoWindow = CreateCommonFarmInfoWindow()
+commonFarmInfoWindow:AddAnchor("CENTER", "UIParent", 0, 0)
+commonFarmInfoWindow:Show(false)
+local testEvents = {
+  OPEN_COMMON_FARM_INFO = function(commonFarmType)
+    commonFarmInfoWindow:Update(commonFarmType)
+    commonFarmInfoWindow:Show(true)
+  end,
+  INTERACTION_END = function()
+    commonFarmInfoWindow:Show(false)
+  end
+}
+commonFarmInfoWindow:SetHandler("OnEvent", function(this, event, ...)
+  testEvents[event](...)
+end)
+commonFarmInfoWindow:RegisterEvent("OPEN_COMMON_FARM_INFO")
+commonFarmInfoWindow:RegisterEvent("INTERACTION_END")
+function TestUpdate()
+  commonFarmInfoWindow:Update(1)
+  commonFarmInfoWindow:Show(true)
+end

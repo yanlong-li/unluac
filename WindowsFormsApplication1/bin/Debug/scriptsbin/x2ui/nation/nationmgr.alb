@@ -1,0 +1,75 @@
+function CreateNationMgrView(id, parent)
+  local wnd = SetViewOfnationMgrView(id, parent)
+  function wnd.tab:OnTabChanged(selected)
+    wnd.tab.window[selected]:Init()
+    ReAnhorTabLine(wnd.tab, selected)
+    ShowBelongExpeditionList(false)
+  end
+  wnd.tab:SetHandler("OnTabChanged", wnd.tab.OnTabChanged)
+  function wnd:OnHide()
+    ShowBelongExpeditionList(false)
+  end
+  wnd:SetHandler("OnHide", wnd.OnHide)
+  function wnd:ShowProc()
+    local factionId = X2Faction:GetMyTopLevelFaction()
+    local isNation = X2Nation:IsNationFaction(factionId)
+    local myName = X2Unit:UnitName("player")
+    local isKing = X2Nation:IsNationOwner(factionId, myName)
+    self.tab.selectedButton[NATION_TAB.PEOPLE]:Enable(isNation)
+    self.tab.unselectedButton[NATION_TAB.PEOPLE]:Enable(isNation)
+    self.tab.selectedButton[NATION_TAB.NATION]:Enable(isNation)
+    self.tab.unselectedButton[NATION_TAB.NATION]:Enable(isNation)
+    if isNation then
+      self.tab:SelectTab(NATION_TAB.NATION)
+    else
+      self.tab:SelectTab(NATION_TAB.RELATION)
+    end
+    local index = wnd.tab:GetSelectedTab()
+    wnd.tab.window[index]:Init()
+  end
+  local events = {
+    NATION_INDEPENDENCE = function(ownerName, nationName)
+      if not wnd:IsVisible() then
+        return
+      end
+      wnd:ShowProc()
+    end,
+    NATION_KICK = function()
+      if not wnd:IsVisible() then
+        return
+      end
+      wnd:ShowProc()
+    end,
+    NATION_INVITE = function()
+      if not wnd:IsVisible() then
+        return
+      end
+      wnd:ShowProc()
+    end,
+    NATION_OWNER_CHANGE = function()
+      if not wnd:IsVisible() then
+        return
+      end
+      wnd:ShowProc()
+    end,
+    NATION_MEMBER_COUNT = function(memberCount, maxMemberCount)
+      local peopleWnd = wnd.tab.window[NATION_TAB.PEOPLE]
+      peopleWnd.memberCount:SetText(string.format("%s: %d/%d", GetUIText(NATION_TEXT, "people_count"), memberCount, maxMemberCount))
+    end
+  }
+  wnd:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(wnd, events)
+  return wnd
+end
+local nationMgrView = CreateNationMgrView("nationMgr", "UIParent")
+nationMgrView:Show(false)
+function ToggleNationMgrView(force)
+  if force ~= nil then
+    nationMgrView:Show(force)
+    return
+  end
+  nationMgrView:Show(not nationMgrView:IsVisible())
+end
+ADDON:RegisterContentTriggerFunc(UIC_NATION, ToggleNationMgrView)

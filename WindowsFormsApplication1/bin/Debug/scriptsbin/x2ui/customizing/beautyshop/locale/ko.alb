@@ -1,0 +1,56 @@
+if beautyShopCommonLocale == nil then
+  beautyShopCommonLocale = {}
+end
+beautyShopCommonLocale.slotBg = {
+  plastic = {
+    42,
+    0,
+    42,
+    42
+  },
+  cosmetic = {
+    0,
+    0,
+    42,
+    42
+  },
+  mini = {
+    42,
+    42,
+    20,
+    20
+  }
+}
+beautyShopCommonLocale.plasticIcon = {
+  none = {
+    0,
+    0,
+    0,
+    0
+  },
+  eye = {
+    168,
+    0,
+    42,
+    42
+  },
+  nose = {
+    126,
+    0,
+    42,
+    42
+  },
+  lip = {
+    84,
+    0,
+    42,
+    42
+  },
+  face_shape = {
+    210,
+    0,
+    42,
+    42
+  }
+}
+beautyShopCommonLocale.detailWndFontSize = FONT_SIZE.LARGE

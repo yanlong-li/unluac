@@ -1,0 +1,51 @@
+F_MONEY = {}
+funcNamespaceTable.F_MONEY = F_MONEY
+F_MONEY.currency = {
+  houseTax = X2House:GetCurrencyForTax(),
+  auctionBid = X2Auction:GetCurrencyForBid(),
+  auctionFee = X2Auction:GetCurrencyForFee(),
+  houseSale = X2House:GetCurrencyForHouseSale(),
+  abilityChange = X2Ability:GetCurrencyForAbilityChange(),
+  skillsReset = X2Ability:GetCurrencyForSkillsReset(),
+  siegeAuctionBid = X2Faction:GetSiegeAuctionBidCurrency()
+}
+F_MONEY.currency.pipeString = {}
+F_MONEY.currency.pipeString[CURRENCY_GOLD] = "|m%s;"
+F_MONEY.currency.pipeString[CURRENCY_GOLD_WITH_AA_POINT] = "|m%s;"
+F_MONEY.currency.pipeString[CURRENCY_AA_POINT] = "|p%s;"
+function F_MONEY:GetTaxString(taxStr, isRebuild)
+  if isRebuild == nil then
+    isRebuild = false
+  end
+  local featureSet = X2Player:GetFeatureSet()
+  if featureSet.taxItem then
+    local count = taxStr
+    if isRebuild == false then
+      count = tostring(X2House:CountTaxItemForTax(taxStr))
+    end
+    return string.format("|x%s;", count)
+  else
+    return string.format(F_MONEY.currency.pipeString[F_MONEY.currency.houseTax], taxStr)
+  end
+end
+local ByteToNumber = function(ch)
+  return ch - 48
+end
+function F_MONEY:RemoveHeadZero(strNum)
+  local limit = string.len(strNum)
+  local byte, char
+  local startIndex = 1
+  local strFinalNum = ""
+  for i = 1, limit do
+    byte = string.byte(strNum, i)
+    if ByteToNumber(byte) ~= 0 then
+      startIndex = i
+      break
+    end
+  end
+  for i = startIndex, limit do
+    byte = string.byte(strNum, i)
+    strFinalNum = strFinalNum .. string.char(byte)
+  end
+  return strFinalNum
+end

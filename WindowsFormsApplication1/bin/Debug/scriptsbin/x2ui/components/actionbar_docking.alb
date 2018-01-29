@@ -1,0 +1,140 @@
+local SCREEN_MIN_INTERSECT_AREA = 500
+local GetIntersectArea = function(widget, target)
+  local x, y = widget:GetEffectiveOffset()
+  local cx, cy = widget:GetEffectiveExtent()
+  local src
+  local srcLeft = x
+  local srcRight = x + cx
+  local srcTop = y
+  local srcBottom = y + cy
+  x, y = target:GetEffectiveOffset()
+  cx, cy = target:GetEffectiveExtent()
+  local dstLeft = x
+  local dstRight = x + cx
+  local dstTop = y
+  local dstBottom = y + cy
+  if srcRight <= dstLeft or srcLeft >= dstRight or srcBottom <= dstTop or srcTop >= dstBottom then
+    return 0
+  end
+  local ClippedRectLeft = srcLeft
+  local ClippedRectTop = srcTop
+  local ClippedRectRight = srcRight
+  local ClippedRectBottom = srcBottom
+  if dstLeft > ClippedRectLeft then
+    ClippedRectLeft = dstLeft
+  end
+  if dstTop > ClippedRectTop then
+    ClippedRectTop = dstTop
+  end
+  if dstRight < ClippedRectRight then
+    ClippedRectRight = dstRight
+  end
+  if dstBottom < ClippedRectBottom then
+    ClippedRectBottom = dstBottom
+  end
+  local area = (ClippedRectRight - ClippedRectLeft) * (ClippedRectBottom - ClippedRectTop)
+  return area
+end
+local GetDistance = function(x, y, widget)
+  local targetX, targetY = widget:GetEffectiveOffset()
+  local cx, cy = widget:GetEffectiveExtent()
+  targetX = targetX + cx / 2
+  targetY = targetY + cy / 2
+  local dx, dy = x - targetX, y - targetY
+  return dx * dx + dy * dy
+end
+local function FindNearestTarget(widget)
+  local index = 0
+  local maxArea = -1
+  for i = 1, #dockingTargetWnd do
+    local target = dockingTargetWnd[i]
+    local area = GetIntersectArea(widget, target)
+    if IsDockingableTarget(target) and maxArea < area then
+      maxArea = area
+      index = i
+    end
+  end
+  if maxArea < SCREEN_MIN_INTERSECT_AREA then
+    return nil
+  end
+  return dockingTargetWnd[index]
+end
+function ActionBar_FindNearestScreenDockingTarget(widget)
+  local maxTarget
+  local maxArea = -1
+  for side, target in pairs(actionBar_dockingWindow) do
+    local area = GetIntersectArea(widget, target.intersectWidget)
+    if maxArea < area then
+      maxArea = area
+      maxTarget = target
+    end
+  end
+  if maxArea < SCREEN_MIN_INTERSECT_AREA then
+    return nil
+  end
+  return maxTarget
+end
+function ActionBar_RelocationDockingWindow()
+  ActionBar_UpdateDockingWindow(actionBar_dockingWindow.LEFT, "LEFT")
+  ActionBar_UpdateDockingWindow(actionBar_dockingWindow.RIGHT, "RIGHT")
+  ActionBar_UpdateDockingWindow(actionBar_dockingWindow.TOP, "TOP")
+  ActionBar_UpdateDockingWindow(actionBar_dockingWindow.BOTTOM, "BOTTOM")
+end
+function ActionBar_ShowAnchorTargetWithoutDocked()
+  ActionBar_RelocationDockingWindow()
+  for i = 1, #actionBar_dockingWindow do
+    local widget = actionBar_dockingWindow[i]
+    if IsDockingableTarget(widget) then
+      widget:Show(true)
+    end
+  end
+  for _, widget in pairs(actionBar_dockingWindow) do
+    widget:Show(true)
+  end
+end
+function ActionBar_HideAllAnchorTarget()
+  for i = 1, #actionBar_dockingWindow do
+    actionBar_dockingWindow[i]:Show(false)
+  end
+  for _, widget in pairs(actionBar_dockingWindow) do
+    widget:Show(false)
+  end
+end
+function IsDockingableTarget(target)
+  if target.dockedWidget == nil then
+    return true
+  end
+  return false
+end
+function ActionBar_ReleaseDocking(src)
+  local widget = src.dockingTarget
+  src.dockingTarget = nil
+  if widget ~= nil then
+    widget.dockedWidget = nil
+  end
+  local actionBarIndex = ActionBar_GetIndex(src)
+  if actionBarIndex ~= nil then
+    ActionBar_SetDockingTarget(actionBarIndex, nil)
+  end
+end
+function ActionBar_DoScreenDocking(widget, target)
+  local x, y = widget:GetEffectiveOffset()
+  local side = target.side
+  widget:RemoveAllAnchors()
+  local sx, sy, scx, scy = GetScreenSize()
+  if side == "LEFT" then
+    widget:AddAnchor("TOPLEFT", target, "TOPLEFT", 0, F_LAYOUT:CalcDontApplyUIScale(y - sy))
+  elseif side == "RIGHT" then
+    widget:AddAnchor("TOPRIGHT", target, "TOPRIGHT", 0, F_LAYOUT:CalcDontApplyUIScale(y - sy))
+  elseif side == "TOP" then
+    widget:AddAnchor("TOPLEFT", target, "TOPLEFT", F_LAYOUT:CalcDontApplyUIScale(x - sx), 0)
+  else
+    widget:AddAnchor("BOTTOMLEFT", target, "BOTTOMLEFT", F_LAYOUT:CalcDontApplyUIScale(x - sx), 0)
+  end
+end
+function TryDocking(src)
+  local widget = ActionBar_FindNearestScreenDockingTarget(src)
+  if widget ~= nil then
+    ActionBar_DoScreenDocking(src, widget)
+  end
+end

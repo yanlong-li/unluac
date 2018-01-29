@@ -1,0 +1,141 @@
+function CreateEnchantInfoFrame(id, parent)
+  extent = WINDOW_ENCHANT.SOCKET_ENCHANT_TAB.SOCKET_INFO_FRAME.ITEM_ICON_EXTENT
+  lineSpace = WINDOW_ENCHANT.SOCKET_ENCHANT_TAB.SOCKET_INFO_FRAME.ITEM_NAME.LINE_SPACE
+  fontColor = WINDOW_ENCHANT.SOCKET_ENCHANT_TAB.SOCKET_INFO_FRAME.ITEM_NAME.FONT_COLOR
+  local widget = UIParent:CreateWidget("emptywidget", id, parent)
+  widget:SetHeight(extent[2])
+  local itemIcon = CreateItemIconButton(widget:GetId() .. ".itemIcon", widget)
+  itemIcon:SetExtent(extent[1], extent[2])
+  itemIcon:AddAnchor("LEFT", widget, 0, 0)
+  widget.itemIcon = itemIcon
+  local itemName = widget:CreateChildWidget("textbox", "itemName", 0, true)
+  itemName:SetHeight(FONT_SIZE.MIDDLE)
+  itemName:SetLineSpace(TEXTBOX_LINE_SPACE.SMALL)
+  itemName:AddAnchor("LEFT", itemIcon, "RIGHT", 5, 0)
+  itemName.style:SetAlign(ALIGN_TOP_LEFT)
+  local bg = widget:CreateImageDrawable(TEXTURE_PATH.TAB_LIST, "artwork")
+  bg:SetCoords(0, 65, 134, 11)
+  bg:SetInset(66, 5, 67, 5)
+  bg:SetColor(1, 1, 1, 0.4)
+  bg:AddAnchor("TOPLEFT", widget, -40, 0)
+  bg:AddAnchor("BOTTOMRIGHT", widget, 20, 0)
+  bg:Show(false)
+  widget.bg = bg
+  function widget:ShowBg(isShow, alpha)
+    bg:Show(isShow)
+    if isShow then
+      bg:SetColor(1, 1, 1, alpha)
+    end
+  end
+  function widget:SetInfo(type, modifierStr)
+    local itemInfo
+    if type ~= nil then
+      itemInfo = X2Item:GetItemInfoByType(type)
+    end
+    self.itemIcon:Show(true)
+    self.itemIcon:SetItemInfo(itemInfo)
+    self.itemName:SetWidth(300)
+    self.itemName:SetText(modifierStr)
+    self.itemName:SetWidth(self.itemName:GetLongestLineWidth() + 5)
+    self.itemName:SetHeight(self.itemName:GetTextHeight())
+    self.itemType = type
+    self:SetWidth(itemIcon:GetWidth() + itemName:GetWidth() + 7)
+  end
+  return widget
+end
+function CreateCurEnchantInfoFrame(id, parent)
+  local curEnchantInfoFrame = parent:CreateChildWidget("emptywidget", id, 0, false)
+  curEnchantInfoFrame:SetExtent(parent:GetWidth(), FORM_ENCHANT_WINDOW.UPPER_FRAME_HEIGHT)
+  local bg = CreateContentBackground(curEnchantInfoFrame, "TYPE5")
+  bg:AddAnchor("TOPLEFT", curEnchantInfoFrame, -10, 0)
+  bg:AddAnchor("BOTTOMRIGHT", curEnchantInfoFrame, 10, 0)
+  curEnchantInfoFrame.bg = bg
+  local info = CreateEnchantInfoFrame(curEnchantInfoFrame:GetId() .. ".info", curEnchantInfoFrame)
+  info.itemIcon:SetExtent(ICON_SIZE.APPELLAITON, ICON_SIZE.APPELLAITON)
+  info:AddAnchor("CENTER", curEnchantInfoFrame, 0, 0)
+  ApplyTextColor(info.itemName, fontColor)
+  curEnchantInfoFrame.info = info
+  return curEnchantInfoFrame
+end
+function CreateEnchantListFrame(id, parent)
+  local enchantListFrame = parent:CreateChildWidget("emptywidget", id, 0, false)
+  enchantListFrame:SetExtent(parent:GetWidth(), FORM_ENCHANT_WINDOW.BOTTOM_FRAME_HEIGHT)
+  local bg = CreateContentBackground(enchantListFrame, "TYPE10")
+  bg:AddAnchor("TOPLEFT", enchantListFrame, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", enchantListFrame, 0, 0)
+  return enchantListFrame
+end
+function SetTargetItemClickFunc(targetItemWidget)
+  local SlotTargetItemLeftClickFunc = function(self)
+    if X2Cursor:GetCursorPickedBagItemIndex() ~= 0 then
+      X2ItemEnchant:SetTargetItemSlotFromPick()
+    end
+  end
+  local SlotTargetItemRightClickFunc = function(self)
+    X2ItemEnchant:ClearTargetItemSlot()
+  end
+  ButtonOnClickHandler(targetItemWidget, SlotTargetItemLeftClickFunc, SlotTargetItemRightClickFunc)
+end
+function SetEnchantItemClickFunc(enchantItemWidget)
+  local SlotEnchantItemLeftClickFunc = function(self)
+    if X2Cursor:GetCursorPickedBagItemIndex() ~= 0 then
+      X2ItemEnchant:SetEnchantItemSlotFromPick()
+    end
+  end
+  local SlotEnchantItemRightClickFunc = function(self)
+    X2ItemEnchant:ClearEnchantItemSlot()
+  end
+  ButtonOnClickHandler(enchantItemWidget, SlotEnchantItemLeftClickFunc, SlotEnchantItemRightClickFunc)
+end
+function CreateEnchantSlotLabel(parent, text)
+  local label = parent:CreateChildWidget("label", "label", 0, true)
+  label:SetAutoResize(true)
+  label:SetHeight(FONT_SIZE.LARGE)
+  label:SetText(text)
+  label:AddAnchor("TOP", parent, "BOTTOM", 0, 5)
+  label.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.LARGE)
+  return label
+end
+function GetTargetItemGradeStr(forceViewNextGrade)
+  local itemInfo = X2ItemEnchant:GetTargetItemInfo()
+  if itemInfo == nil then
+    return
+  end
+  if itemInfo.itemGrade == nil then
+    return
+  end
+  local str = ""
+  local color = X2Item:GradeColor(itemInfo.itemGrade)
+  local gradeStr = X2Item:GradeName(itemInfo.itemGrade)
+  local enableGradeupCount = X2ItemEnchant:GetEvolvingEnableGradeupCount()
+  if enableGradeupCount == 0 then
+    local isMaxEvolvingGrade = gradeStr == itemInfo.maxEvolvingGrade and true or false
+    if forceViewNextGrade and isMaxEvolvingGrade == false then
+      enableGradeupCount = 1
+    end
+  end
+  if enableGradeupCount > 0 then
+    local nextGradeColor = X2Item:GradeColor(itemInfo.itemGrade, enableGradeupCount)
+    local naxtGradeStr = X2Item:GradeName(itemInfo.itemGrade, enableGradeupCount)
+    str = GetUIText(COMMON_TEXT, "change_value", string.format("|c%s[%s]", color, gradeStr), string.format("|c%s[%s]", nextGradeColor, naxtGradeStr))
+  else
+    str = string.format("|c%s[%s]", color, gradeStr)
+  end
+  return str
+end
+function CreateItemEnchantDefaultSlot(id, parent, text, textColor)
+  local slot = CreateItemIconButton(id, parent)
+  slot:SetExtent(ICON_SIZE.SLAVE, ICON_SIZE.SLAVE)
+  slot.back:SetVisible(false)
+  local label = CreateEnchantSlotLabel(slot, text)
+  ApplyTextColor(label, textColor)
+  return slot
+end
+function CreateTargetSlot(parent, text)
+  local slotTargetItem = CreateItemEnchantDefaultSlot("slotTargetItem", parent, text, FONT_COLOR.DEFAULT)
+  local bg = parent:CreateImageDrawable(TEXTURE_PATH.ENCHANT_TARGET, "background")
+  bg:SetTextureInfo("socket_item")
+  bg:AddAnchor("CENTER", slotTargetItem, -8, -5)
+  slotTargetItem.bg = bg
+  return slotTargetItem
+end

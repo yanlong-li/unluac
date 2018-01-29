@@ -1,0 +1,554 @@
+function TargetWindowHide()
+  if targetFrame ~= nil then
+    targetFrame:Show(false)
+  end
+end
+local TARGET_FRAME_WIDTH = 300
+local CreateReputationWindow = function(id, parent, reputationButton)
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local window = CreateWindow(id, parent)
+  window:Show(false)
+  window:SetExtent(430, 380)
+  window:AddAnchor("CENTER", "UIParent", 0, 0)
+  window:SetTitle(GetUIText(COMMON_TEXT, "reputation"))
+  window:EnableHidingIsRemove(true)
+  local width = window:GetWidth() - sideMargin * 2
+  local content = window:CreateChildWidget("textbox", "content", 0, false)
+  content:SetWidth(width)
+  content:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  content.style:SetFontSize(FONT_SIZE.LARGE)
+  ApplyTextColor(content, FONT_COLOR.DEFAULT)
+  content:SetText(GetUIText(COMMON_TEXT, "ask_reputation", string.format("%s%s|r", FONT_COLOR_HEX.BLUE, X2Unit:UnitName("target"))))
+  content:SetHeight(content:GetTextHeight())
+  content:AddAnchor("TOP", window, 0, titleMargin)
+  local tip = window:CreateChildWidget("textbox", "tip", 0, false)
+  tip:SetWidth(width)
+  tip:AddAnchor("TOP", content, "BOTTOM", 0, sideMargin / 2)
+  tip:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  ApplyTextColor(tip, FONT_COLOR.DEFAULT)
+  tip:SetText(GetUIText(COMMON_TEXT, "reputation_rule"))
+  tip:SetHeight(tip:GetTextHeight())
+  local _, yOffset = F_LAYOUT:GetExtentWidgets(window.titleBar, tip)
+  yOffset = yOffset + sideMargin / 2
+  local goodBtn = window:CreateChildWidget("button", "goodBtn", 0, false)
+  goodBtn:SetText(GetUIText(COMMON_TEXT, "reputation_good"))
+  ApplyButtonSkin(goodBtn, BUTTON_CONTENTS.REPUTATION_GOOD)
+  local nogoodBtn = window:CreateChildWidget("button", "nogoodBtn", 0, false)
+  nogoodBtn:SetText(GetUIText(COMMON_TEXT, "reputation_nogood"))
+  ApplyButtonSkin(nogoodBtn, BUTTON_CONTENTS.REPUTATION_NOGOOD)
+  local xOffset = goodBtn:GetWidth() / 2 + 5
+  goodBtn:AddAnchor("TOP", window, -xOffset, yOffset)
+  nogoodBtn:AddAnchor("TOP", window, xOffset, yOffset)
+  local _, height = F_LAYOUT:GetExtentWidgets(window.titleBar, nogoodBtn)
+  height = height + sideMargin * 1.5
+  window:SetHeight(height)
+  local function GoodBtnLeftClickFunc()
+    X2Hero:VoteReputation(1)
+    window:Show(false)
+    reputationButton:Show(false)
+  end
+  ButtonOnClickHandler(goodBtn, GoodBtnLeftClickFunc)
+  local function NoGoodBtnLeftClickFunc()
+    X2Hero:VoteReputation(-1)
+    window:Show(false)
+    reputationButton:Show(false)
+  end
+  ButtonOnClickHandler(nogoodBtn, NoGoodBtnLeftClickFunc)
+  return window
+end
+function CreateTargetFrame(id, parent)
+  local reputationWindow
+  local w = CreateUnitFrame(id, parent)
+  w:SetExtent(300, 55)
+  local gradeBg = w:CreateImageDrawable(TEXTURE_PATH.UNITFRAME_GRADE, "background")
+  gradeBg:SetVisible(false)
+  w.gradeBg = gradeBg
+  local gradeStar = w:CreateImageDrawable(TEXTURE_PATH.HUD, "background")
+  gradeStar:SetVisible(false)
+  gradeStar:SetExtent(67, 15)
+  w.gradeStar = gradeStar
+  w.gradeStar:AddAnchor("BOTTOMLEFT", w.level, "BOTTOMRIGHT", -1, 2)
+  local reporterIcon = w:CreateImageDrawable("ui/hud/reporter.dds", "background")
+  reporterIcon:SetVisible(false)
+  reporterIcon:SetCoords(0, 0, 21, 20)
+  reporterIcon:SetExtent(21, 20)
+  reporterIcon:AddAnchor("TOPLEFT", w, -23, 20)
+  w.reporterIcon = reporterIcon
+  local gradeDeco = w.mpBar:CreateImageDrawable(TEXTURE_PATH.UNITFRAME_GRADE, "overlay")
+  gradeDeco:SetVisible(false)
+  w.gradeDeco = gradeDeco
+  local distanceLabel = w:CreateChildWidget("label", "distanceLabel", 0, true)
+  distanceLabel:Show(true)
+  distanceLabel:SetHeight(FONT_SIZE.MIDDLE)
+  distanceLabel:AddAnchor("TOPRIGHT", w, 0, 5)
+  distanceLabel:SetAutoResize(true)
+  distanceLabel.style:SetAlign(ALIGN_LEFT)
+  distanceLabel.style:SetShadow(true)
+  w.leaderMark:RemoveAllAnchors()
+  w.leaderMark:AddAnchor("LEFT", distanceLabel, "RIGHT", 5, 0)
+  local function DistanceLabelOnUpdate(self)
+    local distance = X2Unit:UnitDistance("target")
+    if distance ~= nil then
+      if distance < 0 then
+        distance = 0
+      end
+      local str = X2Locale:LocalizeUiText(COMMON_TEXT, "meter_initial", string.format("%.1f", distance))
+      distanceLabel:SetText(str)
+    end
+  end
+  distanceLabel:SetHandler("OnUpdate", DistanceLabelOnUpdate)
+  CreateAbilityIcon("abilityIconFrame", w, "player")
+  w.abilityIconFrame:AddAnchor("TOPRIGHT", w, -48, 3)
+  local reputationButton = w:CreateChildWidget("button", "reputationButton", 0, true)
+  reputationButton:Show(X2Hero:CanAddReputation())
+  reputationButton:AddAnchor("TOPRIGHT", w.hpBar, "TOPLEFT", 0, -7)
+  ApplyButtonSkin(reputationButton, BUTTON_HUD.REPUTATION)
+  w.reputationButton = reputationButton
+  local OnEnter = function(self)
+    SetTooltip(GetUIText(COMMON_TEXT, "reputation_button_tooltip", tostring(X2Hero:GetAbleReputationLevel())), self)
+  end
+  reputationButton:SetHandler("OnEnter", OnEnter)
+  local function LeftButtonLeftClickFunc()
+    local show = true
+    if reputationWindow ~= nil then
+      show = not reputationWindow:IsVisible()
+    end
+    if show and w.reputationWindow == nil then
+      reputationWindow = CreateReputationWindow("reputationWindow", "UIParent", reputationButton)
+      local function OnHide()
+        reputationWindow = nil
+      end
+      reputationWindow:SetHandler("OnHide", OnHide)
+    end
+    if reputationWindow ~= nil then
+      reputationWindow:Show(show)
+    end
+  end
+  reputationButton:SetHandler("OnClick", LeftButtonLeftClickFunc)
+  function w:SetStyleForUnitGrade(grade)
+    self:SetHeight(55)
+    self.gradeStar:SetVisible(false)
+    self.name:AddAnchor("BOTTOMLEFT", self.level, "BOTTOMRIGHT", 3, -1)
+    local coords = {
+      GetTextureInfo(TEXTURE_PATH.HUD, "level_01"):GetCoords()
+    }
+    w.gradeStar:SetCoords(coords[1], coords[2], coords[3], coords[4])
+    if grade == "weak" then
+      self.line:SetCoords(305, 207, 152, 8)
+      self.bg:SetCoords(305, 168, 154, 38)
+      self:SetWidth(180)
+      self.buffWindow:SetLayout(6, 30, 2, 2, false)
+      self.debuffWindow:SetLayout(6, 30, 2, 2, false)
+    elseif grade == "normal" then
+      self.line:SetCoords(0, 207, 302, 8)
+      self.bg:SetCoords(0, 168, 304, 38)
+      self:SetWidth(300)
+      self.buffWindow:SetLayout(9, 30, 2, 2, false)
+      self.debuffWindow:SetLayout(9, 30, 2, 2, false)
+    elseif grade == "strong" then
+      self.line:SetCoords(0, 207, 302, 8)
+      self.bg:SetCoords(0, 168, 304, 38)
+      self:SetWidth(430)
+      self.buffWindow:SetLayout(14, 30, 2, 2, false)
+      self.debuffWindow:SetLayout(14, 30, 2, 2, false)
+      self.gradeStar:SetVisible(true)
+      self.name:AddAnchor("BOTTOMLEFT", self.level, "BOTTOMRIGHT", 70, -1)
+    else
+      self.line:SetCoords(0, 207, 302, 8)
+      self.bg:SetCoords(0, 168, 304, 38)
+      self:SetWidth(430)
+      self.gradeBg:SetVisible(true)
+      self.buffWindow:SetLayout(14, 30, 2, 2, false)
+      self.debuffWindow:SetLayout(14, 30, 2, 2, false)
+      self.gradeStar:SetVisible(true)
+      self.name:AddAnchor("BOTTOMLEFT", self.level, "BOTTOMRIGHT", 70, -1)
+    end
+  end
+  function w:UpdateFrameStyle_ForUniType(detailType)
+    if detailType == "slave" or detailType == "housing" or detailType == "transfer" or detailType == "shipyard" then
+      self.level:Show(false)
+      self.name:RemoveAllAnchors()
+      self.name:AddAnchor("TOPLEFT", self, 0, 4)
+      self.pvpIcon:Show(false)
+      self.lootIcon:Show(false)
+      self.leaderMark:Show(false)
+      self.hpBar:SetHeight(UNIT_FRAME_HEIGHT.HP_BAR + UNIT_FRAME_HEIGHT.MP_BAR)
+      self.hpBar_deco:SetVisible(false)
+      self.mpBar:Show(false)
+      self.buffWindow:RemoveAllAnchors()
+      self.buffWindow:AddAnchor("TOPLEFT", self.hpBar, "BOTTOMLEFT", 0, 4)
+      self.bg:RemoveAllAnchors()
+      self.bg:AddAnchor("TOPLEFT", self.hpBar, -1, -3)
+      self.bg:AddAnchor("BOTTOMRIGHT", self.hpBar, 4, 2)
+      self.combatIcon:RemoveAllAnchors()
+      self.combatIcon:AddAnchor("TOPLEFT", self.hpBar, -10, -10)
+      self.combatIcon:AddAnchor("BOTTOMRIGHT", self.hpBar, 10, 8)
+      self.line:RemoveAllAnchors()
+      self.line:AddAnchor("TOPLEFT", self.hpBar, "BOTTOMLEFT", -2, -4)
+      self.line:AddAnchor("TOPRIGHT", self.hpBar, "BOTTOMRIGHT", 1, -4)
+    else
+      self.level:Show(true)
+      self.name:RemoveAllAnchors()
+      self.hpBar:SetHeight(UNIT_FRAME_HEIGHT.HP_BAR)
+      self.hpBar_deco:SetVisible(true)
+      self.mpBar:Show(true)
+      self.mpBar:SetHeight(UNIT_FRAME_HEIGHT.MP_BAR)
+      self.bg:RemoveAllAnchors()
+      self.bg:AddAnchor("TOPLEFT", self.hpBar, -1, -4)
+      self.bg:AddAnchor("BOTTOMRIGHT", self.mpBar, 4, 4)
+      self.line:RemoveAllAnchors()
+      self.line:AddAnchor("TOPLEFT", self.hpBar, "BOTTOMLEFT", -1, -3)
+      self.line:AddAnchor("TOPRIGHT", self.hpBar, "BOTTOMRIGHT", 1, -3)
+      self.combatIcon:RemoveAllAnchors()
+      self.combatIcon:AddAnchor("TOPLEFT", self.hpBar, -10, -10)
+      self.combatIcon:AddAnchor("BOTTOMRIGHT", self.mpBar, 10, 10)
+      self.hpBar:RemoveAllAnchors()
+      self.hpBar:AddAnchor("TOPLEFT", self.level, "BOTTOMLEFT", 1, 5)
+      self.hpBar:AddAnchor("RIGHT", self, 0, 0)
+      self.mpBar:RemoveAllAnchors()
+      self.mpBar:AddAnchor("TOPLEFT", self.hpBar, "BOTTOMLEFT", 0, 0)
+      self.mpBar:AddAnchor("TOPRIGHT", self.hpBar, "BOTTOMRIGHT", 0, 0)
+      self.buffWindow:RemoveAllAnchors()
+      self.buffWindow:AddAnchor("TOPLEFT", self.mpBar, "BOTTOMLEFT", 0, 4)
+    end
+  end
+  function w:UpdateNameStyle(unitType)
+    if unitType == "npc" then
+      self.name:SetAutoResize(false)
+      self.name:SetLimitWidth(true)
+      local width = self:GetWidth() - self.level:GetWidth() - 40
+      self.name:SetWidth(width)
+    else
+      self.name:SetAutoResize(true)
+      self.name:SetLimitWidth(false)
+      self.leaderMark:RemoveAllAnchors()
+      self.leaderMark:AddAnchor("LEFT", self.name, "RIGHT", 3, 1)
+    end
+  end
+  function w:SetGradeBg(unitGrade)
+    if not self.gradeBg:IsVisible() then
+      return
+    end
+    self.gradeBg:RemoveAllAnchors()
+    self.gradeDeco:RemoveAllAnchors()
+    self.gradeDeco:SetVisible(false)
+    if unitGrade == "elite" then
+      self.gradeBg:SetCoords(431, 92, 426, 71)
+      self.gradeBg:SetExtent(474, 79)
+      self.gradeBg:AddAnchor("CENTER", self, 5, 12)
+    elseif unitGrade == "boss_a" then
+      self.gradeBg:SetCoords(0, 0, 515, 93)
+      self.gradeBg:SetExtent(637, 115)
+      self.gradeBg:AddAnchor("CENTER", self, -3, 18)
+    elseif unitGrade == "boss_b" then
+      self.gradeBg:SetCoords(514, 0, 456, 82)
+      self.gradeBg:SetExtent(562, 102)
+      self.gradeBg:AddAnchor("CENTER", self, 33, 15)
+    elseif unitGrade == "boss_c" then
+      self.gradeBg:SetCoords(0, 92, 432, 72)
+      self.gradeBg:SetExtent(534, 88)
+      self.gradeBg:AddAnchor("CENTER", self, 30, 15)
+    elseif unitGrade == "boss_s" then
+      self.gradeBg:SetCoords(0, 164, 478, 92)
+      self.gradeBg:SetExtent(550, 106)
+      self.gradeBg:AddAnchor("CENTER", self, 0, 13)
+      self.gradeDeco:SetVisible(true)
+      self.gradeDeco:SetCoords(478, 164, 431, 48)
+      self.gradeDeco:SetExtent(431, 48)
+      self.gradeDeco:SetColor(1, 1, 1, 0.5)
+      self.gradeDeco:AddAnchor("CENTER", self, 0, 8)
+    end
+    local gradeCoords = {
+      elite = {
+        GetTextureInfo(TEXTURE_PATH.HUD, "level_02"):GetCoords()
+      },
+      boss_c = {
+        GetTextureInfo(TEXTURE_PATH.HUD, "level_03"):GetCoords()
+      },
+      boss_b = {
+        GetTextureInfo(TEXTURE_PATH.HUD, "level_04"):GetCoords()
+      },
+      boss_a = {
+        GetTextureInfo(TEXTURE_PATH.HUD, "level_05"):GetCoords()
+      },
+      boss_s = {
+        GetTextureInfo(TEXTURE_PATH.HUD, "level_06"):GetCoords()
+      }
+    }
+    local coords = gradeCoords[unitGrade]
+    if coords ~= nil then
+      w.gradeStar:SetCoords(coords[1], coords[2], coords[3], coords[4])
+    end
+  end
+  function w:ChangedTarget()
+    if reputationWindow ~= nil then
+      reputationWindow:Show(false)
+    end
+    if self.target == nil then
+      return
+    end
+    self.gradeBg:SetVisible(false)
+    self.gradeDeco:SetVisible(false)
+    self.reporterIcon:SetVisible(false)
+    self.reputationButton:Show(X2Hero:CanAddReputation())
+    local factionInfo = X2Unit:GetCombatRelationshipStr(self.target)
+    local unitType, detailType = GetUnitType(self.target)
+    self:UpdateFrameStyle_ForUniType(detailType)
+    local unitId = X2Unit:GetUnitId(self.target)
+    local unitGrade = GetUnitGrade(self.target)
+    self:SetStyleForUnitGrade(unitGrade)
+    self:SetGradeBg(unitGrade)
+    self:UpdateNameStyle(unitType)
+    if unitType == "player" or unitType == "character" then
+      self.reporterIcon:SetVisible(X2Unit:IsReporter("target"))
+      self:ChangeHpBarTexture_forPc(factionInfo, socialInfo)
+    else
+      self:ChangeHpBarTexture_forNpc(unitGrade, factionInfo)
+      if detailType == "npc" then
+        self:UpdateHpBarTexture_FirstHitByMe(unitGrade, X2Unit:UnitCombatState("target"))
+      end
+    end
+  end
+  function w:Click(arg)
+    local unitType, detail = GetUnitType(w.target)
+    if detail == "mate" then
+      if arg == "RightButton" then
+        if X2Mate:IsTargetMyMate() then
+          local mateType = X2Unit:GetUnitMateType(w.target)
+          ActivatePopupMenu(w, GetPetTargetName(mateType))
+        else
+          ActivatePopupMenu(w, "mate")
+        end
+      end
+    elseif detail == "slave" then
+      if arg == "RightButton" then
+        ActivatePopupMenu(w, "slave")
+      end
+    elseif detail == "housing" or detail == "shipyard" or detail == "transfer" then
+      return
+    elseif arg == "RightButton" then
+      ActivatePopupMenu(w, "target")
+    end
+  end
+  function w:UpdateFactionInfo()
+    if self:IsVisible() then
+      local factionInfo = X2Unit:GetCombatRelationshipStr(self.target)
+      local unitType, _ = GetUnitType(self.target)
+      if unitType == "character" then
+        self:ChangeHpBarTexture_forPc(factionInfo, socialInfo)
+      end
+    end
+  end
+  function w:UpdateMarkerAnchor(unitType)
+    self.marker:RemoveAllAnchors()
+    if unitType == "npc" then
+      local width = self.name.style:GetTextWidth(self.name:GetText())
+      local labelWidth = self.name:GetWidth()
+      if width >= labelWidth then
+        width = labelWidth - 10
+      end
+      self.marker:AddAnchor("LEFT", self.name, width, 0)
+    elseif self.leaderMark:IsVisible() then
+      self.marker:AddAnchor("LEFT", self.leaderMark, "RIGHT", -1, -1)
+    else
+      self.marker:AddAnchor("LEFT", self.name, "RIGHT", 0, 0)
+    end
+  end
+  local function OnHide()
+    if reputationWindow ~= nil then
+      reputationWindow:Show(false)
+    end
+  end
+  w:SetHandler("OnHide", OnHide)
+  local OnShow = function(self)
+    if X2:IsInClientDrivenZone() == true then
+      local stringId = X2Unit:GetTargetUnitId()
+      if stringId == nil then
+        TargetWindowHide()
+        return
+      end
+      X2Unit:TargetFrameOpened()
+    end
+  end
+  w:SetHandler("OnShow", OnShow)
+  w:UpdateAll()
+  w:UpdateFrameStyle_ForUniType()
+  w:SetTarget("target")
+  return w
+end
+targetFrame = CreateTargetFrame("targetFrame", "UIParent")
+function targetFrame:MakeOriginWindowPos(reset)
+  if targetFrame == nil then
+    return
+  end
+  targetFrame:RemoveAllAnchors()
+  targetFrame:SetExtent(300, 55)
+  if reset then
+    targetFrame:AddAnchor("TOP", 0, F_LAYOUT:CalcDontApplyUIScale(10))
+  else
+    targetFrame:AddAnchor("TOP", 0, 10)
+  end
+end
+targetFrame:MakeOriginWindowPos()
+AddUISaveHandlerByKey("targetFrame", targetFrame)
+targetFrame:ApplyLastWindowOffset()
+ADDON:RegisterContentWidget(UIC_TARGET_UNITFRAME, targetFrame)
+local targetEvent = {
+  TARGET_HEALTH_CHANGED = function(curHp, maxHp)
+    local _, detailType = GetUnitType(targetFrame.target)
+    local grade = GetUnitGrade(targetFrame.target)
+    if detailType == "npc" then
+      targetFrame:UpdateHpBarTexture_FirstHitByMe(grade, X2Unit:UnitCombatState("target"))
+    end
+  end,
+  TARGET_MANA_CHANGED = function(curMp, maxMp)
+    targetFrame:SetMp(curMp, maxMp)
+  end,
+  TARGET_CHANGED = function(stringId, targetType)
+    TargetChanged(stringId, targetType)
+  end,
+  ENTERED_WORLD = function()
+    local stringId = X2Unit:GetTargetUnitId()
+    if stringId == nil then
+      return
+    end
+    local unitType = X2Unit:GetUnitTypeString("target")
+    if unitType == "character" or unitType == "player" then
+      unitType = "npc"
+    end
+    TargetChanged(stringId, unitType)
+  end,
+  LOOTING_RULE_METHOD_CHANGED = function()
+    targetFrame:UpdateLootIcon()
+  end,
+  LOOTING_RULE_MASTER_CHANGED = function()
+    targetFrame:UpdateLootIcon()
+  end,
+  FORCE_ATTACK_CHANGED = function(stringId, on)
+    targetFrame:ShowPVPIcon(stringId, on)
+  end,
+  UNIT_COMBAT_STATE_CHANGED = function(arg1, arg2)
+    if arg2 == X2Unit:GetUnitId("target") then
+      targetFrame:ShowCombatIcon(arg1)
+    end
+  end,
+  TEAM_MEMBERS_CHANGED = function(arg1, arg2, arg3, arg4, arg5)
+    if arg1 == "joined_by_self" then
+      targetFrame:UpdateLootIcon()
+      targetFrame:UpdateLeaderMark()
+      targetFrame.marker:SetVisible(false)
+      local targetId = X2Unit:GetUnitId("target")
+      targetFrame:SetMarker(targetId, targetFrame:UpdateMarkerAnchor("character"))
+    elseif arg1 == "kicked" then
+      targetFrame:UpdateLootIcon()
+      targetFrame:UpdateLeaderMark()
+    elseif arg1 == "leaved_by_self" then
+      targetFrame.marker:SetVisible(false)
+    elseif arg1 == "leaved" then
+      targetFrame:UpdateLootIcon()
+      targetFrame:UpdateLeaderMark()
+    elseif arg1 == "dismissed" or arg1 == "kicked_by_self" then
+      targetFrame:ShowLeaderMark(false)
+      targetFrame:ShowLootIcon(false)
+      targetFrame.marker:SetVisible(false)
+    elseif arg1 == "owner_changed" then
+      local myMemberIndex = X2Team:GetTeamPlayerIndex()
+      if arg4 == myMemberIndex or arg5 == myMemberIndex then
+        targetFrame:UpdateLeaderMark()
+        targetFrame:UpdateMarkerAnchor()
+      end
+    end
+    targetFrame.reputationButton:Show(X2Hero:CanAddReputation())
+  end,
+  LEVEL_CHANGED = function()
+    targetFrame:UpdateLevel()
+  end,
+  TEAM_MEMBER_DISCONNECTED = function(arg1, stringId, partyNo, slot)
+    if arg1 ~= nil and X2Unit:UnitIsOffline("target") then
+      targetFrame:Show(false)
+    end
+  end,
+  STARTED_DUEL = function()
+    targetFrame:UpdateFactionInfo()
+  end,
+  ENDED_DUEL = function()
+    targetFrame:UpdateFactionInfo()
+  end,
+  LEFT_LOADING = function()
+    local stringId = X2Unit:GetTargetUnitId()
+    if targetFrame ~= nil and stringId == nil then
+      targetFrame:Show(false)
+    end
+  end,
+  UNIT_NAME_CHANGED = function(unitId)
+    if targetFrame ~= nil and targetFrame.target ~= nil and X2Unit:GetUnitId(targetFrame.target) == unitId then
+      local unitType, detailType = GetUnitType("target")
+      targetFrame:UpdateName()
+      targetFrame:UpdateMarkerAnchor(unitType)
+    end
+  end,
+  SET_OVERHEAD_MARK = function(unitId, markerIndex, visible)
+    local targetId = X2Unit:GetUnitId("target")
+    if targetId ~= unitId then
+      return
+    end
+    if not visible then
+      targetFrame.marker:SetVisible(false)
+      return
+    end
+    local unitType, detailType = GetUnitType("target")
+    targetFrame:SetMarker(targetId, targetFrame:UpdateMarkerAnchor(unitType))
+  end,
+  TARGET_ABILITY_CHANGED = function()
+    targetFrame:UpdateTooltip()
+    targetFrame.abilityIconFrame:SetAbility("target")
+  end
+}
+targetFrame:SetHandler("OnEvent", function(this, event, ...)
+  targetEvent[event](...)
+end)
+RegistUIEvent(targetFrame, targetEvent)
+function TargetChanged(stringId, targetType)
+  targetFrame.unableGageAni = true
+  HideEditDialog(targetFrame)
+  targetFrame.marker:SetVisible(false)
+  if targetType == "npc" then
+    targetFrame:Show(true)
+    targetFrame:SetTarget("target")
+    local state = X2Unit:UnitCombatState("target")
+    targetFrame:ShowCombatIcon(state)
+    local unitType, detailType = GetUnitType("target")
+    if unitType == "player" or unitType == "character" then
+      targetFrame.abilityIconFrame:Show(true)
+      targetFrame.abilityIconFrame:SetAbility("target")
+    else
+      targetFrame.abilityIconFrame:Show(false)
+    end
+    targetFrame:SetMarker(X2Unit:GetUnitId("target"), targetFrame:UpdateMarkerAnchor(unitType))
+  else
+    targetFrame:Show(false)
+  end
+  HidePopUpMenu(targetFrame)
+end
+targetCastingBar = CreateCastingBar("targetCastingBar", targetFrame, "target")
+targetCastingBar:Show(false)
+targetCastingBar:SetWidth(150)
+targetCastingBar:AddAnchor("TOPLEFT", targetFrame.debuffWindow, "BOTTOMLEFT", 0, 0)
+targetCastingBar:RegisterEvent("SPELLCAST_START")
+targetCastingBar:RegisterEvent("SPELLCAST_STOP")
+targetCastingBar:RegisterEvent("SPELLCAST_SUCCEEDED")
+local targetChangeEvent = {
+  TARGET_CHANGED = function(stringId, targetType)
+    if stringId == nil then
+      targetCastingBar.unit = "none"
+    elseif X2Unit:GetUnitId("player") == stringId then
+      targetCastingBar.unit = "player"
+    else
+      targetCastingBar.unit = "target"
+    end
+    targetCastingBar:Refresh()
+    targetCastingBar:SetWidth(targetFrame:GetWidth())
+  end
+}
+targetCastingBar:SetEventProc(targetChangeEvent)
+targetCastingBar:RegisterEvent("TARGET_CHANGED")

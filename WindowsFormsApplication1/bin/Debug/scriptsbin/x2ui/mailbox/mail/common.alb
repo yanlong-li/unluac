@@ -1,0 +1,396 @@
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+MAX_ATTACHMENT_COUNT = 10
+PAGE_PER_MAIL_MAX_COUNT = 14
+MAIL_TYPE = {
+  INVALID_YPE = 0,
+  NORMAL = 1,
+  EXPRESS = 2,
+  REGISTERED = 3,
+  SPAM = 4,
+  ADMIN = 5,
+  BILLING = 6,
+  BALANCE_RECEIPT = 7,
+  TAXRATE_CHANGED = 8,
+  AUCTION_OFF_CANCEL = 13,
+  AUCTION_OFF_SUCCESS = 14,
+  AUCTION_OFF_FAIL = 15,
+  AUCTION_BID_WIN = 16,
+  AUCITON_BID_FAIL = 17,
+  SYS_EXPRESS = 18,
+  SYS_SELL_BACKPACK = 19,
+  DEMOLISH_WITH_PENALTY = 20,
+  HOUSING_SALE = 21,
+  NATION_TAX_RATE = 23,
+  NATION_TAX_RECEIPT = 24,
+  NATION_REQUEST_FRIEND = 25,
+  MAIL_MOBILIZATION_GIVE_ITEM = 27,
+  HERO_CANDIDATE_ALARM = 28,
+  HERO_ELECTION_ITEM = 29,
+  HOUSING_REBUILD = 30,
+  HOUSING_DEMOLISH = 31,
+  MAIL_SIEGE_WIN_GIVE_ITEM = 32,
+  MAIL_SIEGE_LOSE_GIVE_ITEM = 33,
+  TAX_IN_KIND_RECEIPT = 34,
+  MAIL_NATION_RELATION_FRIEND = 35,
+  MAIL_NATION_RELATION_FRIEND_SUCCESS = 36,
+  MAIL_NATION_RELATION_FRIEND_REJECT = 37,
+  MAIL_NATION_RELATION_FRIEND_REJECT_ITEM = 38,
+  MAIL_NATION_RELATION_HOSTILE = 39,
+  MAIL_NATION_RELATION_HOSTILE_SUCCESS = 40,
+  MAIL_NATION_RELATION_HOSTILE_REJECT = 41,
+  SIEGE_AUCTION_START = 42,
+  TYPE_MAX = 43
+}
+MAIL_COL = {
+  TITLE = 1,
+  NAME = 2,
+  ISREAD = 3,
+  HASITEM = 4,
+  MAILID = 5,
+  CHK = 6,
+  MAIL_TYPE = 7
+}
+withReceiver = true
+local function SetViewOfMailList(window, columnText)
+  local listCtrl = CreateMailListCtrl(window:GetId() .. ".listCtrl", window, columnText, sideMargin)
+  local pageCtrl = CreatePageControl(window:GetId() .. ".pageControl", window, "mail")
+  pageCtrl:AddAnchor("TOP", listCtrl, "BOTTOM", 0, 0)
+  window.listCtrl = listCtrl
+  window.pageCtrl = pageCtrl
+end
+function CreateMailList(window, columnText)
+  SetViewOfMailList(window, columnText)
+  local listCtrl = window.listCtrl
+  local pageCtrl = window.pageCtrl
+  function window:GetSelectedMailIds()
+    local selectedMailIds = {}
+    for i = 1, #listCtrl.checkValue do
+      if listCtrl.checkValue[i] then
+        table.insert(selectedMailIds, listCtrl.mailIDs[i])
+      end
+    end
+    return selectedMailIds
+  end
+end
+function CreateMailTypeIconWidget(id, widget)
+  local icon = widget:CreateChildWidget("emptywidget", id, 0, true)
+  icon:SetExtent(17, 17)
+  icon:Raise()
+  local texture = icon:CreateImageDrawable(TEXTURE_PATH.MAIL, "background")
+  texture:AddAnchor("TOPLEFT", icon, 0, 0)
+  texture:AddAnchor("BOTTOMRIGHT", icon, 0, 0)
+  function icon:SetType(type)
+    icon:Show(false)
+    icon:SetExtent(0, 0)
+    if type == nil or type == "" then
+      return
+    end
+    local coordsKey = {
+      housing = "icon_house",
+      trade = "icon_trade",
+      archeage = "icon_aa"
+    }
+    local key = coordsKey[type]
+    if key == nil then
+      return
+    end
+    icon:Show(true)
+    icon:SetExtent(17, 17)
+    texture:SetTextureInfo(key)
+  end
+  function icon:SetIconColor(color)
+    ApplyTextureColor(texture, color)
+  end
+  return icon
+end
+function CreateMailUpperFrame(widget, style)
+  local roleLabel = widget:CreateChildWidget("label", "roleLabel", 0, true)
+  roleLabel:SetHeight(FONT_SIZE.LARGE)
+  roleLabel:AddAnchor("TOPLEFT", widget, sideMargin, 45)
+  roleLabel.style:SetFontSize(FONT_SIZE.LARGE)
+  roleLabel.style:SetAlign(ALIGN_RIGHT)
+  roleLabel.style:SetSnap(true)
+  ApplyTextColor(roleLabel, FONT_COLOR.BLACK)
+  local bg = CreateContentBackground(roleLabel, "TYPE6")
+  bg:SetExtent(312, 58)
+  bg:SetColor(1, 1, 1, 0.4)
+  bg:AddAnchor("TOPLEFT", roleLabel, -5, -sideMargin / 2)
+  local namePolicyInfo = X2Util:GetNamePolicyInfo(VNT_CHAR)
+  local roleEdit = widget:CreateChildWidget("editbox", "roleEdit", 0, true)
+  roleEdit:SetHeight(DEFAULT_SIZE.EDIT_HEIGHT)
+  roleEdit:AddAnchor("LEFT", roleLabel, "RIGHT", -3, 0)
+  roleEdit:AddAnchor("RIGHT", widget, -sideMargin, 0)
+  roleEdit:SetMaxTextLength(namePolicyInfo.local_max)
+  InitEdit(roleEdit)
+  roleEdit.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.LARGE)
+  ApplyTextColor(roleEdit, FONT_COLOR.BLUE)
+  local titleLabel = widget:CreateChildWidget("label", "titleLabel", 0, true)
+  titleLabel:SetHeight(FONT_SIZE.LARGE)
+  titleLabel:SetText(locale.mail.title .. ": ")
+  titleLabel:AddAnchor("TOPLEFT", roleLabel, "BOTTOMLEFT", 0, 5)
+  titleLabel.style:SetAlign(ALIGN_RIGHT)
+  titleLabel.style:SetFontSize(FONT_SIZE.LARGE)
+  titleLabel.style:SetSnap(true)
+  ApplyTextColor(titleLabel, FONT_COLOR.BLACK)
+  local titleEdit = widget:CreateChildWidget("editbox", "titleEdit", 0, true)
+  titleEdit:SetHeight(DEFAULT_SIZE.EDIT_HEIGHT)
+  titleEdit:SetMaxTextLength(24)
+  titleEdit:AddAnchor("LEFT", titleLabel, "RIGHT", -3, 0)
+  titleEdit:AddAnchor("RIGHT", widget, -sideMargin, 0)
+  InitEdit(titleEdit)
+  titleEdit.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.LARGE)
+  ApplyTextColor(titleEdit, FONT_COLOR.BLUE)
+  local titleLimitLabel = widget:CreateChildWidget("label", "titleLimitLabel", 0, true)
+  titleLimitLabel:SetLimitWidth(true)
+  titleLimitLabel:SetHeight(DEFAULT_SIZE.EDIT_HEIGHT)
+  titleLimitLabel:AddAnchor("LEFT", titleLabel, "RIGHT", -3, 0)
+  titleLimitLabel:AddAnchor("RIGHT", widget, -sideMargin, 0)
+  titleLimitLabel:SetInset(5, 0, 0, 0)
+  titleLimitLabel.style:SetAlign(ALIGN_LEFT)
+  titleLimitLabel.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.LARGE)
+  ApplyTextColor(titleLimitLabel, FONT_COLOR.BLUE)
+  local OnEnter = function(self)
+    if CheckInputTextVisible(self) then
+      return
+    end
+    SetTooltip(self:GetText(), self)
+  end
+  titleLimitLabel:SetHandler("OnEnter", OnEnter)
+  if style == "write" then
+    roleLabel:SetText(locale.mail.receiver .. ": ")
+    roleEdit:SetReadOnly(false)
+    titleEdit:SetReadOnly(false)
+    titleEdit:Show(true)
+    titleLimitLabel:Show(false)
+  else
+    roleLabel:SetText(locale.mail.sender .. ": ")
+    roleEdit:SetReadOnly(true)
+    titleEdit:SetReadOnly(true)
+    titleEdit:Show(false)
+    titleLimitLabel:Show(true)
+    local mailTypeIcon = CreateMailTypeIconWidget("mailTypeIcon", titleLimitLabel)
+    mailTypeIcon:Show(false)
+    mailTypeIcon:AddAnchor("LEFT", titleLimitLabel, 5, 0)
+  end
+  local leftWidth = roleLabel.style:GetTextWidth(roleLabel:GetText())
+  if leftWidth < titleLabel.style:GetTextWidth(titleLabel:GetText()) then
+    leftWidth = titleLabel.style:GetTextWidth(titleLabel:GetText())
+  end
+  roleLabel:SetWidth(leftWidth)
+  titleLabel:SetWidth(leftWidth)
+end
+local function SetViewOfContentFrame(widget, style)
+  local defaultFrame = widget:CreateChildWidget("window", "defaultFrame", 0, true)
+  defaultFrame:Show(true)
+  defaultFrame:SetExtent(400, 265)
+  defaultFrame:AddAnchor("TOPLEFT", widget.titleLabel, "BOTTOMLEFT", -5, sideMargin)
+  local bg = CreateContentBackground(widget, "TYPE13", nil, "artwork")
+  bg:SetCoords(0, 0, 398, 281)
+  bg:AddAnchor("TOPLEFT", defaultFrame, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", defaultFrame, 0, 0)
+  local date = widget:CreateChildWidget("label", "date", 0, true)
+  date:SetAutoResize(true)
+  date:SetHeight(15)
+  date:AddAnchor("BOTTOMRIGHT", bg, "TOPRIGHT", -5, -1)
+  date.style:SetColor(0.7, 0.7, 0.7, 1)
+  local content = widget:CreateChildWidget("editboxmultiline", "content", 0, true)
+  content:SetExtent(400, 245)
+  content:AddAnchor("TOPLEFT", defaultFrame, 0, 0)
+  InitMultiline(content)
+  content:SetMaxTextLength(mailBoxLocale.maxTextLength)
+  content.style:SetAlign(ALIGN_TOP_LEFT)
+  content:SetCursorColor(0, 0, 0, 1)
+  content.style:SetColor(0, 0, 0, 1)
+  local attachWindow = defaultFrame:CreateChildWidget("window", "attachWindow", 0, true)
+  attachWindow:Show(true)
+  attachWindow:SetExtent(395, 90)
+  attachWindow:AddAnchor("TOPLEFT", defaultFrame, "BOTTOMLEFT", 4, sideMargin / 1.5)
+  defaultFrame.itemSlots = {}
+  local x = 0
+  local y = -45
+  for i = 1, MAX_ATTACHMENT_COUNT do
+    local itemSlot = CreateItemIconButton(defaultFrame:GetId() .. ".itemSlot" .. i, defaultFrame)
+    itemSlot:AddAnchor("BOTTOMLEFT", attachWindow, x, y)
+    x = x + 45
+    if i == 5 then
+      x = 0
+      y = y + 45
+    end
+    defaultFrame.itemSlots[i] = itemSlot
+  end
+  if style == "write" then
+    local moneyEditsWindow
+    if X2Mail:GetCurrencyForAttachment() == CURRENCY_AA_POINT then
+      moneyEditsWindow = CreateAAPointEditsWindow(defaultFrame:GetId() .. ".moneyEditsWindow", defaultFrame)
+    else
+      moneyEditsWindow = CreateMoneyEditsWindow(defaultFrame:GetId() .. ".moneyEditsWindow", defaultFrame)
+    end
+    moneyEditsWindow:AddAnchor("BOTTOMRIGHT", attachWindow, -12, -2)
+    moneyEditsWindow:SetWidth(140)
+    moneyEditsWindow.goldEdit:SetWidth(140)
+    moneyEditsWindow.silverEdit:SetWidth(70)
+    moneyEditsWindow.copperEdit:SetWidth(70)
+    ApplyTextColor(moneyEditsWindow.goldEdit, FONT_COLOR.BLACK)
+    ApplyTextColor(moneyEditsWindow.silverEdit, FONT_COLOR.BLACK)
+    ApplyTextColor(moneyEditsWindow.copperEdit, FONT_COLOR.BLACK)
+    moneyEditsWindow:AnchorStyling("twoLine")
+    defaultFrame.moneyEditsWindow = moneyEditsWindow
+    local attachLabel = defaultFrame:CreateChildWidget("label", "attachLabel", 0, true)
+    attachLabel:SetText(locale.mail.attachment)
+    attachLabel:SetExtent(60, 20)
+    attachLabel:AddAnchor("BOTTOM", moneyEditsWindow.goldEdit, "TOP", 0, -10)
+    attachLabel.style:SetFontSize(FONT_SIZE.LARGE)
+    attachLabel.style:SetShadow(false)
+    ApplyTextColor(attachLabel, FONT_COLOR.BLUE)
+    local labelDeco = CreateContentBackground(attachLabel, "TYPE6")
+    labelDeco:SetExtent(109, 28)
+    labelDeco:SetColor(1, 1, 1, 0.5)
+    labelDeco:AddAnchor("CENTER", attachLabel, 5, 0)
+    content:SetInset(20, 20, 30, 20)
+  else
+    content:SetReadOnly(true)
+    content:SetInset(sideMargin, sideMargin, 30, sideMargin)
+    local attachReceiveButton = defaultFrame:CreateChildWidget("button", "attachReceiveButton", 0, true)
+    attachReceiveButton:Enable(false)
+    attachReceiveButton:AddAnchor("BOTTOMRIGHT", attachWindow, 0, 2)
+    ApplyButtonSkin(attachReceiveButton, BUTTON_CONTENTS.MAIL_RECEIVE_ALL_ITEM)
+    local OnEnter = function(self)
+      SetTargetAnchorTooltip(locale.mail.attachRecv, "TOPLEFT", self, "BOTTOMRIGHT", -2, -2)
+    end
+    attachReceiveButton:SetHandler("OnEnter", OnEnter)
+    local OnLeave = function()
+      HideTooltip()
+    end
+    attachReceiveButton:SetHandler("OnLeave", OnLeave)
+    local moneyReceiveButton = defaultFrame:CreateChildWidget("button", "moneyReceiveButton", 0, true)
+    moneyReceiveButton:Enable(false)
+    moneyReceiveButton:AddAnchor("RIGHT", attachReceiveButton, "LEFT", 0, 0)
+    ApplyButtonSkin(moneyReceiveButton, BUTTON_CONTENTS.MAIL_RECEIVE_MONEY)
+    local OnEnter = function(self)
+      SetTargetAnchorTooltip(locale.mail.moneyRece, "TOPLEFT", self, "BOTTOMRIGHT", -2, -2)
+    end
+    moneyReceiveButton:SetHandler("OnEnter", OnEnter)
+    local OnLeave = function()
+      HideTooltip()
+    end
+    moneyReceiveButton:SetHandler("OnLeave", OnLeave)
+    local receiveMoneyWindow = CreateTitleMoneyWindow(defaultFrame:GetId() .. ".receiveMoneyWindow", defaultFrame)
+    receiveMoneyWindow:Show(true)
+    receiveMoneyWindow:SetExtent(155, 29)
+    receiveMoneyWindow.title:Show(false)
+    receiveMoneyWindow:AddAnchor("BOTTOMRIGHT", attachReceiveButton, "TOPRIGHT", -5, -1)
+    defaultFrame.receiveMoneyWindow = receiveMoneyWindow
+    if X2Bag:GetCurrency() ~= CURRENCY_GOLD then
+      local receiveAAPointWindow = CreateTitleMoneyWindow(defaultFrame:GetId() .. ".receiveAAPointWindow", defaultFrame)
+      receiveAAPointWindow:Show(true)
+      receiveAAPointWindow:SetExtent(155, 29)
+      receiveAAPointWindow.title:Show(false)
+      receiveAAPointWindow:AddAnchor("BOTTOM", receiveMoneyWindow, "TOP", 0, 2)
+      defaultFrame.receiveAAPointWindow = receiveAAPointWindow
+    end
+  end
+end
+function CreateContentFrame(widget, style)
+  SetViewOfContentFrame(widget, style)
+  function widget:VisibleDefaultContetFrame(visible)
+    self.defaultFrame:Show(true)
+    self.content:Show(true)
+    self.defaultFrame:SetHeight(265)
+    self.defaultFrame.attachWindow:SetWidth(395)
+    self.defaultFrame.attachWindow:AddAnchor("TOPLEFT", self.defaultFrame, "BOTTOMLEFT", 4, sideMargin / 1.5)
+    self.defaultFrame.attachReceiveButton:Show(true)
+    self.defaultFrame.moneyReceiveButton:Show(true)
+    self.defaultFrame.receiveMoneyWindow:Show(true)
+    if self.defaultFrame.receiveAAPointWindow ~= nil then
+      self.defaultFrame.receiveAAPointWindow:Show(true)
+    end
+    local itemSlots = self.defaultFrame.itemSlots
+    for i = 1, #itemSlots do
+      itemSlots[i]:Show(true)
+    end
+  end
+  function widget:VisibleTaxContentFrame(mailType)
+    if mailType == nil then
+      return
+    end
+    self.defaultFrame:SetHeight(265)
+    if mailType == MAIL_TYPE.BILLING or mailType == MAIL_TYPE.TAXRATE_CHANGED or mailType == MAIL_TYPE.NATION_TAX_RATE or mailType == MAIL_TYPE.NATION_REQUEST_FRIEND or mailType == MAIL_TYPE.HERO_CANDIDATE_ALARM or mailType == MAIL_TYPE.SIEGE_AUCTION_START or mailType == MAIL_TYPE.MAIL_NATION_RELATION_FRIEND or mailType == MAIL_TYPE.MAIL_NATION_RELATION_FRIEND_SUCCESS or mailType == MAIL_TYPE.MAIL_NATION_RELATION_FRIEND_REJECT or mailType == MAIL_TYPE.MAIL_NATION_RELATION_HOSTILE or mailType == MAIL_TYPE.MAIL_NATION_RELATION_HOSTILE_SUCCESS then
+      self.defaultFrame:SetHeight(370)
+      self.content:Show(false)
+      self.defaultFrame.attachReceiveButton:Show(false)
+      self.defaultFrame.moneyReceiveButton:Show(false)
+      self.defaultFrame.receiveMoneyWindow:Show(false)
+      self.defaultFrame.attachWindow:Show(false)
+      if self.defaultFrame.receiveAAPointWindow ~= nil then
+        self.defaultFrame.receiveAAPointWindow:Show(false)
+      end
+      local itemSlots = self.defaultFrame.itemSlots
+      for i = 1, #itemSlots do
+        itemSlots[i]:Show(false)
+      end
+    elseif mailType == MAIL_TYPE.BALANCE_RECEIPT or mailType == MAIL_TYPE.NATION_TAX_RECEIPT or mailType == MAIL_TYPE.HERO_ELECTION_ITEM then
+      self.defaultFrame:Show(true)
+      self.content:Show(false)
+      self.defaultFrame.attachReceiveButton:Show(false)
+      self.defaultFrame.moneyReceiveButton:Show(false)
+      self.defaultFrame.receiveMoneyWindow:Show(false)
+      if self.defaultFrame.receiveAAPointWindow ~= nil then
+        self.defaultFrame.receiveAAPointWindow:Show(false)
+      end
+      self.defaultFrame.attachWindow:SetWidth(220)
+      self.defaultFrame.attachWindow:RemoveAllAnchors()
+      self.defaultFrame.attachWindow:AddAnchor("TOP", self.defaultFrame, "BOTTOM", 0, sideMargin / 1.5)
+    end
+  end
+  function widget:VisibleAuctionContentFrame(mailType)
+    if mailType == nil then
+      return
+    end
+    self.defaultFrame:Show(true)
+    self.content:Show(false)
+    if mailType == MAIL_TYPE.AUCTION_OFF_CANCEL or mailType == MAIL_TYPE.AUCTION_OFF_FAIL or mailType == MAIL_TYPE.AUCTION_BID_WIN then
+      self.defaultFrame.moneyReceiveButton:Enable(false)
+      self.defaultFrame.receiveMoneyWindow:Enable(false)
+      if self.defaultFrame.receiveAAPointWindow ~= nil then
+        self.defaultFrame.receiveAAPointWindow:Enable(false)
+      end
+    end
+  end
+  function widget:VisibleSellBackpackContentFrame()
+    self.defaultFrame:Show(true)
+    self.content:Show(false)
+  end
+end
+function GetMailTypeIcon(mailType)
+  if mailType == MAIL_TYPE.AUCTION_OFF_CANCEL or mailType == MAIL_TYPE.AUCTION_OFF_SUCCESS or mailType == MAIL_TYPE.AUCTION_OFF_FAIL or mailType == MAIL_TYPE.AUCTION_BID_WIN or mailType == MAIL_TYPE.AUCITON_BID_FAIL or mailType == MAIL_TYPE.SYS_SELL_BACKPACK then
+    return "trade"
+  end
+  if mailType == MAIL_TYPE.HOUSING_SALE or mailType == MAIL_TYPE.NATION_TAX_RATE or mailType == MAIL_TYPE.NATION_TAX_RECEIPT or mailType == MAIL_TYPE.BILLING or mailType == MAIL_TYPE.BALANCE_RECEIPT or mailType == MAIL_TYPE.TAXRATE_CHANGED or mailType == MAIL_TYPE.HOUSING_REBUILD or mailType == MAIL_TYPE.DEMOLISH_WITH_PENALTY or mailType == MAIL_TYPE.HOUSING_DEMOLISH or mailType == MAIL_TYPE.TAX_IN_KIND_RECEIPT then
+    return "housing"
+  end
+  if mailType == MAIL_TYPE.ADMIN or mailType == MAIL_TYPE.NATION_REQUEST_FRIEND or mailType == MAIL_TYPE.SYS_EXPRESS or mailType == MAIL_TYPE.MAIL_MOBILIZATION_GIVE_ITEM or mailType == MAIL_TYPE.HERO_CANDIDATE_ALARM or mailType == MAIL_TYPE.HERO_ELECTION_ITEM or mailType == MAIL_TYPE.SIEGE_AUCTION_START or mailType == MAIL_TYPE.MAIL_NATION_RELATION_FRIEND or mailType == MAIL_TYPE.MAIL_NATION_RELATION_FRIEND_SUCCESS or mailType == MAIL_TYPE.MAIL_NATION_RELATION_FRIEND_REJECT or mailType == MAIL_TYPE.MAIL_NATION_RELATION_FRIEND_REJECT_ITEM or mailType == MAIL_TYPE.MAIL_NATION_RELATION_HOSTILE or mailType == MAIL_TYPE.MAIL_NATION_RELATION_HOSTILE_SUCCESS then
+    return "archeage"
+  end
+  return
+end
+function SetMailHeaderColor(mailType, isRead, label, mailTypeIcon)
+  local labelColor, iconColor
+  if isRead then
+    labelColor = FONT_COLOR.GRAY
+    iconColor = FONT_COLOR.GRAY
+  elseif mailType == MAIL_TYPE.ADMIN then
+    labelColor = FONT_COLOR.RED
+    iconColor = FONT_COLOR.RED
+  elseif GetMailTypeIcon(mailType) ~= nil then
+    labelColor = FONT_COLOR.GREEN
+    iconColor = FONT_COLOR.GREEN
+  else
+    labelColor = FONT_COLOR.BLUE
+  end
+  if label ~= nil and labelColor ~= nil then
+    ApplyTextColor(label, labelColor)
+  end
+  if mailTypeIcon ~= nil and iconColor ~= nil then
+    mailTypeIcon:SetIconColor(iconColor)
+  end
+end

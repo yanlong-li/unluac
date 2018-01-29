@@ -1,0 +1,134 @@
+ASSIGNMENT_WINDOW_WIDTH = 800
+ASSIGNMENT_WINDOW_HEIGHT = 620
+A_CATEGORY_LIST_WIDTH = 220
+A_RIGHT_WND_OFFSET = 20
+A_FILTER_BTN_WIDTH = 180
+UNKNOWN_ACHIEVEMENT_STR = "?????"
+UNKNOWN_ACHIEVETENT_ICON_PATH = "ui/achievement/top_hide_achievement.dds"
+A_STATUS_WND_WIDTH = {
+  TOTAL = ASSIGNMENT_WINDOW_WIDTH - A_CATEGORY_LIST_WIDTH - A_RIGHT_WND_OFFSET - 80,
+  EACH = (ASSIGNMENT_WINDOW_WIDTH - A_CATEGORY_LIST_WIDTH - A_RIGHT_WND_OFFSET - 95) / 2,
+  LIST = ASSIGNMENT_WINDOW_WIDTH - A_CATEGORY_LIST_WIDTH - A_RIGHT_WND_OFFSET - A_FILTER_BTN_WIDTH - 50
+}
+A_ASSIGNMENT_TYPE = {
+  RACIAL = 1,
+  ACHIEVEMENT = 2,
+  TODAY = 3
+}
+A_TAB_LIST = {
+  A_ASSIGNMENT_TYPE.TODAY,
+  A_ASSIGNMENT_TYPE.RACIAL,
+  A_ASSIGNMENT_TYPE.ACHIEVEMENT
+}
+A_SUBJECT_STYLE = {
+  ACHIEVEMENT_LIST = 1,
+  ACHIEVEMENT_DESC = 2,
+  TODAY_ASSIGNMENT_LIST = 3,
+  TODAY_ASSIGNMENT_DESC = 4
+}
+A_TODAY_STATUS = {
+  LOCKED = 0,
+  READY = 1,
+  PROGRESS = 2,
+  DONE = 3
+}
+ACHIEVEMENT_CATEGORY = {
+  AC_NORMAL,
+  AC_COMBAT,
+  AC_LIFE,
+  AC_ADVENTURE,
+  AC_SOCIETY,
+  AC_SEASON,
+  AC_EVENT
+}
+function MakeAssignementDateString(info)
+  local str = baselibLocale:GetDefaultDateString(string.format("%02d", info.year - 2000), info.month, info.day)
+  return string.format("%s [%s]", str, GetCommonText("complete"))
+end
+function GetAchievementCategoryStr(mId, sId)
+  local key
+  if mId == nil then
+    return ""
+  end
+  if sId == nil then
+    key = string.format("achievement_category_%d", mId)
+  else
+    key = string.format("achievement_category_%d_%d", mId, sId)
+  end
+  return X2Locale:LocalizeUiText(COMMON_TEXT, key)
+end
+function MakeAchievementSubjectInfo(style, acType)
+  local acInfo = X2Achievement:GetAchievementInfo(acType)
+  local info = {}
+  info.id = acType
+  info.style = style
+  info.titleStr = acInfo.name
+  if not acInfo.canProgress then
+    info.descStr = UNKNOWN_ACHIEVEMENT_STR
+  elseif style == A_SUBJECT_STYLE.ACHIEVEMENT_LIST then
+    info.descStr = acInfo.summary
+  elseif style == A_SUBJECT_STYLE.ACHIEVEMENT_DESC then
+    info.descStr = string.format("%d/%d", acInfo.current, acInfo.completeNum)
+  end
+  info.resultStr = acInfo.complete and MakeAssignementDateString(acInfo.completeDate) or ""
+  info.iconPath = acInfo.canProgress and acInfo.iconPath or UNKNOWN_ACHIEVETENT_ICON_PATH
+  info.curValue = acInfo.current
+  info.maxValue = acInfo.completeNum
+  info.itemType = acInfo.reward
+  info.itemCount = acInfo.rewardCount
+  info.checked = acInfo.tracing
+  info.canProgress = acInfo.canProgress
+  info.complete = acInfo.complete
+  info.highRank = acInfo.highRank
+  info.tabType = acInfo.mainCategory == AC_LEVEL and A_ASSIGNMENT_TYPE.RACIAL or A_ASSIGNMENT_TYPE.ACHIEVEMENT
+  info.grade = acInfo.grade + 1
+  return info
+end
+function MakeTodayQuestInfo(style, qType)
+  local qInfo = X2Quest:GetTodayQuestInfo(qType)
+  if qInfo == nil then
+    return
+  end
+  local info = {}
+  info.qType = qType
+  info.titleStr = qInfo.title
+  if style == A_SUBJECT_STYLE.TODAY_ASSIGNMENT_LIST then
+    info.summaryStr = qInfo.summary
+    info.descStr = qInfo.description
+  else
+    info.summaryStr = string.format("%d/%d", qInfo.curValue, qInfo.maxValue)
+  end
+  info.curValue = qInfo.curValue
+  info.maxValue = qInfo.maxValue
+  if X2Quest:GetQuestContextRewardItemAllCount(qType) > 0 then
+    info.itemType = X2Quest:GetQuestContextRewardItemIconType(qType, 1)
+    info.itemCount = X2Quest:GetQuestContextRewardItemCount(qType, 1)
+    info.rewardCopper = X2Quest:GetQuestContextRewardCopper(qType)
+  else
+    info.itemType = nil
+    info.itemCount = 0
+  end
+  info.grade = qInfo.grade
+  return info
+end
+function TodayAssignmentActived()
+  local satisfyCnt = 0
+  local closeCnt = 0
+  local cnt = X2Achievement:GetTodayAssignmentCount(false)
+  for index = 1, cnt do
+    local info = X2Achievement:GetTodayAssignmentInfo(false, index)
+    if info.status ~= A_TODAY_STATUS.LOCKED and info.status ~= A_TODAY_STATUS.READY then
+      return false
+    end
+    if info.satisfy then
+      satisfyCnt = satisfyCnt + 1
+    end
+    if info.status == A_TODAY_STATUS.LOCKED or info.status == A_TODAY_STATUS.READY then
+      closeCnt = closeCnt + 1
+    end
+  end
+  if satisfyCnt == 0 and closeCnt == cnt then
+    return false
+  end
+  return true
+end

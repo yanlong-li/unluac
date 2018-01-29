@@ -1,0 +1,92 @@
+if X2Util:GetGameProvider() == MAILRU then
+  BUTTON_BEAUTYSHOP.RESET = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.BEAUTYSHOP,
+      coordsKey = "Reset",
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 5,
+        y = 0
+      }
+    }
+  }
+  BUTTON_BEAUTYSHOP.EXIT = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.BEAUTYSHOP,
+      coordsKey = "Exit",
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 15,
+        y = 2
+      }
+    }
+  }
+  BUTTON_BEAUTYSHOP.CONFIRM = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.BEAUTYSHOP,
+      coordsKey = "Apply",
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 15,
+        y = 0
+      }
+    }
+  }
+  beautyShopCommonLocale.slotBg = {
+    plastic = UIParent:GetTextureData(LOGIN_STAGE_TEXTURE_PATH.BEAUTYSHOP, "icon_blue").coords,
+    cosmetic = UIParent:GetTextureData(LOGIN_STAGE_TEXTURE_PATH.BEAUTYSHOP, "icon_pink").coords,
+    mini = UIParent:GetTextureData(LOGIN_STAGE_TEXTURE_PATH.BEAUTYSHOP, "icon_none_sm").coords
+  }
+  beautyShopCommonLocale.plasticIcon = {
+    none = {
+      0,
+      0,
+      0,
+      0
+    },
+    eye = UIParent:GetTextureData(LOGIN_STAGE_TEXTURE_PATH.BEAUTYSHOP, "icon_eye").coords,
+    nose = UIParent:GetTextureData(LOGIN_STAGE_TEXTURE_PATH.BEAUTYSHOP, "icon_nose").coords,
+    lip = UIParent:GetTextureData(LOGIN_STAGE_TEXTURE_PATH.BEAUTYSHOP, "icon_lip").coords,
+    face_shape = UIParent:GetTextureData(LOGIN_STAGE_TEXTURE_PATH.BEAUTYSHOP, "icon_face").coords
+  }
+  beautyShopCommonLocale.detailWndFontSize = FONT_SIZE.MIDDLE
+end

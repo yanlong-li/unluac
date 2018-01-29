@@ -1,0 +1,171 @@
+function CreateAbilityChangeFrame(id, parent)
+  local window = SetViewOfAbilityChangeFrame(id, parent)
+  local MY_ABILITY_INDEX = 0
+  local CHANGE_ABILITY_INDEX = 0
+  local upperWindow = window.upperWindow
+  local lowerWindow = window.lowerWindow
+  local selectedIcon = lowerWindow.selectedIcon
+  local changeButton = window.leftButton
+  local function EnableChangeButton()
+    changeButton:Enable(false)
+    if MY_ABILITY_INDEX ~= 0 and CHANGE_ABILITY_INDEX ~= 0 then
+      changeButton:Enable(true)
+    end
+  end
+  local function ResetMyAbilityButton()
+    for i = 1, #upperWindow.ability_button do
+      local button = upperWindow.ability_button[i]
+      SetBGPushed(button, false, GetMyAbilityButtonFontColor())
+      localeView.abilityButton.ResetFunc(button)
+    end
+  end
+  for i = 1, #upperWindow.ability_button do
+    do
+      local button = upperWindow.ability_button[i]
+      function button:OnClick()
+        ResetMyAbilityButton()
+        SetBGPushed(button, true, GetMyAbilityButtonFontColor())
+        localeView.abilityButton.SetPushedFunc(button)
+        MY_ABILITY_INDEX = button.index
+        EnableChangeButton()
+      end
+      button:SetHandler("OnClick", button.OnClick)
+    end
+  end
+  local function ResetAllAbilityButton()
+    for i = 1, #locale.common.abilityCategoryName do
+      local button = lowerWindow.all_ability_button[i]
+      SetBGHighlighted(button, false, GetAbilityButtonFontColor())
+    end
+  end
+  for j = 1, #locale.common.abilityCategoryName do
+    do
+      local button = lowerWindow.all_ability_button[j]
+      function button:OnClick()
+        ResetAllAbilityButton()
+        selectedIcon:SetVisible(true)
+        selectedIcon:RemoveAllAnchors()
+        selectedIcon:AddAnchor("RIGHT", button, "LEFT", 25, 0)
+        SetBGHighlighted(button, true, GetAbilityButtonFontColor())
+        CHANGE_ABILITY_INDEX = j
+        EnableChangeButton()
+      end
+      button:SetHandler("OnClick", button.OnClick)
+    end
+  end
+  local function GetAbilityButtonText(isMyInfo, abilityType)
+    if window.allAbilityInfos == nil then
+      return
+    end
+    if isMyInfo then
+      for i = 1, #window.allAbilityInfos do
+        local info = window.allAbilityInfos[i]
+        if info.level < 10 then
+          info.level = 10
+        end
+        if abilityType == info.type then
+          return string.format("%s(%d)", locale.common.abilityCategoryName[abilityType], info.level)
+        end
+      end
+    else
+      local info = window.allAbilityInfos[abilityType]
+      if info.level < 10 then
+        info.level = 10
+      end
+      return string.format("%s(%d)", locale.common.abilityCategoryName[abilityType], info.level)
+    end
+  end
+  function window:Reset()
+    MY_ABILITY_INDEX = 0
+    CHANGE_ABILITY_INDEX = 0
+    local myAbilityInfo = X2Ability:GetActiveAbility()
+    for j = 1, #locale.common.abilityCategoryName do
+      lowerWindow.all_ability_button[j]:Enable(true)
+      lowerWindow.all_ability_button[j]:SetText(GetAbilityButtonText(false, j))
+    end
+    for i = 1, MAX.MY_ABILITY_COUNT do
+      if myAbilityInfo[i] ~= nil then
+        local button = upperWindow.ability_button[i]
+        button:SetText(GetAbilityButtonText(true, myAbilityInfo[i].type))
+        button.index = myAbilityInfo[i].type
+        lowerWindow.all_ability_button[myAbilityInfo[i].type]:Enable(false)
+      end
+    end
+    ResetMyAbilityButton()
+    ResetAllAbilityButton()
+    selectedIcon:SetVisible(false)
+    changeButton:Enable(false)
+    selectedIcon:RemoveAllAnchors()
+  end
+  function window:ShowProc()
+    local myAbilityInfo = X2Ability:GetActiveAbility()
+    if #myAbilityInfo < 3 then
+      self:Show(false)
+      AddMessageToSysMsgWindow("|cFFFF6600" .. locale.abilityChanger.reqActivationAbility)
+      return
+    end
+    self.allAbilityInfos = X2Ability:GetAllAbility()
+    self:Reset()
+  end
+  function changeButton:OnClick()
+    local changeCost = X2Ability:CanBuyAbilityChange()
+    if changeCost ~= nil then
+      do
+        local abilityNames = locale.common.abilityCategoryName
+        local content = locale.abilityChanger.GetExchangeText(abilityNames[MY_ABILITY_INDEX], abilityNames[CHANGE_ABILITY_INDEX])
+        local valueText = string.format(F_MONEY.currency.pipeString[F_MONEY.currency.abilityChange], tostring(changeCost))
+        local function DialogHandler(wnd)
+          ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_VALUE_TEXT)
+          wnd:SetTitle(locale.abilityChanger.title)
+          wnd:SetContentEx(content, valueText)
+          function wnd:OkProc()
+            X2Ability:SwapAbility(MY_ABILITY_INDEX, CHANGE_ABILITY_INDEX)
+          end
+          function wnd:GetOkSound()
+            return "event_message_box_ability_change_onok"
+          end
+        end
+        X2DialogManager:RequestDefaultDialog(DialogHandler, abilityChangeFrame:GetId())
+      end
+    else
+      do
+        local lackMoney = tonumber(X2Ability:GetAbilityChangeCost()) - tonumber(X2Util:GetMyMoneyString())
+        lackMoney = tostring(lackMoney)
+        local content = string.format("%s", locale.abilityChanger.needMoreStr)
+        local valueText = string.format(F_MONEY.currency.pipeString[F_MONEY.currency.abilityChange], lackMoney)
+        local function DialogNoticeHandler(wnd)
+          ApplyDialogStyle(wnd, DIALOG_STYLE.INCLUDE_VALUE_TEXT)
+          wnd:SetTitle(locale.abilityChanger.title)
+          wnd:SetContentEx(content, valueText)
+        end
+        X2DialogManager:RequestNoticeDialog(DialogNoticeHandler, abilityChangeFrame:GetId())
+      end
+    end
+  end
+  changeButton:SetHandler("OnClick", changeButton.OnClick)
+  local function CancelButtonLeftClickFunc()
+    window:Show(false)
+  end
+  ButtonOnClickHandler(window.rightButton, CancelButtonLeftClickFunc)
+  return window
+end
+abilityChangeFrame = CreateAbilityChangeFrame("abilityChangeFrame", "UIParent")
+abilityChangeFrame:AddAnchor("CENTER", "UIParent", 0, 0)
+local abilityChangeEvents = {
+  ABILITY_CHANGED = function()
+    abilityChangeFrame:Reset()
+  end,
+  NPC_INTERACTION_END = function()
+    abilityChangeFrame:Show(false)
+  end,
+  TARGET_CHANGED = function()
+    abilityChangeFrame:Show(false)
+  end,
+  ENTERED_WORLD = function()
+    abilityChangeFrame:Reset()
+  end
+}
+abilityChangeFrame:SetHandler("OnEvent", function(this, event, ...)
+  abilityChangeEvents[event](...)
+end)
+RegistUIEvent(abilityChangeFrame, abilityChangeEvents)

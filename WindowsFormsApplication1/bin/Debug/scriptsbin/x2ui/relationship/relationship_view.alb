@@ -1,0 +1,35 @@
+function SetViewOfRelationshipFrame(id, parent)
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local window = CreateWindow(id, parent)
+  window:Show(false)
+  window:AddAnchor("CENTER", "UIParent", 0, 0)
+  local extent = relationshipLocale.extent
+  window:SetExtent(extent[1], extent[2])
+  window:SetTitle(locale.relationship.title)
+  window:SetSounds("friend")
+  window:SetCloseOnEscape(true)
+  local tab = window:CreateChildWidget("tab", "tab", 0, true)
+  tab:AddAnchor("TOPLEFT", window, sideMargin, titleMargin)
+  tab:AddAnchor("BOTTOMRIGHT", window, -sideMargin, -sideMargin)
+  tab:SetCorner("TOPLEFT")
+  for i = 1, #locale.relationship.tabText do
+    tab:AddSimpleTab(locale.relationship.tabText[i])
+  end
+  local buttonTable = {}
+  for i = 1, #tab.window do
+    ApplyButtonSkin(tab.selectedButton[i], BUTTON_BASIC.TAB_SELECT)
+    ApplyButtonSkin(tab.unselectedButton[i], BUTTON_BASIC.TAB_UNSELECT)
+    table.insert(buttonTable, tab.selectedButton[i])
+    table.insert(buttonTable, tab.unselectedButton[i])
+  end
+  AdjustBtnLongestTextWidth(buttonTable)
+  tab:SetGap(-2)
+  DrawTabSkin(tab, tab.window[1], tab.selectedButton[1])
+  tab.friendTabIdx = 1
+  CreateFriendTabWindow(tab.window[1])
+  tab.blockTabIdx = 2
+  CreateBlockTabWindow(tab.window[2])
+  tab.familyTabIdx = 3
+  CreateFamilyTabWindow(tab.window[3])
+  return window
+end

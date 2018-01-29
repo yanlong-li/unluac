@@ -1,0 +1,39 @@
+if X2Util:GetGameProvider() == TRION and X2Locale:GetLocale() == "de" then
+  baselibLocale.bindingKeyModifierName = {
+    ["CTRL--"] = "Strg ",
+    ["ALT--"] = "Alt ",
+    ["SHIFT--"] = "Umsch "
+  }
+  baselibLocale.bindingKeyName = {
+    ["MINUS"] = "-",
+    ["EQUALS"] = "=",
+    ["INSERT"] = "Einfg",
+    ["DELETE"] = "Entf",
+    ["END"] = "Ende",
+    ["PAGEUP"] = "Bild auf",
+    ["PAGEDOWN"] = "Bild ab",
+    ["HOME"] = "Pos1",
+    ["\\"] = "b",
+    ["NUMBER1"] = "Num 1",
+    ["NUMBER2"] = "Num 2",
+    ["NUMBER3"] = "Num 3",
+    ["NUMBER4"] = "Num 4",
+    ["NUMBER5"] = "Num 5",
+    ["NUMBER6"] = "Num 6",
+    ["NUMBER7"] = "Num 7",
+    ["NUMBER8"] = "Num 8",
+    ["NUMBER9"] = "Num 9",
+    ["NUMBER0"] = "Num 0",
+    ["WHEELUP"] = "(W)Aufw\195\164rts",
+    ["WHEELDOWN"] = "(W)Abw\195\164rts",
+    ["APOSTROPHE"] = "`",
+    ["UP"] = "Aufw\195\164rts",
+    ["DOWN"] = "Abw\195\164rts",
+    ["LEFT"] = "Links",
+    ["RIGHT"] = "Rechts",
+    ["SPACE"] = "Leertaste",
+    ["NUMLOCK"] = "Num-Lock",
+    ["ENTER"] = "Eingabe",
+    ["ESCAPE"] = "Esc"
+  }
+end

@@ -1,0 +1,130 @@
+if X2Util:GetGameProvider() == GAMEON then
+  loginStageCommonLocale.pageTitleCoords = {
+    selectCharacter = {
+      730,
+      328,
+      201,
+      40
+    },
+    createRace = {
+      416,
+      359,
+      111,
+      31
+    },
+    createCustomizing = {
+      541,
+      328,
+      189,
+      30
+    },
+    createAbility = {
+      527,
+      360,
+      108,
+      31
+    }
+  }
+  loginStageCommonLocale.made_html_path = "ui/login_stage/html/made_en.html"
+  BUTTON_LOGINSTAGE.EXIT = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coords = {
+        normal = {
+          0,
+          0,
+          77,
+          36
+        },
+        over = {
+          0,
+          36,
+          77,
+          36
+        },
+        click = {
+          0,
+          72,
+          77,
+          36
+        },
+        disable = {
+          0,
+          108,
+          77,
+          36
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 25,
+        y = -2
+      },
+      drawableExtent = {width = 77, height = 36}
+    }
+  }
+  BUTTON_LOGINSTAGE.OPTION = {
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.REMNANTS,
+      coords = {
+        normal = BROWN_BACKGROUND_COORDS.NORMAL,
+        over = BROWN_BACKGROUND_COORDS.OVER,
+        click = BROWN_BACKGROUND_COORDS.CLICK,
+        disable = BROWN_BACKGROUND_COORDS.DISABLE
+      },
+      width = SMALL_BROWN_BACKGROUND_EXTENT.WIDTH,
+      height = SMALL_BROWN_BACKGROUND_EXTENT.HEIGHT
+    },
+    {
+      drawableType = "drawable",
+      path = LOGIN_STAGE_TEXTURE_PATH.IMG_TEXT,
+      coords = {
+        normal = {
+          77,
+          0,
+          124,
+          36
+        },
+        over = {
+          77,
+          36,
+          124,
+          36
+        },
+        click = {
+          77,
+          72,
+          124,
+          36
+        },
+        disable = {
+          77,
+          108,
+          124,
+          36
+        }
+      },
+      drawableAnchor = {
+        anchor = "BOTTOM",
+        x = 15,
+        y = -1
+      },
+      drawableExtent = {width = 124, height = 36}
+    }
+  }
+  loginStageCommonLocale.max_character_count = 6
+end

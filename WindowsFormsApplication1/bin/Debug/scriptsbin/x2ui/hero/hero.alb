@@ -1,0 +1,66 @@
+local featureSet = X2Player:GetFeatureSet()
+local SetViewOfHeroWindow = function(id, parent)
+  local window = CreateWindow(id, parent)
+  window:SetExtent(800, 815)
+  window:SetTitle(GetUIText(COMMON_TEXT, "hero"))
+  local tabStrs = {
+    GetUIText(COMMON_TEXT, "hero_current_status"),
+    GetUIText(COMMON_TEXT, "candidate_rank")
+  }
+  local tab = CreateTab("tab", window)
+  tab:AddTabs(tabStrs)
+  CreateHeroCurrentStatus(tab.window[1])
+  CreateHeroRankTab(tab.window[2])
+  local serverName = window:CreateChildWidget("label", "serverName", 0, true)
+  serverName:SetAutoResize(true)
+  serverName:SetHeight(FONT_SIZE.LARGE)
+  serverName:AddAnchor("TOPRIGHT", tab, 0, 8)
+  ApplyTextColor(serverName, FONT_COLOR.DEFAULT)
+  return window
+end
+function CreateHeroRankWindow(id, parent)
+  local frame = SetViewOfHeroWindow(id, parent)
+  local serverName = X2World:GetCurrentWorldName()
+  if serverName ~= nil then
+    frame.serverName:SetText(serverName)
+  end
+  local rankTab = frame.tab.window[2]
+  local events = {
+    HERO_RANK_DATA_RETRIEVED = function(factionID)
+      rankTab:RankDataRetrieved(factionID)
+    end,
+    HERO_SEASON_UPDATED = function()
+      rankTab:SeasonUpdated()
+    end
+  }
+  frame:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(frame, events)
+  function frame:RefreshTabWindow()
+    local heroTab = frame.tab.window[1]
+    heroTab.factionCombobox:RefreshFactionId(X2Hero:GetHeroFactions())
+    rankTab.factionCombobox:RefreshFactionId(X2Hero:GetRankFactions())
+    heroTab.factionCombobox:SelectedProc()
+  end
+  return frame
+end
+local heroWindow
+local featureSet = X2Player:GetFeatureSet()
+if featureSet.hero then
+  heroWindow = CreateHeroRankWindow("heroWindow", "UIParent")
+  heroWindow:Show(false)
+  heroWindow:AddAnchor("CENTER", "UIParent", 0, 0)
+end
+function ToggleHeroRankWindow()
+  if heroWindow ~= nil then
+    local visible = heroWindow:IsVisible()
+    if not visible then
+      local factionID = X2Hero:GetClientFactionID()
+      X2Hero:RequestRankData(factionID)
+      heroWindow:RefreshTabWindow()
+    end
+    heroWindow:Show(not visible)
+  end
+end
+ADDON:RegisterContentTriggerFunc(UIC_HERO_RANK_WND, ToggleHeroRankWindow)

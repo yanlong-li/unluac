@@ -1,0 +1,11 @@
+if X2Util:GetGameProvider() == GAMEON then
+  hudLocale.buildGuide = {
+    frame = {
+      extent = {width = 500, height = 275}
+    },
+    bg = {
+      AnchorOffset = {x = 50, y = 0}
+    },
+    guide_text = {width = 320}
+  }
+end

@@ -1,0 +1,394 @@
+function CreatePartyIconWidget(widget)
+  local icon = widget:CreateChildWidget("emptywidget", "icon", 0, true)
+  icon:SetExtent(18, 18)
+  icon:Raise()
+  local iconTexture = icon:CreateImageDrawable(TEXTURE_PATH.TEAM_ICON, "background")
+  iconTexture:SetCoords(36, 0, 18, 18)
+  iconTexture:AddAnchor("TOPLEFT", icon, 0, 0)
+  iconTexture:AddAnchor("BOTTOMRIGHT", icon, 0, 0)
+  local OnEnter = function(self)
+    SetTooltip(locale.expedition.partyPlay, self)
+  end
+  icon:SetHandler("OnEnter", OnEnter)
+  return icon
+end
+function CreateAttachItemIconWidget(widget)
+  local icon = widget:CreateChildWidget("emptywidget", "icon", 0, true)
+  icon:SetExtent(13, 16)
+  icon:Raise()
+  local iconTexture = icon:CreateImageDrawable(TEXTURE_PATH.MONEY_WINDOW, "background")
+  iconTexture:SetCoords(222, 12, 13, 16)
+  iconTexture:AddAnchor("TOPLEFT", icon, 0, 0)
+  iconTexture:AddAnchor("BOTTOMRIGHT", icon, 0, 0)
+  local OnEnter = function(self)
+    SetTooltip(locale.mail.haveAttachItem, self)
+  end
+  icon:SetHandler("OnEnter", OnEnter)
+  return icon
+end
+function CreateLootIconWidget(widget)
+  local lootIcon = widget:CreateChildWidget("emptywidget", "lootIcon", 0, true)
+  lootIcon:SetExtent(13, 16)
+  lootIcon:Raise()
+  local iconTexture = lootIcon:CreateImageDrawable(TEXTURE_PATH.MONEY_WINDOW, "background")
+  iconTexture:SetCoords(222, 12, 13, 16)
+  iconTexture:AddAnchor("TOPLEFT", lootIcon, 0, 0)
+  iconTexture:AddAnchor("BOTTOMRIGHT", lootIcon, 0, 0)
+  local OnEnter = function(self)
+    SetTooltip(locale.raid.lootingTip, self)
+  end
+  lootIcon:SetHandler("OnEnter", OnEnter)
+  return lootIcon
+end
+function CreatePvpIconWidget(widget)
+  local pvpIcon = widget:CreateChildWidget("emptywidget", "pvpIcon", 0, true)
+  pvpIcon:SetExtent(12, 12)
+  pvpIcon:Raise()
+  local iconTexture = pvpIcon:CreateImageDrawable(TEXTURE_PATH.HUD, "background")
+  iconTexture:SetCoords(729, 147, 12, 12)
+  iconTexture:AddAnchor("TOPLEFT", pvpIcon, 0, 0)
+  iconTexture:AddAnchor("BOTTOMRIGHT", pvpIcon, 0, 0)
+  local OnEnter = function(self)
+    SetTooltip(locale.unitFrame.pvpTip, self, true, true)
+  end
+  pvpIcon:SetHandler("OnEnter", OnEnter)
+  return pvpIcon
+end
+function CreateGuideIconWidget(widget)
+  local guide = widget:CreateChildWidget("emptywidget", "guide", 0, false)
+  guide:SetExtent(20, 19)
+  local bg = guide:CreateImageDrawable(TEXTURE_PATH.DEFAULT, "background")
+  bg:SetCoords(994, 46, 20, 19)
+  bg:AddAnchor("TOPLEFT", guide, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", guide, 0, 0)
+  return guide
+end
+function CreateItemIconImage(id, parent)
+  local widget = UIParent:CreateWidget("emptywidget", id, parent)
+  widget:SetExtent(ICON_SIZE.DEFAULT, ICON_SIZE.DEFAULT)
+  local back = widget:CreateNinePartDrawable(TEXTURE_PATH.HUD, "background")
+  ApplySlotSkin(widget, back, SLOT_STYLE.DEFAULT)
+  widget.back = back
+  local iconImage = widget:CreateIconImageDrawable(INVALID_ICON_PATH, "artwork")
+  iconImage:AddAnchor("TOPLEFT", widget, 1, 1)
+  iconImage:AddAnchor("BOTTOMRIGHT", widget, -1, -1)
+  widget.iconImage = iconImage
+  local gradeImage = widget:CreateIconImageDrawable(INVALID_ICON_PATH, "overlay")
+  gradeImage:AddAnchor("TOPLEFT", widget, 1, 1)
+  gradeImage:AddAnchor("BOTTOMRIGHT", widget, -1, -1)
+  widget.gradeImage = gradeImage
+  CreateDestroyIcon(widget)
+  CreateOverlayStateImg(widget)
+  CreateDyeingIcon(widget)
+  CreateLookIcon(widget)
+  CreateLifeTimeIcon(widget)
+  CreatePackIcon(widget)
+  CreateLockIcon(widget)
+  if baselibLocale.itemSideEffect == true then
+    widget.sideEffect = DrawItemSideEffectBackground(widget)
+  end
+  function widget:SetItemIconImage(itemInfo, grade)
+    if itemInfo == nil then
+      return
+    end
+    self:Raise()
+    local itemGrade
+    if grade == nil then
+      itemGrade = itemInfo.itemGrade
+    else
+      itemGrade = grade
+    end
+    local iconInfo = X2Item:GetItemIconSet(itemInfo.lookType, itemGrade)
+    self.iconImage:ClearAllTextures()
+    self.gradeImage:ClearAllTextures()
+    self.lookIcon:SetVisible(false)
+    self.iconImage:AddTexture(iconInfo.itemIcon)
+    if iconInfo.overIcon ~= nil and iconInfo.overIcon ~= INVALID_ICON_PATH then
+      self.iconImage:AddTexture(iconInfo.overIcon)
+    end
+    if iconInfo.frameIcon ~= nil and iconInfo.frameIcon ~= INVALID_ICON_PATH then
+      self.gradeImage:AddTexture(iconInfo.frameIcon)
+    end
+    self:SetDyeingInfo(itemInfo)
+    self:SetLockInfo(itemInfo)
+    self:SetPackInfo(itemInfo)
+    self:SetDestroyInfo(itemInfo)
+    self:SetLookIcon(itemInfo)
+    self:SetLifeTimeIcon(itemInfo)
+    if baselibLocale.itemSideEffect == true then
+      if itemInfo.sideEffect == true then
+        self:Anim_Item_Side_effect(true)
+      else
+        self:Anim_Item_Side_effect(false)
+      end
+    end
+  end
+  return widget
+end
+function CreateActabilityGradeIconWidget(id, parent, fontSize)
+  local iconWidget = UIParent:CreateWidget("emptywidget", id, parent)
+  iconWidget:SetHeight(17)
+  local icon = iconWidget:CreateImageDrawable(TEXTURE_PATH.SKILL, "background")
+  icon:AddAnchor("LEFT", iconWidget, 0, 0)
+  iconWidget.icon = icon
+  if fontSize == nil then
+    fontSize = FONT_SIZE.MIDDLE
+  end
+  local label = iconWidget:CreateChildWidget("label", "label", 0, true)
+  label:SetHeight(fontSize)
+  label:AddAnchor("RIGHT", iconWidget, 0, 0)
+  label.style:SetFontSize(fontSize)
+  label:SetAutoResize(true)
+  function iconWidget:SetGradeInfo(grade, text, colorString)
+    local gradeCoords = {
+      {
+        0,
+        0,
+        0,
+        0
+      },
+      {
+        223,
+        59,
+        19,
+        17
+      },
+      {
+        170,
+        81,
+        19,
+        17
+      },
+      {
+        189,
+        81,
+        19,
+        17
+      },
+      {
+        208,
+        81,
+        19,
+        17
+      },
+      {
+        227,
+        81,
+        19,
+        17
+      },
+      {
+        170,
+        98,
+        19,
+        17
+      },
+      {
+        189,
+        98,
+        19,
+        17
+      },
+      {
+        208,
+        98,
+        19,
+        17
+      },
+      {
+        227,
+        98,
+        19,
+        17
+      },
+      {
+        170,
+        115,
+        20,
+        17
+      }
+    }
+    self.icon:SetVisible(true)
+    self.label:SetText("")
+    if grade == nil then
+      return
+    end
+    grade = grade + 1
+    local coords = gradeCoords[grade]
+    if coords[3] == 0 or coords[4] == 0 then
+      self.icon:SetVisible(false)
+    end
+    self.icon:SetCoords(coords[1], coords[2], coords[3], coords[4])
+    self.icon:SetExtent(coords[3], coords[4])
+    if text ~= nil then
+      self.label:SetText(text)
+      local color = Hex2Dec(colorString)
+      ApplyTextColor(self.label, color)
+    end
+    local width = 0
+    if self.icon:IsVisible() then
+      width = width + self.icon:GetWidth() + 2
+    end
+    width = width + self.label:GetWidth()
+    self:SetWidth(width)
+  end
+  return iconWidget
+end
+function CreateAchievementGradeIcon(widget)
+  local gradeIcon = widget:CreateImageDrawable(TEXTURE_PATH.RANKING_GRADE, "artwork")
+  gradeIcon:SetVisible(false)
+  gradeIcon:SetExtent(0, 19)
+  function widget:SetAchievementGrade(grade)
+    gradeIcon:SetVisible(false)
+    gradeIcon:SetExtent(0, 19)
+    if grade == nil or grade < 2 then
+      return
+    end
+    local textureCoords = {
+      {
+        0,
+        0,
+        0,
+        0
+      },
+      {
+        0,
+        0,
+        0,
+        0
+      },
+      UIParent:GetTextureData(TEXTURE_PATH.RANKING_GRADE, "grand").coords,
+      UIParent:GetTextureData(TEXTURE_PATH.RANKING_GRADE, "rare").coords,
+      UIParent:GetTextureData(TEXTURE_PATH.RANKING_GRADE, "arcane").coords,
+      UIParent:GetTextureData(TEXTURE_PATH.RANKING_GRADE, "heroic").coords,
+      UIParent:GetTextureData(TEXTURE_PATH.RANKING_GRADE, "unique").coords,
+      UIParent:GetTextureData(TEXTURE_PATH.RANKING_GRADE, "celestial").coords,
+      UIParent:GetTextureData(TEXTURE_PATH.RANKING_GRADE, "divine").coords,
+      UIParent:GetTextureData(TEXTURE_PATH.RANKING_GRADE, "epic").coords,
+      UIParent:GetTextureData(TEXTURE_PATH.RANKING_GRADE, "legendary").coords,
+      UIParent:GetTextureData(TEXTURE_PATH.RANKING_GRADE, "mythic").coords
+    }
+    local coords = textureCoords[grade]
+    gradeIcon:SetCoords(coords[1], coords[2], coords[3], coords[4])
+    gradeIcon:SetExtent(coords[3], coords[4])
+    gradeIcon:SetVisible(true)
+  end
+  return gradeIcon
+end
+function CreateQuestGradeMarker(parent)
+  local widget = parent:CreateChildWidget("emptywidget", "gradeMarker", 0, true)
+  widget:Show(false)
+  widget:SetExtent(0, 30)
+  local gradeIcon = widget:CreateImageDrawable(TEXTURE_PATH.QUEST_LEVEL, "artwork")
+  gradeIcon:AddAnchor("TOPLEFT", widget, 0, 0)
+  gradeIcon:AddAnchor("BOTTOMRIGHT", widget, 0, 0)
+  widget.gradeIcon = gradeIcon
+  local OnEnter = function(self)
+    SetTooltip(GetUIText(COMMON_TEXT, "quest_grade_tip"), self)
+  end
+  widget:SetHandler("OnEnter", OnEnter)
+  function widget:SetQuestGrade(grade)
+    self:Show(false)
+    self:SetExtent(0, 30)
+    local textureCoords = {
+      elite = UIParent:GetTextureData(TEXTURE_PATH.QUEST_LEVEL, "elite").coords,
+      boss_c = UIParent:GetTextureData(TEXTURE_PATH.QUEST_LEVEL, "epic").coords,
+      boss_b = UIParent:GetTextureData(TEXTURE_PATH.QUEST_LEVEL, "legendary").coords,
+      boss_a = UIParent:GetTextureData(TEXTURE_PATH.QUEST_LEVEL, "mythic").coords,
+      boss_s = UIParent:GetTextureData(TEXTURE_PATH.QUEST_LEVEL, "mythic").coords
+    }
+    local coords = textureCoords[grade]
+    if coords == nil then
+      return
+    end
+    self.gradeIcon:SetCoords(coords[1], coords[2], coords[3], coords[4])
+    self:SetExtent(coords[3], coords[4])
+    self:Show(true)
+  end
+  return widget
+end
+local GRADE_ICON_COORDS = {
+  UIParent:GetTextureData(TEXTURE_PATH.RANKING_GRADE, "mythic").coords,
+  UIParent:GetTextureData(TEXTURE_PATH.RANKING_GRADE, "legendary").coords,
+  UIParent:GetTextureData(TEXTURE_PATH.RANKING_GRADE, "epic").coords,
+  UIParent:GetTextureData(TEXTURE_PATH.RANKING_GRADE, "divine").coords,
+  UIParent:GetTextureData(TEXTURE_PATH.RANKING_GRADE, "celestial").coords,
+  UIParent:GetTextureData(TEXTURE_PATH.RANKING_GRADE, "unique").coords,
+  UIParent:GetTextureData(TEXTURE_PATH.RANKING_GRADE, "heroic").coords,
+  UIParent:GetTextureData(TEXTURE_PATH.RANKING_GRADE, "arcane").coords,
+  UIParent:GetTextureData(TEXTURE_PATH.RANKING_GRADE, "rare").coords,
+  UIParent:GetTextureData(TEXTURE_PATH.RANKING_GRADE, "grand").coords
+}
+local GRADE_BG_COLOR = {
+  {
+    ConvertColor(201),
+    ConvertColor(11),
+    ConvertColor(11),
+    0.15
+  },
+  {
+    ConvertColor(191),
+    ConvertColor(121),
+    ConvertColor(0),
+    0.15
+  },
+  {
+    ConvertColor(143),
+    ConvertColor(165),
+    ConvertColor(202),
+    0.15
+  },
+  {
+    ConvertColor(207),
+    ConvertColor(125),
+    ConvertColor(93),
+    0.15
+  },
+  {
+    ConvertColor(249),
+    ConvertColor(82),
+    ConvertColor(82),
+    0.15
+  },
+  {
+    ConvertColor(225),
+    ConvertColor(120),
+    ConvertColor(83),
+    0.15
+  },
+  {
+    ConvertColor(215),
+    ConvertColor(139),
+    ConvertColor(6),
+    0.15
+  },
+  {
+    ConvertColor(203),
+    ConvertColor(114),
+    ConvertColor(216),
+    0.15
+  },
+  {
+    ConvertColor(85),
+    ConvertColor(143),
+    ConvertColor(215),
+    0.15
+  },
+  {
+    ConvertColor(119),
+    ConvertColor(176),
+    ConvertColor(100),
+    0.15
+  }
+}
+function SetRankingGradeDataFunc(bg, icon, grade)
+  bg:SetVisible(true)
+  local color = GRADE_BG_COLOR[grade]
+  bg:SetColor(color[1], color[2], color[3], color[4])
+  if icon ~= nil then
+    icon:SetVisible(true)
+    local coords = GRADE_ICON_COORDS[grade]
+    icon:SetCoords(coords[1], coords[2], coords[3], coords[4])
+    icon:SetExtent(coords[3], coords[4])
+  end
+end

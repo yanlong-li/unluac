@@ -1,0 +1,169 @@
+local CreateSocketingSpinner = function(id, parent)
+  local wnd = parent:CreateChildWidget("emptywidget", id, 0, true)
+  local extent
+  local spinner = CreateSpinner("spinner", wnd)
+  spinner:AddAnchor("LEFT", wnd, 0, 0)
+  wnd.spinner = spinner
+  local maxBtn = wnd:CreateChildWidget("button", "maxBtn", 0, true)
+  maxBtn:SetText(locale.craft.maximum)
+  ApplyButtonSkin(maxBtn, BUTTON_BASIC.DEFAULT)
+  maxBtn:AddAnchor("LEFT", spinner, "RIGHT", 0, 0)
+  local maxValue = 0
+  function wnd:SetValue(value)
+    spinner.text:SetText(tostring(value))
+  end
+  function wnd:SetMinMaxValues(min, max)
+    spinner:SetMinMaxValues(min, max)
+    maxValue = max
+  end
+  function wnd:SetState(enable)
+    spinner:SetEnable(enable)
+    maxBtn:Enable(enable)
+  end
+  function wnd:GetCurValue()
+    return spinner:GetCurValue()
+  end
+  function maxBtn:OnClick()
+    wnd:SetValue(maxValue)
+  end
+  maxBtn:SetHandler("OnClick", maxBtn.OnClick)
+  return wnd
+end
+function SetViewOfSocketEnchantWindow(tabWindow)
+  local CreateTabSubMenu = function(id, parent)
+    local widget = UIParent:CreateWidget("emptywidget", id, parent)
+    local bg = CreateContentBackground(widget, "TYPE2")
+    bg:AddAnchor("TOPLEFT", widget, 0, 0)
+    bg:AddAnchor("BOTTOMRIGHT", widget, 0, 0)
+    ApplyTextureColor(bg, TEXTURE_COLOR.BOX_BROWN)
+    local tabTexts = {
+      GetCommonText("install_enchant_socket"),
+      X2Locale:LocalizeUiText(MSG_BOX_BTN_TEXT, "remove")
+    }
+    if X2Player:GetFeatureSet().socketExtract then
+      table.insert(tabTexts, GetCommonText("extract"))
+    end
+    widget.subMenuButtons = {}
+    local widthSum = 15
+    for i = 1, #tabTexts do
+      local text = tabTexts[i]
+      local subMenuButton = widget:CreateChildWidget("button", "subMenuButtons", i, true)
+      ApplyButtonSkin(subMenuButton, BUTTON_CONTENTS.INGAMESHOP_SUB_MENU_UNSELECTED)
+      subMenuButton:SetText(text)
+      subMenuButton:SetHeight(20)
+      subMenuButton:AddAnchor("LEFT", widget, widthSum, 0)
+      subMenuButton.style:SetFontSize(FONT_SIZE.LARGE)
+      subMenuButton:SetAutoResize(true)
+      widthSum = widthSum + subMenuButton:GetWidth()
+      if i ~= #tabTexts then
+        local seperateLabel = subMenuButton:CreateChildWidget("label", "seperateLabel", 0, true)
+        local c = GetIngameShopSelectedSubMenuButtonFontColor().normal
+        ApplyTextColor(seperateLabel, c)
+        seperateLabel:AddAnchor("TOPLEFT", subMenuButton, "TOPRIGHT", 5, 0)
+        seperateLabel:AddAnchor("BOTTOMLEFT", subMenuButton, "BOTTOMRIGHT", 0, 0)
+        seperateLabel:SetText("|")
+        seperateLabel.style:SetFontSize(FONT_SIZE.LARGE)
+        seperateLabel:SetAutoResize(true)
+        widthSum = widthSum + seperateLabel:GetWidth() + 10
+      end
+      widget.subMenuButtons[i] = subMenuButton
+    end
+    function widget:Select(index)
+      for j = 1, #self.subMenuButtons do
+        SetButtonFontColor(self.subMenuButtons[j], BUTTON_CONTENTS.INGAMESHOP_SUB_MENU_UNSELECTED.fontColor)
+      end
+      SetButtonFontColor(self.subMenuButtons[index], BUTTON_CONTENTS.INGAMESHOP_SUB_MENU_SELECTED.fontColor)
+    end
+    widget.selIndex = 0
+    for i = 1, #widget.subMenuButtons do
+      do
+        local button = widget.subMenuButtons[i]
+        function button:OnClick()
+          widget:Select(i)
+          widget.selIndex = i
+          if widget.OnClickProc ~= nil then
+            widget:OnClickProc(i)
+          end
+        end
+        button:SetHandler("OnClick", button.OnClick)
+      end
+    end
+    return widget
+  end
+  local coords, inset, extent, anchor, color, text, height, fontPath, fontSize, fontColor, width, lineSpace
+  local commonWidth = tabWindow:GetWidth()
+  local tabSubMenu = CreateTabSubMenu("tabSubMenu", tabWindow)
+  tabSubMenu:AddAnchor("TOPLEFT", tabWindow, 0, 5)
+  tabSubMenu:SetExtent(commonWidth, 43)
+  tabWindow.tabSubMenu = tabSubMenu
+  local deco = tabWindow:CreateImageDrawable(TEXTURE_PATH.COMMON_ENCHANT, "background")
+  deco:SetTextureInfo("effect")
+  deco:AddAnchor("TOP", tabSubMenu, "BOTTOM", 0, 10)
+  local slotTargetItem = CreateTargetSlot(tabWindow, GetUIText(COMMON_TEXT, "socket_enchant_equipment"))
+  slotTargetItem:AddAnchor("RIGHT", deco, "LEFT", 47, 10)
+  tabWindow.slotTargetItem = slotTargetItem
+  local slotEnchantItem = CreateItemEnchantDefaultSlot("slotEnchantItem", tabWindow, GetCommonText("grade_enchant_magic_scroll"), FONT_COLOR.PURPLE)
+  slotEnchantItem:AddAnchor("LEFT", deco, "RIGHT", -47, 10)
+  tabWindow.slotEnchantItem = slotEnchantItem
+  local bg = tabWindow:CreateImageDrawable(TEXTURE_PATH.COMMON_ENCHANT, "background")
+  bg:SetTextureInfo("socket_purple")
+  bg:AddAnchor("CENTER", slotEnchantItem, -9, -5)
+  slotEnchantItem.bg = bg
+  anchor = WINDOW_ENCHANT.SOCKET_ENCHANT_TAB.CUR_SOCKET_INFO.ANCHOR
+  fontColor = WINDOW_ENCHANT.SOCKET_ENCHANT_TAB.CUR_SOCKET_INFO.FONT_COLOR
+  local curEnchantInfoFrame = CreateCurEnchantInfoFrame("curEnchantInfoFrame", tabWindow)
+  curEnchantInfoFrame:AddAnchor("TOP", tabWindow, anchor[1], anchor[2])
+  ApplyTextureColor(curEnchantInfoFrame.bg, TEXTURE_COLOR.TYPE5_PURPLE)
+  tabWindow.curEnchantInfoFrame = curEnchantInfoFrame
+  local socketListFrame = CreateEnchantListFrame("socketListFrame", tabWindow)
+  socketListFrame:AddAnchor("TOPLEFT", tabWindow, 0, 235)
+  tabWindow.socketListFrame = socketListFrame
+  socketListFrame.item = {}
+  local offsetY = 10
+  for i = 1, MAX_ITEM_SOCKETS do
+    local id = string.format("%s[%d]", socketListFrame:GetId() .. ".item", i)
+    local item = CreateEnchantInfoFrame(id, socketListFrame)
+    item:Show(false)
+    item:AddAnchor("TOPLEFT", socketListFrame, 13, offsetY)
+    offsetY = offsetY + 33
+    socketListFrame.item[i] = item
+  end
+  fontColor = WINDOW_ENCHANT.SOCKET_ENCHANT_TAB.WARNING_TEXT.FONT_COLOR
+  anchor = WINDOW_ENCHANT.SOCKET_ENCHANT_TAB.WARNING_TEXT.ANCHOR
+  lineSpace = WINDOW_ENCHANT.SOCKET_ENCHANT_TAB.WARNING_TEXT.LINE_SPACE
+  local warningText = tabWindow:CreateChildWidget("textbox", "warningText", 0, true)
+  warningText:SetWidth(commonWidth)
+  warningText:SetLineSpace(lineSpace)
+  ApplyTextColor(warningText, fontColor)
+  warningText:AddAnchor("BOTTOM", tabWindow, anchor[1], anchor[2])
+  function tabWindow:SetWarningText(text)
+    warningText:SetText(text)
+    warningText:SetHeight(warningText:GetTextHeight())
+  end
+  local extractWarningText = tabWindow:CreateChildWidget("textbox", "extractWarningText", 0, true)
+  extractWarningText:SetWidth(commonWidth)
+  extractWarningText:SetLineSpace(lineSpace)
+  ApplyTextColor(extractWarningText, FONT_COLOR.BLUE)
+  extractWarningText:SetText(GetCommonText("not_extractable_warning"))
+  extractWarningText:SetHeight(extractWarningText:GetTextHeight())
+  extractWarningText:AddAnchor("TOP", socketListFrame, "BOTTOM", 0, 20)
+  local money = CreateTitleMoneyWindow("money", tabWindow, GetUIText(STABLER_TEXT, "cost"), "horizon")
+  money:AddAnchor("TOP", socketListFrame, "BOTTOM", 0, 0)
+  tabWindow.money = money
+  local guide = CreateGuideIconWidget(money)
+  guide:AddAnchor("LEFT", money, "RIGHT", 5, 0)
+  local function OnEnterGuide()
+    SetTargetAnchorTooltip(GetCommonText("socketing_cost_tooltip"), "BOTTOMLEFT", guide, "TOPRIGHT", -20, -10)
+  end
+  guide:SetHandler("OnEnter", OnEnterGuide)
+  local OnleaveGuide = function()
+    HideTooltip()
+  end
+  guide:SetHandler("OnLeave", OnleaveGuide)
+  extent = WINDOW_ENCHANT.SOCKET_ENCHANT_TAB.SPINNER_WND.EXTENT
+  anchor = WINDOW_ENCHANT.SOCKET_ENCHANT_TAB.SPINNER_WND.ANCHOR
+  local spinnerWnd = CreateSocketingSpinner("spinnerWnd", tabWindow)
+  spinnerWnd:SetExtent(extent[1], extent[2])
+  spinnerWnd:AddAnchor("BOTTOMLEFT", tabWindow, anchor[1], anchor[2])
+  tabWindow.spinnerWnd = spinnerWnd
+end

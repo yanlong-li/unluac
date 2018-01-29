@@ -1,0 +1,20 @@
+if X2Util:GetGameProvider() == TENCENT then
+  componentsLocale.nameDrawable = {
+    x = 737,
+    y = 158,
+    w = 112,
+    h = 38
+  }
+  componentsLocale.bonus1Drawable = {
+    x = 704,
+    y = 158,
+    w = 33,
+    h = 23
+  }
+  componentsLocale.bonus2Drawable = {
+    x = 704,
+    y = 181,
+    w = 33,
+    h = 23
+  }
+end

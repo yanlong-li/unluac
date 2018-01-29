@@ -1,0 +1,81 @@
+if X2Util:GetGameProvider() == TENCENT then
+  localeView.useWebContent = false
+  localeView.localGmCommand = 2
+  localeView.actionBarOption = {
+    ShowActionBar_1 = 1,
+    ShowActionBar_2 = 1,
+    ShowActionBar_3 = 1,
+    ShowActionBar_4 = 1
+  }
+  UIParent:SetTextureCoordsForFormattedText(TT_MONEY_DISHONOR, 64, 31, 18, 16)
+  UIParent:SetTextureCoordsForFormattedText(TT_MONEY_GOLD, 0, 30, 18, 15)
+  UIParent:SetTextureCoordsForFormattedText(TT_MONEY_SILVER, 18, 30, 18, 15)
+  UIParent:SetTextureCoordsForFormattedText(TT_MONEY_COPPER, 16, 45, 18, 15)
+  UIParent:SetTextureCoordsForFormattedText(TT_MONEY_AA_POINT_GOLD, 102, 31, 15, 16)
+  UIParent:SetTextureCoordsForFormattedText(TT_MONEY_AA_POINT_SILVER, 117, 31, 15, 16)
+  UIParent:SetTextureCoordsForFormattedText(TT_MONEY_AA_POINT_COPPER, 132, 31, 15, 16)
+  UIParent:SetTextureCoordsForFormattedText(TT_MONEY_ITEM_DELPI, 124, 47, 20, 17)
+  UIParent:SetTextureCoordsForFormattedText(TT_MONEY_ITEM_STAR, 81, 48, 18, 16)
+  UIParent:SetTextureCoordsForFormattedText(TT_MONEY_ITEM_KEY, 102, 47, 22, 17)
+  UIParent:SetTextureCoordsForFormattedText(TT_MONEY_ITEM_NETCAFE, 63, 48, 18, 15)
+  UIParent:SetTextureCoordsForFormattedText(TT_MONEY_CASH, 149, 47, 16, 16)
+  localeView.moneyIconCoords = {
+    gold = {
+      0,
+      30,
+      18,
+      15
+    },
+    silver = {
+      18,
+      30,
+      18,
+      15
+    },
+    copper = {
+      16,
+      45,
+      18,
+      15
+    },
+    aapointGold = {
+      102,
+      31,
+      15,
+      16
+    },
+    aapointSilver = {
+      117,
+      31,
+      15,
+      16
+    },
+    aapointCopper = {
+      132,
+      31,
+      15,
+      16
+    }
+  }
+  localeView.payIcon = {
+    person = {
+      624,
+      341,
+      68,
+      23
+    },
+    pcbang = {
+      624,
+      318,
+      68,
+      23
+    },
+    trial = {
+      624,
+      295,
+      68,
+      23
+    },
+    extent = {68, 23}
+  }
+end

@@ -1,0 +1,56 @@
+if X2Util:GetGameProvider() == TENCENT then
+  auctionLocale.icon = {
+    currentCoords = {
+      0,
+      42,
+      42,
+      21
+    },
+    directCoords = {
+      0,
+      21,
+      42,
+      21
+    }
+  }
+  auctionLocale.width = {
+    window = 800,
+    category = 160,
+    bidListCtrl = 590,
+    putupListCtrl = 550,
+    bidHistoryListCtrl = 760,
+    bidStateCol = 95,
+    itemlevelCol = 55,
+    itemConditionCol = 70,
+    gradeCombobox = 65,
+    timeCol = 75
+  }
+  auctionLocale.nameColLimitLen = {
+    bidTab = 18,
+    putupTab = 18,
+    bidHistoryTab = 26
+  }
+  local addAuctionCategory = {
+    id = 14,
+    name = GetUIText(AUCTION_TEXT, "item_category_aa_coin"),
+    child = {
+      {
+        id = 50,
+        name = GetUIText(AUCTION_TEXT, "item_category_aa_coin_200")
+      },
+      {
+        id = 51,
+        name = GetUIText(AUCTION_TEXT, "item_category_aa_coin_500")
+      },
+      {
+        id = 52,
+        name = GetUIText(AUCTION_TEXT, "item_category_aa_coin_2000")
+      },
+      {
+        id = 53,
+        name = GetUIText(AUCTION_TEXT, "item_category_aa_coin_5000")
+      }
+    }
+  }
+  table.insert(auctionLocale.auctionCategories, addAuctionCategory)
+end

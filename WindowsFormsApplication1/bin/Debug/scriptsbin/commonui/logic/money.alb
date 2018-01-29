@@ -1,0 +1,138 @@
+function GoldSilverCopperStringFromMoney(money)
+  local gold = math.floor(money / 10000)
+  money = money - gold * 10000
+  local silver = math.floor(money / 100)
+  money = money - silver * 100
+  local copper = money
+  return tostring(gold), tostring(silver), tostring(copper)
+end
+function GoldSilverCopperStringFromMoneyStr(moneyStr)
+  if moneyStr == nil then
+    moneyStr = "0"
+  end
+  if type(moneyStr) == "number" then
+    moneyStr = X2Util:NumberToString(moneyStr)
+  end
+  local copper = "0"
+  local silver = "0"
+  local gold = "0"
+  local length = string.len(moneyStr)
+  if length <= 2 then
+    copper = moneyStr
+  elseif length <= 4 then
+    copper = string.sub(moneyStr, length - 1, length)
+    silver = string.sub(moneyStr, 1, length - 2)
+  else
+    copper = string.sub(moneyStr, length - 1, length)
+    silver = string.sub(moneyStr, length - 3, length - 2)
+    gold = string.sub(moneyStr, 1, length - 4)
+  end
+  silver = tostring(tonumber(silver))
+  copper = tostring(tonumber(copper))
+  return gold, silver, copper
+end
+function GetAAPointByUnitFromAAPointStr(aaPointStr)
+  if aaPointStr == nil then
+    aaPointStr = "0"
+  end
+  if type(aaPointStr) == "number" then
+    aaPointStr = X2Util:NumberToString(aaPointStr)
+  end
+  local copper = "0"
+  local silver = "0"
+  local gold = "0"
+  local length = string.len(aaPointStr)
+  if length <= 2 then
+    copper = aaPointStr
+  elseif length <= 4 then
+    copper = string.sub(aaPointStr, length - 1, length)
+    silver = string.sub(aaPointStr, 1, length - 2)
+  else
+    copper = string.sub(aaPointStr, length - 1, length)
+    silver = string.sub(aaPointStr, length - 3, length - 2)
+    gold = string.sub(aaPointStr, 1, length - 4)
+  end
+  silver = tostring(tonumber(silver))
+  copper = tostring(tonumber(copper))
+  return gold, silver, copper
+end
+function MakeMoneyText(moneyStr)
+  local gold, silver, copper = GoldSilverCopperStringFromMoneyStr(moneyStr)
+  if gold == nil or silver == nil or copper == nil then
+    return ""
+  end
+  local moneyStr = ""
+  local isExist = false
+  local numGold = tonumber(gold)
+  if numGold ~= nil and numGold ~= 0 then
+    moneyStr = X2Locale:LocalizeUiText(MONEY_TEXT, "gold", CommaStr(gold))
+    isExist = true
+  else
+    numGold = 0
+  end
+  local numSilver = tonumber(silver)
+  if numSilver ~= nil and numSilver ~= 0 then
+    if isExist then
+      moneyStr = moneyStr .. " "
+    end
+    silver = tostring(numSilver)
+    moneyStr = moneyStr .. X2Locale:LocalizeUiText(MONEY_TEXT, "silver", silver)
+    isExist = true
+  else
+    numSilver = 0
+  end
+  local numCopper = tonumber(copper)
+  if numCopper ~= nil and numCopper ~= 0 then
+    if isExist then
+      moneyStr = moneyStr .. " "
+    end
+    copper = tostring(numCopper)
+    moneyStr = moneyStr .. X2Locale:LocalizeUiText(MONEY_TEXT, "copper", copper)
+  else
+    numCopper = 0
+  end
+  if numGold + numSilver + numCopper == 0 then
+    moneyStr = X2Locale:LocalizeUiText(MONEY_TEXT, "no_have_money")
+  end
+  return moneyStr
+end
+function MakeAAPointText(moneyStr)
+  local gold, silver, copper = GoldSilverCopperStringFromMoneyStr(moneyStr)
+  if gold == nil or silver == nil or copper == nil then
+    return ""
+  end
+  local moneyStr = ""
+  local isExist = false
+  local numGold = tonumber(gold)
+  if numGold ~= nil and numGold ~= 0 then
+    moneyStr = X2Locale:LocalizeUiText(MONEY_TEXT, "gold", CommaStr(gold))
+    isExist = true
+  else
+    numGold = 0
+  end
+  local numSilver = tonumber(silver)
+  if numSilver ~= nil and numSilver ~= 0 then
+    if isExist then
+      moneyStr = moneyStr .. " "
+    end
+    silver = tostring(numSilver)
+    moneyStr = moneyStr .. X2Locale:LocalizeUiText(MONEY_TEXT, "silver", silver)
+    isExist = true
+  else
+    numSilver = 0
+  end
+  local numCopper = tonumber(copper)
+  if numCopper ~= nil and numCopper ~= 0 then
+    if isExist then
+      moneyStr = moneyStr .. " "
+    end
+    copper = tostring(numCopper)
+    moneyStr = moneyStr .. X2Locale:LocalizeUiText(MONEY_TEXT, "copper", copper)
+  else
+    numCopper = 0
+  end
+  if numGold + numSilver + numCopper == 0 then
+    moneyStr = X2Locale:LocalizeUiText(MONEY_TEXT, "no_have_money")
+  end
+  return moneyStr
+end

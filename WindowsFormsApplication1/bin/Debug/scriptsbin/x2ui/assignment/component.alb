@@ -1,0 +1,1285 @@
+function CreateACategoryListWnd(id, parent)
+  local wnd = CreateScrollListBox(parent, id)
+  wnd.content.itemStyle:SetFontSize(FONT_SIZE.LARGE)
+  wnd.content:SetHeight(FONT_SIZE.MIDDLE)
+  wnd.content.itemStyle:SetAlign(ALIGN_LEFT)
+  wnd.content.itemStyleSub:SetFontSize(FONT_SIZE.SMALL)
+  wnd.content:SetTreeTypeIndent(true, 20)
+  wnd.content:SetDefaultItemTextColor(FONT_COLOR.TITLE[1], FONT_COLOR.TITLE[2], FONT_COLOR.TITLE[3], FONT_COLOR.TITLE[4])
+  function wnd:SetStyle(useToggleBtnImg, useSeparatorImg, enableSelectParent, childFontSize, childFontColor)
+    if useToggleBtnImg == true then
+      local opened = wnd.content:CreateOpenedImageDrawable("ui/button/grid.dds")
+      opened:SetCoords(0, 0, 21, 14)
+      opened:SetExtent(21, 14)
+      local closed = wnd.content:CreateClosedImageDrawable("ui/button/grid.dds")
+      closed:SetCoords(44, 0, 13, 21)
+      closed:SetExtent(13, 21)
+    end
+    if useSeparatorImg == true then
+      local line = wnd.content:CreateSeparatorImageDrawable(TEXTURE_PATH.DEFAULT, "background")
+      line:SetCoords(0, 1010, 155, 3)
+      line:SetColor(1, 1, 1, 0.8)
+      line:SetExtent(170, 3)
+    end
+    if enableSelectParent ~= nil then
+      wnd.content:EnableSelectParent(enableSelectParent)
+    end
+    if childFontSize ~= nil or childFontColor ~= nil then
+      wnd.content:UseChildStyle(true)
+      if childFontSize ~= nil then
+        wnd.content.childStyle:SetFontSize(childFontSize)
+        wnd.content.childStyleSub:SetFontSize(childFontSize)
+      end
+      if childFontColor ~= nil then
+        wnd.content.childStyle:SetColor(childFontColor[1], childFontColor[2], childFontColor[3], childFontColor[4])
+      end
+    end
+  end
+  function wnd:SetInfo(info, categoryFunc, initialIndex)
+    wnd.infos = info
+    wnd.categoryFunc = categoryFunc
+    wnd.content:SetItemTrees(info)
+    wnd.content:InitializeSelect(initialIndex)
+  end
+  function wnd:GetOpenState()
+    local openState = {}
+    for i = 1, #wnd.infos do
+      openState[i] = wnd.content:IsItemOpened(i - 1)
+    end
+    return openState
+  end
+  local function UpdateCountList()
+    local openState = wnd:GetOpenState()
+    wnd.infos.updateCountFunc(openState)
+  end
+  function wnd:OnSelChanged()
+    local index = self.content:GetSelectedIndex()
+    local value = self.content:GetSelectedValue()
+    if wnd.categoryFunc ~= nil then
+      wnd.categoryFunc(index + 1, value)
+    end
+    UpdateCountList()
+  end
+  local function OnListboxToggled()
+    UpdateCountList()
+    wnd:SetMinMaxValues(0, wnd.content:GetMaxTop())
+  end
+  wnd.content:SetHandler("OnListboxToggled", OnListboxToggled)
+  local ScrollChanged = function(self, _value)
+    self:OnSliderChanged(_value)
+  end
+  wnd.scroll.vs:SetHandler("OnSliderChanged", ScrollChanged)
+  function wnd:Update(info)
+    if info ~= nil then
+      local index = self.content:GetSelectedIndex()
+      local value = wnd.content:GetSelectedValue()
+      local top = wnd.content:GetTop()
+      wnd.infos = info
+      wnd.content:SetItemTrees(info)
+      wnd.content:SetTop(top)
+      if value ~= 0 then
+        wnd.content:SelectWithValue(value)
+      else
+        wnd.content:InitializeSelect(index)
+      end
+      wnd:SetValue(top)
+    end
+    UpdateCountList()
+  end
+  return wnd
+end
+function CreateAStatusWnd(id, parent, index)
+  local wnd = parent:CreateChildWidget("emptywidget", id, index or 0, true)
+  local label = wnd:CreateChildWidget("label", "label", 0, true)
+  label:SetHeight(FONT_SIZE.MIDDLE)
+  label:SetAutoResize(true)
+  label.style:SetAlign(ALIGN_LEFT)
+  label:AddAnchor("TOPLEFT", wnd, 0, 0)
+  ApplyTextColor(label, FONT_COLOR.DEFAULT)
+  local status = CreateStatusBar("status", wnd)
+  status:AddAnchor("TOPLEFT", label, "BOTTOMLEFT", 0, 5)
+  status:AddAnchor("BOTTOMRIGHT", wnd, 0, 0)
+  wnd.status = status
+  function wnd:SetInfo(str, fontSize, fontColor, statusStyle)
+    label:SetText(str or "")
+    label.baseStr = str or ""
+    label:SetHeight(fontSize or FONT_SIZE.MIDDLE)
+    label.style:SetFontSize(fontSize or FONT_SIZE.MIDDLE)
+    ApplyTextColor(label, fontColor or FONT_COLOR.DEFAULT)
+    status:SetStyle(statusStyle)
+  end
+  function wnd:Update(curValue, maxValue)
+    label:SetText(string.format("%s (%d/%d)", label.baseStr, curValue, maxValue))
+    if curValue == 0 and maxValue == 0 then
+      maxValue = 1
+    end
+    status:SetMinMaxValues(0, maxValue)
+    status:SetValue(curValue)
+  end
+  return wnd
+end
+local visibleTime = 180
+local function CreateLightEffect(icon, wnd)
+  local lightCircle = wnd:CreateEffectDrawable("Textures/Defaults/White.dds", "background")
+  lightCircle:AddAnchor("TOPLEFT", wnd, 0, 0)
+  lightCircle:AddAnchor("BOTTOMRIGHT", wnd, 0, 0)
+  lightCircle:SetInterval(0.8)
+  lightCircle:SetEffectPriority(1, "alpha", 0.4, 0.4)
+  lightCircle:SetEffectInitialColor(1, 1, 1, 1, 0.3)
+  lightCircle:SetEffectFinalColor(1, 1, 1, 1, 0.3)
+  lightCircle:SetEffectPriority(2, "alpha", 1.6, 1.6)
+  lightCircle:SetEffectInitialColor(2, 1, 1, 1, 0.3)
+  lightCircle:SetEffectFinalColor(2, 1, 1, 1, 0)
+  lightCircle:SetEffectInterval(2, 1.8)
+  lightCircle:SetEffectPriority(3, "alpha", 0.5, 0.5)
+  lightCircle:SetEffectInitialColor(3, 1, 1, 1, 0)
+  lightCircle:SetEffectFinalColor(3, 1, 1, 1, 0.3)
+  lightCircle:SetEffectPriority(4, "alpha", 0.6, 0.6)
+  lightCircle:SetEffectInitialColor(4, 1, 1, 1, 0.3)
+  lightCircle:SetEffectFinalColor(4, 1, 1, 1, 0)
+  lightCircle:SetEffectInterval(4, visibleTime - 6.8)
+  lightCircle:SetEffectPriority(5, "alpha", 0.5, 0.5)
+  lightCircle:SetEffectInitialColor(5, 1, 1, 1, 0)
+  lightCircle:SetEffectFinalColor(5, 1, 1, 1, 0.3)
+  lightCircle:SetEffectPriority(6, "alpha", 0.6, 0.6)
+  lightCircle:SetEffectInitialColor(6, 1, 1, 1, 0.3)
+  lightCircle:SetEffectFinalColor(6, 1, 1, 1, 0)
+  lightCircle:SetRepeatCount(1)
+  icon.lightCircle = lightCircle
+  local light1 = wnd:CreateEffectDrawable(TEXTURE_PATH.ACHIEVEMENT_LIGHT, "background")
+  light1:SetCoords(0, 0, 204, 182)
+  light1:SetExtent(204, 182)
+  light1:AddAnchor("CENTER", icon, 0, 0)
+  light1:SetInterval(0.5)
+  light1:SetEffectPriority(1, "alpha", 0.7, 0.7)
+  light1:SetEffectInitialColor(1, 1, 1, 1, 0)
+  light1:SetEffectFinalColor(1, 1, 1, 1, 0.39)
+  light1:SetEffectScale(1, 0.57, 0.57, 0.57, 0.57)
+  light1:SetEffectPriority(2, "alpha", 0.4, 0.4)
+  light1:SetEffectInitialColor(2, 1, 1, 1, 0.39)
+  light1:SetEffectFinalColor(2, 1, 1, 1, 0.3)
+  light1:SetEffectRotate(2, 0, -15)
+  light1:SetEffectScale(2, 0.57, 0.57, 0.57, 0.57)
+  light1:SetEffectPriority(3, "alpha", 0.4, 0.4)
+  light1:SetEffectInitialColor(3, 1, 1, 1, 0.3)
+  light1:SetEffectFinalColor(3, 1, 1, 1, 0.13)
+  light1:SetEffectRotate(3, -15, 0)
+  light1:SetEffectScale(3, 0.57, 0.57, 0.57, 0.57)
+  light1:SetEffectPriority(4, "alpha", 0.4, 0.4)
+  light1:SetEffectInitialColor(4, 1, 1, 1, 0.13)
+  light1:SetEffectFinalColor(4, 1, 1, 1, 0.3)
+  light1:SetEffectRotate(4, 0, 15)
+  light1:SetEffectScale(4, 0.57, 0.57, 0.57, 0.57)
+  light1:SetEffectPriority(5, "rotate", 0.4, 0.4)
+  light1:SetEffectInitialColor(5, 1, 1, 1, 0.3)
+  light1:SetEffectFinalColor(5, 1, 1, 1, 0.3)
+  light1:SetEffectRotate(5, 15, -15)
+  light1:SetEffectScale(5, 0.57, 0.57, 0.57, 0.57)
+  light1:SetEffectPriority(6, "alpha", 0.5, 0.5)
+  light1:SetEffectInitialColor(6, 1, 1, 1, 0.3)
+  light1:SetEffectFinalColor(6, 1, 1, 1, 0.13)
+  light1:SetEffectRotate(6, -15, 0)
+  light1:SetEffectScale(6, 0.57, 0.57, 0.57, 0.57)
+  light1:SetEffectPriority(7, "alpha", 0.4, 0.4)
+  light1:SetEffectInitialColor(7, 1, 1, 1, 0.13)
+  light1:SetEffectFinalColor(7, 1, 1, 1, 0.3)
+  light1:SetEffectRotate(7, 0, -15)
+  light1:SetEffectScale(7, 0.57, 0.57, 0.57, 0.57)
+  light1:SetEffectPriority(8, "alpha", 0.4, 0.4)
+  light1:SetEffectInitialColor(8, 1, 1, 1, 0.3)
+  light1:SetEffectFinalColor(8, 1, 1, 1, 0.13)
+  light1:SetEffectRotate(8, -15, 0)
+  light1:SetEffectScale(8, 0.57, 0.57, 0.57, 0.57)
+  light1:SetEffectPriority(9, "alpha", 0.5, 0.5)
+  light1:SetEffectInitialColor(9, 1, 1, 1, 0.13)
+  light1:SetEffectFinalColor(9, 1, 1, 1, 0.3)
+  light1:SetEffectRotate(9, 0, -15)
+  light1:SetEffectScale(9, 0.57, 0.57, 0.57, 0.57)
+  light1:SetEffectPriority(10, "alpha", 0.5, 0.5)
+  light1:SetEffectInitialColor(10, 1, 1, 1, 0.3)
+  light1:SetEffectFinalColor(10, 1, 1, 1, 0.13)
+  light1:SetEffectRotate(10, -15, 0)
+  light1:SetEffectScale(10, 0.57, 0.57, 0.57, 0.57)
+  light1:SetEffectPriority(11, "alpha", 0.4, 0.4)
+  light1:SetEffectInitialColor(11, 1, 1, 1, 0.13)
+  light1:SetEffectFinalColor(11, 1, 1, 1, 0)
+  light1:SetEffectRotate(11, 0, 0)
+  light1:SetEffectScale(11, 0.57, 0.57, 0.57, 0.57)
+  light1:SetEffectInterval(11, visibleTime - 6.4)
+  light1:SetEffectPriority(12, "alpha", 0.4, 0.4)
+  light1:SetEffectInitialColor(12, 1, 1, 1, 0)
+  light1:SetEffectFinalColor(12, 1, 1, 1, 0.13)
+  light1:SetEffectRotate(12, 0, 0)
+  light1:SetEffectScale(12, 0.57, 0.57, 0.57, 0.57)
+  light1:SetEffectPriority(13, "alpha", 0.3, 0.3)
+  light1:SetEffectInitialColor(13, 1, 1, 1, 0.13)
+  light1:SetEffectFinalColor(13, 1, 1, 1, 0.3)
+  light1:SetEffectRotate(13, 0, -15)
+  light1:SetEffectScale(13, 0.57, 0.57, 0.57, 0.57)
+  light1:SetEffectPriority(14, "alpha", 0.3, 0.3)
+  light1:SetEffectInitialColor(14, 1, 1, 1, 0.3)
+  light1:SetEffectFinalColor(14, 1, 1, 1, 0.13)
+  light1:SetEffectRotate(14, -15, 0)
+  light1:SetEffectScale(14, 0.57, 0.57, 0.57, 0.57)
+  light1:SetEffectPriority(15, "alpha", 0.4, 0.4)
+  light1:SetEffectInitialColor(15, 1, 1, 1, 0.13)
+  light1:SetEffectFinalColor(15, 1, 1, 1, 0)
+  light1:SetEffectRotate(15, 0, 0)
+  light1:SetEffectScale(15, 0.57, 0.57, 0.57, 0.57)
+  light1:SetRepeatCount(1)
+  icon.light1 = light1
+  local light2 = wnd:CreateEffectDrawable(TEXTURE_PATH.ACHIEVEMENT_LIGHT, "background")
+  light2:SetCoords(0, 0, 204, 182)
+  light2:SetExtent(204, 182)
+  light2:AddAnchor("CENTER", icon, 0, 0)
+  light2:SetInterval(0.5)
+  light2:SetEffectPriority(1, "alpha", 1.1, 1.1)
+  light2:SetEffectInitialColor(1, 1, 1, 1, 0)
+  light2:SetEffectFinalColor(1, 1, 1, 1, 0.4)
+  light2:SetEffectRotate(1, 0, 15)
+  light2:SetEffectScale(1, 0.54, 0.65, 0.54, 0.65)
+  light2:SetEffectPriority(2, "alpha", 0.4, 0.4)
+  light2:SetEffectInitialColor(2, 1, 1, 1, 0.4)
+  light2:SetEffectFinalColor(2, 1, 1, 1, 0.53)
+  light2:SetEffectRotate(2, 15, 0)
+  light2:SetEffectScale(2, 0.65, 0.57, 0.65, 0.57)
+  light2:SetEffectPriority(3, "alpha", 0.4, 0.4)
+  light2:SetEffectInitialColor(3, 1, 1, 1, 0.53)
+  light2:SetEffectFinalColor(3, 1, 1, 1, 0.4)
+  light2:SetEffectRotate(3, 0, -15)
+  light2:SetEffectScale(3, 0.57, 0.65, 0.57, 0.65)
+  light2:SetEffectPriority(4, "rotate", 0.4, 0.4)
+  light2:SetEffectInitialColor(4, 1, 1, 1, 0.4)
+  light2:SetEffectFinalColor(4, 1, 1, 1, 0.4)
+  light2:SetEffectRotate(4, -15, 15)
+  light2:SetEffectScale(4, 0.65, 0.65, 0.65, 0.65)
+  light2:SetEffectPriority(5, "alpha", 0.5, 0.5)
+  light2:SetEffectInitialColor(5, 1, 1, 1, 0.4)
+  light2:SetEffectFinalColor(5, 1, 1, 1, 0.53)
+  light2:SetEffectRotate(5, 15, 0)
+  light2:SetEffectScale(5, 0.65, 0.57, 0.65, 0.57)
+  light2:SetEffectPriority(6, "alpha", 0.4, 0.4)
+  light2:SetEffectInitialColor(6, 1, 1, 1, 0.53)
+  light2:SetEffectFinalColor(6, 1, 1, 1, 0.4)
+  light2:SetEffectRotate(6, 0, 15)
+  light2:SetEffectScale(6, 0.57, 0.65, 0.57, 0.65)
+  light2:SetEffectPriority(7, "alpha", 0.4, 0.4)
+  light2:SetEffectInitialColor(7, 1, 1, 1, 0.4)
+  light2:SetEffectFinalColor(7, 1, 1, 1, 0.53)
+  light2:SetEffectRotate(7, 15, 0)
+  light2:SetEffectScale(7, 0.65, 0.57, 0.65, 0.57)
+  light2:SetEffectPriority(8, "alpha", 0.4, 0.4)
+  light2:SetEffectInitialColor(8, 1, 1, 1, 0.53)
+  light2:SetEffectFinalColor(8, 1, 1, 1, 0.4)
+  light2:SetEffectRotate(8, 0, 15)
+  light2:SetEffectScale(8, 0.57, 0.57, 0.57, 0.57)
+  light2:SetEffectPriority(9, "alpha", 0.5, 0.5)
+  light2:SetEffectInitialColor(9, 1, 1, 1, 0.4)
+  light2:SetEffectFinalColor(9, 1, 1, 1, 0.53)
+  light2:SetEffectRotate(9, 15, 0)
+  light2:SetEffectScale(9, 0.57, 0.57, 0.57, 0.57)
+  light2:SetEffectPriority(10, "alpha", 0.4, 0.4)
+  light2:SetEffectInitialColor(10, 1, 1, 1, 0.53)
+  light2:SetEffectFinalColor(10, 1, 1, 1, 0)
+  light2:SetEffectRotate(10, 0, 0)
+  light2:SetEffectScale(10, 0.57, 0.57, 0.57, 0.57)
+  light2:SetEffectInterval(10, visibleTime - 6.4)
+  light2:SetEffectPriority(11, "alpha", 0.4, 0.4)
+  light2:SetEffectInitialColor(11, 1, 1, 1, 0)
+  light2:SetEffectFinalColor(11, 1, 1, 1, 0.53)
+  light2:SetEffectRotate(11, 0, 0)
+  light2:SetEffectScale(11, 0.57, 0.57, 0.57, 0.57)
+  light2:SetEffectPriority(12, "alpha", 0.3, 0.3)
+  light2:SetEffectInitialColor(12, 1, 1, 1, 0.53)
+  light2:SetEffectFinalColor(12, 1, 1, 1, 0.4)
+  light2:SetEffectRotate(12, 0, 15)
+  light2:SetEffectScale(12, 0.57, 0.57, 0.57, 0.57)
+  light2:SetEffectPriority(13, "alpha", 0.3, 0.3)
+  light2:SetEffectInitialColor(13, 1, 1, 1, 0.4)
+  light2:SetEffectFinalColor(13, 1, 1, 1, 0.53)
+  light2:SetEffectRotate(13, 15, 0)
+  light2:SetEffectScale(13, 0.57, 0.57, 0.57, 0.57)
+  light2:SetEffectPriority(14, "alpha", 0.4, 0.4)
+  light2:SetEffectInitialColor(14, 1, 1, 1, 0.53)
+  light2:SetEffectFinalColor(14, 1, 1, 1, 0)
+  light2:SetEffectRotate(14, 0, 0)
+  light2:SetEffectScale(14, 0.57, 0.57, 0.57, 0.57)
+  light2:SetRepeatCount(1)
+  icon.light2 = light2
+end
+function CreateASubjectWnd(id, parent, index)
+  local wnd = parent:CreateChildWidget("emptywidget", id, index or 0, true)
+  local bg = CreateContentBackground(wnd, "TYPE12", "BROWN")
+  bg:AddAnchor("TOPLEFT", wnd, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", wnd, 0, 0)
+  bg:SetVisible(true)
+  wnd.bg = bg
+  local iconBg = wnd:CreateNinePartDrawable(TEXTURE_PATH.DEFAULT, "artwork")
+  iconBg:SetInset(4, 4, 5, 5)
+  iconBg:SetCoords(949, 199, 10, 10)
+  iconBg:SetExtent(ICON_SIZE.SLAVE, ICON_SIZE.SLAVE)
+  iconBg:AddAnchor("LEFT", wnd, 11, 0)
+  local icon = wnd:CreateImageDrawable(TEXTURE_PATH.DEFAULT, "artwork")
+  icon:SetCoords(0, 0, 48, 48)
+  icon:AddAnchor("TOPLEFT", iconBg, 2, 2)
+  icon:AddAnchor("BOTTOMRIGHT", iconBg, -2, -2)
+  wnd.icon = icon
+  CreateLightEffect(icon, wnd)
+  icon.effected = false
+  local iconDeco = wnd:CreateImageDrawable(TEXTURE_PATH.ACHIEVEMENT_RANK, "artwork")
+  iconDeco:AddAnchor("TOPLEFT", iconBg, 0, 0)
+  iconDeco:AddAnchor("BOTTOMRIGHT", iconBg, 0, 0)
+  wnd.iconDeco = iconDeco
+  local achievementGradeIcon = CreateAchievementGradeIcon(wnd)
+  achievementGradeIcon:AddAnchor("TOPLEFT", icon, "TOPRIGHT", 7, -2)
+  local titleLabel = wnd:CreateChildWidget("label", "titleLabel", 0, true)
+  titleLabel:SetAutoResize(true)
+  titleLabel:SetHeight(FONT_SIZE.LARGE)
+  titleLabel.style:SetFontSize(FONT_SIZE.LARGE)
+  titleLabel:AddAnchor("LEFT", achievementGradeIcon, "RIGHT", 2, 1)
+  ApplyTextColor(titleLabel, FONT_COLOR.HIGH_TITLE)
+  local todayGradeIcon = CreateQuestGradeMarker(wnd)
+  todayGradeIcon:AddAnchor("LEFT", titleLabel, "RIGHT", 2, -2)
+  local descLabel = wnd:CreateChildWidget("label", "descLabel", 0, true)
+  descLabel:SetAutoResize(true)
+  descLabel:SetHeight(FONT_SIZE.MIDDLE)
+  descLabel.style:SetFontSize(FONT_SIZE.MIDDLE)
+  descLabel:AddAnchor("TOPLEFT", titleLabel, "BOTTOMLEFT", 2, 0)
+  ApplyTextColor(descLabel, FONT_COLOR.DEFAULT)
+  local resultLabel = wnd:CreateChildWidget("label", "resultLabel", 0, true)
+  resultLabel:SetHeight(FONT_SIZE.SMALL)
+  resultLabel.style:SetFontSize(FONT_SIZE.SMALL)
+  resultLabel:SetAutoResize(true)
+  resultLabel:AddAnchor("BOTTOMLEFT", icon, "BOTTOMRIGHT", 8, 0)
+  ApplyTextColor(resultLabel, FONT_COLOR.BLUE)
+  local status = CreateStatusBar("status", wnd, "achievement")
+  status:AddAnchor("BOTTOMLEFT", icon, "BOTTOMRIGHT", 9, 0)
+  status:AddAnchor("BOTTOMRIGHT", wnd, -MARGIN.WINDOW_SIDE / 2, -12)
+  status:SetHeight(7)
+  wnd.status = status
+  local checkBtn = CreateCheckButton("checkBtn", wnd, "")
+  checkBtn:AddAnchor("TOPRIGHT", wnd, -5, 6)
+  wnd.checkBtn = checkBtn
+  local itemBtn = CreateItemIconButton(wnd:GetId() .. ".itemBtn", wnd)
+  itemBtn:SetExtent(ICON_SIZE.BUFF, ICON_SIZE.BUFF)
+  itemBtn:AddAnchor("BOTTOMRIGHT", status, "TOPRIGHT", 0, -4)
+  wnd.itemBtn = itemBtn
+  local function SetAchievementInfo(info)
+    achievementGradeIcon:RemoveAllAnchors()
+    descLabel:RemoveAllAnchors()
+    if assignmentLocale.useGrade then
+      wnd:SetAchievementGrade(info.grade)
+    else
+      wnd:SetAchievementGrade(nil)
+    end
+    icon.light1:SetVisible(false)
+    icon.light2:SetVisible(false)
+    icon.lightCircle:SetVisible(false)
+    todayGradeIcon:Show(false)
+    if info.style == A_SUBJECT_STYLE.ACHIEVEMENT_LIST then
+      achievementGradeIcon:AddAnchor("TOPLEFT", icon, "TOPRIGHT", 7, -2)
+      descLabel:AddAnchor("TOPLEFT", achievementGradeIcon, "BOTTOMLEFT", 2, 3)
+      descLabel:Show(true)
+      itemBtn:Show(true)
+      status:SetStyle("achievement_list")
+    elseif info.style == A_SUBJECT_STYLE.ACHIEVEMENT_DESC then
+      achievementGradeIcon:AddAnchor("BOTTOMLEFT", status, "TOPLEFT", 0, -6)
+      descLabel:AddAnchor("BOTTOMRIGHT", status, "TOPRIGHT", 0, -5)
+      itemBtn:Show(false)
+      status:SetStyle("achievement_detail")
+      if info.complete then
+        descLabel:Show(false)
+      else
+        descLabel:Show(true)
+      end
+    end
+    if not info.canProgress then
+      resultLabel:Show(false)
+      status:Show(false)
+      checkBtn:Show(false)
+      itemBtn:RemoveAllAnchors()
+      itemBtn:AddAnchor("TOPRIGHT", wnd, "TOPRIGHT", -MARGIN.WINDOW_SIDE / 2, MARGIN.WINDOW_SIDE / 2)
+      bg:SetCoords(635, 748, 200, 21)
+      bg:SetInset(17, 10, 182, 10)
+      ApplyTextureColor(bg, TEXTURE_COLOR.TYPE12_BROWN)
+      wnd:SetAlpha(0.4)
+    elseif info.complete then
+      resultLabel:Show(true)
+      status:Show(false)
+      checkBtn:Show(false)
+      itemBtn:RemoveAllAnchors()
+      itemBtn:AddAnchor("TOPRIGHT", wnd, "TOPRIGHT", -MARGIN.WINDOW_SIDE / 2, MARGIN.WINDOW_SIDE / 2)
+      bg:SetTexture(TEXTURE_PATH.ACHIEVEMENT)
+      bg:SetColor(1, 1, 1, 1)
+      bg:SetInset(37, 0, 262, 0)
+      if info.highRank then
+        if info.tabType == A_ASSIGNMENT_TYPE.RACIAL then
+          bg:SetCoords(0, 169, 301, 73)
+        else
+          bg:SetCoords(0, 0, 300, 73)
+        end
+      elseif info.tabType == A_ASSIGNMENT_TYPE.RACIAL then
+        bg:SetCoords(0, 242, 301, 73)
+      else
+        bg:SetCoords(0, 73, 300, 73)
+      end
+      wnd:SetAlpha(1)
+    else
+      resultLabel:Show(false)
+      status:Show(true)
+      checkBtn:Show(true)
+      itemBtn:RemoveAllAnchors()
+      itemBtn:AddAnchor("BOTTOMRIGHT", status, "TOPRIGHT", 0, -4)
+      bg:SetTexture(TEXTURE_PATH.DEFAULT)
+      if info.style == A_SUBJECT_STYLE.ACHIEVEMENT_LIST then
+        bg:SetCoords(635, 748, 200, 21)
+        bg:SetInset(17, 10, 182, 10)
+        ApplyTextureColor(bg, TEXTURE_COLOR.TYPE12_BROWN)
+      elseif info.style == A_SUBJECT_STYLE.ACHIEVEMENT_DESC then
+        bg:SetCoords(949, 210, 25, 36)
+        bg:SetInset(12, 15, 12, 20)
+        ApplyTextureColor(bg, TEXTURE_COLOR.TYPE10_BROWN)
+      end
+      wnd:SetAlpha(1)
+    end
+    if info.highRank then
+      iconDeco:SetCoords(52, 0, 52, 52)
+    else
+      iconDeco:SetCoords(0, 0, 52, 52)
+    end
+    titleLabel:SetText(info.titleStr)
+    descLabel:SetText(info.descStr)
+    resultLabel:SetText(info.resultStr)
+    icon:SetTexture(info.iconPath)
+    if info.curValue == 0 and info.maxValue == 0 then
+      info.maxValue = 1
+    end
+    status:SetMinMaxValues(0, info.maxValue or 1)
+    status:SetValue(info.curValue or 0)
+    if info.itemType == nil or info.itemType == 0 then
+      itemBtn:Init()
+      itemBtn:Show(false)
+    else
+      local itemInfo = X2Item:GetItemInfoByType(info.itemType)
+      itemBtn:SetItemInfo(itemInfo)
+      itemBtn:SetStack(info.itemCount or 0)
+    end
+    checkBtn:SetChecked(info.checked, false)
+    wnd:Show(true)
+  end
+  local function SetTodayAssignmentInfo(info, isExpedition)
+    iconBg:SetVisible(false)
+    iconDeco:SetVisible(false)
+    checkBtn:Show(false)
+    status:Show(false)
+    itemBtn:Show(false)
+    if itemBtn.rewardMoney ~= nil then
+      itemBtn.rewardMoney:SetText("")
+      itemBtn.rewardMoney:Show(false)
+    end
+    resultLabel:Show(false)
+    icon.light1:SetVisible(false)
+    icon.light2:SetVisible(false)
+    icon.lightCircle:SetVisible(false)
+    achievementGradeIcon:SetVisible(false)
+    todayGradeIcon:Show(false)
+    titleLabel:RemoveAllAnchors()
+    descLabel:RemoveAllAnchors()
+    descLabel:SetHeight(FONT_SIZE.MIDDLE)
+    descLabel.style:SetFontSize(FONT_SIZE.MIDDLE)
+    descLabel:Show(true)
+    if wnd.style == A_SUBJECT_STYLE.TODAY_ASSIGNMENT_LIST then
+      if info.status < A_TODAY_STATUS.PROGRESS then
+        titleLabel:AddAnchor("BOTTOMLEFT", icon, "RIGHT", 7, -3)
+        descLabel:AddAnchor("TOPLEFT", titleLabel, "BOTTOMLEFT", 0, 6)
+      else
+        titleLabel:AddAnchor("TOPLEFT", icon, "TOPRIGHT", 7, 1)
+        descLabel:AddAnchor("TOPLEFT", titleLabel, "BOTTOMLEFT", 0, 5)
+        status:SetStyle("achievement_list")
+      end
+    else
+      titleLabel:AddAnchor("BOTTOMLEFT", status, "TOPLEFT", 0, -6)
+      descLabel:AddAnchor("BOTTOMRIGHT", status, "TOPRIGHT", 0, -5)
+      status:SetStyle("achievement_list")
+      if info.status == A_TODAY_STATUS.DONE then
+        descLabel:Show(false)
+      end
+    end
+    if info.status == A_TODAY_STATUS.LOCKED then
+      titleLabel:SetText(info.title)
+      icon:SetTexture(TEXTURE_PATH.ACHIEVEMENT_TODAY)
+      bg:SetTexture(TEXTURE_PATH.ACHIEVEMENT_TODAY)
+      if info.satisfy then
+        ApplyTextColor(titleLabel, FONT_COLOR.BATTLEFIELD_YELLOW)
+        ApplyTextColor(descLabel, FONT_COLOR.WHITE)
+        descLabel:SetHeight(FONT_SIZE.MIDDLE)
+        descLabel.style:SetFontSize(FONT_SIZE.MIDDLE)
+        descLabel:SetText(info.desc)
+        icon:SetTextureInfo("icon_green")
+        bg:SetTextureInfo("bg_green")
+        bg:SetColor(1, 1, 1, 1)
+      else
+        ApplyTextColor(titleLabel, FONT_COLOR.GRAY)
+        ApplyTextColor(descLabel, FONT_COLOR.RED)
+        local descStr = string.format("%s : ", GetCommonText("require_condition"))
+        local firstCond = true
+        if 0 < info.requireLevel then
+          descStr = string.format("%s%s %s", descStr, GetCommonText("level"), tostring(info.requireLevel))
+          firstCond = false
+        end
+        if info.expeditionLevelMin ~= nil and 0 < info.expeditionLevelMin then
+          if firstCond ~= true then
+            descStr = string.format("%s, ", descStr)
+          end
+          descStr = string.format("%s%s %s %s", descStr, GetUIText(COMMUNITY_TEXT, "expedition"), GetCommonText("level"), tostring(info.expeditionLevelMin))
+          firstCond = false
+        end
+        if info.requireItem ~= nil and info.requireItem ~= 0 then
+          if firstCond ~= true then
+            descStr = string.format("%s, ", descStr)
+          end
+          descStr = string.format("%s%s ", descStr, GetCommonText("item"))
+          firstCond = false
+          local itemInfo = X2Item:GetItemInfoByType(info.requireItem)
+          itemBtn:Init()
+          itemBtn:SetItemInfo(itemInfo)
+          itemBtn:SetStack(info.requireItemCount or 0)
+          itemBtn:SetOverlayColor(ICON_BUTTON_OVERLAY_COLOR.RED)
+          itemBtn:RemoveAllAnchors()
+          itemBtn:AddAnchor("LEFT", descLabel, "RIGHT", 0, 0)
+          itemBtn:Show(true)
+        end
+        descLabel:SetHeight(FONT_SIZE.LARGE)
+        descLabel.style:SetFontSize(FONT_SIZE.LARGE)
+        descLabel:SetText(descStr)
+        icon:SetTextureInfo("icon_gray")
+        bg:SetTextureInfo("bg_gray")
+        bg:SetColor(1, 1, 1, 1)
+      end
+    elseif info.status == A_TODAY_STATUS.READY then
+      icon:SetTexture(TEXTURE_PATH.ACHIEVEMENT_TODAY)
+      icon:SetTextureInfo("icon_blue")
+      if icon.effected == false then
+        icon.effected = true
+        icon.light1:SetVisible(true)
+        icon.light1:SetStartEffect(true)
+        icon.light2:SetVisible(true)
+        icon.light2:SetStartEffect(true)
+        icon.lightCircle:SetVisible(true)
+        icon.lightCircle:SetStartEffect(true)
+      end
+      bg:SetTexture(TEXTURE_PATH.ACHIEVEMENT_TODAY)
+      bg:SetTextureInfo("bg_blue")
+      bg:SetColor(1, 1, 1, 1)
+      iconBg:SetVisible(false)
+      itemBtn:Show(false)
+      ApplyTextColor(titleLabel, FONT_COLOR.QUEST_TASK)
+      titleLabel:SetText(info.title)
+      ApplyTextColor(descLabel, FONT_COLOR.WHITE)
+      descLabel:SetHeight(FONT_SIZE.MIDDLE)
+      descLabel.style:SetFontSize(FONT_SIZE.MIDDLE)
+      descLabel:SetText(info.desc)
+    elseif info.status == A_TODAY_STATUS.PROGRESS then
+      bg:SetTexture(TEXTURE_PATH.DEFAULT)
+      if wnd.style == A_SUBJECT_STYLE.TODAY_ASSIGNMENT_LIST then
+        bg:SetCoords(635, 748, 200, 21)
+        bg:SetInset(17, 10, 182, 10)
+        ApplyTextureColor(bg, TEXTURE_COLOR.TYPE12_BROWN)
+      else
+        bg:SetCoords(949, 210, 25, 36)
+        bg:SetInset(12, 15, 12, 20)
+        ApplyTextureColor(bg, TEXTURE_COLOR.TYPE10_BROWN)
+      end
+      icon:SetTexture(info.iconPath)
+      icon:SetCoords(0, 0, 48, 48)
+      iconBg:SetVisible(true)
+      local qInfo = MakeTodayQuestInfo(wnd.style, info.questType)
+      ApplyTextColor(titleLabel, FONT_COLOR.HIGH_TITLE)
+      titleLabel:SetText(qInfo.titleStr)
+      todayGradeIcon:SetQuestGrade(qInfo.grade)
+      ApplyTextColor(descLabel, FONT_COLOR.DEFAULT)
+      descLabel:SetHeight(FONT_SIZE.MIDDLE)
+      descLabel.style:SetFontSize(FONT_SIZE.MIDDLE)
+      descLabel:SetText(qInfo.summaryStr)
+      itemBtn:RemoveAllAnchors()
+      itemBtn:AddAnchor("BOTTOMRIGHT", status, "TOPRIGHT", 0, -4)
+      if qInfo.itemType ~= nil and wnd.style == A_SUBJECT_STYLE.TODAY_ASSIGNMENT_LIST then
+        itemBtn:Show(true)
+        itemBtn:Init()
+        local itemInfo = X2Item:GetItemInfoByType(qInfo.itemType)
+        itemBtn:SetItemInfo(itemInfo)
+        itemBtn:SetStack(qInfo.itemCount or 0)
+      else
+        itemBtn:Show(false)
+      end
+      if wnd.style == A_SUBJECT_STYLE.TODAY_ASSIGNMENT_LIST then
+        if qInfo.rewardCopper ~= nil and qInfo.rewardCopper ~= 0 then
+          local str = string.format("%s|m%d;", FONT_COLOR_HEX.BLUE, qInfo.rewardCopper)
+          if itemBtn.rewardMoney == nil then
+            itemBtn.rewardMoney = itemBtn:CreateChildWidget("textbox", "reward", 0, true)
+            itemBtn.rewardMoney:AddAnchor("RIGHT", itemBtn, "LEFT", -5, 0)
+            itemBtn.rewardMoney:SetExtent(150, FONT_SIZE.MIDDLE)
+            itemBtn.rewardMoney.style:SetAlign(ALIGN_RIGHT)
+            ApplyTextColor(itemBtn.rewardMoney, FONT_COLOR.BLUE)
+          end
+          itemBtn.rewardMoney:SetText(str)
+          itemBtn.rewardMoney:Show(true)
+        elseif itemBtn.rewardMoney ~= nil then
+          itemBtn.rewardMoney:SetText("")
+          itemBtn.rewardMoney:Show(false)
+        end
+      end
+      status:SetMinMaxValues(0, qInfo.maxValue)
+      status:SetValue(qInfo.curValue)
+      status:Show(true)
+      local IsTracingQuest = function(qType)
+        local notifierData = X2:GetQuestNotifierListUiData()
+        if notifierData.todayQuestList == nil then
+          return false
+        end
+        for i = 1, #notifierData.todayQuestList do
+          if notifierData.todayQuestList[i] == qType then
+            return true
+          end
+        end
+        return false
+      end
+      if HasTodayQuestList == nil then
+        checkBtn:SetChecked(IsTracingQuest(info.questType), false)
+      else
+        checkBtn:SetChecked(HasTodayQuestList(info.questType), false)
+      end
+      checkBtn:Show(true)
+    elseif info.status == A_TODAY_STATUS.DONE then
+      bg:SetTexture(TEXTURE_PATH.ACHIEVEMENT)
+      bg:SetColor(1, 1, 1, 1)
+      bg:SetInset(37, 0, 262, 0)
+      bg:SetCoords(0, 73, 300, 73)
+      icon:SetTexture(info.iconPath)
+      icon:SetCoords(0, 0, 48, 48)
+      iconBg:SetVisible(true)
+      local qInfo = MakeTodayQuestInfo(wnd.style, info.questType)
+      ApplyTextColor(titleLabel, FONT_COLOR.HIGH_TITLE)
+      titleLabel:SetText(qInfo.titleStr)
+      todayGradeIcon:SetQuestGrade(qInfo.grade)
+      ApplyTextColor(descLabel, FONT_COLOR.DEFAULT)
+      descLabel:SetHeight(FONT_SIZE.MIDDLE)
+      descLabel.style:SetFontSize(FONT_SIZE.MIDDLE)
+      descLabel:SetText(qInfo.summaryStr)
+      resultLabel:SetText(string.format("[%s]", GetCommonText("complete")))
+      resultLabel:Show(true)
+      itemBtn:RemoveAllAnchors()
+      itemBtn:AddAnchor("TOPRIGHT", wnd, "TOPRIGHT", -MARGIN.WINDOW_SIDE / 2, MARGIN.WINDOW_SIDE / 2)
+      if qInfo.itemType ~= nil and wnd.style == A_SUBJECT_STYLE.TODAY_ASSIGNMENT_LIST then
+        itemBtn:Show(true)
+        itemBtn:Init()
+        local itemInfo = X2Item:GetItemInfoByType(qInfo.itemType)
+        itemBtn:SetItemInfo(itemInfo)
+        itemBtn:SetStack(qInfo.itemCount or 0)
+      else
+        itemBtn:Show(false)
+      end
+    end
+    wnd:Show(true)
+  end
+  local function ClearInfo()
+    wnd:Show(false)
+  end
+  function checkBtn:CheckBtnCheckChagnedProc()
+    if wnd.checkFunc ~= nil then
+      wnd.checkFunc(checkBtn)
+    end
+  end
+  local function EnterCheckBtn()
+    if wnd.enterFunc ~= nil then
+      wnd.enterFunc(checkBtn)
+    end
+  end
+  checkBtn:SetHandler("OnEnter", EnterCheckBtn)
+  local LeaveCheckBtn = function()
+    HideTooltip()
+  end
+  checkBtn:SetHandler("OnLeave", LeaveCheckBtn)
+  function wnd:SetAchievement(style, aType, checkFunc, enterFunc)
+    wnd.style = style
+    wnd.aType = aType
+    wnd.checkFunc = checkFunc
+    wnd.enterFunc = enterFunc
+    wnd:Update()
+  end
+  function wnd:SetTodayAssignment(style, isExpedition, index, checkFunc, enterFunc)
+    wnd.style = style
+    wnd.isExpedition = isExpedition
+    wnd.index = index
+    wnd.checkFunc = checkFunc
+    wnd.enterFunc = enterFunc
+    wnd:Update()
+  end
+  function wnd:Update()
+    if wnd.style == A_SUBJECT_STYLE.ACHIEVEMENT_LIST or wnd.style == A_SUBJECT_STYLE.ACHIEVEMENT_DESC then
+      if wnd.aType ~= nil then
+        local info = MakeAchievementSubjectInfo(wnd.style, wnd.aType)
+        SetAchievementInfo(info)
+        return
+      end
+    elseif (wnd.style == A_SUBJECT_STYLE.TODAY_ASSIGNMENT_LIST or wnd.style == A_SUBJECT_STYLE.TODAY_ASSIGNMENT_DESC) and wnd.index ~= nil then
+      local info = X2Achievement:GetTodayAssignmentInfo(wnd.isExpedition, wnd.index)
+      if info ~= nil then
+        SetTodayAssignmentInfo(info, wnd.isExpedition)
+        return
+      end
+    end
+    ClearInfo()
+  end
+  return wnd
+end
+function CreateASubjectListWnd(id, parent)
+  local wnd = CreatePageScrollListCtrl(parent, id, 0)
+  wnd.scroll:RemoveAllAnchors()
+  wnd.scroll:AddAnchor("TOPRIGHT", wnd, 0, 0)
+  wnd.scroll:AddAnchor("BOTTOMRIGHT", wnd, 0, 0)
+  wnd.listCtrl:SetColumnHeight(0)
+  wnd.pageControl:RemoveAllAnchors()
+  wnd.pageControl:AddAnchor("TOP", wnd.listCtrl, "BOTTOM", 0, 0)
+  wnd.pageControl:Show(false)
+  ListCtrlOverClickTextureSetting(wnd.listCtrl, "achievement")
+  local emptyLabel = wnd:CreateChildWidget("textbox", "emptyLabel", 0, true)
+  emptyLabel:SetExtent(wnd.listCtrl:GetWidth(), FONT_SIZE.MIDDLE)
+  emptyLabel:SetHeight(FONT_SIZE.MIDDLE)
+  emptyLabel.style:SetFontSize(FONT_SIZE.LARGE)
+  emptyLabel:AddAnchor("LEFT", wnd.listCtrl, 0, 0)
+  emptyLabel:AddAnchor("RIGHT", wnd.listCtrl, 0, 0)
+  ApplyTextColor(emptyLabel, FONT_COLOR.DEFAULT)
+  emptyLabel:Show(false)
+  function wnd:SetListStyle(viewCount, maxCount, dataSetFunc)
+    local LayoutFunc = function(frame, rowIndex, colIndex, subItem)
+      local subjectWnd = CreateASubjectWnd("subjectWnd", subItem)
+      subjectWnd:AddAnchor("TOPLEFT", subItem, 0, 0)
+      subjectWnd:AddAnchor("BOTTOMRIGHT", subItem, 0, 0)
+    end
+    wnd:InsertColumn("", wnd:GetWidth() - wnd.scroll:GetWidth() - 3, LCCIT_WINDOW, dataSetFunc, nil, nil, LayoutFunc)
+    wnd:InsertRows(viewCount, false)
+    wnd.maxCount = maxCount
+    wnd.viewCount = viewCount
+  end
+  function wnd:SetListSelectFuc(func)
+    wnd.selectFunc = func
+  end
+  function wnd:SetWndStyle(usePageCtrl, emptyStr)
+    wnd.pageControl:Show(usePageCtrl)
+    emptyLabel:SetText(emptyStr)
+    emptyLabel:SetHeight(emptyLabel:GetTextHeight())
+  end
+  wnd.curFilter = filter
+  wnd.prevFilter = nil
+  function wnd:SetInfo(info, filter)
+    self.info = info
+    self.curFilter = filter
+    self.prevCurPageIndex = self:GetCurrentPageIndex()
+    self.prevTopDataIndex = self:GetTopDataIndex()
+    self.pageControl:SetCurrentPage(wnd.prevCurPageIndex, true)
+    self.prevFilter = filter
+  end
+  function wnd:OnPageChangedProc(pageIndex)
+    wnd:DeleteAllDatas()
+    if wnd.info == nil or #wnd.info == 0 then
+      emptyLabel:Show(true)
+    else
+      emptyLabel:Show(false)
+      local startIndex = (pageIndex - 1) * wnd.maxCount
+      for i = 1, math.min(#wnd.info - (pageIndex - 1) * wnd.maxCount, wnd.maxCount) do
+        wnd:InsertData(wnd.info[startIndex + i], 1, wnd.info[startIndex + i])
+      end
+      wnd:SetPageByItemCount(#wnd.info, wnd.maxCount)
+      if self.curFilter == self.prevFilter and wnd.prevCurPageIndex == pageIndex then
+        local dataIndex = self:GetDataCount() < self.prevTopDataIndex and self:GetTopDataIndex() or self.prevTopDataIndex
+        self:SetTopDataIndex(dataIndex)
+        self:UpdateView()
+        self.scroll.vs:SetValue(dataIndex - 1, false)
+      end
+    end
+  end
+  function wnd:SelChangedProc(viewIndex, dataIndex, dataKey, doubleClick)
+    if viewIndex == 0 or dataKey == nil then
+      return
+    end
+    self:ClearSelection()
+    local subItem = self.listCtrl.items[viewIndex].subItems[1]
+    if (subItem.handleClick == nil or not subItem.handleClick()) and wnd.selectFunc ~= nil then
+      wnd.selectFunc(dataKey, wnd.info)
+    end
+  end
+  function wnd:ToggleWithAchievement(aType)
+    for i = 1, #wnd.info do
+      if wnd.info[i] == aType then
+        local page = math.floor((i - 1) / wnd.maxCount) + 1
+        local index = i % wnd.maxCount
+        if index == 0 then
+          index = wnd.maxCount
+        end
+        wnd.pageControl:SetCurrentPage(page, true)
+        wnd:ScrollToDataIndex(aType, 3)
+        wnd.selectFunc(aType, wnd.info)
+        return
+      end
+    end
+  end
+  function wnd:Update()
+    wnd:UpdateView()
+  end
+  return wnd
+end
+function CreateAAchievementDescWnd(id, parent)
+  local wnd = CreateScrollWindow(parent, "id", 0)
+  wnd:AddAnchor("TOPLEFT", wnd, "BOTTOMLEFT", 0, 5)
+  wnd:AddAnchor("BOTTOMRIGHT", wnd, 0, -35)
+  ResetScroll(wnd, 0)
+  local descriptionWnd = wnd.content:CreateChildWidget("emptywidget", "descriptionWnd", 0, true)
+  descriptionWnd:AddAnchor("TOPLEFT", wnd.content, 0, 0)
+  descriptionWnd:AddAnchor("TOPRIGHT", wnd.content, 0, 0)
+  local descLabel = descriptionWnd:CreateChildWidget("textbox", "descLabel", 0, true)
+  descLabel:AddAnchor("TOPLEFT", descriptionWnd, 20, 20)
+  descLabel:AddAnchor("TOPRIGHT", descriptionWnd, -20, 20)
+  descLabel:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  descLabel.style:SetAlign(ALIGN_LEFT)
+  descLabel:SetAutoResize(true)
+  ApplyTextColor(descLabel, FONT_COLOR.BLUE)
+  local descBg = CreateContentBackground(descriptionWnd, "TYPE7")
+  descBg:AddAnchor("TOPLEFT", descLabel, -MARGIN.WINDOW_SIDE, -MARGIN.WINDOW_SIDE)
+  descBg:AddAnchor("BOTTOMRIGHT", descLabel, MARGIN.WINDOW_SIDE, MARGIN.WINDOW_SIDE)
+  ApplyTextureColor(descBg, TEXTURE_COLOR.ACHIEVEMENT_WINDOW_BG)
+  wnd.descBg = descBg
+  local objectiveList = wnd.content:CreateChildWidget("listctrl", "objectiveList", 0, true)
+  objectiveList:AddAnchor("TOPLEFT", descriptionWnd, "BOTTOMLEFT", 20, 10)
+  objectiveList:AddAnchor("TOPRIGHT", descriptionWnd, "BOTTOMRIGHT", -10, 10)
+  objectiveList:EnableScroll(false)
+  objectiveList:SetColumnHeight(0)
+  objectiveList:InsertColumn(400, LCCIT_WINDOW)
+  ListCtrlOverClickTextureSetting(objectiveList)
+  local objectiveWnd = wnd.content:CreateChildWidget("emptywidget", "objectiveWnd", 0, true)
+  objectiveWnd:AddAnchor("TOPLEFT", descriptionWnd, "BOTTOMLEFT", 20, 10)
+  objectiveWnd:AddAnchor("TOPRIGHT", descriptionWnd, "BOTTOMRIGHT", -10, 10)
+  local objectiveDesc = objectiveWnd:CreateChildWidget("textbox", "objectiveDesc", 0, true)
+  objectiveDesc:AddAnchor("TOPLEFT", objectiveWnd, 0, 0)
+  objectiveDesc:AddAnchor("TOPRIGHT", objectiveWnd, 0, 0)
+  objectiveDesc:SetAutoResize(true)
+  objectiveDesc:SetLineSpace(10)
+  objectiveDesc.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(objectiveDesc, FONT_COLOR.HIGH_TITLE)
+  local anchorTarget = objectiveDesc
+  local anchorOffset = 15
+  local objectiveLabel = {}
+  for i = 1, 5 do
+    objectiveLabel[i] = objectiveWnd:CreateChildWidget("label", "objectiveLabel", i, true)
+    objectiveLabel[i]:AddAnchor("TOPLEFT", anchorTarget, "BOTTOMLEFT", anchorOffset, 8)
+    objectiveLabel[i]:SetAutoResize(true)
+    objectiveLabel[i]:SetHeight(FONT_SIZE.MIDDLE)
+    ApplyTextColor(objectiveLabel[i], FONT_COLOR.DEFAULT)
+    DrawRoundDingbat(objectiveLabel[i])
+    anchorTarget = objectiveLabel[i]
+    anchorOffset = 0
+  end
+  local rewardWnd = wnd.content:CreateChildWidget("emptywidget", "rewardWnd", 0, true)
+  rewardWnd:AddAnchor("TOPLEFT", objectiveList, "BOTTOMLEFT", 0, 20)
+  rewardWnd:AddAnchor("TOPRIGHT", objectiveList, "BOTTOMRIGHT", 0, 20)
+  local rewardTitle = rewardWnd:CreateChildWidget("textbox", "rewardTitle", 0, true)
+  rewardTitle:AddAnchor("TOPLEFT", rewardWnd, 0, 0)
+  rewardTitle:AddAnchor("TOPRIGHT", rewardWnd, 0, 0)
+  rewardTitle.style:SetAlign(ALIGN_LEFT)
+  rewardTitle.style:SetFontSize(FONT_SIZE.LARGE)
+  rewardTitle:SetAutoResize(true)
+  rewardTitle:SetHeight(FONT_SIZE.LARGE)
+  ApplyTextColor(rewardTitle, FONT_COLOR.HIGH_TITLE)
+  rewardTitle:SetText(GetCommonText("achievement_reward"))
+  local function CreateRewardTextBox(name)
+    local wnd = rewardWnd:CreateChildWidget("textbox", name, 0, true)
+    wnd:AddAnchor("TOPLEFT", rewardWnd, 10, 0)
+    wnd:AddAnchor("TOPRIGHT", rewardWnd, 0, 0)
+    wnd:SetAutoResize(true)
+    wnd.style:SetAlign(ALIGN_LEFT)
+    ApplyTextColor(wnd, FONT_COLOR.DEFAULT)
+    DrawRoundDingbat(wnd)
+    wnd:Show(false)
+    return wnd
+  end
+  local rewardExp = CreateRewardTextBox("rewardExp")
+  local rewardMoney = CreateRewardTextBox("rewardMoney")
+  local rewardAAPoint = CreateRewardTextBox("rewardAAPoint")
+  local rewardExpeditionExp = CreateRewardTextBox("rewardExpeditionExp")
+  local rewardLaborPower = CreateRewardTextBox("rewardLaborPower")
+  local rewardHonorPoint = CreateRewardTextBox("rewardHonorPoint")
+  local rewardDisHonorPoint = CreateRewardTextBox("rewardDisHonorPoint")
+  local rewardLivingPoint = CreateRewardTextBox("rewardLivingPoint")
+  local rewardContributionPoint = CreateRewardTextBox("rewardContributionPoint")
+  local rewardActability = CreateRewardTextBox("rewardActability")
+  local rewardItemBtn = CreateItemIconButton(id .. ".rewardItemBtn", rewardWnd)
+  rewardItemBtn:AddAnchor("TOPLEFT", rewardTitle, "BOTTOMLEFT", 0, 7)
+  local rewardItemLabel = rewardWnd:CreateChildWidget("label", "rewardItemLabel", 0, true)
+  rewardItemLabel:SetExtent(200, FONT_SIZE.MIDDLE)
+  rewardItemLabel.style:SetAlign(ALIGN_LEFT)
+  rewardItemLabel.style:SetFontSize(FONT_SIZE.MIDDLE)
+  rewardItemLabel:SetLimitWidth(true)
+  ApplyTextColor(rewardItemLabel, FONT_COLOR.TITLE)
+  rewardItemLabel:AddAnchor("LEFT", rewardItemBtn, "RIGHT", 5, 0)
+  local rewardCountLabel = rewardWnd:CreateChildWidget("label", "rewardCountLabel", 0, true)
+  rewardCountLabel:SetHeight(FONT_SIZE.MIDDLE)
+  rewardCountLabel:SetAutoResize(true)
+  rewardCountLabel.style:SetAlign(ALIGN_LEFT)
+  rewardCountLabel.style:SetFontSize(FONT_SIZE.MIDDLE)
+  rewardCountLabel:SetLimitWidth(true)
+  ApplyTextColor(rewardCountLabel, FONT_COLOR.TITLE)
+  rewardCountLabel:AddAnchor("TOPLEFT", rewardItemLabel, "BOTTOMLEFT", 0, 3)
+  local rewardItemBg = rewardWnd:CreateImageDrawable(TEXTURE_PATH.REWARD, "background")
+  rewardItemBg:SetCoords(0, 0, 198, 64)
+  rewardItemBg:SetHeight(71)
+  rewardItemBg:AddAnchor("LEFT", rewardItemBtn, "RIGHT", -10, 0)
+  rewardItemBg:AddAnchor("RIGHT", rewardItemLabel, "RIGHT", 40, 0)
+  local bubble = wnd.content:CreateChildWidget("gametooltip", "bubble", 0, true)
+  bubble:AddAnchor("TOPLEFT", rewardWnd, "BOTTOMLEFT", 0, 30)
+  bubble:AddAnchor("TOPRIGHT", rewardWnd, "TOPRIGHT", 0, 30)
+  bubble:SetLineSpace(TEXTBOX_LINE_SPACE.MIDDLE)
+  bubble:SetAutoWordwrap(true)
+  bubble.style:SetSnap(true)
+  ApplyTextColor(bubble, FONT_COLOR.DEFAULT)
+  function objectiveList:OnSelChanged(selIdx)
+    if selIdx ~= 0 then
+      self:ClearSelection()
+      if wnd.selectFunc ~= nil then
+        wnd.selectFunc(objectiveList.list[selIdx], objectiveList.list)
+      end
+    end
+  end
+  objectiveList:SetHandler("OnSelChanged", objectiveList.OnSelChanged)
+  local function UpdateBubble(qType)
+    bubble:ClearLines()
+    local bubbles = X2Quest:AcceptBubbleText(qType)
+    if bubbles == nil or #bubbles == 0 then
+      bubble:Show(false)
+      return
+    end
+    local DecoSystemChatBubble = function(str)
+      return string.format(localeView.questContextList.systemChatBubbleDecoFormat, str)
+    end
+    local RemovedGestureText = function(str)
+      return string.gsub(str, "/(%w+) ", "")
+    end
+    local height = 0
+    for i = 1, #bubbles do
+      local speech = bubbles[i]
+      if speech.kind == CBK_SYSTEM then
+        speech.text = DecoSystemChatBubble(speech.text)
+      elseif bubbles[i - 1] == nil or bubbles[i - 1].who ~= speech.who then
+        local str = string.format("%s%s", FONT_COLOR_HEX.MIDDLE_TITLE, speech.who)
+        local index = bubble:AddLine(str, FONT_PATH.DEFAULT, FONT_SIZE.LARGE, "left", ALIGN_LEFT, 0)
+        if i ~= 1 then
+          bubble:AttachUpperSpaceLine(index, MARGIN.WINDOW_SIDE / 3)
+        end
+        bubble:AttachLowerSpaceLine(index, 3)
+      end
+      local index = bubble:AddLine(RemovedGestureText(speech.text), FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE, "left", ALIGN_LEFT, MARGIN.WINDOW_SIDE / 2)
+      bubble:AttachLowerSpaceLine(index, MARGIN.WINDOW_SIDE / 3)
+    end
+    bubble:Show(true)
+  end
+  local function UpdateObjectiveList(list)
+    objectiveList.list = list
+    objectiveList:DeleteAllDatas()
+    objectiveList:ClearSelection()
+    objectiveList:DeleteRows()
+    if list == nil or #list == 0 then
+      objectiveList:SetHeight(0)
+      objectiveList:Show(false)
+    else
+      objectiveList:SetHeight(#list * 20)
+      objectiveList:Show(true)
+      objectiveList:InsertRows(#list, false)
+      for i = 1, #list do
+        local subItem = objectiveList.items[i].subItems[1]
+        local label = subItem:CreateChildWidget("label", "label", 0, true)
+        label:AddAnchor("LEFT", subItem, 15, 0)
+        label:SetHeight(FONT_SIZE.MIDDLE)
+        label.style:SetAlign(ALIGN_LEFT)
+        label:SetAutoResize(true)
+        DrawRoundDingbat(label)
+        objectiveList:InsertData(i, 1, string.format("objective%d", i))
+        local info = X2Achievement:GetAchievementInfo(list[i])
+        if not info.canProgress then
+          subItem.label:SetText(UNKNOWN_ACHIEVEMENT_STR)
+        elseif info.complete then
+          local str = string.format("[%s] %s", GetCommonText("complete"), info.summary)
+          subItem.label:SetText(str)
+        else
+          subItem.label:SetText(info.summary)
+        end
+        if not info.canProgress then
+          local color = FONT_COLOR.DEFAULT
+          ApplyTextColor(subItem.label, {
+            color[1],
+            color[2],
+            color[3],
+            0.4
+          })
+        elseif info.complete then
+          ApplyTextColor(subItem.label, FONT_COLOR.BLUE)
+        else
+          ApplyTextColor(subItem.label, FONT_COLOR.DEFAULT)
+        end
+      end
+    end
+  end
+  local function UpdateObjectiveWnd(qType, qInfo)
+    if X2Quest:IsSelectiveQuest(qType) then
+      objectiveDesc:SetText(locale.questContext.selectiveObj)
+    elseif X2Quest:IsScoreQuest(qType) then
+      local str = ""
+      local titleStr = X2Quest:GetQuestJournalProgTitleByType(qType)
+      local scoreStr = string.format("%s (%d/%d)", locale.questContext.scoreCount, qInfo.curValue, qInfo.maxValue)
+      if titleStr == nil then
+        str = scoreStr
+      else
+        str = string.format([[
+%s
+%s]], titleStr, scoreStr)
+      end
+      objectiveDesc:SetText(str)
+    else
+      objectiveDesc:SetText("")
+      objectiveDesc:SetHeight(0)
+    end
+    local count = X2Quest:GetObjectiveComponentCount(qType)
+    for i = 1, #objectiveLabel do
+      if i <= count then
+        local str = X2Quest:GetObjective(qType, i)
+        objectiveLabel[i]:SetText(str)
+        objectiveLabel[i]:Show(true)
+      else
+        objectiveLabel[i]:SetText("")
+        objectiveLabel[i]:Show(false)
+      end
+    end
+    objectiveWnd:SetHeight(objectiveDesc:GetHeight() + math.min(count, 5) * (FONT_SIZE.MIDDLE + 8))
+    objectiveWnd:Show(true)
+  end
+  function wnd:SetAchievementInfo(aType, selectFunc)
+    wnd.aType = aType
+    wnd.qType = nil
+    wnd.selectFunc = selectFunc
+    wnd:Update()
+  end
+  function wnd:SetTodayAssignmentInfo(qType)
+    wnd.aType = nil
+    wnd.qType = qType
+    wnd.selectFunc = nil
+    wnd:Update()
+  end
+  local function UpdateQuestReward(qType)
+    rewardWnd:RemoveAllAnchors()
+    rewardWnd:AddAnchor("TOPLEFT", objectiveWnd, "BOTTOMLEFT", 0, 20)
+    rewardWnd:AddAnchor("TOPRIGHT", objectiveWnd, "BOTTOMRIGHT", 0, 20)
+    local lastTarget = rewardTitle
+    local xOffset = 15
+    local yOffset = 8
+    local function SetLastTarget(widget)
+      widget:RemoveAllAnchors()
+      widget:AddAnchor("TOPLEFT", lastTarget, "BOTTOMLEFT", xOffset, yOffset)
+      widget:AddAnchor("TOPRIGHT", lastTarget, "BOTTOMRIGHT", 0, yOffset)
+      xOffset = 0
+      yOffset = 8
+      lastTarget = widget
+    end
+    local expValue = X2Quest:GetQuestContextRewardExp(qType)
+    if expValue ~= nil and tonumber(expValue) ~= 0 then
+      local str = string.format("%s %s|,%s;", GetUIText(COMMON_TEXT, "exp"), FONT_COLOR_HEX.BLUE, tostring(expValue))
+      rewardExp:SetText(str)
+      SetLastTarget(rewardExp)
+      rewardExp:Show(true)
+    else
+      rewardExp:SetText("")
+      rewardExp:Show(false)
+    end
+    local money = X2Quest:GetQuestContextRewardCopper(qType)
+    if money ~= nil and money ~= 0 then
+      local str = string.format("%s %s|m%d;", locale.questContext.rewardMoney, FONT_COLOR_HEX.BLUE, money)
+      rewardMoney:SetText(str)
+      SetLastTarget(rewardMoney)
+      rewardMoney:Show(true)
+    else
+      rewardMoney:SetText("")
+      rewardMoney:Show(false)
+    end
+    local aaPoint = X2Quest:GetQuestContextRewardAAPoint(qType)
+    if aaPoint ~= nil and aaPoint ~= 0 then
+      local str = string.format("%s %s|p%d;", locale.questContext.rewardAAPoint, FONT_COLOR_HEX.DEEP_ORANGE, aaPoint)
+      rewardAAPoint:SetText(str)
+      SetLastTarget(rewardAAPoint)
+      rewardAAPoint:Show(true)
+    else
+      rewardAAPoint:SetText("")
+      rewardAAPoint:Show(false)
+    end
+    local expeditionExpValue = X2Quest:RewardExpeditionExp(qType)
+    if expeditionExpValue ~= nil and expeditionExpValue ~= 0 then
+      local str = string.format("%s %s %s|,%s;", GetUIText(COMMUNITY_TEXT, "expedition"), GetUIText(COMMON_TEXT, "exp"), FONT_COLOR_HEX.BLUE, tostring(expeditionExpValue))
+      rewardExpeditionExp:SetText(str)
+      SetLastTarget(rewardExpeditionExp)
+      rewardExpeditionExp:Show(true)
+    else
+      rewardExpeditionExp:SetText("")
+      rewardExpeditionExp:Show(false)
+    end
+    local laborPower = X2Quest:RewardLaborPower(qType)
+    if laborPower ~= nil and laborPower ~= 0 then
+      local str = string.format("%s %s|,%s;", locale.attribute("labor_power"), FONT_COLOR_HEX.BLUE, tostring(laborPower))
+      rewardLaborPower:SetText(str)
+      SetLastTarget(rewardLaborPower)
+      rewardLaborPower:Show(true)
+    else
+      rewardLaborPower:SetText("")
+      rewardLaborPower:Show(false)
+    end
+    local honor = X2Quest:RewardHonorPoint(qType)
+    if honor ~= nil and honor ~= 0 then
+      local str = string.format("%s %s|h%d;", GetUIText(COMMON_TEXT, "honor_point"), FONT_COLOR_HEX.BLUE, honor)
+      rewardHonorPoint:SetText(str)
+      SetLastTarget(rewardHonorPoint)
+      rewardHonorPoint:Show(true)
+    else
+      rewardHonorPoint:SetText("")
+      rewardHonorPoint:Show(false)
+    end
+    local crime = X2Quest:RewardCrimePoint(qType)
+    if crime ~= nil and crime ~= 0 then
+      local str = string.format("%s %s|d%d;", locale.money.dishonor, FONT_COLOR_HEX.BLUE, crime)
+      rewardDisHonorPoint:SetText(str)
+      SetLastTarget(rewardDisHonorPoint)
+      rewardDisHonorPoint:Show(true)
+    else
+      rewardDisHonorPoint:SetText("")
+      rewardDisHonorPoint:Show(false)
+    end
+    local livingPoint = X2Quest:RewardLivingPoint(qType)
+    if livingPoint ~= nil and livingPoint ~= 0 then
+      local str = string.format("%s %s|l%d", locale.questContext.livingPoint, FONT_COLOR_HEX.BLUE, livingPoint)
+      rewardLivingPoint:SetText(str)
+      SetLastTarget(rewardLivingPoint)
+      rewardLivingPoint:Show(true)
+    else
+      rewardLivingPoint:SetText("")
+      rewardLivingPoint:Show(false)
+    end
+    local contributionPoint = X2Quest:RewardContributionPoint(qType)
+    if contributionPoint ~= nil and contributionPoint ~= 0 then
+      local str = string.format("%s %s|w%d", locale.money.contribution_point, FONT_COLOR_HEX.BLUE, contributionPoint)
+      rewardContributionPoint:SetText(str)
+      SetLastTarget(rewardContributionPoint)
+      rewardContributionPoint:Show(true)
+    else
+      rewardContributionPoint:SetText("")
+      rewardContributionPoint:Show(false)
+    end
+    local actabilityInfo = X2Quest:RewardActability(qType)
+    if actabilityInfo ~= nil and actabilityInfo.point ~= 0 then
+      local str = string.format("%s %s %s%d", actabilityInfo.name, locale.skill.actabilityButtonText, FONT_COLOR_HEX.BLUE, actabilityInfo.point)
+      rewardActability:SetText(str)
+      SetLastTarget(rewardActability)
+      rewardActability:Show(true)
+    else
+      rewardActability:SetText("")
+      rewardActability:Show(false)
+    end
+    if 0 < X2Quest:GetQuestContextRewardItemAllCount(wnd.qType) then
+      local itemType = X2Quest:GetQuestContextRewardItemIconType(wnd.qType, 1)
+      local itemCount = X2Quest:GetQuestContextRewardItemCount(wnd.qType, 1)
+      local itemInfo = X2Item:GetItemInfoByType(itemType)
+      rewardItemBtn:SetItemInfo(itemInfo)
+      rewardItemLabel:SetText(itemInfo.name)
+      if itemCount ~= nil and itemCount > 1 then
+        rewardCountLabel:SetText(string.format("X %d", itemCount))
+        rewardItemLabel:AddAnchor("LEFT", rewardItemBtn, "RIGHT", 5, -5)
+        rewardCountLabel:Show(true)
+      else
+        rewardItemLabel:AddAnchor("LEFT", rewardItemBtn, "RIGHT", 5, 0)
+        rewardCountLabel:Show(false)
+      end
+      rewardItemBtn:Show(true)
+      rewardItemLabel:Show(true)
+      rewardItemBg:SetVisible(true)
+      if lastTarget == rewardTitle then
+        rewardItemBtn:AddAnchor("TOPLEFT", lastTarget, "BOTTOMLEFT", 0, yOffset)
+      else
+        rewardItemBtn:AddAnchor("TOPLEFT", lastTarget, "BOTTOMLEFT", -15, yOffset)
+      end
+      lastTarget = rewardItemBtn
+    else
+      rewardItemBtn:Show(false)
+      rewardItemLabel:Show(false)
+      rewardCountLabel:Show(false)
+      rewardItemBg:SetVisible(false)
+    end
+    if lastTarget == rewardTitle then
+      rewardWnd:SetHeight(0)
+      rewardWnd:Show(false)
+    else
+      local _, rY = rewardWnd:GetOffset()
+      local _, tY = lastTarget:GetOffset()
+      local height = tY + lastTarget:GetHeight() - rY
+      rewardWnd:SetHeight(height)
+    end
+  end
+  function wnd:Update()
+    if wnd.aType ~= nil then
+      local info = X2Achievement:GetAchievementInfo(wnd.aType)
+      descLabel:SetText(info.desc)
+      descriptionWnd:SetHeight(descBg:GetHeight())
+      UpdateObjectiveList(info.objective)
+      objectiveWnd:Show(false)
+      bubble:Show(false)
+      rewardWnd:RemoveAllAnchors()
+      rewardWnd:AddAnchor("TOPLEFT", objectiveList, "BOTTOMLEFT", 0, 20)
+      rewardWnd:AddAnchor("TOPRIGHT", objectiveList, "BOTTOMRIGHT", 0, 20)
+      if info.reward == nil or info.reward == 0 then
+        rewardWnd:Show(false)
+        rewardWnd:SetHeight(0)
+      else
+        local itemInfo = X2Item:GetItemInfoByType(info.reward)
+        rewardItemBtn:SetItemInfo(itemInfo)
+        rewardItemLabel:SetText(itemInfo.name)
+        if info.rewardCount ~= nil and info.rewardCount > 1 then
+          rewardCountLabel:SetText(string.format("X %d", info.rewardCount))
+          rewardItemLabel:AddAnchor("LEFT", rewardItemBtn, "RIGHT", 5, -5)
+          rewardCountLabel:Show(true)
+        else
+          rewardItemLabel:AddAnchor("LEFT", rewardItemBtn, "RIGHT", 5, 0)
+          rewardCountLabel:Show(false)
+        end
+        rewardWnd:Show(true)
+      end
+      rewardWnd:SetHeight(rewardTitle:GetHeight() + 10 + rewardItemBtn:GetHeight())
+    elseif wnd.qType ~= nil then
+      local info = X2Quest:GetTodayQuestInfo(wnd.qType)
+      descLabel:SetText(info.description)
+      descriptionWnd:SetHeight(descBg:GetHeight())
+      objectiveList:Show(false)
+      if X2Quest:IsProgressQuestInJournal(wnd.qType) then
+        UpdateObjectiveWnd(wnd.qType, info)
+      else
+        objectiveWnd:Show(false)
+      end
+      UpdateQuestReward(wnd.qType)
+      UpdateBubble(wnd.qType)
+    end
+    local height = 0
+    local _, cY = wnd:GetOffset()
+    if bubble:IsVisible() then
+      local _, rY = bubble:GetOffset()
+      local rH = bubble:GetHeight()
+      height = rY + rH - cY
+    else
+      local _, rY = rewardWnd:GetOffset()
+      local rH = rewardWnd:GetHeight()
+      height = rY + rH - cY
+    end
+    ResetScroll(wnd, height)
+  end
+  return wnd
+end

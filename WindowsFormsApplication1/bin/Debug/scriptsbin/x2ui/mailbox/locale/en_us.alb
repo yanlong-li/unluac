@@ -1,0 +1,58 @@
+if X2Util:GetGameProvider() == TRION then
+  mailBoxLocale.wnd = {width = 510, useImageBtn = true}
+  function mailBoxLocale:SetLayoutBottomBtns(window, deleteBtn, readDeleteBtn, takeBtn, writeBtn)
+    local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+    ApplyButtonSkin(deleteBtn, BUTTON_CONTENTS.MAIL_SELECTED_DELETE)
+    deleteBtn:AddAnchor("BOTTOMLEFT", window, sideMargin, -sideMargin)
+    ApplyButtonSkin(readDeleteBtn, BUTTON_CONTENTS.MAIL_READ_MAIL_DELETE)
+    readDeleteBtn:AddAnchor("LEFT", deleteBtn, "RIGHT", 0, 0)
+    ApplyButtonSkin(takeBtn, BUTTON_CONTENTS.MAIL_TAKE)
+    takeBtn:AddAnchor("LEFT", readDeleteBtn, "RIGHT", 0, 0)
+    ApplyButtonSkin(writeBtn, BUTTON_CONTENTS.MAIL_WRITE)
+    writeBtn:AddAnchor("BOTTOMRIGHT", window, -sideMargin, -sideMargin)
+    local OnEnter = function(self)
+      SetTargetAnchorTooltip(X2Locale:LocalizeUiText(MAIL_TEXT, "write_mail"), "BOTTOMLEFT", self, "TOPLEFT", 0, 0)
+    end
+    writeBtn:SetHandler("OnEnter", OnEnter)
+    local OnLeave = function()
+      HideTooltip()
+    end
+    writeBtn:SetHandler("OnLeave", OnLeave)
+  end
+  function mailBoxLocale:TabChangedFunc(allDeleteBtn, tabIdx)
+    if tabIdx == 1 then
+      ChangeButtonSkin(allDeleteBtn, BUTTON_CONTENTS.MAIL_READ_MAIL_DELETE)
+    elseif tabIdx == 2 then
+      ChangeButtonSkin(allDeleteBtn, BUTTON_CONTENTS.MAIL_ALL_MAIL_DELETE)
+    end
+  end
+  mailBoxLocale.mail = {
+    bodyMaxWidth = 370,
+    sendCommission = {offsetX = 130}
+  }
+  function mailBoxLocale.MakeEndFilter(startDate, endDate, filter1, filter2)
+    return filter1
+  end
+  mailBoxLocale.housingTaxFilter = FORMAT_FILTER.YEAR + FORMAT_FILTER.MONTH + FORMAT_FILTER.DAY + FORMAT_FILTER.HOUR + FORMAT_FILTER.MINUTE
+  FORM_MAILBOX = {
+    COMMERCIAL_MAIL = {
+      MAIL_TYPE_COORDS = {
+        EVENT = {
+          GetTextureInfo(TEXTURE_PATH.COMMERCIAL_MAIL, "icon_event"):GetCoords()
+        },
+        BUY = {
+          GetTextureInfo(TEXTURE_PATH.COMMERCIAL_MAIL, "icon_purch"):GetCoords()
+        },
+        GIFT = {
+          GetTextureInfo(TEXTURE_PATH.COMMERCIAL_MAIL, "icon_gift"):GetCoords()
+        }
+      },
+      COLUMN_WIDTH = {
+        100,
+        160,
+        130
+      }
+    }
+  }
+  mailBoxLocale.useSpamMailFilter = true
+end

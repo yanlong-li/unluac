@@ -1,0 +1,126 @@
+local reportMode = 1
+local function CreateReportCrimeWindow(id)
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local frame = CreateWindow(id, "UIParent")
+  frame:Show(false)
+  frame:SetCloseOnEscape(false)
+  frame:AddAnchor("CENTER", "UIParent", 0, 0)
+  frame:SetExtent(POPUP_WINDOW_WIDTH, 240)
+  frame:SetTitle(locale.trial.crimeReport)
+  frame:EnableHidingIsRemove(true)
+  local reportDesc = frame:CreateChildWidget("textbox", "reportDesc", 0, true)
+  reportDesc:SetWidth(frame:GetWidth() - sideMargin * 2)
+  reportDesc:AddAnchor("TOP", frame, 0, titleMargin)
+  reportDesc.style:SetFontSize(FONT_SIZE.LARGE)
+  ApplyTextColor(reportDesc, FONT_COLOR.DEFAULT)
+  local report_edit = frame:CreateChildWidget("editboxmultiline", "report_edit", 0, true)
+  report_edit:SetExtent(312, 50)
+  report_edit:AddAnchor("TOP", reportDesc, "BOTTOM", 0, sideMargin / 2)
+  InitMultiline(report_edit)
+  report_edit:SetMaxTextLength(50)
+  report_edit.style:SetAlign(ALIGN_TOP_LEFT)
+  report_edit:SetCursorColor(0, 0, 0, 1)
+  report_edit.style:SetColor(0, 0, 0, 1)
+  report_edit:SetInset(10, 10, 20, 5)
+  CreateEditGuideText(report_edit, locale.trial.input_report, ALIGN_TOP_LEFT)
+  report_edit.guideText:SetInset(12, 12, 0, 0)
+  function frame:ShowProc()
+    self.report_edit.guideText:Show(true)
+    self.report_edit:SetText("")
+  end
+  local input_texture = report_edit:CreateImageDrawable(TEXTURE_PATH.DEFAULT, "background")
+  input_texture:SetCoords(446, 358, 204, 46)
+  input_texture:SetExtent(204, 46)
+  input_texture:SetColor(1, 1, 1, 0.7)
+  input_texture:AddAnchor("TOPLEFT", report_edit, 0, 0)
+  local input_texture_2 = report_edit:CreateImageDrawable(TEXTURE_PATH.DEFAULT, "background")
+  input_texture_2:SetCoords(650, 404, -204, -46)
+  input_texture_2:SetExtent(204, 46)
+  input_texture_2:SetColor(1, 1, 1, 0.7)
+  input_texture_2:AddAnchor("BOTTOMRIGHT", report_edit, 0, 0)
+  local location = frame:CreateChildWidget("textbox", "location", 0, true)
+  location:SetWidth(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH - 10)
+  location:AddAnchor("TOPLEFT", report_edit, "BOTTOMLEFT", sideMargin / 1.5, sideMargin / 1.5)
+  location.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(location, FONT_COLOR.TITLE)
+  DrawRoundDingbat(location)
+  location.dingbat:RemoveAllAnchors()
+  location.dingbat:AddAnchor("TOPRIGHT", location, "TOPLEFT", -2, 3)
+  local report_time = frame:CreateChildWidget("textbox", "report_time", 0, true)
+  report_time:SetWidth(DEFAULT_SIZE.DIALOG_CONTENT_WIDTH - 10)
+  report_time:AddAnchor("TOPLEFT", location, "BOTTOMLEFT", 0, 0)
+  report_time.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(report_time, FONT_COLOR.TITLE)
+  DrawRoundDingbat(report_time)
+  local info = {
+    leftButtonStr = GetUIText(TRIAL_TEXT, "report_ok"),
+    leftButtonLeftClickFunc = function()
+      local msg = frame.report_edit:GetText()
+      if reportMode == 1 then
+        X2Trial:ReportCrime(msg)
+      else
+        X2Trial:ReportBotSuspect(msg)
+      end
+      frame:Show(false)
+    end,
+    rightButtonStr = GetUIText(MSG_BOX_BTN_TEXT, "cancel"),
+    rightButtonLeftClickFunc = function()
+      frame:Show(false)
+    end
+  }
+  CreateWindowDefaultTextButtonSet(frame, info)
+  local function SetFrameHeight()
+    local height = titleMargin + sideMargin * 1.3 + frame.leftButton:GetHeight() + reportDesc:GetHeight() + report_edit:GetHeight()
+    height = height + location:GetHeight() + report_time:GetHeight() + sideMargin * 2
+    frame:SetHeight(height)
+  end
+  function frame:FillData(isNotBotReport, name, locationName)
+    if isNotBotReport then
+      reportMode = 1
+      local text = locale.trial.crimeReportByDoodad(name)
+      self.reportDesc:SetText(text)
+    else
+      reportMode = 2
+      local text = locale.trial.botSuspectReport(name)
+      self.reportDesc:SetText(text)
+    end
+    self.reportDesc:SetHeight(self.reportDesc:GetTextHeight())
+    local location = locale.trial.crimeReportLocation(locationName)
+    self.location:SetText(location)
+    self.location:SetHeight(self.location:GetTextHeight())
+    local curTime = X2Time:GetLocalTime()
+    local nowDate = X2Time:TimeToDate(curTime)
+    local nowDateString = locale.time.GetDateToDateFormat(nowDate, DATE_FORMAT_FILTER1)
+    local reportTime = locale.trial.crimeReportTime(nowDateString)
+    self.report_time:SetText(reportTime)
+    self.report_time:SetHeight(self.report_time:GetTextHeight())
+    SetFrameHeight()
+  end
+  local OnHide = function()
+    userTrial.reportCrimeWnd = nil
+  end
+  frame:SetHandler("OnHide", OnHide)
+  return frame
+end
+local function ShowReportCrimeWindow(doodadName, locationName)
+  if userTrial.reportCrimeWnd == nil then
+    userTrial.reportCrimeWnd = CreateReportCrimeWindow("userTrial.reportCrimeWnd")
+    userTrial.reportCrimeWnd:FillData(true, doodadName, locationName)
+    userTrial.reportCrimeWnd:Show(true)
+  else
+    userTrial.reportCrimeWnd:FillData(true, doodadName, locationName)
+    userTrial.reportCrimeWnd:Show(true)
+  end
+end
+UIParent:SetEventHandler("REPORT_CRIME", ShowReportCrimeWindow)
+local function ShowReportBotSuspectWindow(targetName, locationName)
+  if userTrial.reportCrimeWnd == nil then
+    userTrial.reportCrimeWnd = CreateReportCrimeWindow("userTrial.reportCrimeWnd")
+    userTrial.reportCrimeWnd:FillData(false, targetName, locationName)
+    userTrial.reportCrimeWnd:Show(true)
+  else
+    userTrial.reportCrimeWnd:FillData(false, targetName, locationName)
+    userTrial.reportCrimeWnd:Show(true)
+  end
+end
+UIParent:SetEventHandler("REPORT_BOT_SUSPECT", ShowReportBotSuspectWindow)

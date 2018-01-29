@@ -1,0 +1,265 @@
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+MAX_COMERCIAL_ATTACHMENT_COUNT = 10
+MAX_MIA_ATTACHMENT_COUNT = 2
+PAGE_PER_MAIL_MAX_COUNT = 14
+COMERCIAL_MAIL_TYPE = {
+  INVALID_YPE = 0,
+  MAIL_CHARGED = 9,
+  MAIL_PROMOTION = 10,
+  MAIL_MIA_SEND = 11,
+  MAIL_MIA_RECV = 12,
+  TYPE_MAX = 13
+}
+COMERCIAL_MAIL_COL = {
+  TITLE = 1,
+  NAME = 2,
+  ISREAD = 3,
+  HASITEM = 4,
+  MAILID = 5,
+  CHK = 6,
+  MAIL_TYPE = 7,
+  RECV_DATE = 8,
+  REFUND_LIMIT_FILE_TIME = 9,
+  REFUND = 10,
+  GIFT = 11
+}
+function CreateComercialMailUpperFrame(widget, style)
+  local roleLabel = widget:CreateChildWidget("label", "roleLabel", 0, true)
+  roleLabel:SetHeight(FONT_SIZE.LARGE)
+  roleLabel:AddAnchor("TOPLEFT", widget, sideMargin, 45)
+  roleLabel.style:SetFontSize(FONT_SIZE.LARGE)
+  roleLabel.style:SetAlign(ALIGN_RIGHT)
+  roleLabel.style:SetSnap(true)
+  ApplyTextColor(roleLabel, FONT_COLOR.BLACK)
+  local bg = CreateContentBackground(roleLabel, "TYPE6")
+  bg:SetExtent(312, 58)
+  bg:SetColor(1, 1, 1, 0.4)
+  bg:AddAnchor("TOPLEFT", roleLabel, -5, -sideMargin / 2)
+  local namePolicyInfo = X2Util:GetNamePolicyInfo(VNT_CHAR)
+  local roleEdit = widget:CreateChildWidget("editbox", "roleEdit", 0, true)
+  roleEdit:SetHeight(DEFAULT_SIZE.EDIT_HEIGHT)
+  roleEdit:AddAnchor("LEFT", roleLabel, "RIGHT", -3, 0)
+  roleEdit:AddAnchor("RIGHT", widget, -sideMargin, 0)
+  roleEdit:SetMaxTextLength(namePolicyInfo.local_max)
+  InitEdit(roleEdit)
+  roleEdit.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.LARGE)
+  ApplyTextColor(roleEdit, FONT_COLOR.BLUE)
+  local titleLabel = widget:CreateChildWidget("label", "titleLabel", 0, true)
+  titleLabel:SetHeight(FONT_SIZE.LARGE)
+  titleLabel:SetText(locale.mail.title .. ": ")
+  titleLabel:AddAnchor("TOPRIGHT", roleLabel, "BOTTOMRIGHT", 0, 5)
+  titleLabel.style:SetAlign(ALIGN_RIGHT)
+  titleLabel.style:SetFontSize(FONT_SIZE.LARGE)
+  titleLabel.style:SetSnap(true)
+  ApplyTextColor(titleLabel, FONT_COLOR.BLACK)
+  local titleEdit = widget:CreateChildWidget("label", "titleEdit", 0, true)
+  titleEdit:SetHeight(DEFAULT_SIZE.EDIT_HEIGHT)
+  titleEdit:AddAnchor("LEFT", titleLabel, "RIGHT", -3, 0)
+  titleEdit:AddAnchor("RIGHT", widget, -sideMargin, 0)
+  titleEdit.style:SetAlign(ALIGN_LEFT)
+  titleEdit.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.LARGE)
+  ApplyTextColor(titleEdit, FONT_COLOR.BLUE)
+  tooltipAttachParam = {
+    "TOPLEFT",
+    titleEdit,
+    "BOTTOM",
+    0,
+    0
+  }
+  ApplyEllipsisText(titleEdit, titleEdit:GetWidth(), tooltipAttachParam)
+  local width
+  if style == "write" then
+    roleLabel:SetText(locale.mail.receiver .. ": ")
+    roleEdit:SetReadOnly(false)
+    width = roleLabel.style:GetTextWidth(locale.mail.receiver .. ": ")
+  else
+    roleLabel:SetText(locale.mail.sender .. ": ")
+    roleEdit:SetReadOnly(true)
+    width = roleLabel.style:GetTextWidth(locale.mail.sender .. ": ")
+  end
+  if width < titleLabel.style:GetTextWidth(locale.mail.title .. ": ") then
+    width = titleLabel.style:GetTextWidth(locale.mail.title .. ": ")
+  end
+  roleLabel:SetWidth(width)
+  titleLabel:SetWidth(width)
+  local bg = CreateContentBackground(widget, "TYPE13", nil, "artwork")
+  bg:SetExtent(398, 334)
+  bg:AddAnchor("TOP", titleLabel, "BOTTOM", 0, sideMargin)
+  bg:AddAnchor("LEFT", widget, sideMargin - 3, 0)
+  widget.bg = bg
+  local date = widget:CreateChildWidget("label", "date", 0, true)
+  date:SetAutoResize(true)
+  date:SetHeight(15)
+  date:AddAnchor("BOTTOMRIGHT", bg, "TOPRIGHT", -5, -1)
+  date.style:SetColor(0.7, 0.7, 0.7, 1)
+end
+function SetViewOfComercialContentFrame(widget, style)
+  local defaultFrame = widget:CreateChildWidget("window", "defaultFrame", 0, true)
+  defaultFrame:Show(true)
+  defaultFrame:SetExtent(400, 335)
+  defaultFrame:AddAnchor("TOPLEFT", widget.titleLabel, "BOTTOMLEFT", -5, sideMargin)
+  local content = widget:CreateChildWidget("editboxmultiline", "content", 0, true)
+  content:SetExtent(400, 215)
+  content:AddAnchor("TOPLEFT", defaultFrame, 0, 0)
+  InitMultiline(content)
+  content:SetMaxTextLength(300)
+  content.style:SetAlign(ALIGN_TOP_LEFT)
+  content:SetCursorColor(0, 0, 0, 1)
+  content.style:SetColor(0, 0, 0, 1)
+  local attachWindow = defaultFrame:CreateChildWidget("window", "attachWindow", 0, true)
+  attachWindow:Show(true)
+  defaultFrame.itemSlots = {}
+  local x = 0
+  for i = 1, MAX_MIA_ATTACHMENT_COUNT do
+    local itemSlot = CreateItemIconButton(defaultFrame:GetId() .. ".itemSlot" .. i, defaultFrame)
+    itemSlot:SetExtent(ICON_SIZE.DEFAULT, ICON_SIZE.DEFAULT)
+    itemSlot:AddAnchor("BOTTOMLEFT", attachWindow, x, 0)
+    x = x + 44
+    defaultFrame.itemSlots[i] = itemSlot
+  end
+  if style == "write" then
+    attachWindow:AddAnchor("BOTTOM", defaultFrame, 0, -sideMargin)
+    attachWindow:SetExtent(88, 80)
+    local attachLabel = defaultFrame:CreateChildWidget("label", "attachLabel", 0, true)
+    attachLabel:SetText(locale.mail.attachment)
+    attachLabel:SetExtent(60, 20)
+    attachLabel:AddAnchor("TOP", attachWindow, 0, 5)
+    attachLabel.style:SetFontSize(FONT_SIZE.LARGE)
+    attachLabel.style:SetShadow(false)
+    ApplyTextColor(attachLabel, FONT_COLOR.BLUE)
+    local labelDeco = CreateContentBackground(attachLabel, "TYPE6")
+    labelDeco:SetExtent(109, 28)
+    labelDeco:SetColor(1, 1, 1, 0.5)
+    labelDeco:AddAnchor("CENTER", attachLabel, 5, 0)
+    local input_texture = content:CreateImageDrawable(TEXTURE_PATH.DEFAULT, "background")
+    input_texture:SetCoords(446, 358, 204, 46)
+    input_texture:SetExtent(204, 44)
+    input_texture:SetColor(1, 1, 1, 0.7)
+    input_texture:AddAnchor("TOPLEFT", content, sideMargin, sideMargin)
+    local input_texture_2 = content:CreateImageDrawable(TEXTURE_PATH.DEFAULT, "background")
+    input_texture_2:SetCoords(650, 404, -204, -46)
+    input_texture_2:SetExtent(204, 44)
+    input_texture_2:SetColor(1, 1, 1, 0.7)
+    input_texture_2:AddAnchor("BOTTOMRIGHT", content, -sideMargin, 0)
+    content:SetInset(30, 30, 35, 30)
+  else
+    attachWindow:AddAnchor("BOTTOM", defaultFrame, 0, -sideMargin * 3)
+    attachWindow:SetExtent(88, 44)
+    content:SetReadOnly(true)
+    content:SetInset(sideMargin, sideMargin, 30, sideMargin)
+    local attachReceiveButton = defaultFrame:CreateChildWidget("button", "attachReceiveButton", 0, true)
+    attachReceiveButton:Enable(false)
+    attachReceiveButton:AddAnchor("TOP", attachWindow, "BOTTOM", -1, 5)
+    attachReceiveButton:SetText(locale.mail.attachRecv)
+    ApplyButtonSkin(attachReceiveButton, BUTTON_BASIC.DEFAULT)
+  end
+end
+function CreateComercialContentFrame(widget, style)
+  SetViewOfComercialContentFrame(widget, style)
+  function widget:VisibleReceivedContentFrame(boolean)
+    self.defaultFrame:Show(boolean)
+  end
+end
+function RefundOrder(left, right)
+  local leftRefundable = left[COMERCIAL_MAIL_COL.REFUND]
+  local rightRefundable = right[COMERCIAL_MAIL_COL.REFUND]
+  if leftRefundable and rightRefundable then
+    local beginTime = X2Util:GetCurrentFileTimeStr()
+    local leftLimit = left[COMERCIAL_MAIL_COL.REFUND_LIMIT_FILE_TIME]
+    local rightLimit = right[COMERCIAL_MAIL_COL.REFUND_LIMIT_FILE_TIME]
+    local timeTable = X2Util:DiffTimeTable("", leftLimit, beginTime)
+    local leftOver = timeTable.over
+    local timeTable = X2Util:DiffTimeTable("", rightLimit, beginTime)
+    local rightOver = timeTable.over
+    if leftOver == rightOver then
+      return leftLimit < rightLimit and true or false
+    end
+    return not leftOver
+  elseif leftRefundable or rightRefundable then
+    return leftRefundable or not rightRefundable
+  else
+    return left[COMERCIAL_MAIL_COL.RECV_DATE] < right[COMERCIAL_MAIL_COL.RECV_DATE] and true or false
+  end
+end
+function MakeRefundLimitStr(refund, endTime, notRefund, over, timeDH, timeHM, timeM, lessM)
+  if not baselibLocale.visibleRefundInfo then
+    return ""
+  end
+  if refund == false then
+    return notRefund
+  end
+  local beginTime = X2Util:GetCurrentFileTimeStr()
+  local timeTable = X2Util:DiffTimeTable("Dhm", endTime, beginTime)
+  if timeTable.over then
+    return over
+  end
+  if timeTable.day > 0 then
+    return timeDH(timeTable.day, timeTable.hour)
+  end
+  if 0 < timeTable.hour then
+    return timeHM(timeTable.hour, timeTable.min)
+  end
+  if 0 < timeTable.min then
+    return timeM(timeTable.min)
+  end
+  return lessM
+end
+function GetEnableRefund(refund, endTime)
+  if not refund then
+    return false
+  end
+  local beginTime = X2Util:GetCurrentFileTimeStr()
+  local timeTable = X2Util:DiffTimeTable("Dhm", endTime, beginTime)
+  if timeTable.over then
+    return false
+  end
+  return true
+end
+function MakeRefundLimitStrForBody(refund, endTime)
+  return MakeRefundLimitStr(refund, endTime, locale.comercialMail.notRefundableGoods, locale.comercialMail.refundExpiration, locale.comercialMail.GetRefundLimitDH, locale.comercialMail.GetRefundLimitHM, locale.comercialMail.GetRefundLimitM, locale.comercialMail.refundLimitLessM)
+end
+function MakeRefundLimitStrForList(refund, endTime)
+  return MakeRefundLimitStr(refund, endTime, locale.comercialMail.notRefundable, locale.comercialMail.refundExpiration, locale.comercialMail.GetLimitDH, locale.comercialMail.GetLimitHM, locale.comercialMail.GetLimitM, locale.comercialMail.limitLessM)
+end
+function RecvDateStrFromBody(recvDate)
+  if recvDate == nil then
+    return "unknown"
+  end
+  return baselibLocale:GetDefaultDateString(recvDate.year, recvDate.month, recvDate.day)
+end
+function ParsePipeArgFromBody(bodyInfo)
+  local args = X2Util:ParsePipeArgsFromText(bodyInfo.text)
+  local info = {
+    limit_file_time = "0",
+    refund = false,
+    gift = false
+  }
+  if args.limit ~= nil then
+    local time = args.limit
+    local fileTimeTable = {
+      year = tonumber(time[1]),
+      mon = tonumber(time[2]),
+      mday = tonumber(time[3]),
+      hour = tonumber(time[4]),
+      min = tonumber(time[5]),
+      sec = tonumber(time[6])
+    }
+    info.limit_file_time = X2Util:MakeFileTimeStr(fileTimeTable)
+  end
+  if args.refund ~= nil then
+    local refund = args.refund
+    info.refund = refund[1] == "1"
+  end
+  if args.gift ~= nil then
+    local gift = args.gift
+    info.gift = gift[1] == "1"
+  end
+  return info
+end
+function GetCustomRefundMsg(isGift, enableRefund, priceType)
+  if not isGift and enableRefund and priceType == PRICE_TYPE_AA_CASH then
+    return X2Locale:LocalizeUiText(COMMON_TEXT, "commecial_mail_aacash_goods_refund_rule")
+  else
+    return X2Locale:LocalizeUiText(MAIL_TEXT, "refund_life_time_item")
+  end
+end

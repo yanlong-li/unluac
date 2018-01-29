@@ -1,0 +1,68 @@
+local MAX_RAID_PARTIES = X2Team:GetMaxParties()
+function SetViewOfRaidFrame(ownId)
+  local w = UIParent:CreateWidget("emptywidget", ownId, "UIParent")
+  w:Clickable(false)
+  w:Show(false)
+  w.simple = false
+  w.vertical = false
+  w.rowCount = 0
+  w.columnCount = 0
+  local party = {}
+  for i = 1, MAX_RAID_PARTIES do
+    party[i] = CreateRaidParty(w, "partyWindow", i)
+    if i == 1 then
+      party[i]:AddAnchor("TOPLEFT", w, 0, 0)
+    else
+      party[i]:AddAnchor("TOPLEFT", party[i - 1], "TOPRIGHT", PARTY_FRAME_AMONG_INSET_HORIZON, 0)
+    end
+  end
+  w.party = party
+  function w:OnBoundChanged()
+    local width, height = self:GetExtent()
+    local partyWidth = width / 5
+    local partyHeight = (height - PARTY_FRAME_AMONG_INSET_VERTICAL) / 2
+    for i = 1, MAX_RAID_PARTIES do
+      self.party[i]:SetExtent(partyWidth, partyHeight)
+    end
+  end
+  w:SetHandler("OnBoundChanged", w.OnBoundChanged)
+  function w:SetSimpleMode(simple)
+    self.simple = simple
+    if simple == true then
+      w:SetExtent(SIMPLE_RAID_FRAME_WIDTH, SIMPLE_RAID_FRAME_HEIGHT)
+    else
+      w:SetExtent(RAID_FRAME_WIDTH, RAID_FRAME_HEIGHT)
+    end
+    for i = 1, MAX_RAID_PARTIES do
+      self.party[i]:SetSimpleMode(simple)
+    end
+  end
+  function w:SetVertical(vertical, feedCount)
+    self.vertical = vertical
+    self.rowCount = 0
+    self.columnCount = 0
+    for i = 1, MAX_RAID_PARTIES do
+      local row = math.mod(i - 1, feedCount)
+      local column = math.floor((i - 1) / feedCount)
+      local party = w.party
+      party[i]:UpdateMemberAnchor(vertical)
+      if i == 1 then
+        party[i]:RemoveAllAnchors()
+        party[i]:AddAnchor("TOPLEFT", w, "TOPLEFT", 0, 0)
+      elseif i > 5 then
+        party[i]:RemoveAllAnchors()
+        party[i]:AddAnchor("TOPLEFT", party[i - 5], "BOTTOMLEFT", 0, PARTY_FRAME_AMONG_INSET_VERTICAL)
+      elseif row == 0 and column > 0 then
+        party[i]:RemoveAllAnchors()
+        party[i]:AddAnchor("TOPLEFT", party[(column - 1) * feedCount + 1], "TOPRIGHT", 0, 0)
+      else
+        party[i]:RemoveAllAnchors()
+        party[i]:AddAnchor("TOPLEFT", party[i - 1], "TOPRIGHT", PARTY_FRAME_AMONG_INSET_HORIZON, 0)
+      end
+      self.rowCount = math.max(row + 1, self.rowCount)
+      self.columnCount = math.max(column + 1, self.columnCount)
+    end
+  end
+  w:SetVertical(false, 10)
+  return w
+end

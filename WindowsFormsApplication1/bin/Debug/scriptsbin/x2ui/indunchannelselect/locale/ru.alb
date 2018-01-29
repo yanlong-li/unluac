@@ -1,0 +1,8 @@
+if X2Util:GetGameProvider() == MAILRU then
+  WINDOW_INDUN_CHANNEL_SELECT.CHANNEL_STATE_COORDS = {
+    UIParent:GetTextureData(TEXTURE_PATH.INDUN_CHANNEL_SELECT, "icon_up").coords,
+    UIParent:GetTextureData(TEXTURE_PATH.INDUN_CHANNEL_SELECT, "icon_moderate").coords,
+    UIParent:GetTextureData(TEXTURE_PATH.INDUN_CHANNEL_SELECT, "icon_full").coords,
+    UIParent:GetTextureData(TEXTURE_PATH.INDUN_CHANNEL_SELECT, "icon_maintenance").coords
+  }
+end

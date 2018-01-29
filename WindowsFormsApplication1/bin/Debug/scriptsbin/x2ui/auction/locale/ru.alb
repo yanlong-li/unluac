@@ -1,0 +1,57 @@
+if X2Util:GetGameProvider() == MAILRU then
+  auctionLocale.icon = {
+    currentCoords = {
+      0,
+      42,
+      24,
+      21
+    },
+    directCoords = {
+      0,
+      21,
+      24,
+      21
+    }
+  }
+  auctionLocale.width = {
+    window = 900,
+    category = 230,
+    bidListCtrl = 620,
+    putupListCtrl = 650,
+    bidHistoryListCtrl = 860,
+    bidStateCol = 110,
+    itemlevelCol = 65,
+    itemConditionCol = 100,
+    gradeCombobox = 140,
+    timeCol = 65
+  }
+  auctionLocale.nameColWidth = {
+    bidTab = 190,
+    putupTab = 245,
+    bidHistoryTab = 335
+  }
+  auctionLocale.nameColLimitLen = {
+    bidTab = 40,
+    putupTab = 50,
+    bidHistoryTab = 70
+  }
+  auctionLocale.leftTimeColInset = 5
+  auctionLocale.categoryTooltip = true
+  function auctionLocale:CreateDirectBundlePriceLabel(id, parent, anchorTarget)
+    local directBundlePriceLabel = parent:CreateChildWidget("textbox", id, 0, true)
+    directBundlePriceLabel:SetWidth(190)
+    directBundlePriceLabel:AddAnchor("TOPLEFT", anchorTarget, "BOTTOMLEFT", 0, 10)
+    directBundlePriceLabel:SetText(locale.auction.bundlePrice)
+    directBundlePriceLabel:SetHeight(directBundlePriceLabel:GetTextHeight())
+    directBundlePriceLabel.style:SetAlign(ALIGN_LEFT)
+    ApplyTextColor(directBundlePriceLabel, FONT_COLOR.BROWN)
+    return directBundlePriceLabel
+  end
+  function auctionLocale:SetLayoutDirectBundleAmountLabel(label, target)
+    label:AddAnchor("TOPLEFT", target, "BOTTOMLEFT", 0, 3)
+    label.style:SetAlign(ALIGN_LEFT)
+  end
+  function auctionLocale:AnchorDirectBundlePrice(widget, target)
+    widget:AddAnchor("TOPLEFT", target, "BOTTOMLEFT", 0, 3)
+  end
+end

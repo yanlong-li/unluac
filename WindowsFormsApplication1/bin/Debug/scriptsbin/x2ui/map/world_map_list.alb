@@ -1,0 +1,875 @@
+local FILE_PATH = "Game/ui/map/image_map.g"
+for level in pairs(MAP_LEVELS) do
+  MAP_LIST[level] = {}
+end
+function FindMapData(level, id)
+  local map = MAP_LIST[level]
+  for i = 1, #map do
+    if map[i].id == id then
+      return map[i]
+    end
+  end
+  return nil
+end
+function FindMapDataIndex(level, id)
+  local map = MAP_LIST[level]
+  for i = 1, #map do
+    if map[i].id == id then
+      return i
+    end
+  end
+  return (#map or 0) + 1
+end
+function MAP_LIST:AddDefaultImg(zoneInfo)
+  local map = MAP_LIST[zoneInfo.level]
+  local index = FindMapDataIndex(zoneInfo.level, zoneInfo.id)
+  if map[index] == nil then
+    map[index] = {}
+  end
+  local mapInfo = map[index]
+  mapInfo.id = zoneInfo.id
+  mapInfo.name = zoneInfo.name
+  mapInfo.routeImg = nil
+  if zoneInfo.overImage then
+    mapInfo.overName = string.format("%s_over", mapInfo.name)
+    mapInfo.overImgPath = zoneInfo.overImage
+  end
+  local stateIconKey = string.format("%s_icon", mapInfo.name)
+  local textureInfo = GetTextureInfo(FILE_PATH, stateIconKey)
+  if textureInfo ~= nil and textureInfo:ValidOffset() then
+    local offset = textureInfo:GetOffset()
+    mapInfo.stateIconInfo = {}
+    mapInfo.stateIconInfo.offsetX = offset[1]
+    mapInfo.stateIconInfo.offsetY = offset[2]
+  end
+end
+function MAP_LIST:Get(level, index)
+  local map = MAP_LIST[level]
+  return map[index]
+end
+local main_world_over_img_name = "main_world_over"
+local land_west_over_img_name = "land_west_over"
+local land_east_over_img_name = "land_east_over"
+local land_east_over2_img_name = "land_east_over2"
+local land_origin_over_img_name = "land_origin_over"
+local s_silent_sea_over_img_name = "s_silent_sea_over"
+local worldMapInfos = {
+  {
+    level = WMS_WORLD,
+    id = 2,
+    name = "main_world"
+  },
+  {
+    level = WMS_CONTINENT,
+    id = 3,
+    name = "land_west",
+    overImage = main_world_over_img_name
+  },
+  {
+    level = WMS_CONTINENT,
+    id = 4,
+    name = "land_east",
+    overImage = main_world_over_img_name
+  },
+  {
+    level = WMS_CONTINENT,
+    id = 5,
+    name = "land_origin",
+    overImage = main_world_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 1,
+    name = "w_gweonid_forest",
+    overImage = land_west_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 27,
+    name = "w_long_sand",
+    overImage = land_west_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 5,
+    name = "w_solzreed",
+    overImage = land_west_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 6,
+    name = "w_lilyut_meadow",
+    overImage = land_west_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 3,
+    name = "w_garangdol_plains",
+    overImage = land_west_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 18,
+    name = "w_white_forest",
+    overImage = land_west_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 2,
+    name = "w_marianople",
+    overImage = land_west_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 8,
+    name = "w_two_crowns",
+    overImage = land_west_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 20,
+    name = "w_cross_plains",
+    overImage = land_west_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 22,
+    name = "w_golden_plains",
+    overImage = land_west_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 26,
+    name = "w_hell_swamp",
+    overImage = land_west_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 19,
+    name = "w_the_carcass",
+    overImage = land_west_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 79,
+    name = "w_mirror_kingdom",
+    overImage = land_west_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 11,
+    name = "e_falcony_plateau",
+    overImage = land_east_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 24,
+    name = "e_tiger_spine_mountains",
+    overImage = land_east_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 9,
+    name = "e_mahadevi",
+    overImage = land_east_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 4,
+    name = "e_sunrise_peninsula",
+    overImage = land_east_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 25,
+    name = "e_ancient_forest",
+    overImage = land_east_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 12,
+    name = "e_singing_land",
+    overImage = land_east_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 7,
+    name = "e_rainbow_field",
+    overImage = land_east_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 17,
+    name = "e_ynystere",
+    overImage = land_east_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 14,
+    name = "e_steppe_belt",
+    overImage = land_east_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 16,
+    name = "e_lokas_checkers",
+    overImage = land_east_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 15,
+    name = "e_ruins_of_hariharalaya",
+    overImage = land_east_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 23,
+    name = "e_hasla",
+    overImage = land_east_over2_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 33,
+    name = "o_salpimari",
+    overImage = land_origin_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 34,
+    name = "o_nuimari",
+    overImage = land_origin_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 43,
+    name = "o_seonyeokmari",
+    overImage = land_origin_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 44,
+    name = "o_rest_land",
+    overImage = land_origin_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 54,
+    name = "o_abyss_gate",
+    overImage = land_origin_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 56,
+    name = "o_land_of_sunlights",
+    overImage = land_origin_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 67,
+    name = "o_library_1"
+  },
+  {
+    level = WMS_ZONE,
+    id = 65,
+    name = "o_library_2"
+  },
+  {
+    level = WMS_ZONE,
+    id = 69,
+    name = "o_library_3"
+  },
+  {
+    level = WMS_ZONE,
+    id = 61,
+    name = "o_shining_shore",
+    overImage = land_origin_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 78,
+    name = "o_dew_plains",
+    overImage = land_origin_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 57,
+    name = "o_ruins_of_gold",
+    overImage = land_origin_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 39,
+    name = "s_gold_sea",
+    overImage = main_world_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 30,
+    name = "s_lost_road_sea",
+    overImage = main_world_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 40,
+    name = "s_crescent_moon_sea",
+    overImage = main_world_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 36,
+    name = "s_silent_sea",
+    overImage = main_world_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 59,
+    name = "s_freedom_island",
+    overImage = s_silent_sea_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 60,
+    name = "s_pirate_island",
+    overImage = s_silent_sea_over_img_name
+  },
+  {
+    level = WMS_CITY,
+    id = 866,
+    name = "s_freedom_island_detail",
+    overImage = s_silent_sea_over_img_name
+  },
+  {
+    level = WMS_CITY,
+    id = 1135,
+    name = "s_tomb_of_ships",
+    overImage = s_silent_sea_over_img_name
+  },
+  {
+    level = WMS_ZONE,
+    id = 80,
+    name = "s_broken_mirrors_sea",
+    overImage = main_world_over_img_name
+  },
+  {
+    level = WMS_CITY,
+    id = 14,
+    name = "w_gweonid_forest_city",
+    overImage = land_west_over_img_name
+  },
+  {
+    level = WMS_CITY,
+    id = 335,
+    name = "w_solzreed_city",
+    overImage = land_west_over_img_name
+  },
+  {
+    level = WMS_CITY,
+    id = 37,
+    name = "w_marianople_city",
+    overImage = land_west_over_img_name
+  },
+  {
+    level = WMS_CITY,
+    id = 144,
+    name = "w_two_crowns_city",
+    overImage = land_west_over_img_name
+  },
+  {
+    level = WMS_CITY,
+    id = 252,
+    name = "w_lilyut_meadow_west_ronbann_mine"
+  },
+  {
+    level = WMS_CITY,
+    id = 253,
+    name = "w_lilyut_meadow_east_ronbann_mine"
+  },
+  {
+    level = WMS_CITY,
+    id = 155,
+    name = "w_white_forest_red_moss_cave"
+  },
+  {
+    level = WMS_CITY,
+    id = 278,
+    name = "e_mahadevi_city",
+    overImage = land_east_over_img_name
+  },
+  {
+    level = WMS_CITY,
+    id = 578,
+    name = "e_sunrise_peninsula_city",
+    overImage = land_east_over_img_name
+  },
+  {
+    level = WMS_CITY,
+    id = 542,
+    name = "e_singing_land_city",
+    overImage = land_east_over_img_name
+  },
+  {
+    level = WMS_CITY,
+    id = 468,
+    name = "e_ynystere_city",
+    overImage = land_east_over_img_name
+  },
+  {
+    level = WMS_CITY,
+    id = 996,
+    name = "e_mahadevi_astra_cave"
+  },
+  {
+    level = WMS_CITY,
+    id = 688,
+    name = "e_tiger_spine_mountains_kobold_cave"
+  },
+  {
+    level = WMS_CITY,
+    id = 749,
+    name = "e_falcony_plateau_misty_cave"
+  },
+  {
+    level = WMS_CITY,
+    id = 735,
+    name = "e_falcony_plateau_bat_cave"
+  },
+  {
+    level = WMS_CITY,
+    id = 95,
+    name = "e_steppe_belt_snowlion_rock"
+  },
+  {
+    level = WMS_CITY,
+    id = 1057,
+    name = "e_hasla_cemetery_underground"
+  },
+  {
+    level = WMS_CITY,
+    id = 1126,
+    name = "o_dew_plains_in",
+    overImage = land_origin_over_img_name
+  },
+  {
+    level = WMS_CITY,
+    id = 1075,
+    name = "o_abyss_gate_ruin_of_vanishing_snake_1f"
+  },
+  {
+    level = WMS_CITY,
+    id = 1076,
+    name = "o_abyss_gate_ruin_of_vanishing_snake_2f"
+  },
+  {
+    level = WMS_ZONE,
+    id = 31,
+    name = "instance_training_camp"
+  },
+  {
+    level = WMS_ZONE,
+    id = 45,
+    name = "instance_burntcastle_armory"
+  },
+  {
+    level = WMS_ZONE,
+    id = 46,
+    name = "instance_hadir_farm"
+  },
+  {
+    level = WMS_ZONE,
+    id = 47,
+    name = "instance_sal_temple"
+  },
+  {
+    level = WMS_ZONE,
+    id = 50,
+    name = "instance_cuttingwind_deadmine"
+  },
+  {
+    level = WMS_ZONE,
+    id = 51,
+    name = "instance_howling_abyss"
+  },
+  {
+    level = WMS_ZONE,
+    id = 58,
+    name = "instance_howling_abyss"
+  },
+  {
+    level = WMS_ZONE,
+    id = 52,
+    name = "instance_cradle_of_destruction"
+  },
+  {
+    level = WMS_ZONE,
+    id = 49,
+    name = "arche_mall"
+  },
+  {
+    level = WMS_ZONE,
+    id = 62,
+    name = "instance_immortal_isle"
+  },
+  {
+    level = WMS_ZONE,
+    id = 64,
+    name = "instance_immortal_isle"
+  },
+  {
+    level = WMS_ZONE,
+    id = 70,
+    name = "instance_library_1"
+  },
+  {
+    level = WMS_ZONE,
+    id = 71,
+    name = "instance_library_2"
+  },
+  {
+    level = WMS_ZONE,
+    id = 72,
+    name = "instance_library_3"
+  },
+  {
+    level = WMS_ZONE,
+    id = 83,
+    name = "instance_hadir_farm"
+  },
+  {
+    level = WMS_ZONE,
+    id = 84,
+    name = "instance_burntcastle_armory"
+  },
+  {
+    level = WMS_ZONE,
+    id = 86,
+    name = "instance_sal_temple"
+  },
+  {
+    level = WMS_ZONE,
+    id = 87,
+    name = "instance_cuttingwind_deadmine"
+  },
+  {
+    level = WMS_ZONE,
+    id = 88,
+    name = "instance_cradle_of_destruction"
+  },
+  {
+    level = WMS_CITY,
+    id = 1063,
+    name = "instance_nachashgar_room_01"
+  },
+  {
+    level = WMS_CITY,
+    id = 1064,
+    name = "instance_nachashgar_room_02"
+  },
+  {
+    level = WMS_CITY,
+    id = 1065,
+    name = "instance_nachashgar_room_03"
+  },
+  {
+    level = WMS_CITY,
+    id = 1066,
+    name = "instance_nachashgar_room_04"
+  },
+  {
+    level = WMS_CITY,
+    id = 1067,
+    name = "instance_nachashgar_room_05"
+  },
+  {
+    level = WMS_CITY,
+    id = 1068,
+    name = "instance_nachashgar_room_06"
+  },
+  {
+    level = WMS_CITY,
+    id = 1069,
+    name = "instance_nachashgar_room_07"
+  },
+  {
+    level = WMS_CITY,
+    id = 1070,
+    name = "instance_nachashgar_room_08"
+  },
+  {
+    level = WMS_CITY,
+    id = 1071,
+    name = "instance_nachashgar_room_09_larman"
+  },
+  {
+    level = WMS_CITY,
+    id = 1084,
+    name = "instance_nachashgar_room_09_carmilla"
+  },
+  {
+    level = WMS_CITY,
+    id = 1085,
+    name = "instance_nachashgar_room_09_anerin"
+  },
+  {
+    level = WMS_CITY,
+    id = 1081,
+    name = "instance_nachashgar_room_10"
+  },
+  {
+    level = WMS_CITY,
+    id = 1101,
+    name = "instance_library_boss_1_bossroom"
+  },
+  {
+    level = WMS_CITY,
+    id = 1105,
+    name = "instance_library_boss_1_waitingroom"
+  },
+  {
+    level = WMS_CITY,
+    id = 1102,
+    name = "instance_library_boss_2_bossroom"
+  },
+  {
+    level = WMS_CITY,
+    id = 1106,
+    name = "instance_library_boss_2_waitingroom"
+  },
+  {
+    level = WMS_CITY,
+    id = 1103,
+    name = "instance_library_boss_3_bossroom"
+  },
+  {
+    level = WMS_CITY,
+    id = 1107,
+    name = "instance_library_boss_3_waitingroom"
+  },
+  {
+    level = WMS_CITY,
+    id = 1104,
+    name = "instance_library_towerdefense_bossroom"
+  },
+  {
+    level = WMS_CITY,
+    id = 1108,
+    name = "instance_library_towerdefense_waitingroom"
+  },
+  {
+    level = WMS_CITY,
+    id = 1142,
+    name = "instance_library_heart_inside"
+  },
+  {
+    level = WMS_CITY,
+    id = 1143,
+    name = "instance_library_heart_waiting"
+  },
+  {
+    level = WMS_ZONE,
+    id = 89,
+    name = "instance_feast_garden"
+  },
+  {
+    level = WMS_CITY,
+    id = 1144,
+    name = "instance_feast_garden_room_01"
+  },
+  {
+    level = WMS_CITY,
+    id = 1145,
+    name = "instance_feast_garden_room_02"
+  },
+  {
+    level = WMS_CITY,
+    id = 1146,
+    name = "instance_feast_garden_room_03"
+  },
+  {
+    level = WMS_CITY,
+    id = 1149,
+    name = "instance_feast_garden_room_04"
+  }
+}
+for i = 1, #worldMapInfos do
+  MAP_LIST:AddDefaultImg(worldMapInfos[i])
+end
+local GetOverImgBoundInfos = function(path, name)
+  local boundInfo
+  local overImgInfo = UIParent:GetTextureData(path, name)
+  if overImgInfo then
+    boundInfo = {}
+    boundInfo.coordX = overImgInfo.coords[1]
+    boundInfo.coordY = overImgInfo.coords[2]
+    boundInfo.coordW = overImgInfo.coords[3]
+    boundInfo.coordH = overImgInfo.coords[4]
+    boundInfo.offsetX = overImgInfo.offset[1]
+    boundInfo.offsetY = overImgInfo.offset[2]
+  end
+  return boundInfo
+end
+local GetTgaColorInfos = function(tgaImgInfo)
+  local color
+  if tgaImgInfo and tgaImgInfo.color then
+    color = {}
+    color.r = tgaImgInfo.color[3]
+    color.g = tgaImgInfo.color[2]
+    color.b = tgaImgInfo.color[1]
+  end
+  return color
+end
+local GetTgaBoundInfos = function(tgaImgInfo)
+  local tgaImgBoundsInfo
+  if tgaImgInfo and tgaImgInfo.coords and tgaImgInfo.offset then
+    tgaImgBoundsInfo = {}
+    if tgaImgInfo.coords then
+      tgaImgBoundsInfo.coordX = tgaImgInfo.coords[1]
+      tgaImgBoundsInfo.coordY = tgaImgInfo.coords[2]
+      tgaImgBoundsInfo.coordW = tgaImgInfo.coords[3]
+      tgaImgBoundsInfo.coordH = tgaImgInfo.coords[4]
+    end
+    if tgaImgInfo.offset then
+      tgaImgBoundsInfo.offsetX = tgaImgInfo.offset[1]
+      tgaImgBoundsInfo.offsetY = tgaImgInfo.offset[2]
+    end
+  end
+  return tgaImgBoundsInfo
+end
+for level in pairs(MAP_LEVELS) do
+  local data = MAP_LIST[level]
+  for i = 1, #data do
+    local value = MAP_LIST:Get(level, i)
+    if value.overName ~= nil then
+      local overPath = string.format("Game/ui/map/world/%s.dds", value.overImgPath)
+      local over = worldmap:CreateImageDrawable(overPath, "background")
+      over:SetColor(1, 1, 1, 1)
+      over:SetVisible(false)
+      value.overImgBoundsInfo = GetOverImgBoundInfos(overPath, value.overName)
+      if value.overImgBoundsInfo then
+        over:SetCoords(value.overImgBoundsInfo.coordX, value.overImgBoundsInfo.coordY, value.overImgBoundsInfo.coordW, value.overImgBoundsInfo.coordH)
+        over:SetExtent(value.overImgBoundsInfo.coordW, value.overImgBoundsInfo.coordH)
+        over:AddAnchor("TOPLEFT", worldmap, "TOPLEFT", value.overImgBoundsInfo.offsetX, value.overImgBoundsInfo.offsetY)
+        over:SetSnap(false)
+      else
+        UIParent:Warning(string.format("[Lua Warning] failed get over image infos.. (%s / %s)", overPath, value.overName))
+      end
+      value.overImage = over
+    end
+    local path = string.format("Game/ui/map/world/%s.dds", value.name)
+    local drawable = worldmap:CreateImageDrawable(path, "background")
+    drawable:SetColor(1, 1, 1, 1)
+    drawable:SetVisible(false)
+    drawable:SetCoords(0, 0, WORLDMAP_VISIBLE_WIDTH, WORLDMAP_VISIBLE_HEIGHT)
+    drawable:AddAnchor("TOPLEFT", worldmap, "TOPLEFT", 0, 0)
+    drawable:AddAnchor("BOTTOMRIGHT", worldmap, "BOTTOMRIGHT", 0, 0)
+    drawable:SetSnap(false)
+    local tgaName = string.format("%s_tga", value.name)
+    local tgaImgInfo = UIParent:GetTextureData(FILE_PATH, tgaName)
+    local color = GetTgaColorInfos(tgaImgInfo)
+    local tgaImgBoundsInfo = GetTgaBoundInfos(tgaImgInfo)
+    local mapImagesInfo = {
+      level = level,
+      id = value.id,
+      mapImage = drawable,
+      overImage = value.overImage,
+      color = color,
+      tgaBoundInfo = tgaImgBoundsInfo
+    }
+    worldmap:SaveMapData(mapImagesInfo)
+    if value.stateIconInfo ~= nil then
+      local zoneInfo = X2Map:GetZoneStateInfoByZoneId(value.id)
+      local stateIcon = worldmap:CreateImageDrawable(BUTTON_TEXTURE_PATH.MAP, "artwork")
+      if zoneInfo and zoneInfo.isFestivalZone then
+        stateIcon:SetExtent(25, 21)
+      else
+        stateIcon:SetExtent(22, 22)
+      end
+      stateIcon:AddAnchor("CENTER", worldmap, "TOPLEFT", value.stateIconInfo.offsetX, value.stateIconInfo.offsetY)
+      stateIcon:SetColor(1, 1, 1, 1)
+      stateIcon:SetSnap(false)
+      stateIcon:SetVisible(false)
+      value.stateIcon = stateIcon
+      worldmap:EnableZoneStateDrawable(value.id, true)
+    end
+  end
+end
+function ReAnchorOverImages(ratio)
+  for level in pairs(MAP_LEVELS) do
+    local data = MAP_LIST[level]
+    for i = 1, #data do
+      local value = MAP_LIST:Get(level, i)
+      if value.overName ~= nil then
+        local over = value.overImage
+        if value.overImgBoundsInfo ~= nil then
+          over:SetExtent(value.overImgBoundsInfo.coordW * ratio, value.overImgBoundsInfo.coordH * ratio)
+          over:AddAnchor("TOPLEFT", worldmap, "TOPLEFT", value.overImgBoundsInfo.offsetX * ratio, value.overImgBoundsInfo.offsetY * ratio)
+        end
+      end
+      if value.stateIcon ~= nil then
+        local stateIcon = value.stateIcon
+        stateIcon:SetExtent(22 * ratio, 22 * ratio)
+        stateIcon:AddAnchor("CENTER", worldmap, "TOPLEFT", value.stateIconInfo.offsetX * ratio, value.stateIconInfo.offsetY * ratio)
+      end
+    end
+  end
+end
+local textureAlpha = 0.4
+local stateColor = TEXTURE_COLOR.MAP_ZONE_COLOR_STATE_MIDDLE
+worldmap:SetTroubleZoneColor(HPWS_TROUBLE_0, stateColor[1], stateColor[2], stateColor[3], textureAlpha)
+worldmap:SetTroubleZoneColor(HPWS_TROUBLE_1, stateColor[1], stateColor[2], stateColor[3], textureAlpha)
+worldmap:SetTroubleZoneColor(HPWS_TROUBLE_2, stateColor[1], stateColor[2], stateColor[3], textureAlpha)
+worldmap:SetTroubleZoneColor(HPWS_TROUBLE_3, stateColor[1], stateColor[2], stateColor[3], textureAlpha)
+worldmap:SetTroubleZoneColor(HPWS_TROUBLE_4, stateColor[1], stateColor[2], stateColor[3], textureAlpha)
+worldmap:SetTroubleZoneColor(HPWS_BATTLE, stateColor[1], stateColor[2], stateColor[3], textureAlpha)
+local stateColor = TEXTURE_COLOR.MAP_ZONE_COLOR_STATE_HIGH
+worldmap:SetTroubleZoneColor(HPWS_WAR, stateColor[1], stateColor[2], stateColor[3], textureAlpha)
+local stateColor = TEXTURE_COLOR.MAP_ZONE_COLOR_STATE_PEACE
+worldmap:SetTroubleZoneColor(HPWS_PEACE, stateColor[1], stateColor[2], stateColor[3], textureAlpha)
+local stateColor = TEXTURE_COLOR.MAP_ZONE_COLOR_STATE_FESTIVAL
+worldmap:SetFestivalZoneColor(stateColor[1], stateColor[2], stateColor[3], textureAlpha)
+function ApplyZoneStateIcon(icon, zoneInfo)
+  if zoneInfo.isFestivalZone then
+    icon:SetCoords(128, 551, 25, 21)
+    icon:SetVisible(true)
+  elseif zoneInfo.isConflictZone then
+    if zoneInfo.conflictState < HPWS_BATTLE then
+      icon:SetVisible(false)
+    elseif zoneInfo.conflictState == HPWS_BATTLE then
+      icon:SetCoords(151, 573, 22, 22)
+      icon:SetVisible(true)
+    elseif zoneInfo.conflictState == HPWS_WAR then
+      icon:SetCoords(128, 573, 22, 22)
+      icon:SetVisible(true)
+    elseif zoneInfo.conflictState == HPWS_PEACE then
+      icon:SetCoords(174, 573, 22, 22)
+      icon:SetVisible(true)
+    end
+  elseif zoneInfo.isSiegeZone then
+    icon:SetVisible(false)
+  elseif zoneInfo.isPeaceZone then
+    icon:SetCoords(174, 573, 22, 22)
+    icon:SetVisible(true)
+  else
+    icon:SetVisible(false)
+  end
+end
+function UpdateZoneStateIcon(zoneId)
+  local index = FindMapDataIndex(WMS_ZONE, zoneId)
+  local data = MAP_LIST:Get(WMS_ZONE, index)
+  if data ~= nil and data.stateIcon ~= nil then
+    local zoneInfo = X2Map:GetZoneStateInfoByZoneId(zoneId)
+    if zoneInfo.isFestivalZone or zoneInfo.isConflictZone then
+      ApplyZoneStateIcon(data.stateIcon, zoneInfo)
+    else
+      data.stateIcon:SetVisible(false)
+    end
+  end
+end
+function HideZoneStateIcon()
+  local data = MAP_LIST[WMS_ZONE]
+  for i = 1, #data do
+    local value = MAP_LIST:Get(WMS_ZONE, i)
+    if value.stateIcon ~= nil then
+      value.stateIcon:SetVisible(false)
+    end
+  end
+end

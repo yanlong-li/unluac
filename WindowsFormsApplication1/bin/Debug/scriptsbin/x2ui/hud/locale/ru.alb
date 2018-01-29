@@ -1,0 +1,12 @@
+if X2Util:GetGameProvider() == MAILRU then
+  function hudLocale.MakeHudTimeString()
+    local isAm, hour, minute = X2Time:GetGameTime()
+    if not isAm and hour < 12 then
+      hour = hour + 12
+    end
+    return string.format("%d : %02d", hour, minute)
+  end
+  hudLocale.alterTexts = {
+    battleClose = GetUIText(COMMON_TEXT, "expedition_war_result")
+  }
+end

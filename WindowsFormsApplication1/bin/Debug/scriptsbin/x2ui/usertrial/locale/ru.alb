@@ -1,0 +1,45 @@
+if X2Util:GetGameProvider() == MAILRU then
+  userTrialLocale.crimeRecords = {
+    windowWidth = 800,
+    listCtrlWidth = 550,
+    columnWidth = {
+      125,
+      145,
+      150,
+      130
+    }
+  }
+  userTrialLocale.verdict = {
+    windowWidth = 800,
+    sentenceBtnOffset = 10,
+    buttonFontSize = FONT_SIZE.MIDDLE
+  }
+  userTrialLocale.botRecords = {
+    windowWidth = 800,
+    listCtrlWidth = 550,
+    columnWidth = {
+      125,
+      175,
+      250
+    }
+  }
+  userTrialLocale.rulingStatusWnd = {
+    fontSize = {
+      crimeListWndTitle = FONT_SIZE.MIDDLE,
+      notGuilty = 30,
+      guilty = 60
+    },
+    statusFontPath = "ui/font/yoon_firedgothic_b.ttf",
+    statusTitleAnchor = {
+      myPoint = "BOTTOMLEFT",
+      targetPoint = "TOPLEFT",
+      x = -10,
+      y = -2
+    },
+    crimeTypeIcon = {
+      offset = 90,
+      width = 80,
+      inset = 40
+    }
+  }
+end

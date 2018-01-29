@@ -1,0 +1,252 @@
+local screenResolution = X2:GetCharacterUiData("screenResolution")
+local matchedResolution
+if screenResolution == nil then
+  screenResolution = {}
+  screenResolution.x = UIParent:GetScreenWidth()
+  screenResolution.y = UIParent:GetScreenHeight()
+  matchedResolution = false
+elseif screenResolution.x ~= UIParent:GetScreenWidth() or screenResolution.y ~= UIParent:GetScreenHeight() then
+  screenResolution.x = UIParent:GetScreenWidth()
+  screenResolution.y = UIParent:GetScreenHeight()
+  matchedResolution = false
+else
+  matchedResolution = true
+end
+function Global_IsMatchedResolution()
+  return matchedResolution
+end
+X2:SetCharacterUiData("screenResolution", screenResolution)
+local MakeUIboundKey = function(key)
+  return string.format("ui_bound_%s", key)
+end
+function IsValidBoundInfo(info)
+  if info == nil then
+    return false
+  end
+  if info.bound == nil then
+    return false
+  end
+  if info.screenResolution == nil then
+    return false
+  end
+  return true
+end
+function IsMatchedResolution(resolution)
+  if resolution.x ~= UIParent:GetScreenWidth() or resolution.y ~= UIParent:GetScreenHeight() then
+    return false
+  end
+  return true
+end
+local uiSaveHandlers = {}
+function AddUISaveHandlerByKey(key, window, checkResolution)
+  if checkResolution == nil then
+    checkResolution = true
+  end
+  key = MakeUIboundKey(key)
+  local isExist = UIParent:GetUIBound(key)
+  if isExist then
+    window.isMoved = true
+  end
+  uiSaveHandlers[key] = window
+  function window:OnMovedPosition()
+    self.isMoved = true
+    self:SaveBound()
+    if self.ProcMovedSize ~= nil then
+      self:ProcMovedSize()
+    end
+  end
+  window:SetHandler("OnMovedPosition", window.OnMovedPosition)
+  function window:OnChangedAnchor()
+    self:SaveBound()
+    if self.ProcChangedAnchor ~= nil then
+      self:ProcChangedAnchor()
+    end
+  end
+  window:SetHandler("OnChangedAnchor", window.OnChangedAnchor)
+  function window:OnBoundChanged()
+    self:SaveBound()
+    if self.ProcBoundChanged ~= nil then
+      self:ProcBoundChanged()
+    end
+  end
+  window:SetHandler("OnBoundChanged", window.OnBoundChanged)
+  function window:SaveBound()
+    if not self.isMoved then
+      return
+    end
+    local bound = {}
+    bound.x, bound.y = self:GetEffectiveOffset()
+    bound.width, bound.height = self:GetExtent()
+    local screenRes = {}
+    screenRes.x = UIParent:GetScreenWidth()
+    screenRes.y = UIParent:GetScreenHeight()
+    local info = {}
+    info.bound = bound
+    info.screenResolution = screenRes
+    UIParent:SetUIBound(key, info)
+  end
+  function window:GetLastWindowBound()
+    return UIParent:GetUIBound(key)
+  end
+  function window:ApplyLastWindowOffset()
+    local info = self:GetLastWindowBound()
+    if IsValidBoundInfo(info) == false then
+      self:SaveBound()
+      return
+    end
+    if checkResolution == true and not IsMatchedResolution(info.screenResolution) then
+      self:SaveBound()
+      return
+    end
+    local bound = info.bound
+    self:RemoveAllAnchors()
+    local IsUINotScaled = function(w)
+      local curex, curey = w:GetEffectiveOffset()
+      local curx, cury = w:GetOffset()
+      return curex == curx and curey == cury
+    end
+    if IsUINotScaled(self) then
+      self:AddAnchor("TOPLEFT", "UIParent", bound.x, bound.y)
+    else
+      self:AddAnchor("TOPLEFT", "UIParent", F_LAYOUT:CalcDontApplyUIScale(bound.x), F_LAYOUT:CalcDontApplyUIScale(bound.y))
+    end
+  end
+  function window:ApplyLastWindowExtent()
+    local info = self:GetLastWindowBound()
+    if IsValidBoundInfo(info) == false then
+      self:SaveBound()
+      return
+    end
+    if checkResolution == true and not IsMatchedResolution(info.screenResolution) then
+      self:SaveBound()
+      return
+    end
+    local bound = info.bound
+    self:SetExtent(bound.width, bound.height)
+  end
+  function window:ApplyLastWindowBound()
+    local info = self:GetLastWindowBound()
+    if IsValidBoundInfo(info) == false then
+      self:SaveBound()
+      return
+    end
+    if checkResolution == true and not IsMatchedResolution(info.screenResolution) then
+      if self.ProcCorrectBound ~= nil then
+        self:ProcCorrectBound(info)
+      end
+      self:SaveBound()
+      return
+    end
+    local bound = info.bound
+    self:RemoveAllAnchors()
+    self:AddAnchor("TOPLEFT", "UIParent", F_LAYOUT:CalcDontApplyUIScale(bound.x), F_LAYOUT:CalcDontApplyUIScale(bound.y))
+    self:SetExtent(bound.width, bound.height)
+  end
+end
+function ClearUISaveHandlers()
+  if ActionBar_InitValues ~= nil then
+    ActionBar_InitValues(true)
+  end
+  if ActionBar_RelocationDockingWindow ~= nil then
+    ActionBar_RelocationDockingWindow()
+  end
+  for key, window in next, uiSaveHandlers, nil do
+    if window and window:IsValidUIObject() and window.MakeOriginWindowPos then
+      window:MakeOriginWindowPos(true)
+    end
+    UIParent:ClearUIBound(key)
+  end
+end
+GROUP_GLOBAL = "global"
+GROUP_BAG_SHARE = "bag_share"
+GROUP_CASH = "cash"
+UI_KIND_COMMERCIAL_MAIL = "commercial_mail_box"
+UI_KIND_MAIL = "mail_box"
+UI_KIND_STORE = "store"
+UI_KIND_AUCTION = "auction"
+UI_KIND_BANK = "bank"
+UI_KIND_COFFER = "coffer"
+UI_KIND_TRADE = "trade"
+UI_KIND_CRAFT = "craft"
+UI_KIND_ITEM_SECURITY_LOCK = "item_security_lock"
+UI_KIND_INGAME_SHOP = "ingame_shop"
+UI_KIND_PREMIUM_SERVICE = "premium_service"
+UI_KIND_ITEM_ENCHANT = "item_enchant"
+UI_KIND_ITEM_LOOK_CONVERT = "item_look_convert"
+UI_KIND_ITEM_GACHA = "item_gacha"
+local GetUiTitle = function(uiKind)
+  local strTable = {
+    [UI_KIND_COMMERCIAL_MAIL] = locale.comercialMail.mailbox,
+    [UI_KIND_MAIL] = locale.mail.mailbox,
+    [UI_KIND_STORE] = locale.store.store,
+    [UI_KIND_AUCTION] = locale.auction.title,
+    [UI_KIND_BANK] = locale.inven.bankTitle,
+    [UI_KIND_COFFER] = locale.inven.cofferTitle,
+    [UI_KIND_TRADE] = locale.trade.title,
+    [UI_KIND_CRAFT] = locale.craft.make,
+    [UI_KIND_ITEM_SECURITY_LOCK] = locale.inven.itemLockUnlock,
+    [UI_KIND_INGAME_SHOP] = locale.inGameShop.ingameshop_name,
+    [UI_KIND_PREMIUM_SERVICE] = locale.premium.premium_name,
+    [UI_KIND_ITEM_ENCHANT] = GetUIText(COMMON_TEXT, "grade_enchant_title"),
+    [UI_KIND_ITEM_LOOK_CONVERT] = GetUIText(ITEM_LOOK_CONVERT_TEXT, "title"),
+    [UI_KIND_ITEM_GACHA] = GetUIText(COMMON_TEXT, "open_gacha")
+  }
+  if strTable[uiKind] == nil then
+    return "unknown"
+  else
+    return strTable[uiKind]
+  end
+end
+local exclusiveInfoTable = {}
+local CheckExclusiveInfo = function(group, uiKind, checker)
+  local isInvalidInfo = group == nil or uiKind == nil or checker == nil or type(checker) ~= "function"
+  if isInvalidInfo then
+    local msg = string.format("CheckExclusiveInfo group(%s), uiKind(%s), checker(%s)", tostring(group), tostring(uiKind), tostring(checker))
+    X2Util:RaiseLuaCallStack(msg)
+    return true
+  end
+  return false
+end
+function MakeExclusiveActivationInfo(group, uiKind, checker)
+  local info = {}
+  info.group = group
+  info.uiKind = uiKind
+  info.checker = checker
+  return info
+end
+function CheckExclusiveUI(group, uiKind, checker, fireError)
+  if CheckExclusiveInfo(group, uiKind, checker) then
+    return false
+  end
+  local otherUiKind
+  local otherActivated = false
+  local foundExistInfo = false
+  for _, info in pairs(exclusiveInfoTable) do
+    local sameGroup = info.group == group
+    local sameKind = info.uiKind == uiKind
+    if sameGroup then
+      if sameKind then
+        foundExistInfo = true
+      elseif info.checker() then
+        otherUiKind = info.uiKind
+        otherActivated = true
+        break
+      end
+    end
+  end
+  if not foundExistInfo then
+    table.insert(exclusiveInfoTable, MakeExclusiveActivationInfo(group, uiKind, checker))
+  end
+  if otherActivated then
+    if fireError == nil then
+      fireError = true
+    end
+    if fireError then
+      local msg = locale.comercialMail.GetNotAbleConcurrentlyActivateText(GetUiTitle(uiKind), GetUiTitle(otherUiKind))
+      AddMessageToSysMsgWindow(msg)
+      systemAlertWindow:Raise()
+    end
+    return true
+  end
+  return false
+end

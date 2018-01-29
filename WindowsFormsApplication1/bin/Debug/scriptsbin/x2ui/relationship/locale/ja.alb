@@ -1,0 +1,6 @@
+if X2Util:GetGameProvider() == GAMEON then
+  relationshipLocale.friendTab.columnWidth.name = 175
+  relationshipLocale.friendTab.columnWidth.level = 80
+  relationshipLocale.friendTab.columnWidth.race = 80
+  relationshipLocale.friendTab.columnWidth.job = 110
+end

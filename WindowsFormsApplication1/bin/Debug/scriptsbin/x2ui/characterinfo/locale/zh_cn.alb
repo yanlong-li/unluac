@@ -1,0 +1,8 @@
+if X2Util:GetGameProvider() == TENCENT then
+  characetInfoLocale.juryIconCoords = {
+    249,
+    105,
+    43,
+    20
+  }
+end

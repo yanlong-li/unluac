@@ -1,0 +1,3 @@
+if X2Util:GetGameProvider() == TRION then
+  inventoryLocale.guideLineSpace = 16
+end

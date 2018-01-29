@@ -1,0 +1,40 @@
+if X2Util:GetGameProvider() == TRION and X2Locale:GetLocale() == "fr" then
+  centerMessageLocale.killEffect = {
+    killEffectCoords = {
+      UIParent:GetTextureData(TEXTURE_PATH.KILL_EFFECT_FIRST_KILL, "first").coords,
+      UIParent:GetTextureData(TEXTURE_PATH.KILL_EFFECT_FROM_SECOND_TO_FOURTH_KILL, "Double").coords,
+      UIParent:GetTextureData(TEXTURE_PATH.KILL_EFFECT_FROM_SECOND_TO_FOURTH_KILL, "Triple").coords,
+      UIParent:GetTextureData(TEXTURE_PATH.KILL_EFFECT_FROM_SECOND_TO_FOURTH_KILL, "fourth").coords,
+      UIParent:GetTextureData(TEXTURE_PATH.KILL_EFFECT_FIFTH_KILL, "fifth").coords,
+      UIParent:GetTextureData(TEXTURE_PATH.KILL_EFFECT_WAR_OF_GOD, "Dominating").coords
+    },
+    firstKilBloodlHelmetCoords = {
+      0,
+      108,
+      100,
+      108
+    },
+    deco = {
+      347,
+      100,
+      134,
+      100
+    }
+  }
+  centerMessageLocale.killEffect.killEffectCoords[10] = UIParent:GetTextureData(TEXTURE_PATH.KILL_EFFECT_WAR_OF_GOD, "Legendary").coords
+  centerMessageLocale.killEffect.killEffectCoords[15] = UIParent:GetTextureData(TEXTURE_PATH.KILL_EFFECT_WAR_OF_GOD, "Destruction").coords
+  FORM_CENTER_MESSAGE = {
+    NATION_INDEPENDENCE_COORDS = {
+      FLAG = {
+        GetTextureInfo(TEXTURE_PATH.NATION_ALARM, "flag"):GetCoords()
+      },
+      DECLARE = {
+        GetTextureInfo(TEXTURE_PATH.NATION_ALARM, "Declared"):GetCoords()
+      }
+    },
+    ACHIEVEMENT_IMG_EXTENT = {
+      LOW_COMPLETE_TEXT = {124, 36},
+      LOW_RANK_LEFT_DECO = {80, 36}
+    }
+  }
+end

@@ -1,0 +1,102 @@
+BUTTON_ICON = {
+  PORTAL_DELETE = {
+    drawableType = "icon",
+    path = "ui/button/icon_shape/wastebasket.dds"
+  },
+  PORTAL_RENAME = {
+    drawableType = "icon",
+    path = "ui/button/icon_shape/pencil.dds"
+  },
+  PORTAL_SPAWN = {
+    drawableType = "icon",
+    path = "ui/button/icon_shape/portal.dds"
+  },
+  ESC_SKIP = {
+    drawableType = "icon",
+    path = "ui/button/icon_shape/skip.dds",
+    fontInset = {
+      left = 0,
+      top = 55,
+      right = 0,
+      bottom = 0
+    },
+    drawableAnchor = {
+      anchor = "TOP",
+      x = 0,
+      y = 0
+    },
+    drawableExtent = {
+      width = BUTTON_SIZE.ICON.WIDTH,
+      height = BUTTON_SIZE.ICON.HEIGHT
+    },
+    width = BUTTON_SIZE.ICON.WIDTH,
+    height = 75
+  },
+  ESC_OPTION = {
+    drawableType = "icon",
+    path = "ui/button/icon_shape/option.dds",
+    fontInset = {
+      left = 0,
+      top = 55,
+      right = 0,
+      bottom = 0
+    },
+    drawableAnchor = {
+      anchor = "TOP",
+      x = 0,
+      y = 0
+    },
+    drawableExtent = {
+      width = BUTTON_SIZE.ICON.WIDTH,
+      height = BUTTON_SIZE.ICON.HEIGHT
+    },
+    width = BUTTON_SIZE.ICON.WIDTH,
+    height = 75
+  },
+  ESC_CHARACTER_SELECT = {
+    drawableType = "icon",
+    path = "ui/button/icon_shape/characterselect.dds",
+    fontInset = {
+      left = 0,
+      top = 55,
+      right = 0,
+      bottom = 0
+    },
+    drawableAnchor = {
+      anchor = "TOP",
+      x = 0,
+      y = 0
+    },
+    drawableExtent = {
+      width = BUTTON_SIZE.ICON.WIDTH,
+      height = BUTTON_SIZE.ICON.HEIGHT
+    },
+    width = 54,
+    height = 75
+  },
+  ESC_EXIT = {
+    drawableType = "icon",
+    path = "ui/button/icon_shape/exit.dds",
+    fontInset = {
+      left = 0,
+      top = 55,
+      right = 0,
+      bottom = 0
+    },
+    drawableAnchor = {
+      anchor = "TOP",
+      x = 0,
+      y = 0
+    },
+    drawableExtent = {
+      width = BUTTON_SIZE.ICON.WIDTH,
+      height = BUTTON_SIZE.ICON.HEIGHT
+    },
+    width = BUTTON_SIZE.ICON.WIDTH,
+    height = 75
+  },
+  SKILL_RESET = {
+    drawableType = "icon",
+    path = "ui/button/icon_shape/skill_reset.dds"
+  }
+}

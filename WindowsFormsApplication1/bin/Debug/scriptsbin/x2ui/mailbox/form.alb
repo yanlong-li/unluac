@@ -1,0 +1,20 @@
+FORM_MAILBOX = {
+  COMMERCIAL_MAIL = {
+    MAIL_TYPE_COORDS = {
+      EVENT = {
+        GetTextureInfo(TEXTURE_PATH.COMMERCIAL_MAIL, "icon_event"):GetCoords()
+      },
+      BUY = {
+        GetTextureInfo(TEXTURE_PATH.COMMERCIAL_MAIL, "icon_purch"):GetCoords()
+      },
+      GIFT = {
+        GetTextureInfo(TEXTURE_PATH.COMMERCIAL_MAIL, "icon_gift"):GetCoords()
+      }
+    },
+    COLUMN_WIDTH = {
+      75,
+      180,
+      135
+    }
+  }
+}

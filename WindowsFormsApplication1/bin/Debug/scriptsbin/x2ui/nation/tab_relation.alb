@@ -1,0 +1,316 @@
+local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+local MAX_ROW = 4
+local width = 545
+local CreateNationList = function(id, parent)
+  local frame = parent:CreateChildWidget("emptywidget", id, 0, true)
+  local sliderList = CreateScrollListBox(frame, "sliderList")
+  sliderList:AddAnchor("TOPLEFT", frame, 0, 0)
+  sliderList:AddAnchor("BOTTOMRIGHT", frame, 0, 0)
+  sliderList.content.itemStyle:SetFontSize(FONT_SIZE.LARGE)
+  sliderList.content:SetTextLimit(10)
+  frame.sliderList = sliderList
+  frame.NationFactionIds = {}
+  function frame:Init(list)
+    self.sliderList.content:ClearItem()
+    self.NationFactionIds = {}
+    local nationList = X2Nation:GetNationList()
+    if nationList == nil then
+      self:SetMinMaxValues("vert", 0, 0)
+      return
+    end
+    for i = 1, #nationList do
+      self.sliderList:AppendItem(nationList[i].name, nationList[i].factionId)
+      self.NationFactionIds[i] = nationList[i].factionId
+    end
+    self.sliderList.content:Select(0)
+  end
+end
+local function CreateRelationNationList(id, parent, isFrendly)
+  local listFrame = parent:CreateChildWidget("emptywidget", id, 0, true)
+  listFrame:SetExtent(width, 130)
+  local bg = CreateContentBackground(listFrame, "TYPE2")
+  bg:AddAnchor("TOPLEFT", listFrame, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", listFrame, 0, 0)
+  local relationListCtrl = CreateScrollListCtrl(listFrame, "relationListCtrl", 0)
+  relationListCtrl:SetExtent(width - 5, 120)
+  relationListCtrl:AddAnchor("TOPLEFT", listFrame, 0, 0)
+  local function LayoutFunc(frame, rowIndex, colIndex, subItem)
+    local nameLabel = subItem:CreateChildWidget("label", "nameLabel", 0, true)
+    nameLabel:SetLimitWidth(true)
+    nameLabel:SetHeight(FONT_SIZE.MIDDLE)
+    nameLabel:AddAnchor("TOPLEFT", subItem, 15, 0)
+    nameLabel:AddAnchor("BOTTOMRIGHT", subItem, 15, 0)
+    nameLabel.style:SetAlign(ALIGN_LEFT)
+    if isFrendly then
+      ApplyTextColor(nameLabel, FONT_COLOR.BLUE)
+    else
+      ApplyTextColor(nameLabel, FONT_COLOR.RED)
+    end
+  end
+  local LayoutRemaindTimeFunc = function(frame, rowIndex, colIndex, subItem)
+    local nameLabel = subItem:CreateChildWidget("label", "nameLabel", 0, true)
+    nameLabel:SetLimitWidth(true)
+    nameLabel:SetHeight(FONT_SIZE.MIDDLE)
+    nameLabel:AddAnchor("TOPLEFT", subItem, 15, 0)
+    nameLabel:AddAnchor("BOTTOMRIGHT", subItem, 15, 0)
+    nameLabel.style:SetAlign(ALIGN_CENTER)
+    ApplyTextColor(nameLabel, FONT_COLOR.BLUE)
+  end
+  local SetDataFunc = function(subItem, data, setValue)
+    if setValue then
+      subItem.nameLabel:SetText(data.name)
+    else
+      subItem.nameLabel:SetText("")
+    end
+  end
+  local SetRemainTimeDataFunc = function(subItem, data, setValue)
+    if setValue then
+      local period = ""
+      if data.period == nil then
+        period = X2Locale:LocalizeUiText(NATION_TEXT, "out_period")
+      else
+        period = locale.time.GetRemainDateToDateFormat(data.period)
+      end
+      if (CUR_FACTION_ID == SYSTEM_NATION.NUIAN or CUR_FACTION_ID == SYSTEM_NATION.HARIHARAN) and (data.factionId == SYSTEM_NATION.NUIAN or data.factionId == SYSTEM_NATION.HARIHARAN) then
+        period = X2Locale:LocalizeUiText(NATION_TEXT, "limitless")
+      end
+      if CUR_FACTION_ID ~= SYSTEM_NATION.NUIAN and CUR_FACTION_ID ~= SYSTEM_NATION.HARIHARAN and data.factionId ~= SYSTEM_NATION.NUIAN and data.factionId ~= SYSTEM_NATION.HARIHARAN then
+        period = X2Locale:LocalizeUiText(NATION_TEXT, "limitless")
+      end
+      subItem.nameLabel:SetText(period)
+    else
+      subItem.nameLabel:SetText("")
+    end
+  end
+  local targetWidth = relationListCtrl.listCtrl:GetWidth()
+  if isFrendly then
+    relationListCtrl:InsertColumn(locale.nationMgr.friendlyNation, targetWidth * 0.4, LCCIT_WINDOW, SetDataFunc, nil, nil, LayoutFunc)
+    relationListCtrl:InsertColumn(locale.nationMgr.remain_period, targetWidth * 0.6, LCCIT_WINDOW, SetRemainTimeDataFunc, nil, nil, LayoutRemaindTimeFunc)
+  else
+    relationListCtrl:InsertColumn(locale.nationMgr.hostileNation, targetWidth, LCCIT_WINDOW, SetDataFunc, nil, nil, LayoutFunc)
+  end
+  relationListCtrl:InsertRows(MAX_ROW, false)
+  ListCtrlOverClickTextureSetting(relationListCtrl.listCtrl)
+  for i = 1, #relationListCtrl.listCtrl.column do
+    relationListCtrl.listCtrl.column[i]:Enable(false)
+    SettingListColumn(relationListCtrl.listCtrl, relationListCtrl.listCtrl.column[i])
+    DrawListCtrlColumnSperatorLine(relationListCtrl.listCtrl.column[i], #relationListCtrl.listCtrl.column, i)
+  end
+  local underLine = CreateLine(relationListCtrl, "TYPE1")
+  underLine:AddAnchor("TOPLEFT", relationListCtrl.listCtrl, -sideMargin / 2, LIST_COLUMN_HEIGHT - 2)
+  underLine:AddAnchor("TOPRIGHT", relationListCtrl.listCtrl, sideMargin / 1.5, LIST_COLUMN_HEIGHT - 2)
+  if isFrendly then
+    ApplyTextureColor(bg, TEXTURE_COLOR.BOX_BLUE)
+    local guide = CreateGuideIconWidget(listFrame)
+    guide:AddAnchor("TOPRIGHT", listFrame, -sideMargin / 1.5, sideMargin / 1.7)
+    listFrame.guide = guide
+    local OnEnter = function(self)
+      SetTargetAnchorTooltip(locale.nationMgr.hostile_setting_tip, "TOPLEFT", self, "BOTTOMRIGHT", 0, 0)
+    end
+    guide:SetHandler("OnEnter", OnEnter)
+    local OnLeave = function()
+      HideTooltip()
+    end
+    guide:SetHandler("OnLeave", OnLeave)
+  else
+    ApplyTextureColor(bg, TEXTURE_COLOR.BOX_RED)
+  end
+  for i = 1, MAX_ROW do
+    do
+      local subItem = relationListCtrl.listCtrl.items[i].subItems[1]
+      local function OnEnter(self)
+        local data = relationListCtrl:GetDataByViewIndex(i, 1)
+        if data == nil then
+          return
+        end
+        SetTargetAnchorTooltip(data.name, "TOPLEFT", self, "BOTTOMRIGHT", 0, 0)
+        relationListCtrl.OnEnterItemRowIndex = i
+        relationListCtrl.OnEnterItemColIndex = 1
+        relationListCtrl.OnEnterWidget = self
+      end
+      subItem:SetHandler("OnEnter", OnEnter)
+      local function OnLeave()
+        HideTooltip()
+        relationListCtrl.OnEnterWidget = nil
+        relationListCtrl.OnEnterItemIndex = nil
+        relationListCtrl.OnEnterItemColIndex = nil
+      end
+      subItem:SetHandler("OnLeave", OnLeave)
+    end
+  end
+  function listFrame:ClearSelection()
+    local index = self.relationListCtrl.listCtrl:GetSelectedIdx()
+    if index ~= nil then
+      self.relationListCtrl.listCtrl:Select(-1, false)
+    end
+  end
+  function relationListCtrl:OnSliderChangedProc()
+    if not tooltip.window:IsVisible() then
+      return
+    end
+    if self.OnEnterWidget == nil or self.OnEnterItemRowIndex == nil or self.OnEnterItemColIndex == nil then
+      return
+    end
+    local data = self.datas[self.OnEnterItemRowIndex + self:GetTopDataIndex() - 1]
+    if data == nil then
+      return
+    end
+    local itemData = data[self.OnEnterItemColIndex + ROWDATA_COLUMN_OFFSET]
+    if itemData == nil then
+      return
+    end
+    SetTargetAnchorTooltip(itemData.name, "TOPLEFT", self.OnEnterWidget, "BOTTOMRIGHT", 0, 0)
+  end
+end
+local function CreateInfoFrame(id, parent)
+  local frame = parent:CreateChildWidget("emptywidget", id, 0, true)
+  frame:SetExtent(540, 508)
+  CreateNationMap("nationMap", frame, false)
+  frame.nationMap:AddAnchor("TOPLEFT", frame, -sideMargin / 2, -sideMargin / 2)
+  local upperFrame = CreateNationInfos("InfoUpperFrame", frame, false)
+  upperFrame:AddAnchor("TOPLEFT", frame.nationMap, "TOPRIGHT", -sideMargin / 2, 0)
+  frame.upperFrame = upperFrame
+  CreateRelationNationList("friendlyList", frame, true)
+  frame.friendlyList:AddAnchor("TOPLEFT", frame.nationMap, "BOTTOMLEFT", 13, 8)
+  function frame.friendlyList.relationListCtrl:SelChangedProc(selDataViewIdx, selDataIdx, selDataKey, doubleClick)
+    frame.hostileList:ClearSelection()
+    frame:SetRelationListButton()
+  end
+  CreateRelationNationList("hostileList", frame, false)
+  frame.hostileList:AddAnchor("TOPLEFT", frame.friendlyList, "BOTTOMLEFT", 0, 6)
+  function frame.hostileList.relationListCtrl:SelChangedProc(selDataViewIdx, selDataIdx, selDataKey, doubleClick)
+    frame.friendlyList:ClearSelection()
+    frame:SetRelationListButton()
+  end
+  function frame:GetSelectFactionId()
+    local index = frame.friendlyList.relationListCtrl.listCtrl:GetSelectedIdx()
+    if index == nil or index == 0 then
+      index = frame.hostileList.relationListCtrl.listCtrl:GetSelectedIdx()
+      if index ~= nil or index ~= 0 then
+        local data = frame.hostileList.relationListCtrl:GetDataByViewIndex(index, 1)
+        if data == nil then
+          return nil
+        end
+        return data.factionId
+      end
+    end
+    local data = frame.friendlyList.relationListCtrl:GetDataByViewIndex(index, 1)
+    if data == nil then
+      return nil
+    end
+    return data.factionId
+  end
+  local hostileSettingButton = frame:CreateChildWidget("button", "hostileSettingButton", 0, true)
+  hostileSettingButton:SetText(GetUIText(NATION_TEXT, "friendly_setting"))
+  hostileSettingButton:AddAnchor("TOPRIGHT", parent, "BOTTOMRIGHT", 0, bottomMargin * 0.5)
+  ApplyButtonSkin(hostileSettingButton, BUTTON_BASIC.DEFAULT)
+  local function FriendButtonClickFunc()
+    local factionId = frame:GetSelectFactionId()
+    if factionId ~= nil then
+      X2Nation:OpenRelationFriend(factionId)
+    end
+  end
+  ButtonOnClickHandler(hostileSettingButton, FriendButtonClickFunc)
+  local friendlySettingButton = frame:CreateChildWidget("button", "friendlySettingButton", 0, true)
+  friendlySettingButton:SetText(GetUIText(NATION_TEXT, "hostile_setting"))
+  friendlySettingButton:AddAnchor("TOPRIGHT", hostileSettingButton, "TOPLEFT", 0, 0)
+  ApplyButtonSkin(friendlySettingButton, BUTTON_BASIC.DEFAULT)
+  local function HostileButtonClickFunc()
+    local factionId = frame:GetSelectFactionId()
+    if factionId ~= nil then
+      X2Nation:OpenRelationHostile(factionId)
+    end
+  end
+  ButtonOnClickHandler(friendlySettingButton, HostileButtonClickFunc)
+  function frame:FillData()
+    self.friendlyList.relationListCtrl:DeleteAllDatas()
+    self.hostileList.relationListCtrl:DeleteAllDatas()
+    local relationList = X2Nation:GetRelationList(CUR_FACTION_ID)
+    if relationList == nil then
+      return
+    end
+    local friendlyNationInfos = {}
+    local hostileNationInfos = {}
+    for i = 1, #relationList do
+      if relationList[i].relation == NATION_RELATION.FRIENDLY then
+        local infos = relationList[i]
+        infos.isFrendly = true
+        friendlyNationInfos[#friendlyNationInfos + 1] = infos
+      elseif relationList[i].relation == NATION_RELATION.HOSTILE then
+        local infos = relationList[i]
+        infos.isFrendly = false
+        hostileNationInfos[#hostileNationInfos + 1] = infos
+      end
+    end
+    for i = 1, #friendlyNationInfos do
+      self.friendlyList.relationListCtrl:InsertData(friendlyNationInfos[i].factionId, 1, friendlyNationInfos[i])
+      self.friendlyList.relationListCtrl:InsertData(friendlyNationInfos[i].factionId, 2, friendlyNationInfos[i])
+    end
+    for i = 1, #hostileNationInfos do
+      self.hostileList.relationListCtrl:InsertData(hostileNationInfos[i].factionId, 1, hostileNationInfos[i])
+    end
+    local count = self.friendlyList.relationListCtrl:GetDataCount()
+    self.friendlyList.relationListCtrl.scroll:Show(count > MAX_ROW)
+    count = self.hostileList.relationListCtrl:GetDataCount()
+    self.hostileList.relationListCtrl.scroll:Show(count > MAX_ROW)
+  end
+end
+function CreateRelationTabOfNationMgr(window)
+  CreateNationList("otherNaitonList", window)
+  window.otherNaitonList:SetExtent(200, 508)
+  window.otherNaitonList:AddAnchor("TOPLEFT", window, 0, sideMargin)
+  CreateInfoFrame("infoFrame", window)
+  window.infoFrame:AddAnchor("TOPLEFT", window.otherNaitonList, "TOPRIGHT", sideMargin / 2, 0)
+  function window.infoFrame:SetRelationListButton()
+    local enable = false
+    if X2Faction:GetMyTopLevelFaction() == CUR_FACTION_ID then
+      if X2Nation:IsNationFaction(CUR_FACTION_ID) == true then
+        enable = X2Nation:IsNationOwner(CUR_FACTION_ID, X2Unit:UnitName("player"))
+      else
+        enable = X2Hero:IsHero()
+      end
+    end
+    local selectFactionId = self:GetSelectFactionId()
+    if selectFactionId == nil then
+      enable = false
+    end
+    local hostileEnable = enable
+    local friendEnable = enable
+    if enable == true then
+      hostileEnable = X2Nation:IsOpenRelationFriend(selectFactionId)
+      friendEnable = X2Nation:IsOpenRelationHostile(selectFactionId)
+    end
+    window.infoFrame.hostileSettingButton:Enable(hostileEnable)
+    window.infoFrame.friendlySettingButton:Enable(friendEnable)
+  end
+  function window.otherNaitonList.sliderList:OnSelChanged()
+    local index = self.content:GetSelectedIndex() + 1
+    local factionId = window.otherNaitonList.NationFactionIds[index]
+    if factionId == nil then
+      return
+    end
+    ShowBelongExpeditionList(false)
+    local info = X2Nation:GetNationBaseInfo(factionId)
+    if info == nil then
+      return
+    end
+    CUR_FACTION_ID = factionId
+    window.infoFrame.upperFrame:Init(info, factionId)
+    window.infoFrame.nationMap:FillMapInfo(factionId)
+    window.infoFrame:FillData()
+  end
+  function window:Init()
+    self.otherNaitonList:Init()
+    ShowBelongExpeditionList(false)
+    X2Nation:SendNationMemberCountList()
+  end
+  local events = {
+    NATION_DECLAREHOSTILE = function()
+      window.infoFrame:FillData()
+    end
+  }
+  window:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(window, events)
+end

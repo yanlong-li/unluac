@@ -1,0 +1,79 @@
+local CreateAssignmentTabWnd = function(asType, wnd)
+  if asType == A_ASSIGNMENT_TYPE.RACIAL then
+    CreateARacialWnd(wnd)
+  elseif asType == A_ASSIGNMENT_TYPE.ACHIEVEMENT then
+    CreateAAchievementWnd(wnd)
+  end
+end
+function CreateAssignementWindow(id, parent)
+  local wnd = CreateWindow(id, parent)
+  wnd:SetTitle(GetCommonText("assignment_system"))
+  wnd:SetExtent(ASSIGNMENT_WINDOW_WIDTH, ASSIGNMENT_WINDOW_HEIGHT)
+  wnd:AddAnchor("CENTER", "UIParent", 0, 0)
+  wnd:Show(false)
+  wnd:SetSounds("achievement")
+  local CheckAssignmentFeatureSet = function()
+    local featureSet = X2Player:GetFeatureSet()
+    local tabList = {}
+    for i = 1, #A_TAB_LIST do
+      if A_TAB_LIST[i] == A_ASSIGNMENT_TYPE.RACIAL and featureSet.achievement == true then
+        tabList[#tabList + 1] = A_TAB_LIST[i]
+      elseif A_TAB_LIST[i] == A_ASSIGNMENT_TYPE.ACHIEVEMENT and featureSet.achievement == true then
+        tabList[#tabList + 1] = A_TAB_LIST[i]
+      end
+    end
+    A_TAB_LIST = tabList
+  end
+  CheckAssignmentFeatureSet()
+  if A_TAB_LIST == nil or #A_TAB_LIST == 0 then
+    return wnd
+  elseif #A_TAB_LIST == 1 then
+    local bodyWnd = wnd:CreateChildWidget("emptywidget", "bodyWnd", 0, true)
+    bodyWnd:AddAnchor("TOPLEFT", wnd, MARGIN.WINDOW_SIDE, MARGIN.WINDOW_TITLE)
+    bodyWnd:AddAnchor("BOTTOMRIGHT", wnd, -MARGIN.WINDOW_SIDE, -MARGIN.WINDOW_SIDE)
+    CreateAssignmentTabWnd(A_TAB_LIST[1], bodyWnd)
+  else
+    do
+      local tabName = {}
+      for i = 1, #A_TAB_LIST do
+        if A_TAB_LIST[i] == A_ASSIGNMENT_TYPE.RACIAL then
+          tabName[i] = GetCommonText("racial_assignment")
+        elseif A_TAB_LIST[i] == A_ASSIGNMENT_TYPE.ACHIEVEMENT then
+          tabName[i] = GetCommonText("achievement")
+        end
+      end
+      local tab = CreateTab("tab", wnd)
+      tab:AddTabs(tabName)
+      for i = 1, #tab.window do
+        CreateAssignmentTabWnd(A_TAB_LIST[i], tab.window[i])
+      end
+      function tab:OnTabChanged(idx)
+        ReAnhorTabLine(self, idx)
+        if A_TAB_LIST[idx] == A_ASSIGNMENT_TYPE.TODAY then
+          tab.window[idx]:Update()
+        end
+      end
+      tab:SetHandler("OnTabChanged", tab.OnTabChanged)
+    end
+  end
+  function wnd:OnHide()
+    X2Achievement:RemoveAllNewCompleteAchievement()
+  end
+  wnd:SetHandler("OnHide", wnd.OnHide)
+  local assignmentEvents = {
+    ACHIEVEMENT_UPDATE = function()
+      if #A_TAB_LIST == 1 then
+        bodyWnd:Update()
+      else
+        for i = 1, #A_TAB_LIST do
+          wnd.tab.window[i]:Update()
+        end
+      end
+    end
+  }
+  wnd:SetHandler("OnEvent", function(this, event, ...)
+    assignmentEvents[event](...)
+  end)
+  RegistUIEvent(wnd, assignmentEvents)
+  return wnd
+end

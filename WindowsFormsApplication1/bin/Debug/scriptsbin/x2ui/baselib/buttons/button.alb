@@ -1,0 +1,659 @@
+function SetButtonFontColor(button, color)
+  local n = color.normal
+  local h = color.highlight
+  local p = color.pushed
+  local d = color.disabled
+  button:SetTextColor(n[1], n[2], n[3], n[4])
+  button:SetHighlightTextColor(h[1], h[2], h[3], h[4])
+  button:SetPushedTextColor(p[1], p[2], p[3], p[4])
+  button:SetDisabledTextColor(d[1], d[2], d[3], d[4])
+end
+function SetButtonFontOneColor(button, color)
+  button:SetTextColor(color[1], color[2], color[3], color[4])
+  button:SetPushedTextColor(color[1], color[2], color[3], color[4])
+  button:SetHighlightTextColor(color[1], color[2], color[3], color[4])
+  button:SetDisabledTextColor(color[1], color[2], color[3], color[4])
+end
+local InitButton = function(button)
+  button:EnableDrawables("background")
+  button.style:SetAlign(ALIGN_CENTER)
+  button.style:SetSnap(true)
+  button.style:SetShadow(false)
+  button.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.MIDDLE)
+  SetButtonFontColor(button, GetButtonDefaultFontColor())
+end
+local GetButtonBackGroundCount = function(drawableType)
+  local count = 0
+  if drawableType ~= "radio" then
+    count = 4
+  else
+    count = 6
+  end
+  return count
+end
+local DrawButtonBackGround = function(button, drawableType, path, layer, inset)
+  local bg
+  if drawableType == "drawable" then
+    bg = button:CreateImageDrawable(path, layer)
+  elseif drawableType == "threePart" then
+    bg = button:CreateThreePartDrawable(path, layer)
+    bg:SetInset(inset[1], inset[2], inset[3], inset[4])
+  elseif drawableType == "ninePart" then
+    bg = button:CreateNinePartDrawable(path, layer)
+    bg:SetInset(inset[1], inset[2], inset[3], inset[4])
+  elseif drawableType == "icon" then
+    bg = button:CreateIconImageDrawable(path, layer)
+  elseif drawableType == "colorDrawable" then
+    bg = button:CreateColorDrawable(1, 1, 1, 1, layer)
+  end
+  return bg
+end
+local GetIconShapeButtonPath = function(count, path)
+  if count == 1 then
+  elseif count == 2 then
+    path = string.sub(path, 1, string.len(path) - 4)
+    path = string.format("%s%s", path, "_o.dds")
+  elseif count == 3 then
+    path = string.sub(path, 1, string.len(path) - 4)
+    path = string.format("%s%s", path, "_c.dds")
+  elseif count == 4 then
+    path = string.sub(path, 1, string.len(path) - 4)
+    path = string.format("%s%s", path, "_d.dds")
+  end
+  return path
+end
+local AnchorButtonDrawables = function(button, bgsTable, drawableAnchor, drawableExtent)
+  for i = 1, #bgsTable do
+    if drawableAnchor ~= nil and drawableExtent ~= nil then
+      bgsTable[i]:RemoveAllAnchors()
+      bgsTable[i]:AddAnchor(drawableAnchor.anchor, button, drawableAnchor.x, drawableAnchor.y)
+      bgsTable[i]:SetExtent(drawableExtent.width, drawableExtent.height)
+    else
+      local topleftX, topleftY, bottomrightX, bottomrightY = 0, 0, 0, 0
+      if drawableAnchor ~= nil and drawableAnchor.offset ~= nil then
+        topleftX = drawableAnchor.offset.topleftX
+        topleftY = drawableAnchor.offset.topleftY
+        bottomrightX = drawableAnchor.offset.bottomrightX
+        bottomrightY = drawableAnchor.offset.bottomrightY
+      end
+      bgsTable[i]:RemoveAllAnchors()
+      bgsTable[i]:AddAnchor("TOPLEFT", button, topleftX, topleftY)
+      bgsTable[i]:AddAnchor("BOTTOMRIGHT", button, bottomrightX, bottomrightY)
+    end
+  end
+end
+local ApplyButtonDrawablesColor = function(bgsTable, drawableColor)
+  if #bgsTable > 4 then
+    return
+  end
+  bgsTable[1]:SetColor(drawableColor.normal[1], drawableColor.normal[2], drawableColor.normal[3], drawableColor.normal[4])
+  bgsTable[2]:SetColor(drawableColor.over[1], drawableColor.over[2], drawableColor.over[3], drawableColor.over[4])
+  bgsTable[3]:SetColor(drawableColor.click[1], drawableColor.click[2], drawableColor.click[3], drawableColor.click[4])
+  bgsTable[4]:SetColor(drawableColor.disable[1], drawableColor.disable[2], drawableColor.disable[3], drawableColor.disable[4])
+end
+function CreateButtonBackGround(button, drawableType, path, layer, count, inset, drawableColor, drawableAnchor, drawableExtent)
+  button.bgs = {}
+  local drawablePath = path
+  for i = 1, count do
+    if drawableType == "icon" then
+      drawablePath = GetIconShapeButtonPath(i, path)
+    end
+    button.bgs[i] = DrawButtonBackGround(button, drawableType, drawablePath, layer, inset)
+  end
+  AnchorButtonDrawables(button, button.bgs, drawableAnchor, drawableExtent)
+end
+local SetBackGroundsCoords = function(bgsTable, drawableType, coords)
+  if drawableType == "icon" then
+    bgsTable[1]:SetCoords(coords[1], coords[2], coords[3], coords[4])
+    bgsTable[2]:SetCoords(coords[1], coords[2], coords[3], coords[4])
+    bgsTable[3]:SetCoords(coords[1], coords[2], coords[3], coords[4])
+    bgsTable[4]:SetCoords(coords[1], coords[2], coords[3], coords[4])
+  elseif drawableType ~= "colorDrawable" then
+    bgsTable[1]:SetCoords(coords.normal[1], coords.normal[2], coords.normal[3], coords.normal[4])
+    bgsTable[2]:SetCoords(coords.over[1], coords.over[2], coords.over[3], coords.over[4])
+    bgsTable[3]:SetCoords(coords.click[1], coords.click[2], coords.click[3], coords.click[4])
+    bgsTable[4]:SetCoords(coords.disable[1], coords.disable[2], coords.disable[3], coords.disable[4])
+  end
+end
+local IsValidCoordsKey = function(path, key)
+  local statusKey = {
+    string.format("%s_df", key),
+    string.format("%s_ov", key),
+    string.format("%s_on", key),
+    string.format("%s_dis", key)
+  }
+  local valid = true
+  for i = 1, #statusKey do
+    local info = GetTextureInfo(path, statusKey[i])
+    valid = info:ValidCoords({
+      info:GetCoords()
+    })
+  end
+  return valid
+end
+local GetBackGroundsCoordsByKey = function(path, key)
+  local textInfo = {
+    normal = {
+      GetTextureInfo(path, string.format("%s_df", key)):GetCoords()
+    },
+    over = {
+      GetTextureInfo(path, string.format("%s_ov", key)):GetCoords()
+    },
+    click = {
+      GetTextureInfo(path, string.format("%s_on", key)):GetCoords()
+    },
+    disable = {
+      GetTextureInfo(path, string.format("%s_dis", key)):GetCoords()
+    }
+  }
+  return textInfo
+end
+local GetBackGroundsColorByKey = function(path, key)
+  local colorInfo = {
+    normal = GetTextureInfo(path, string.format("%s_df", key)):GetColor(),
+    over = GetTextureInfo(path, string.format("%s_ov", key)):GetColor(),
+    click = GetTextureInfo(path, string.format("%s_on", key)):GetColor(),
+    disable = GetTextureInfo(path, string.format("%s_dis", key)):GetColor()
+  }
+  return colorInfo
+end
+local GetBackgroundExtentByKey = function(path, key)
+  local extentTable = {}
+  extentTable.width, extentTable.height = GetTextureInfo(path, string.format("%s_df", key)):GetExtent()
+  return extentTable
+end
+local GetBackGroundsInsetByKey = function(path, key)
+  return GetTextureInfo(path, string.format("%s_df", key)):GetInset()
+end
+function SetButtonTooltip(button, tooltipText)
+  if tooltipText == nil then
+    return
+  end
+  function button:OnEnter()
+    SetTooltip(tooltipText, button)
+  end
+  button:SetHandler("OnEnter", button.OnEnter)
+  function button:OnLeave()
+    HideTooltip()
+  end
+  button:SetHandler("OnLeave", button.OnLeave)
+end
+function ApplyButtonSkin(button, skinInfo)
+  if drawable == "drawable" then
+    skinInfo.inset = nil
+  end
+  local drawableType = skinInfo.drawableType
+  local path = skinInfo.path
+  local inset = skinInfo.inset
+  local drawableAnchor = skinInfo.drawableAnchor
+  local drawableExtent = skinInfo.drawableExtent
+  local count = 4
+  local layer = skinInfo.layer
+  if layer == nil then
+    layer = "background"
+  end
+  local drawableColor = skinInfo.drawableColor
+  if drawableColor == nil then
+    drawableColor = {}
+    drawableColor.normal = {
+      1,
+      1,
+      1,
+      1
+    }
+    drawableColor.over = {
+      1,
+      1,
+      1,
+      1
+    }
+    drawableColor.click = {
+      1,
+      1,
+      1,
+      1
+    }
+    drawableColor.disable = {
+      1,
+      1,
+      1,
+      1
+    }
+  end
+  local fontSize = skinInfo.fontSize
+  if fontSize == nil then
+    fontSize = 13
+  end
+  local fontPath = skinInfo.fontPath
+  if fontPath == nil then
+    fontPath = FONT_PATH.DEFAULT
+  end
+  local fontAlign = skinInfo.fontAlign
+  if fontAlign == nil then
+    fontAlign = ALIGN_CENTER
+  end
+  local fontInset = skinInfo.fontInset
+  if fontInset == nil then
+    fontInset = {
+      left = 0,
+      top = 0,
+      bottom = 0,
+      right = 0
+    }
+  end
+  local ellipsis = skinInfo.ellipsis
+  if ellipsis == nil then
+    ellipsis = false
+  end
+  if drawableType == "icon" then
+    skinInfo.coords = {
+      0,
+      0,
+      54,
+      54
+    }
+    skinInfo.width = 54
+    if skinInfo.height == nil then
+      skinInfo.height = 54
+    end
+  end
+  local disuseExtent = skinInfo.disuseExtent
+  if disuseExtent == nil then
+    disuseExtent = false
+  end
+  if skinInfo.coordsKey ~= nil then
+    if IsValidCoordsKey(path, skinInfo.coordsKey) then
+      skinInfo.coords = GetBackGroundsCoordsByKey(path, skinInfo.coordsKey)
+      drawableExtent = GetBackgroundExtentByKey(path, skinInfo.coordsKey)
+      inset = GetBackGroundsInsetByKey(path, skinInfo.coordsKey)
+      drawableColor = GetBackGroundsColorByKey(path, skinInfo.coordsKey)
+      if not disuseExtent and skinInfo.width == nil and skinInfo.height == nil then
+        skinInfo.width = drawableExtent.width
+        skinInfo.height = drawableExtent.height
+      end
+    else
+      drawableType = "drawable"
+      path = INVALID_ICON_PATH
+      skinInfo.coords = {
+        normal = {
+          0,
+          0,
+          40,
+          40
+        },
+        over = {
+          0,
+          0,
+          40,
+          40
+        },
+        click = {
+          0,
+          0,
+          40,
+          40
+        },
+        disable = {
+          0,
+          0,
+          40,
+          40
+        }
+      }
+      skinInfo.width = 40
+      skinInfo.height = 40
+    end
+  end
+  local autoResize = skinInfo.autoResize
+  if autoResize == nil then
+    autoResize = false
+  end
+  local str = button:GetText()
+  local strWidth = button.style:GetTextWidth(str) or 0
+  local compareWidth = strWidth + fontInset.left + fontInset.right
+  if autoResize then
+    if str == "" or str == nil then
+      autoResize = false
+    end
+    if skinInfo.width == nil then
+      autoResize = false
+    end
+    if skinInfo.width ~= nil and compareWidth < skinInfo.width then
+      autoResize = false
+    end
+  end
+  CreateButtonBackGround(button, drawableType, path, layer, count, inset, drawableColor, drawableAnchor, drawableExtent)
+  SetButtonBackground(button)
+  SetBackGroundsCoords(button.bgs, drawableType, skinInfo.coords)
+  ApplyButtonDrawablesColor(button.bgs, drawableColor)
+  if skinInfo.width ~= nil and skinInfo.height ~= nil then
+    button:SetExtent(skinInfo.width, skinInfo.height)
+  end
+  if skinInfo.fontColor ~= nil then
+    SetButtonFontColor(button, skinInfo.fontColor)
+  else
+    SetButtonFontColor(button, GetButtonDefaultFontColor())
+  end
+  button.style:SetSnap(true)
+  button.style:SetShadow(false)
+  button.style:SetEllipsis(ellipsis)
+  button.style:SetAlign(fontAlign)
+  button:SetInset(fontInset.left, fontInset.top, fontInset.right, fontInset.bottom)
+  button.style:SetFont(fontPath, fontSize)
+  button:SetAutoResize(autoResize)
+end
+function GetDefaultDrawableButtonStyle(path, coordsKey)
+  local drawableBasicStyle = BUTTON_BASIC.DEFAULT_DRAWABLE
+  drawableBasicStyle.path = path
+  drawableBasicStyle.coordsKey = coordsKey
+  return drawableBasicStyle
+end
+local ChangeTexturePathTable = function(bgsTable, path)
+  for i = 1, #bgsTable do
+    bgsTable[i]:SetTexture(path)
+  end
+end
+function ChangeButtonSkin(button, skinInfo)
+  local drawableColor = skinInfo.drawableColor
+  if drawableColor == nil then
+    drawableColor = {}
+    drawableColor.normal = {
+      1,
+      1,
+      1,
+      1
+    }
+    drawableColor.over = {
+      1,
+      1,
+      1,
+      1
+    }
+    drawableColor.click = {
+      1,
+      1,
+      1,
+      1
+    }
+    drawableColor.disable = {
+      1,
+      1,
+      1,
+      1
+    }
+  end
+  ChangeTexturePathTable(button.bgs, skinInfo.path)
+  local disuseExtent = skinInfo.disuseExtent
+  if disuseExtent == nil then
+    disuseExtent = false
+  end
+  if skinInfo.coordsKey ~= nil then
+    skinInfo.coords = GetBackGroundsCoordsByKey(skinInfo.path, skinInfo.coordsKey)
+    skinInfo.drawableExtent = GetBackgroundExtentByKey(skinInfo.path, skinInfo.coordsKey)
+    skinInfo.inset = GetBackGroundsInsetByKey(skinInfo.path, skinInfo.coordsKey)
+    drawableColor = GetBackGroundsColorByKey(skinInfo.path, skinInfo.coordsKey)
+    if not disuseExtent and skinInfo.width == nil and skinInfo.height == nil then
+      skinInfo.width = skinInfo.drawableExtent.width
+      skinInfo.height = skinInfo.drawableExtent.height
+    end
+  end
+  SetBackGroundsCoords(button.bgs, drawableType, skinInfo.coords)
+  AnchorButtonDrawables(button, button.bgs, skinInfo.drawableAnchor, skinInfo.drawableExtent)
+  ApplyButtonDrawablesColor(button.bgs, drawableColor)
+  if skinInfo.width ~= nil and skinInfo.height ~= nil then
+    button:SetExtent(skinInfo.width, skinInfo.height)
+  end
+  if skinInfo.fontColor ~= nil then
+    SetButtonFontColor(button, skinInfo.fontColor)
+  else
+    SetButtonFontColor(button, GetButtonDefaultFontColor())
+  end
+  if skinInfo.fontInset ~= nil then
+    button:SetInset(skinInfo.fontInset.left, skinInfo.fontInset.top, skinInfo.fontInset.right, skinInfo.fontInset.bottom)
+  else
+    button:SetInset(0, 0, 0, 0)
+  end
+  local fontSize = skinInfo.fontSize
+  if fontSize == nil then
+    fontSize = FONT_SIZE.MIDDLE
+  end
+  local fontPath = skinInfo.fontPath
+  if fontPath == nil then
+    fontPath = FONT_PATH.DEFAULT
+  end
+  button.style:SetFont(fontPath, fontSize)
+end
+function AddButtonSkin(button, bgsTable, skinInfo)
+  if drawable == "drawable" then
+    skinInfo.inset = nil
+  end
+  local drawableType = skinInfo.drawableType
+  local path = skinInfo.path
+  local inset = skinInfo.inset
+  local drawableAnchor = skinInfo.drawableAnchor
+  local drawableExtent = skinInfo.drawableExtent
+  local layer = skinInfo.layer
+  if layer == nil then
+    layer = "artwork"
+  end
+  local count = 4
+  local drawableColor = skinInfo.drawableColor
+  if drawableColor == nil then
+    drawableColor = {}
+    drawableColor.normal = {
+      1,
+      1,
+      1,
+      1
+    }
+    drawableColor.over = {
+      1,
+      1,
+      1,
+      1
+    }
+    drawableColor.click = {
+      1,
+      1,
+      1,
+      1
+    }
+    drawableColor.disable = {
+      1,
+      1,
+      1,
+      1
+    }
+  end
+  if drawableType == "icon" then
+    skinInfo.coords = {
+      0,
+      0,
+      54,
+      54
+    }
+    skinInfo.width = 54
+    if skinInfo.height == nil then
+      skinInfo.height = 54
+    end
+  end
+  if skinInfo.coordsKey ~= nil then
+    skinInfo.coords = GetBackGroundsCoordsByKey(path, skinInfo.coordsKey)
+    drawableExtent = GetBackgroundExtentByKey(path, skinInfo.coordsKey)
+  end
+  for i = 1, count do
+    if i == 1 then
+      bgsTable[i] = button:CreateNormalDrawable(drawableType, drawableColor.normal[1], drawableColor.normal[2], drawableColor.normal[3], drawableColor.normal[4], path, layer)
+    elseif i == 2 then
+      bgsTable[i] = button:CreateHighlightDrawable(drawableType, drawableColor.over[1], drawableColor.over[2], drawableColor.over[3], drawableColor.over[4], path, layer)
+    elseif i == 3 then
+      bgsTable[i] = button:CreatePushedDrawable(drawableType, drawableColor.click[1], drawableColor.click[2], drawableColor.click[3], drawableColor.click[4], path, layer)
+    elseif i == 4 then
+      bgsTable[i] = button:CreateDisabledDrawable(drawableType, drawableColor.disable[1], drawableColor.disable[2], drawableColor.disable[3], drawableColor.disable[4], path, layer)
+    end
+  end
+  SetBackGroundsCoords(bgsTable, drawableType, skinInfo.coords)
+  AnchorButtonDrawables(button, bgsTable, drawableAnchor, drawableExtent)
+  ApplyButtonDrawablesColor(bgsTable, drawableColor)
+end
+function ApplyButtonSkinTable(button, skinInfoTable)
+  if #skinInfoTable < 2 or #skinInfoTable > 3 then
+    return
+  end
+  for i = 1, #skinInfoTable do
+    if i == 1 then
+      ApplyButtonSkin(button, skinInfoTable[i])
+    elseif i == 2 then
+      button.add_bgs1 = {}
+      AddButtonSkin(button, button.add_bgs1, skinInfoTable[i])
+    elseif i == 3 then
+      button.add_bgs2 = {}
+      AddButtonSkin(button, button.add_bgs2, skinInfoTable[i])
+    end
+  end
+end
+function ChangeButtonAddSkin(button, bgsTable, skinInfo)
+  local drawableColor = skinInfo.drawableColor
+  if drawableColor == nil then
+    drawableColor = {}
+    drawableColor.normal = {
+      1,
+      1,
+      1,
+      1
+    }
+    drawableColor.over = {
+      1,
+      1,
+      1,
+      1
+    }
+    drawableColor.click = {
+      1,
+      1,
+      1,
+      1
+    }
+    drawableColor.disable = {
+      1,
+      1,
+      1,
+      1
+    }
+  end
+  ChangeTexturePathTable(bgsTable, skinInfo.path)
+  if skinInfo.coordsKey ~= nil then
+    skinInfo.coords = GetBackGroundsCoordsByKey(skinInfo.path, skinInfo.coordsKey)
+    skinInfo.drawableExtent = GetBackgroundExtentByKey(skinInfo.path, skinInfo.coordsKey)
+  end
+  SetBackGroundsCoords(bgsTable, drawableType, skinInfo.coords)
+  AnchorButtonDrawables(button, bgsTable, skinInfo.drawableAnchor, skinInfo.drawableExtent)
+  ApplyButtonDrawablesColor(bgsTable, drawableColor)
+end
+function ChangeButtonSkinTable(button, skinInfoTable)
+  if #skinInfoTable < 2 or #skinInfoTable > 3 then
+    return
+  end
+  for i = 1, #skinInfoTable do
+    if i == 1 then
+      ChangeButtonSkin(button, skinInfoTable[i])
+    elseif i == 2 then
+      ChangeButtonAddSkin(button, button.add_bgs1, skinInfoTable[i])
+    elseif i == 3 then
+      ChangeButtonAddSkin(button, button.add_bgs2, skinInfoTable[i])
+    end
+  end
+end
+function CreateActionButton(id, parent)
+  local button = UIParent:CreateWidget("button", id, parent)
+  ButtonInit(button)
+  button.style:SetFont(FONT_PATH.DEFAULT, FONT_SIZE.XXLARGE)
+  return button
+end
+function ButtonOnClickHandler(button, leftButtonClickFunc, rightButtonClickFunc)
+  local function OnClick(self, arg)
+    if arg == "RightButton" then
+      if rightButtonClickFunc == nil then
+        return
+      end
+      rightButtonClickFunc(self)
+    end
+    if arg == "LeftButton" then
+      if leftButtonClickFunc == nil then
+        return
+      end
+      leftButtonClickFunc(self)
+    end
+  end
+  button:SetHandler("OnClick", OnClick)
+end
+function AdjustBtnLongestTextWidth(buttonTable, fixedWidth)
+  if fixedWidth ~= nil and fixedWidth ~= 0 then
+    for i = 1, #buttonTable do
+      buttonTable[i]:SetAutoResize(false)
+      buttonTable[i]:SetWidth(fixedWidth)
+    end
+    return
+  end
+  local maxWidth = 0
+  for i = 1, #buttonTable do
+    if maxWidth < buttonTable[i]:GetWidth() then
+      maxWidth = buttonTable[i]:GetWidth()
+    end
+  end
+  for i = 1, #buttonTable do
+    buttonTable[i]:SetWidth(maxWidth)
+  end
+  return maxWidth
+end
+function ReanchorDefaultTextButtonSet(buttonTable, anchorTarget, bottomOffset)
+  if #buttonTable > 2 then
+    return
+  end
+  local maxWidth = AdjustBtnLongestTextWidth(buttonTable)
+  local offset = maxWidth / 2
+  buttonTable[1]:AddAnchor("BOTTOM", anchorTarget, -offset, bottomOffset)
+  buttonTable[2]:AddAnchor("BOTTOM", anchorTarget, offset, bottomOffset)
+end
+function CreateWindowDefaultTextButtonSet(window, infos, target)
+  if infos == nil then
+    infos = {}
+  end
+  if infos.leftButtonStr == nil then
+    infos.leftButtonStr = locale.common.ok
+  end
+  if infos.rightButtonStr == nil then
+    infos.rightButtonStr = locale.common.cancel
+  end
+  if infos.isPopupWindow == nil then
+    infos.isPopupWindow = false
+  end
+  local buttonBottomInset = -MARGIN.WINDOW_SIDE
+  if infos.isPopupWindow then
+    buttonBottomInset = BUTTON_COMMON_INSET.MESSAGEBOX_BOTTOM
+  end
+  if infos.buttonBottomInset ~= nil then
+    buttonBottomInset = infos.buttonBottomInset
+  end
+  if infos.fixedWidth ~= nil then
+    infos.fixedWidth = 0
+  end
+  local leftButton = window:CreateChildWidget("button", "leftButton", 0, true)
+  leftButton:SetText(infos.leftButtonStr)
+  ApplyButtonSkin(leftButton, BUTTON_BASIC.DEFAULT)
+  if infos.leftButtonLeftClickFunc ~= nil or infos.leftButtonRightClickFunc ~= nil then
+    ButtonOnClickHandler(leftButton, infos.leftButtonLeftClickFunc, infos.leftButtonRightClickFunc)
+  end
+  local rightButton = window:CreateChildWidget("button", "rightButton", 0, true)
+  rightButton:SetText(infos.rightButtonStr)
+  ApplyButtonSkin(rightButton, BUTTON_BASIC.DEFAULT)
+  if infos.rightButtonLeftClickFunc ~= nil or infos.rightButtonRightClickFunc ~= nil then
+    ButtonOnClickHandler(rightButton, infos.rightButtonLeftClickFunc, infos.rightButtonRightClickFunc)
+  end
+  local buttonTable = {leftButton, rightButton}
+  local anchorTarget = window
+  if target ~= nil then
+    anchorTarget = target
+  end
+  ReanchorDefaultTextButtonSet(buttonTable, anchorTarget, buttonBottomInset)
+end

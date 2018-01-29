@@ -1,0 +1,31 @@
+function CreateRaidRoleFrame(id, parent)
+  local w = SetViewOfRaidRoleFrame(id, parent)
+  for i = 1, #w.section.buttons do
+    do
+      local btn = w.section.buttons[i]
+      function btn:OnClick()
+        X2Team:SetRole(btn.role)
+        for idx = 1, #w.section.buttons do
+          local otherBtn = w.section.buttons[idx]
+          if self == otherBtn then
+            self.radioBtn:SetChecked(true)
+          else
+            otherBtn.radioBtn:SetChecked(false)
+          end
+        end
+      end
+      btn:SetHandler("OnClick", btn.OnClick)
+      btn.radioBtn:SetHandler("OnClick", btn.OnClick)
+    end
+  end
+  function w:OnShow()
+    local myIndex = X2Team:GetTeamPlayerIndex()
+    local role = X2Team:GetRole(myIndex)
+    for i = 1, #w.section.buttons do
+      local btn = w.section.buttons[i]
+      btn.radioBtn:SetChecked(btn.role == role)
+    end
+  end
+  w:SetHandler("OnShow", w.OnShow)
+  return w
+end

@@ -1,0 +1,13 @@
+if X2Util:GetGameProvider() == GAMEON then
+  premiumServiceLocale.useAAPoint = false
+  premiumServiceLocale.useCashCharge = false
+  premiumServiceLocale.pointRuleButton = false
+  premiumServiceLocale.serviceBuyButton = false
+  premiumServiceLocale.pointProgressBar = false
+  premiumServiceLocale.showPcbangBenefit = false
+  function premiumServiceLocale.GetDateToPremiumServiceFormat(df)
+    local output = string.format("%s : %s-%s-%s %s:%s", X2Locale:LocalizeUiText(PREMIUM_TEXT, "end"), tostring(df.year), tostring(df.month), tostring(df.day), tostring(df.hour), tostring(df.minute))
+    return output
+  end
+  premiumServiceLocale.showWeb = true
+end

@@ -1,0 +1,43 @@
+local NameColumnLayoutSetFunc = function(frame, rowIndex, colIndex, subItem)
+  local selectCheck = CreateCheckButton(subItem:GetId() .. ".selectCheck", subItem)
+  selectCheck:Show(false)
+  selectCheck:AddAnchor("LEFT", subItem, 5, -1)
+  subItem.selectCheck = selectCheck
+  subItem.selectCheck.rowIndex = rowIndex
+  function selectCheck:CheckBtnCheckChagnedProc(checked)
+    local data = frame:GetDataByViewIndex(rowIndex, colIndex)
+    data[FRIEND_COL.CHK] = checked
+    if frame.CheckProc_inviteButton ~= nil then
+      frame:CheckProc_inviteButton(checked)
+    end
+  end
+  local icon = CreatePartyIconWidget(subItem)
+  icon:Show(false)
+  icon:AddAnchor("LEFT", subItem, 20, 1)
+  local nameLabel = subItem:CreateChildWidget("label", "nameLabel", 0, true)
+  nameLabel:Show(true)
+  nameLabel:SetExtent(140, 25)
+  nameLabel:AddAnchor("LEFT", icon, "RIGHT", 3, -1)
+  nameLabel.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(nameLabel, FONT_COLOR.DEFAULT)
+end
+function LevelDataSetFunc(subItem, data, setValue)
+  if setValue then
+    subItem:SetText(tostring(data.level))
+    ChangeSubItemTextColorForOnline(subItem, data.online)
+  end
+end
+function RaceDataSetFunc(subItem, data, setValue)
+  if setValue then
+    subItem:SetText(locale.raceText[data.race])
+    ChangeSubItemTextColorForOnline(subItem, data.online)
+  end
+end
+function MemoColumnLayoutSetFunc(frame, rowIndex, colIndex, subItem)
+  local memoLabel = subItem:CreateChildWidget("label", "memoLabel", 0, true)
+  memoLabel:SetExtent(subItem:GetWidth() - 10, FONT_SIZE.MIDDLE)
+  memoLabel:SetLimitWidth(true)
+  memoLabel:AddAnchor("CENTER", subItem, 0, 0)
+  memoLabel.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(memoLabel, FONT_COLOR.DEFAULT)
+end

@@ -1,0 +1,13 @@
+if X2Util:GetGameProvider() == TRION then
+  function lootLocale:GetItemName(itemName)
+    if itemName == "" then
+      return itemName
+    end
+    local name = X2Util:UTF8StringLimit(itemName, 40, "...")
+    return name
+  end
+  lootLocale.lootDice = {
+    buttonWidth = BUTTON_SIZE.DEFAULT_MIDDLE.WIDTH,
+    buttonOffsetX = 60
+  }
+end

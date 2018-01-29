@@ -1,0 +1,184 @@
+function SetViewOfRecruitment(id, recruitWnd)
+  local width = 430
+  local height = 540
+  local recruitmentWnd = CreateWindow(id, "UIParent")
+  recruitmentWnd:SetExtent(width, height)
+  recruitmentWnd:AddAnchor("CENTER", "UIParent", 0, 0)
+  recruitmentWnd:SetTitle(GetCommonText("expedition_recruitment_notice"))
+  recruitmentWnd:Show(true)
+  recruitWnd.recruitmentWnd = recruitmentWnd
+  local sideMargin, titleMargin, bottomMargin = GetWindowMargin()
+  local levelLabal = recruitmentWnd:CreateChildWidget("label", "levelLabal", 0, true)
+  levelLabal:SetText("0")
+  levelLabal:SetHeight(FONT_SIZE.XLARGE)
+  levelLabal:SetAutoResize(true)
+  levelLabal.style:SetAlign(ALIGN_LEFT)
+  levelLabal.style:SetFont(FONT_PATH.SNAIL, FONT_SIZE.XLARGE)
+  levelLabal:AddAnchor("TOPLEFT", recruitmentWnd, "TOPLEFT", sideMargin + 10, titleMargin + 20)
+  ApplyTextColor(levelLabal, FONT_COLOR.DEFAULT)
+  local nameLabal = recruitmentWnd:CreateChildWidget("label", "nameLabal", 0, true)
+  nameLabal:SetHeight(FONT_SIZE.LARGE)
+  nameLabal:SetAutoResize(true)
+  nameLabal.style:SetAlign(ALIGN_LEFT)
+  nameLabal.style:SetFontSize(FONT_SIZE.LARGE)
+  nameLabal:AddAnchor("LEFT", levelLabal, "RIGHT", 5, 0)
+  ApplyTextColor(nameLabal, FONT_COLOR.DEFAULT)
+  local ownerTextLabel = recruitmentWnd:CreateChildWidget("label", "ownerTextLabel", 0, true)
+  ownerTextLabel:SetText(string.format("%s: ", GetCommonText("owner")))
+  ownerTextLabel:SetHeight(FONT_SIZE.MIDDLE)
+  ownerTextLabel:SetAutoResize(true)
+  ownerTextLabel.style:SetAlign(ALIGN_LEFT)
+  ownerTextLabel:AddAnchor("TOPLEFT", levelLabal, "BOTTOMLEFT", 0, 10)
+  ApplyTextColor(ownerTextLabel, FONT_COLOR.DEFAULT)
+  local ownerLabel = recruitmentWnd:CreateChildWidget("label", "ownerLabel", 0, true)
+  ownerLabel:SetHeight(FONT_SIZE.MIDDLE)
+  ownerLabel:SetAutoResize(true)
+  ownerLabel.style:SetAlign(ALIGN_LEFT)
+  ownerLabel:AddAnchor("LEFT", ownerTextLabel, "RIGHT", 0, 0)
+  ApplyTextColor(ownerLabel, FONT_COLOR.DEFAULT)
+  local numberOfPeopleLabel = recruitmentWnd:CreateChildWidget("label", "numberOfPeopleLabel", 0, true)
+  numberOfPeopleLabel:SetText("0")
+  numberOfPeopleLabel:SetHeight(FONT_SIZE.MIDDLE)
+  numberOfPeopleLabel:SetAutoResize(true)
+  numberOfPeopleLabel.style:SetAlign(ALIGN_LEFT)
+  numberOfPeopleLabel:AddAnchor("TOP", ownerTextLabel, "TOP", 0, 0)
+  numberOfPeopleLabel:AddAnchor("RIGHT", recruitmentWnd, "RIGHT", -sideMargin, 0)
+  ApplyTextColor(numberOfPeopleLabel, FONT_COLOR.DEFAULT)
+  local numberOfPeopleTextLabel = recruitmentWnd:CreateChildWidget("label", "numberOfPeopleTextLabel", 0, true)
+  numberOfPeopleTextLabel:SetText(string.format("%s: ", GetCommonText("expedition_number_of_people")))
+  numberOfPeopleTextLabel:SetHeight(FONT_SIZE.MIDDLE)
+  numberOfPeopleTextLabel:SetAutoResize(true)
+  numberOfPeopleTextLabel.style:SetAlign(ALIGN_LEFT)
+  numberOfPeopleTextLabel:AddAnchor("RIGHT", numberOfPeopleLabel, "LEFT", 0, 0)
+  ApplyTextColor(numberOfPeopleTextLabel, FONT_COLOR.DEFAULT)
+  local bg = CreateContentBackground(recruitmentWnd, "TYPE8")
+  bg:SetExtent(430, 96)
+  bg:AddAnchor("TOPLEFT", levelLabal, "TOPLEFT", -30, -20)
+  bg:AddAnchor("BOTTOMRIGHT", numberOfPeopleLabel, "BOTTOMRIGHT", 30, 20)
+  ApplyTextureColor(bg, TEXTURE_COLOR.BOX_BROWN)
+  local interestText = recruitmentWnd:CreateChildWidget("label", "interestText", 0, true)
+  interestText:SetText(GetCommonText("expedition_interest"))
+  interestText:SetHeight(FONT_SIZE.LARGE)
+  interestText:SetAutoResize(true)
+  interestText.style:SetAlign(ALIGN_LEFT)
+  interestText.style:SetFontSize(FONT_SIZE.LARGE)
+  interestText:AddAnchor("TOPLEFT", ownerTextLabel, "BOTTOMLEFT", -10, 30)
+  ApplyTextColor(interestText, FONT_COLOR.DEFAULT)
+  local offset_x = 0
+  local offset_y = 10
+  recruitmentWnd.interestChks = {}
+  for i = 1, #expedMgmt.IR do
+    local checkbox = CreateCheckButton(id .. ".checkbox", recruitmentWnd)
+    checkbox:AddAnchor("TOPLEFT", interestText, "BOTTOMLEFT", offset_x, offset_y)
+    local icon = recruitmentWnd:CreateChildWidget("emptywidget", "icon", i, true)
+    icon:AddAnchor("LEFT", checkbox, "RIGHT", 0, 0)
+    local iconTexture = icon:CreateImageDrawable(TEXTURE_PATH.EXPEDITION_RECRUIT, "background")
+    local coord = {
+      GetTextureInfo(TEXTURE_PATH.EXPEDITION_RECRUIT, "icon_" .. expedMgmt.IR[i]):GetCoords()
+    }
+    icon:SetExtent(coord[3], coord[4])
+    iconTexture:SetCoords(coord[1], coord[2], coord[3], coord[4])
+    iconTexture:AddAnchor("TOPLEFT", icon, 0, 0)
+    iconTexture:AddAnchor("BOTTOMRIGHT", icon, 0, 0)
+    local label = recruitmentWnd:CreateChildWidget("label", "subTitle", i, true)
+    label:Show(true)
+    label:SetAutoResize(false)
+    label:SetText(GetCommonText("expedition_interest_" .. expedMgmt.IR[i]))
+    label:AddAnchor("LEFT", icon, "RIGHT", 5, 0)
+    label.style:SetFontSize(FONT_SIZE.MIDDLE)
+    label.style:SetAlign(ALIGN_LEFT)
+    ApplyTextColor(label, FONT_COLOR.DEFAULT)
+    if i % 2 == 1 then
+      offset_x = recruitmentWnd:GetWidth() / 2
+    else
+      offset_x = 0
+      offset_y = offset_y + 22
+    end
+    recruitmentWnd.interestChks[i] = checkbox
+  end
+  local introduceTextLabel = recruitmentWnd:CreateChildWidget("label", "introduceTextLabel", 0, true)
+  introduceTextLabel:SetText(GetCommonText("expedition_introduce"))
+  introduceTextLabel:SetHeight(FONT_SIZE.LARGE)
+  introduceTextLabel:SetAutoResize(true)
+  introduceTextLabel.style:SetAlign(ALIGN_LEFT)
+  introduceTextLabel.style:SetFontSize(FONT_SIZE.LARGE)
+  introduceTextLabel:AddAnchor("TOPLEFT", interestText, "BOTTOMLEFT", 0, offset_y + 10)
+  ApplyTextColor(introduceTextLabel, FONT_COLOR.DEFAULT)
+  local introduce = recruitmentWnd:CreateChildWidget("editboxmultiline", "introduce", 0, true)
+  InitMultiline(introduce)
+  introduce:SetExtent(recruitmentWnd:GetWidth() - sideMargin * 2, 110)
+  introduce:SetMaxTextLength(100)
+  introduce.style:SetAlign(ALIGN_TOP_LEFT)
+  local inset = expeditionLocale.inset.recruitRecruitment
+  introduce:SetInset(inset[1], inset[2], inset[3], inset[4])
+  introduce:AddAnchor("TOPLEFT", introduceTextLabel, "BOTTOMLEFT", 0, 5)
+  introduce:SetText(string.format("%d/%d", 0, introduce:MaxTextLength()))
+  ApplyTextColor(introduce, FONT_COLOR.DEFAULT)
+  ApplyEditSkin(introduce, nil, false)
+  local introduceTextLenth = recruitmentWnd:CreateChildWidget("label", "introduceTextLenth", 0, true)
+  introduceTextLenth:SetHeight(FONT_SIZE.MIDDLE)
+  introduceTextLenth:SetAutoResize(true)
+  introduceTextLenth.style:SetAlign(ALIGN_RIGHT)
+  introduceTextLenth.style:SetFontSize(FONT_SIZE.MIDDLE)
+  introduceTextLenth:AddAnchor("TOPRIGHT", introduce, "BOTTOMRIGHT", -2, 2)
+  ApplyTextColor(introduceTextLenth, FONT_COLOR.DEFAULT)
+  local introducePeriodLabel = recruitmentWnd:CreateChildWidget("label", "introducePeriodLabel", 0, true)
+  introducePeriodLabel:SetText(GetCommonText("expedition_promotional_period"))
+  introducePeriodLabel:SetHeight(FONT_SIZE.LARGE)
+  introducePeriodLabel:SetAutoResize(true)
+  introducePeriodLabel.style:SetAlign(ALIGN_LEFT)
+  introducePeriodLabel.style:SetFontSize(FONT_SIZE.LARGE)
+  introducePeriodLabel:AddAnchor("TOPLEFT", introduce, "BOTTOMLEFT", 0, 20)
+  ApplyTextColor(introducePeriodLabel, FONT_COLOR.DEFAULT)
+  local times = X2Faction:GetExpeditionRecruitmentPeriod()
+  local timeTexts = {}
+  for i = 1, #times do
+    local day = 86400000
+    timeTexts[i] = FormatTime(times[i] * day, false)
+  end
+  local radioBoxes = CreateRadioButton("radioBoxes", recruitmentWnd, #times, "horizen", offset, 30, timeTexts)
+  local offset = {x = 0, y = 10}
+  for i = 1, #radioBoxes do
+    radioBoxes[i]:RemoveAllAnchors()
+    radioBoxes[i]:AddAnchor("TOPLEFT", introducePeriodLabel, "BOTTOMLEFT", offset.x, offset.y)
+    radioBoxes[i].day = times[i]
+    if i % 2 == 1 then
+      offset.x = recruitmentWnd:GetWidth() / 2
+    else
+      offset.x = 0
+      offset.y = offset.y + 22
+    end
+  end
+  recruitmentWnd.radioBoxes = radioBoxes
+  local introduceExpensesText = recruitmentWnd:CreateChildWidget("label", "introduceExpensesText", 0, true)
+  introduceExpensesText:SetText(GetCommonText("expedition_Promotional_expenses"))
+  introduceExpensesText:SetHeight(FONT_SIZE.LARGE)
+  introduceExpensesText:SetAutoResize(true)
+  introduceExpensesText.style:SetAlign(ALIGN_LEFT)
+  introduceExpensesText.style:SetFontSize(FONT_SIZE.LARGE)
+  introduceExpensesText:AddAnchor("TOPLEFT", introducePeriodLabel, "BOTTOMLEFT", 0, offset.y + 10)
+  ApplyTextColor(introduceExpensesText, FONT_COLOR.DEFAULT)
+  local cost = CreateTitleMoneyWindow("cost", recruitmentWnd, "", "horizon")
+  cost:SetExtent(155, 29)
+  cost:Show(true)
+  cost:NotUseTitle()
+  cost:AddAnchor("LEFT", introduceExpensesText, "RIGHT", 10, 0)
+  cost:Update("0")
+  recruitmentWnd.cost = cost
+  local registerButton = recruitmentWnd:CreateChildWidget("button", "registerButton", 0, true)
+  registerButton:SetText(GetCommonText("register"))
+  ApplyButtonSkin(registerButton, BUTTON_BASIC.DEFAULT)
+  registerButton:AddAnchor("BOTTOMLEFT", recruitmentWnd, "BOTTOMLEFT", recruitmentWnd:GetWidth() / 2 - registerButton:GetWidth(), -sideMargin)
+  local cancelButton = recruitmentWnd:CreateChildWidget("button", "cancelButton", 0, true)
+  cancelButton:SetText(GetCommonText("cancel"))
+  ApplyButtonSkin(cancelButton, BUTTON_BASIC.DEFAULT)
+  cancelButton:AddAnchor("BOTTOMLEFT", registerButton, "BOTTOMRIGHT", 0, 0)
+  return recruitmentWnd
+end
+local CreateInterestWindow = function(id, parent)
+  local drawWnd = CreateSubOptionWindow(id, parent)
+  drawWnd:Show(false)
+  drawWnd:SetExtent(localeView.roaddMapOption.wnd.width, localeView.roaddMapOption.wnd.height)
+  drawWnd:AddAnchor("TOPRIGHT", parent, "BOTTOMRIGHT", 3, 3)
+  drawWnd.btn = {}
+end

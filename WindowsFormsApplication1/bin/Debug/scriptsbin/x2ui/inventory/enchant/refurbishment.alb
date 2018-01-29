@@ -1,0 +1,95 @@
+function CreateRefurbishmentWindow(tabWindow)
+  SetViewOfRefurbishmentWindow(tabWindow)
+  SetTargetItemClickFunc(tabWindow.slotTargetItem)
+  SetEnchantItemClickFunc(tabWindow.slotEnchantItem)
+  local COL_INDEX = {
+    NAME = 1,
+    CUR_VALUE = 2,
+    AFTER_VALUE = 3
+  }
+  local weponValueKeys = {
+    "DPS",
+    "healDps",
+    "magicDps",
+    "armor"
+  }
+  local armorValueKeys = {
+    "armor",
+    "magicResistance"
+  }
+  local valueNames = {
+    DPS = GetUIText(TOOLTIP_TEXT, "attack_power"),
+    healDps = GetUIText(TOOLTIP_TEXT, "heal_power"),
+    magicDps = GetUIText(TOOLTIP_TEXT, "magic_attackpower"),
+    armor = GetUIText(TOOLTIP_TEXT, "defence_power"),
+    magicResistance = GetUIText(TOOLTIP_TEXT, "magic_resistance")
+  }
+  local function SetData(itemInfo, index, valueType)
+    if itemInfo[valueType] ~= nil and itemInfo[valueType] ~= 0 then
+      local datas = {
+        type = valueType,
+        value = GetModifierCalcValue(valueType, itemInfo[valueType])
+      }
+      tabWindow.modifierList:InsertData(index, COL_INDEX.NAME, valueNames[valueType])
+      tabWindow.modifierList:InsertData(index, COL_INDEX.CUR_VALUE, datas)
+      return true
+    end
+    return false
+  end
+  function tabWindow.slotTargetItem:Update()
+    local itemInfo = X2ItemEnchant:GetTargetItemInfo()
+    UpdateSlot(self, itemInfo, true)
+    local index = 1
+    if itemInfo ~= nil then
+      local tables = {}
+      if itemInfo.item_impl == "weapon" then
+        tables = weponValueKeys
+      else
+        tables = armorValueKeys
+      end
+      for i = 1, #tables do
+        if SetData(itemInfo, index, tables[i]) then
+          index = index + 1
+        end
+      end
+      return true
+    else
+      return false
+    end
+  end
+  function tabWindow.slotEnchantItem:Update()
+    local itemInfo = X2ItemEnchant:GetEnchantItemInfo()
+    UpdateSlot(self, itemInfo)
+    if itemInfo ~= nil then
+      local scales = X2ItemEnchant:GetRefurbishmentItemCapScale()
+      tabWindow.infoFrame.textbox:SetText(string.format("%s %d~%d%%", GetUIText(COMMON_TEXT, "refurbishment_possible_scale"), scales.min, scales.max))
+      local infos = X2ItemEnchant:GetAfterRefurbishmentInfos()
+      for i = 1, tabWindow.modifierList:GetDataCount() do
+        local data = tabWindow.modifierList:GetData(i, COL_INDEX.CUR_VALUE)
+        local info = infos[data.type]
+        if info ~= nil then
+          tabWindow.modifierList:InsertData(i, COL_INDEX.AFTER_VALUE, string.format("%s ~ %s", GetModifierCalcValue(data.type, info.min), GetModifierCalcValue(data.type, info.max)))
+        end
+      end
+      return true
+    else
+      return false
+    end
+  end
+  function tabWindow:SlotAllUpdate(isExcutable, isLock)
+    self.modifierList:DeleteAllDatas()
+    local targetInfoExist = self.slotTargetItem:Update()
+    local enchatInfoExist = self.slotEnchantItem:Update()
+    self.leftButton:Enable(isExcutable)
+    self.slotTargetItem:Enable(not isLock)
+    self.slotEnchantItem:Enable(not isLock)
+    self.infoFrame.textbox:Show(targetInfoExist and enchatInfoExist)
+    if isLock then
+      self.slotTargetItem:SetOverlayColor(ICON_BUTTON_OVERLAY_COLOR.BLACK)
+      self.slotEnchantItem:SetOverlayColor(ICON_BUTTON_OVERLAY_COLOR.BLACK)
+    else
+      self.slotTargetItem:SetOverlay(self.slotTargetItem:GetInfo())
+      self.slotEnchantItem:SetOverlay(self.slotEnchantItem:GetInfo())
+    end
+  end
+end

@@ -1,0 +1,406 @@
+local BUTTON_OFFSET = {
+  PREMIUM_SERVICE = {X = -10, Y = -50},
+  INGAMESHOP = {X = -10, Y = -50},
+  EVENT_CENTER = {X = -80, Y = -50},
+  COMMERCIAL_MAIL = {X = -150, Y = -50}
+}
+local function SetViewOfPremiumServiceToggleButton(id, parent)
+  local toggleButton = UIParent:CreateWidget("button", id, parent)
+  toggleButton:AddAnchor("BOTTOMRIGHT", "UIParent", BUTTON_OFFSET.PREMIUM_SERVICE.X, BUTTON_OFFSET.PREMIUM_SERVICE.Y)
+  ApplyButtonSkin(toggleButton, BUTTON_HUD.TOGGLE_NO_PREMIUM_SERVICE)
+  function toggleButton:PremiumGradeChageToggle()
+    local isPremiumService = X2PremiumService:IsPremiumService()
+    if isPremiumService == false then
+      ChangeButtonSkin(self, BUTTON_HUD.TOGGLE_NO_PREMIUM_SERVICE)
+    else
+      ChangeButtonSkin(self, BUTTON_HUD.TOGGLE_PREMIUM_SERVICE)
+    end
+  end
+  toggleButton:PremiumGradeChageToggle()
+  return toggleButton
+end
+function SetHandlerCommercialMailBadge(widget)
+  local mailCount = 0
+  function widget:OnCommercialMailInboxUpdated()
+    local count = X2GoodsMail:GetCountUnreadMail()
+    if count > mailCount then
+      F_SOUND:PlayUISound("event_commercial_mail_alarm")
+    end
+    mailCount = count
+    if count == 0 then
+      count = ""
+      widget:Show(false)
+    else
+      count = tostring(count)
+      widget:Show(true)
+    end
+    self:SetText(tostring(count))
+  end
+  widget:SetHandler("OnEvent", function(this, event, ...)
+    this:OnCommercialMailInboxUpdated()
+  end)
+  widget:RegisterEvent("GOODS_MAIL_INBOX_UPDATE")
+  widget:OnCommercialMailInboxUpdated()
+end
+function CreatePremiumServiceToggleButton(id, parent)
+  local button = SetViewOfPremiumServiceToggleButton(id, parent)
+  local LeftButtonCLickFunc = function()
+    TogglePremiumService()
+  end
+  ButtonOnClickHandler(button, LeftButtonCLickFunc)
+  local OnEnter = function(self)
+    local premiumSeviceToolTip = X2PremiumService:GetPremiumSeviceToolTipInfo()
+    local grade = X2PremiumService:GetPremiumGradeKind()
+    local endTime = X2PremiumService:GetPremiumSeviceEndTime()
+    local ispremiumService = X2PremiumService:IsPremiumService()
+    if grade == PG_PREMIUM_0 or ispremiumService == false then
+      SetVerticalTooltip(mainMenuBarLocale:GetArcheLifeBtnTip(), self)
+    elseif premiumSeviceToolTip == nil then
+      HideTooltip()
+    elseif endTime == nil then
+      SetPremiumServiceToolTip(grade, "", premiumSeviceToolTip.tooltip, self)
+    else
+      SetPremiumServiceToolTip(grade, premiumServiceLocale.GetDateToPremiumServiceFormat(endTime.payEnd), premiumSeviceToolTip.tooltip, self)
+    end
+  end
+  button:SetHandler("OnEnter", OnEnter)
+  local OnLeave = function()
+    HideTooltip()
+  end
+  button:SetHandler("OnLeave", OnLeave)
+  local function OnScale(self)
+    self:RemoveAllAnchors()
+    self:AddAnchor("BOTTOMRIGHT", "UIParent", BUTTON_OFFSET.PREMIUM_SERVICE.X, BUTTON_OFFSET.PREMIUM_SERVICE.Y)
+  end
+  button:SetHandler("OnScale", OnScale)
+  return button
+end
+local featureSet = X2Player:GetFeatureSet()
+if featureSet.premium and hudLocale.visiblePremiumBtn then
+  BUTTON_OFFSET.INGAMESHOP.X = BUTTON_OFFSET.INGAMESHOP.X - 70
+end
+local function SetViewOfInGameShopToggleButton(id, parent)
+  local toggleButton = UIParent:CreateWidget("button", id, parent)
+  ApplyButtonSkin(toggleButton, BUTTON_HUD.TOGGLE_INGAMESHOP)
+  toggleButton:AddAnchor("BOTTOMRIGHT", "UIParent", BUTTON_OFFSET.INGAMESHOP.X, BUTTON_OFFSET.INGAMESHOP.Y)
+  return toggleButton
+end
+local function CreateInGameShopToggleButton(id)
+  local btn = SetViewOfInGameShopToggleButton(id)
+  local LeftButtonCLickFunc = function()
+    ToggleInGameShop()
+  end
+  ButtonOnClickHandler(btn, LeftButtonCLickFunc)
+  local OnEnter = function(self)
+    local bindKeyText = string.upper(X2Hotkey:GetBinding("toggle_ingameshop", 1))
+    SetVerticalTooltip(locale.tooltip.inGameShopToggleButton(bindKeyText), self)
+  end
+  btn:SetHandler("OnEnter", OnEnter)
+  local OnLeave = function()
+    HideTooltip()
+  end
+  btn:SetHandler("OnLeave", OnLeave)
+  local function OnScale(self)
+    self:RemoveAllAnchors()
+    self:AddAnchor("BOTTOMRIGHT", "UIParent", "BOTTOMRIGHT", BUTTON_OFFSET.INGAMESHOP.X, BUTTON_OFFSET.INGAMESHOP.Y)
+  end
+  btn:SetHandler("OnScale", OnScale)
+  return btn
+end
+local ingameshopToggleButton
+if featureSet.ingamecashshop then
+  ingameshopToggleButton = CreateInGameShopToggleButton("ingameshopToggleButton")
+  ingameshopToggleButton:Show(true)
+end
+if featureSet.premium and hudLocale.visiblePremiumBtn then
+  BUTTON_OFFSET.EVENT_CENTER.X = BUTTON_OFFSET.EVENT_CENTER.X - 70
+end
+local function CreateEventCenterToggleButton(id)
+  local btn = UIParent:CreateWidget("button", id, parent)
+  ApplyButtonSkin(btn, BUTTON_HUD.TOGGLE_EVENT_CENTER)
+  btn:AddAnchor("BOTTOMRIGHT", "UIParent", BUTTON_OFFSET.EVENT_CENTER.X, BUTTON_OFFSET.EVENT_CENTER.Y)
+  local alarmIcon = btn:CreateImageDrawable(TEXTURE_PATH.HUD, "overlay")
+  alarmIcon:SetTextureInfo("everyday_n")
+  alarmIcon:AddAnchor("TOPLEFT", btn, 5, 6)
+  alarmIcon:SetVisible(false)
+  local LeftButtonCLickFunc = function()
+    ToggleEventCenter()
+  end
+  ButtonOnClickHandler(btn, LeftButtonCLickFunc)
+  local function OnScale(self)
+    self:RemoveAllAnchors()
+    self:AddAnchor("BOTTOMRIGHT", "UIParent", "BOTTOMRIGHT", BUTTON_OFFSET.EVENT_CENTER.X, BUTTON_OFFSET.EVENT_CENTER.Y)
+  end
+  btn:SetHandler("OnScale", OnScale)
+  local function UpdateAlramIcon()
+    local visible = AttendanceActived() or TodayAssignmentActived()
+    alarmIcon:SetVisible(visible)
+  end
+  UpdateAlramIcon()
+  local events = {
+    ACCOUNT_ATTENDANCE_LOADED = function()
+      UpdateAlramIcon()
+    end,
+    ACCOUNT_ATTENDANCE_ADDED = function()
+      UpdateAlramIcon()
+    end,
+    QUEST_CONTEXT_UPDATED = function(qType, status)
+      if X2Quest:IsTodayQuest(qType) and status == "updated" then
+        UpdateAlramIcon()
+      end
+    end,
+    LEVEL_CHANGED = function()
+      UpdateAlramIcon()
+    end,
+    UPDATE_TODAY_ASSIGNMENT = function()
+      UpdateAlramIcon()
+    end,
+    START_TODAY_ASSIGNMENT = function()
+      UpdateAlramIcon()
+    end
+  }
+  btn:SetHandler("OnEvent", function(this, event, ...)
+    events[event](...)
+  end)
+  RegistUIEvent(btn, events)
+  return btn
+end
+local eventCenterToggleButton = CreateEventCenterToggleButton("eventCenterToggleButton")
+eventCenterToggleButton:Show(true)
+local function CreateConvenienceBtn(id, parent)
+  local button = UIParent:CreateWidget("button", id, parent)
+  button:Show(true)
+  ApplyButtonSkin(button, BUTTON_HUD.TOGGLE_CONVENIENCE)
+  local badge = button:CreateChildWidget("label", "badge", 0, true)
+  badge:AddAnchor("TOPRIGHT", button, 0, 5)
+  badge:SetExtent(29, 28)
+  badge:SetInset(0, 0, 1, 4)
+  badge.style:SetShadow(true)
+  badge.style:SetFontSize(FONT_SIZE.SMALL)
+  local bg = badge:CreateImageDrawable(TEXTURE_PATH.HUD, "background")
+  bg:SetTextureInfo("sendbox_balloon")
+  bg:AddAnchor("TOPLEFT", badge, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", badge, 0, 0)
+  SetHandlerCommercialMailBadge(badge)
+  function badge:OnShow()
+    if #button.toggleChildWidgets > 0 and button.toggleChildWidgets[1]:IsVisible() then
+      self:Show(false)
+    end
+  end
+  badge:SetHandler("OnShow", badge.OnShow)
+  local function AnchorButton()
+    if ingameshopToggleButton ~= nil then
+      if eventCenterToggleButton ~= nil then
+        button:AddAnchor("BOTTOMRIGHT", eventCenterToggleButton, "BOTTOMLEFT", -2, 0)
+      else
+        button:AddAnchor("BOTTOMRIGHT", ingameshopToggleButton, "BOTTOMLEFT", -2, 0)
+      end
+    else
+      button:AddAnchor("BOTTOMRIGHT", "UIParent", "BOTTOMRIGHT", BUTTON_OFFSET.INGAMESHOP.X, BUTTON_OFFSET.INGAMESHOP.Y)
+    end
+  end
+  AnchorButton()
+  local function LeftButtonCLickFunc()
+    button:ToggleChildWidgets()
+  end
+  ButtonOnClickHandler(button, LeftButtonCLickFunc)
+  local function OnScale(self)
+    self:RemoveAllAnchors()
+    AnchorButton()
+  end
+  button:SetHandler("OnScale", OnScale)
+  button.toggleChildWidgets = {}
+  function button:PushToggleChildWidget(widget)
+    distance = -55
+    ANCHOR_DATAS = {
+      {
+        x = math.cos(math.rad(-10)) * distance,
+        y = math.sin(math.rad(-10)) * distance
+      },
+      {
+        x = math.cos(math.rad(35)) * distance,
+        y = math.sin(math.rad(35)) * distance
+      },
+      {
+        x = math.cos(math.rad(80)) * distance,
+        y = math.sin(math.rad(80)) * distance
+      },
+      {
+        x = math.cos(math.rad(125)) * distance,
+        y = math.sin(math.rad(125)) * distance
+      }
+    }
+    index = #self.toggleChildWidgets + 1
+    if index > #ANCHOR_DATAS then
+      return
+    end
+    self.toggleChildWidgets[index] = widget
+    widget:AddAnchor("CENTER", self, "CENTER", ANCHOR_DATAS[index].x, ANCHOR_DATAS[index].y)
+  end
+  function button:ToggleChildWidgets()
+    local hideBadge
+    for i = 1, #self.toggleChildWidgets do
+      self.toggleChildWidgets[i]:Show(not self.toggleChildWidgets[i]:IsVisible())
+      hideBadge = self.toggleChildWidgets[i]:IsVisible()
+    end
+    if badge:GetText() == "" then
+      hideBadge = true
+    end
+    badge:Show(not hideBadge)
+  end
+  return button
+end
+local convenienceBtn = CreateConvenienceBtn("commercialMailBtn", "UIParent")
+local CreateAuctionToggleBtn = function(id, parent)
+  local button = UIParent:CreateWidget("button", id, parent)
+  button:Show(false)
+  ApplyButtonSkin(button, BUTTON_HUD.TOGGLE_AUCTION)
+  local function LeftButtonCLickFunc()
+    parent:ToggleChildWidgets()
+    X2Auction:ToggleAuction()
+  end
+  ButtonOnClickHandler(button, LeftButtonCLickFunc)
+  local function OnShow()
+    local hasAuthority = X2Auction:HasHudAuctionAuthority()
+    button:Enable(hasAuthority)
+  end
+  button:SetHandler("OnShow", OnShow)
+  local function OnEnter(self)
+    local str
+    if button:IsEnabled() then
+      local bindKeyText = string.upper(X2Hotkey:GetBinding("toggle_auction", 1))
+      if bindKeyText == nil or bindKeyText == "" then
+        str = GetUIText(AUCTION_TEXT, "auction_title")
+      else
+        str = string.format("%s %s(%s)", GetUIText(AUCTION_TEXT, "auction_title"), FONT_COLOR_HEX.DEFAULT, bindKeyText)
+      end
+    else
+      str = GetUIText(ERROR_MSG, "AUC_INVALID_HUD_AUTHORITY")
+    end
+    if str ~= nil then
+      SetVerticalTooltip(str, self)
+    end
+  end
+  button:SetHandler("OnEnter", OnEnter)
+  local OnLeave = function()
+    HideTooltip()
+  end
+  button:SetHandler("OnLeave", OnLeave)
+  parent:PushToggleChildWidget(button)
+  return button
+end
+if featureSet.hudAuctionButton then
+  local auctionToggleBtn = CreateAuctionToggleBtn("auctionToggleBtn", convenienceBtn)
+end
+local CreateRequestBattleFieldToggleBtn = function(id, parent)
+  local button = UIParent:CreateWidget("button", id, parent)
+  button:Show(false)
+  ApplyButtonSkin(button, BUTTON_HUD.TOGGLE_REQUEST_BATTLE_FIELD)
+  function button:CheckEnabled()
+    button:Enable(X2Player:IsInSeamlessZone() and X2BattleField:HasHudBattlefiledAuthority())
+  end
+  button:SetHandler("OnShow", button.CheckEnabled)
+  local function LeftButtonCLickFunc()
+    parent:ToggleChildWidgets()
+    X2BattleField:ToggleBattleField()
+  end
+  ButtonOnClickHandler(button, LeftButtonCLickFunc)
+  local OnEnter = function(self)
+    local bindKeyText = string.upper(X2Hotkey:GetBinding("toggle_battle_field", 1))
+    local str = ""
+    if bindKeyText == nil or bindKeyText == "" then
+      str = GetUIText(MSG_BOX_TITLE_TEXT, "instant_game_bad_level")
+    else
+      str = string.format("%s %s(%s)", GetUIText(MSG_BOX_TITLE_TEXT, "instant_game_bad_level"), FONT_COLOR_HEX.DEFAULT, bindKeyText)
+    end
+    if self:IsEnabled() == false then
+      if not X2BattleField:HasHudBattlefiledAuthority() then
+        str = GetUIText(ERROR_MSG, "INVALID_HUD_BATTLEFIELD_AUTHORITY")
+      else
+        str = GetUIText(COMMON_TEXT, "instant_game_hud_button_disable_tooltip")
+      end
+    end
+    SetVerticalTooltip(str, self)
+  end
+  button:SetHandler("OnEnter", OnEnter)
+  local OnLeave = function()
+    HideTooltip()
+  end
+  button:SetHandler("OnLeave", OnLeave)
+  parent:PushToggleChildWidget(button)
+  return button
+end
+if featureSet.hudBattleFieldButton then
+  local requestBattleFieldToggleBtn = CreateRequestBattleFieldToggleBtn("requestBattleFieldToggleBtn", convenienceBtn)
+  UIParent:SetEventHandler("LEFT_LOADING", requestBattleFieldToggleBtn.CheckEnabled)
+end
+local CreateMailBoxToggleBtn = function(id, parent)
+  local button = UIParent:CreateWidget("button", id, parent)
+  button:Show(false)
+  ApplyButtonSkin(button, BUTTON_HUD.TOGGLE_MAIL)
+  local function LeftButtonCLickFunc()
+    parent:ToggleChildWidgets()
+    X2Mail:ToggleMailBox()
+  end
+  ButtonOnClickHandler(button, LeftButtonCLickFunc)
+  local OnEnter = function(self)
+    local bindKeyText = string.upper(X2Hotkey:GetBinding("toggle_mail", 1))
+    local str = ""
+    if bindKeyText == nil or bindKeyText == "" then
+      str = GetUIText(MAIL_TEXT, "mailbox")
+    else
+      str = string.format("%s %s(%s)", GetUIText(MAIL_TEXT, "mailbox"), FONT_COLOR_HEX.DEFAULT, bindKeyText)
+    end
+    SetVerticalTooltip(str, self)
+  end
+  button:SetHandler("OnEnter", OnEnter)
+  local OnLeave = function()
+    HideTooltip()
+  end
+  button:SetHandler("OnLeave", OnLeave)
+  parent:PushToggleChildWidget(button)
+  return button
+end
+if featureSet.hudMailBoxButton then
+  local mailBoxToggleBtn = CreateMailBoxToggleBtn("mailBoxToggleBtn", convenienceBtn)
+end
+local CreateCommercialMailBtn = function(id, parent)
+  local button = UIParent:CreateWidget("button", id, parent)
+  button:Show(false)
+  ApplyButtonSkin(button, BUTTON_HUD.TOGGLE_COMMERCIAL_MAIL)
+  local badge = button:CreateChildWidget("label", "badge", 0, true)
+  badge:AddAnchor("TOPRIGHT", button, 7, -2)
+  badge:SetExtent(29, 28)
+  badge:SetInset(0, 0, 0, 3)
+  badge.style:SetShadow(true)
+  badge.style:SetFontSize(FONT_SIZE.SMALL)
+  local bg = badge:CreateImageDrawable(TEXTURE_PATH.HUD, "background")
+  bg:SetTextureInfo("sendbox_balloon")
+  bg:AddAnchor("TOPLEFT", badge, 0, 0)
+  bg:AddAnchor("BOTTOMRIGHT", badge, 0, 0)
+  SetHandlerCommercialMailBadge(badge)
+  local function LeftButtonCLickFunc()
+    parent:ToggleChildWidgets()
+    ToggleComercialMailBoxWithRequest()
+  end
+  ButtonOnClickHandler(button, LeftButtonCLickFunc)
+  ButtonOnClickHandler(badge, LeftButtonCLickFunc)
+  local OnEnter = function(self)
+    local bindKeyText = string.upper(X2Hotkey:GetBinding("toggle_commercial_mail", 1))
+    local str = ""
+    if bindKeyText == nil or bindKeyText == "" then
+      str = GetUIText(MSG_BOX_TITLE_TEXT, "instant_game_bad_level")
+    else
+      str = string.format("%s %s(%s)", GetUIText(INFOBAR_MENU_TEXT, "commercial_mail"), FONT_COLOR_HEX.DEFAULT, bindKeyText)
+    end
+    SetVerticalTooltip(str, self)
+  end
+  button:SetHandler("OnEnter", OnEnter)
+  local OnLeave = function()
+    HideTooltip()
+  end
+  button:SetHandler("OnLeave", OnLeave)
+  parent:PushToggleChildWidget(button)
+  return button
+end
+local commercialMailBtn = CreateCommercialMailBtn("commercialMailBtn", convenienceBtn)

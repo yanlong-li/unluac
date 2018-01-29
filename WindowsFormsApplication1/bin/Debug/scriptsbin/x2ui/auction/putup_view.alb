@@ -1,0 +1,302 @@
+local SetGridAnchoring = function(parent, childs, rowCount, colCount, anchorInfo)
+  if anchorInfo == nil then
+    anchorInfo = {}
+    anchorInfo.myAnchor = "CENTER"
+    anchorInfo.targetAnchor = "TOPLEFT"
+    anchorInfo.childsInsetX = 0
+    anchorInfo.childsInsetY = 0
+    anchorInfo.offsetx = 0
+    anchorInfo.offsety = 0
+  end
+  local width, height = parent:GetExtent()
+  local childWidth, childHeight = childs[1]:GetExtent()
+  local cellWidth = width / colCount + anchorInfo.childsInsetX
+  local cellHeight = height / rowCount / 2 + anchorInfo.childsInsetY
+  local col = 1
+  local row = 1
+  local posX, posY
+  for c = 1, #childs do
+    posX = cellWidth * 0.5 + cellWidth * (col - 1)
+    posY = cellHeight * 0.5 + cellHeight * (row - 1)
+    childs[c]:RemoveAllAnchors()
+    childs[c]:AddAnchor(anchorInfo.myAnchor, parent, anchorInfo.targetAnchor, anchorInfo.offsetx + posX, anchorInfo.offsety + posY)
+    col = col + 1
+    if colCount < col then
+      col = 1
+      row = row + 1
+    end
+  end
+end
+local function SetViewOfPutupFrame(window)
+  local frame = window:CreateChildWidget("window", "putupItemFrame", 0, true)
+  frame:Show(true)
+  local bg = CreateContentBackground(frame, "TYPE3")
+  bg:AddAnchor("TOPLEFT", frame, -MARGIN.WINDOW_SIDE, -MARGIN.WINDOW_SIDE)
+  bg:AddAnchor("BOTTOMRIGHT", frame, MARGIN.WINDOW_SIDE, MARGIN.WINDOW_SIDE)
+  local itemButton = CreateItemIconButton(frame:GetId() .. ".itemButton", frame)
+  itemButton:Show(true)
+  itemButton:AddAnchor("TOP", frame, 0, MARGIN.WINDOW_SIDE / 2)
+  itemButton:SetSounds("")
+  frame.itemButton = itemButton
+  local itemNameLabel = frame:CreateChildWidget("label", "itemNameLabel", 0, true)
+  itemNameLabel:Show(true)
+  itemNameLabel.style:SetEllipsis(true)
+  itemNameLabel:SetExtent(190, FONT_SIZE.LARGE)
+  itemNameLabel:AddAnchor("TOP", itemButton, "BOTTOM", 0, 5)
+  itemNameLabel.style:SetFontSize(FONT_SIZE.LARGE)
+  ApplyTextColor(itemNameLabel, FONT_COLOR.TITLE)
+  local inputWindow = CreateLabel("inputWindow", frame)
+  inputWindow:Show(true)
+  inputWindow:SetExtent(190, 260)
+  inputWindow:AddAnchor("TOP", itemNameLabel, "BOTTOM", 0, MARGIN.WINDOW_SIDE / 2)
+  local startPriceLabel = inputWindow:CreateChildWidget("label", "startPriceLabel", 0, true)
+  startPriceLabel:SetExtent(190, 15)
+  startPriceLabel:AddAnchor("TOP", inputWindow, 0, 0)
+  startPriceLabel:SetText(locale.auction.startPrice)
+  startPriceLabel.style:SetAlign(ALIGN_LEFT)
+  startPriceLabel.style:SetFontSize(FONT_SIZE.LARGE)
+  ApplyTextColor(startPriceLabel, FONT_COLOR.TITLE)
+  local startBundlePriceLabel = inputWindow:CreateChildWidget("label", "startBundlePriceLabel", 0, true)
+  startBundlePriceLabel:SetExtent(190, FONT_SIZE.MIDDLE)
+  startBundlePriceLabel:AddAnchor("TOPLEFT", startPriceLabel, "BOTTOMLEFT", 0, 5)
+  startBundlePriceLabel:SetText(locale.auction.bundlePrice)
+  startBundlePriceLabel.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(startBundlePriceLabel, FONT_COLOR.BROWN)
+  local startPriceEditsWindow
+  if F_MONEY.currency.auctionBid == CURRENCY_AA_POINT then
+    startPriceEditsWindow = CreateAAPointEditsWindow(frame:GetId() .. ".startPriceEditsWindow", frame)
+  else
+    startPriceEditsWindow = CreateMoneyEditsWindow(frame:GetId() .. ".startPriceEditsWindow", frame)
+  end
+  startPriceEditsWindow:Show(true)
+  startPriceEditsWindow:AddAnchor("TOPLEFT", startBundlePriceLabel, "BOTTOMLEFT", 0, 3)
+  startPriceEditsWindow:SetStyle("brown")
+  startPriceEditsWindow:SetWidth(190)
+  startPriceEditsWindow.goldEdit:SetWidth(90)
+  startPriceEditsWindow.silverEdit:SetWidth(45)
+  startPriceEditsWindow.copperEdit:SetWidth(45)
+  frame.startPriceEditsWindow = startPriceEditsWindow
+  local directPriceLabel = inputWindow:CreateChildWidget("label", "directPriceLabel", 0, true)
+  directPriceLabel:SetExtent(190, 15)
+  directPriceLabel:AddAnchor("TOPLEFT", startPriceEditsWindow, "BOTTOMLEFT", 0, MARGIN.WINDOW_SIDE / 1.5)
+  directPriceLabel:SetText(locale.auction.directPrice)
+  directPriceLabel.style:SetAlign(ALIGN_LEFT)
+  directPriceLabel.style:SetFontSize(FONT_SIZE.LARGE)
+  ApplyTextColor(directPriceLabel, FONT_COLOR.TITLE)
+  local lowestPriceLabel = inputWindow:CreateChildWidget("label", "lowestPriceLabel", 0, true)
+  lowestPriceLabel:SetExtent(190, FONT_SIZE.MIDDLE)
+  lowestPriceLabel:AddAnchor("TOPLEFT", directPriceLabel, "BOTTOMLEFT", 0, 5)
+  lowestPriceLabel:SetText(locale.auction.lowestEachPrice)
+  lowestPriceLabel.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(lowestPriceLabel, FONT_COLOR.BROWN)
+  local lowestPrice = CreateDefaultMoneyWindow(inputWindow:GetId() .. ".lowestPrice", inputWindow, 180, 30)
+  lowestPrice.currency = F_MONEY.currency.auctionBid
+  ApplyTextColor(lowestPrice, FONT_COLOR.TITLE)
+  lowestPrice:Show(true)
+  lowestPrice:AddAnchor("TOPLEFT", lowestPriceLabel, "BOTTOMLEFT", 0, 0)
+  frame.lowestPrice = lowestPrice
+  local lowestPriceBg = lowestPrice:CreateImageDrawable(TEXTURE_PATH.MONEY_WINDOW, "background")
+  lowestPriceBg:SetCoords(0, 0, 190, 29)
+  lowestPriceBg:SetColor(1, 1, 1, 0.8)
+  lowestPriceBg:AddAnchor("TOPLEFT", lowestPrice, -5, 0)
+  lowestPriceBg:AddAnchor("BOTTOMRIGHT", lowestPrice, 20, 0)
+  local directEachPriceLabel = inputWindow:CreateChildWidget("label", "directEachPriceLabel", 0, true)
+  directEachPriceLabel:SetExtent(190, 15)
+  directEachPriceLabel:AddAnchor("TOPLEFT", lowestPrice, "BOTTOMLEFT", 0, 5)
+  directEachPriceLabel:SetText(locale.auction.eachPrice)
+  directEachPriceLabel.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(directEachPriceLabel, FONT_COLOR.BROWN)
+  local directPriceEditsWindow
+  if F_MONEY.currency.auctionBid == CURRENCY_AA_POINT then
+    directPriceEditsWindow = CreateAAPointEditsWindow(frame:GetId() .. ".directPriceEditsWindow", frame)
+  else
+    directPriceEditsWindow = CreateMoneyEditsWindow(frame:GetId() .. ".directPriceEditsWindow", frame)
+  end
+  directPriceEditsWindow:Show(true)
+  directPriceEditsWindow:AddAnchor("TOPLEFT", directEachPriceLabel, "BOTTOMLEFT", 0, 3)
+  directPriceEditsWindow:SetStyle("brown")
+  directPriceEditsWindow:SetWidth(190)
+  directPriceEditsWindow.goldEdit:SetWidth(90)
+  directPriceEditsWindow.silverEdit:SetWidth(45)
+  directPriceEditsWindow.copperEdit:SetWidth(45)
+  frame.directPriceEditsWindow = directPriceEditsWindow
+  local directBundlePriceLabel = auctionLocale:CreateDirectBundlePriceLabel("directBundlePriceLabel", inputWindow, directPriceEditsWindow)
+  local directBundleAmountLabel = inputWindow:CreateChildWidget("textbox", "directBundleAmountLabel", 0, true)
+  directBundleAmountLabel:SetExtent(70, FONT_SIZE.MIDDLE)
+  ApplyTextColor(directBundleAmountLabel, FONT_COLOR.BROWN)
+  directBundleAmountLabel.style:SetAlign(ALIGN_RIGHT)
+  auctionLocale:SetLayoutDirectBundleAmountLabel(directBundleAmountLabel, directBundlePriceLabel)
+  frame.directBundleAmountLabel = directBundleAmountLabel
+  function directBundleAmountLabel:Update(amount)
+    self:SetWidth(500)
+    self:SetText(string.format("%s %s%s", locale.auction.amount, FONT_COLOR_HEX.BLUE, tostring(amount)))
+    self:SetWidth(self:GetLongestLineWidth() + 5)
+  end
+  local directBundlePrice = CreateDefaultMoneyWindow(inputWindow:GetId() .. ".directBundlePrice", inputWindow, 180, 30)
+  directBundlePrice:Show(true)
+  directBundlePrice:SetWidth(190)
+  directBundlePrice.currency = F_MONEY.currency.auctionBid
+  ApplyTextColor(directBundlePrice, FONT_COLOR.TITLE)
+  auctionLocale:AnchorDirectBundlePrice(directBundlePrice, directBundleAmountLabel)
+  frame.directBundlePrice = directBundlePrice
+  local directBundlePriceBg = directBundlePrice:CreateImageDrawable(TEXTURE_PATH.MONEY_WINDOW, "background")
+  directBundlePriceBg:SetCoords(0, 0, 190, 29)
+  directBundlePriceBg:SetColor(0, 0.5, 1, 1)
+  directBundlePriceBg:AddAnchor("TOPLEFT", directBundlePrice, -5, 0)
+  directBundlePriceBg:AddAnchor("BOTTOMRIGHT", directBundlePrice, 20, 0)
+  local biddingTimeLabel = inputWindow:CreateChildWidget("label", "biddingTimeLabel", 0, true)
+  biddingTimeLabel:SetExtent(190, 50)
+  biddingTimeLabel:AddAnchor("TOPLEFT", directBundlePrice, "BOTTOMLEFT", 0, MARGIN.WINDOW_SIDE / 2)
+  biddingTimeLabel:SetText(locale.auction.biddingTime)
+  biddingTimeLabel.style:SetAlign(ALIGN_TOP_LEFT)
+  ApplyTextColor(biddingTimeLabel, FONT_COLOR.TITLE)
+  local times = {
+    6,
+    12,
+    24,
+    48
+  }
+  local timeTexts = {}
+  for i = 1, 4 do
+    timeTexts[i] = string.format("%d %s", times[i], locale.tooltip.hour)
+  end
+  local firstOffset = {x = 5, y = 20}
+  local timeCheckBoxes = CreateRadioButton(frame:GetId() .. ".timeCheckBoxes", biddingTimeLabel, 4, "vertical", firstOffset, 70, timeTexts)
+  frame.timeCheckBoxes = timeCheckBoxes
+  local anchorInfo = {
+    myAnchor = "TOPLEFT",
+    targetAnchor = "TOPLEFT",
+    childsInsetX = 0,
+    childsInsetY = 2,
+    offsetx = -40,
+    offsety = MARGIN.WINDOW_SIDE / 2
+  }
+  SetGridAnchoring(biddingTimeLabel, timeCheckBoxes, 2, 2, anchorInfo)
+  local deposit = frame:CreateChildWidget("textbox", "depositLabel", 0, true)
+  deposit:Show(true)
+  deposit:AddAnchor("TOPLEFT", biddingTimeLabel, "BOTTOMLEFT", 0, MARGIN.WINDOW_SIDE / 2)
+  deposit:SetExtent(190, FONT_SIZE.MIDDLE)
+  deposit.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(deposit, FONT_COLOR.TITLE)
+  frame.deposit = deposit
+  local charge = frame:CreateChildWidget("textbox", "chargeLabel", 0, true)
+  charge:Show(true)
+  charge:AddAnchor("TOPLEFT", deposit, "BOTTOMLEFT", 0, 5)
+  charge:SetExtent(190, FONT_SIZE.MIDDLE)
+  charge.style:SetAlign(ALIGN_LEFT)
+  ApplyTextColor(charge, FONT_COLOR.TITLE)
+  frame.charge = charge
+  local putupButton = frame:CreateChildWidget("button", "putupButton", 0, true)
+  putupButton:Show(true)
+  putupButton:Enable(false)
+  putupButton:SetText(locale.auction.putupItem)
+  ApplyButtonSkin(putupButton, BUTTON_BASIC.DEFAULT)
+  putupButton:SetSounds("auction_put_up")
+  local marketPriceBtn = CreateMarketPriceBtn("marketPriceBtn", frame)
+  frame.marketPriceBtn = marketPriceBtn
+  if marketPriceBtn == nil then
+    putupButton:AddAnchor("BOTTOM", frame, 0, MARGIN.WINDOW_SIDE / 2)
+  else
+    putupButton:AddAnchor("BOTTOM", frame, marketPriceBtn:GetWidth() / 2, MARGIN.WINDOW_SIDE / 2)
+    marketPriceBtn:AddAnchor("RIGHT", putupButton, "LEFT", -5, 0)
+  end
+  return frame
+end
+local CreateItemListFrame = function(window)
+  local listInfos = {
+    width = auctionLocale.width.putupListCtrl,
+    height = 431,
+    anchorWidget = window.putupItemFrame,
+    columns = {
+      {
+        name = locale.auction.name,
+        width = auctionLocale.nameColWidth.putupTab,
+        itemType = LCCIT_WINDOW,
+        itemPropFunc = CreateItemName,
+        sortKinds = {
+          columnSortKind[5]
+        },
+        limitLen = auctionLocale.nameColLimitLen.putupTab
+      },
+      {
+        name = locale.auction.level,
+        width = auctionLocale.width.itemlevelCol,
+        itemType = LCCIT_STRING,
+        itemPropFunc = CreateItemLevel,
+        sortKinds = {
+          columnSortKind[6]
+        }
+      },
+      {
+        name = locale.auction.leftTime,
+        width = auctionLocale.width.timeCol,
+        itemType = LCCIT_STRING,
+        itemPropFunc = CreateItemLeftTime,
+        sortKinds = {
+          columnSortKind[7]
+        }
+      },
+      {
+        name = locale.auction.itemCondition,
+        width = auctionLocale.width.itemConditionCol,
+        itemType = LCCIT_STRING,
+        itemPropFunc = CreateMyItemBiddingState
+      },
+      {
+        name = locale.auction.bidPrice,
+        width = 175,
+        itemType = LCCIT_WINDOW,
+        itemPropFunc = CreateItemBiddingPrice,
+        sortKinds = {
+          columnSortKind[8]
+        }
+      }
+    }
+  }
+  CreateAuctionItemList(window, listInfos)
+  window.listCtrl.column[3]:Enable(false)
+end
+local CreateBottomFrame = function(window)
+  local availableMoney = CreateTitleMoneyWindow(window:GetId() .. ".availableMoney", window, nil, "vertical")
+  availableMoney:Show(true)
+  availableMoney:AddAnchor("BOTTOMLEFT", window, 0, 0)
+  window.availableMoney = availableMoney
+  local availableAAPoint = CreateTitleMoneyWindow(window:GetId() .. ".availableAAPoint", window, GetUIText(MONEY_TEXT, "aa_point"), "vertical")
+  if F_MONEY.currency.auctionFee ~= CURRENCY_GOLD or F_MONEY.currency.auctionBid ~= CURRENCY_GOLD then
+    availableAAPoint:Show(true)
+  else
+    availableAAPoint:Show(false)
+  end
+  availableAAPoint:AddAnchor("LEFT", availableMoney, "RIGHT", 20, 0)
+  window.availableAAPoint = availableAAPoint
+  if baselibLocale.showMoneyTooltip then
+    local OnEnter = function(self)
+      SetTooltip(locale.moneyTooltip.money, self)
+    end
+    availableMoney:SetHandler("OnEnter", OnEnter)
+    local OnEnter = function(self)
+      SetTooltip(locale.moneyTooltip.aapoint, self)
+    end
+    availableAAPoint:SetHandler("OnEnter", OnEnter)
+  end
+  local rightMarketPriceBtn = CreateMarketPriceBtn("rightMarketPriceBtn", window)
+  window.rightMarketPriceBtn = rightMarketPriceBtn
+  local cancelBidButton = window:CreateChildWidget("button", "cancelBidButton", 0, true)
+  cancelBidButton:Show(true)
+  cancelBidButton:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+  cancelBidButton:SetText(locale.auction.cancelBid)
+  ApplyButtonSkin(cancelBidButton, BUTTON_BASIC.DEFAULT)
+  if rightMarketPriceBtn == nil then
+    cancelBidButton:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+  else
+    rightMarketPriceBtn:AddAnchor("BOTTOMRIGHT", window, 0, 0)
+    cancelBidButton:AddAnchor("BOTTOMRIGHT", rightMarketPriceBtn, "BOTTOMLEFT", -5, 0)
+  end
+end
+function SetViewOfAuctionPutupFrame(window)
+  local putupFrame = SetViewOfPutupFrame(window)
+  putupFrame:SetExtent(200, 480)
+  putupFrame:AddAnchor("TOPLEFT", window, 0, MARGIN.WINDOW_SIDE)
+  CreateItemListFrame(window)
+  CreateBottomFrame(window)
+end
